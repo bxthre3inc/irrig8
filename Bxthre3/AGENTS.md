@@ -43,6 +43,55 @@
 
 ---
 
+## Architecture & Nesting Protocol
+
+### Repo Topology
+
+```
+bxthre3inc/bxthre3.git          ← PARENT META-REPO (workspace root)
+├── Bxthre3/                     ← WORKING DIRECTORY (AGENTS.md, INBOX/, agents/)
+└── Bxthre3/projects/            ← ALL PROJECTS ARE PEER SUBMODULES
+    ├── the-agentos-project.git
+    ├── the-ard-project.git
+    ├── the-irrig8-project.git
+    ├── the-valleyplayersclub-project.git
+    └── the-zoe-project.git
+```
+
+### Why Nesting Is Forbidden
+
+Nesting a `Bxthre3/` directory inside any project creates a circular reference loop:
+- `bxthre3.git` → submodule `the-zoe-project.git` → nested `Bxthre3/` → contains another copy of all submodules
+- This causes git to lose track of which commit is canonical, creates duplicate INBOX paths, and doubles storage
+- **Historical damage:** `the-zoe-project` accumulated ~2GB of nested Bxthre3 artifacts before cleanup (2026-03-23)
+
+### Golden Rules
+
+1. **No `Bxthre3/` inside any project submodule.** Ever. Not even temporarily.
+2. **Projects are peers, not children.** No project path under another project's path.
+3. **Cross-project references via submodule dependency, not copy.** If Project A needs files from Project B, add Project B as a submodule inside Project A — not a copy of the whole meta-repo.
+
+### How to Add a New Project
+
+```
+1. Create the repo on GitHub under bxthre3inc/
+2. In the parent bxthre3 repo (workspace root):
+   git submodule add https://github.com/bxthre3inc/{new-project}.git \
+     Bxthre3/projects/{new-project}
+3. Commit and push from workspace root
+4. Add canonical path to the table above
+```
+
+### About the-rain-project
+
+`the-rain-project.git` is structurally identical to `bxthre3.git` — it was an early duplicate meta-repo. It has no active development. Its `.gitmodules` references sibling projects that are already tracked by the parent. It should be deprecated once its content is fully migrated to the canonical `bxthre3.git` structure.
+
+---
+
+*Last updated: 2026-03-23 — Protocol established after nesting cleanup.*
+
+---
+
 ## INBOX Routing Rules
 
 ```
