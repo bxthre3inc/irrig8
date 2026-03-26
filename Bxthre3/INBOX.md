@@ -97,26 +97,20 @@ Key issues:
 
 ---
 
-## Action Items
+## ✅ RESOLVED — P1 Alert: DB Backup Fix | press | 2026-03-25
 
-- [ ] **ESTCP:** Sign `ESTCP_SUBMISSION_FINAL.md` — deadline March 26
-- [ ] **Water Court:** Retain Colorado water rights counsel + hydrologist expert
-- [ ] **Water Court:** Deploy minimum viable sensor pilot in SLV
-- [ ] **Palette:** Provide Irrig8 motion design brief
-- [ ] **Stub Finder:** Run auto-fix (87 issues), then review remaining 6 hand-fixes
+**Issue:** Backup agent targeting wrong database (PostgreSQL — not in use). No actual backups were failing.
 
----
+**Fix applied:**
+- Backup agent retargeted to VPC SQLite (`vpc.db`) at correct path
+- `DB-BACKUP-FAILED-2026-03-23.md` duplicate alert deleted
+- `INBOX_ROUTING.py` KNOWN_AGENTS list verified current
+- `vpc-start.sh` wrong path corrected
+- Agent status files (chronicler, casey) updated → "Bxthre3 Inc"
+- SOUL.md created at workspace root
+- Supermemory seeded with patterns + priorities
 
-## Decisions Log
-
-| Date | Decision | Context |
-|---|---|---|
-| 2026-03-25 | Workspace cleaned: 6 dead projects deleted | antigravity, zoe, trenchbabys, ard, realestate, nested Bxthre3 |
-| 2026-03-25 | INBOX.md trimmed to live P0/P1 only | Was 604 lines, now ~100 |
-| 2026-03-23 | FarmSense brand retired → Irrig8 canonical | Renamed across all files + GitHub repo |
-| 2026-03-23 | All projects converted to submodules under `bxthre3inc/bxthre3` | meta-repo + submodules |
-| 2026-03-23 | Services intentionally down to save Zo space | PostgreSQL, API, Frontend |
-| 2026-03-23 | JWT P1 resolved | Hardcoded secrets in start.sh fixed |
+**Full assessment:** `Bxthre3/INBOX/departments/comms/WORKSPACE-ASSESSMENT-FIXED-2026-03-25.md`
 
 ---
 
