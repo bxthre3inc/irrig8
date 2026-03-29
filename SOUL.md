@@ -86,7 +86,6 @@
 ## Current Priority Context (2026-03-25)
 
 - **P1 Active:** Database backup agent failing (targeting wrong DB — PostgreSQL instead of SQLite)
-- **P1 Active:** ESTCP ER26-FS-01 grant deadline **March 26, 2026** (tomorrow)
 - **P1 Active:** Water Court hearing June 29, 2026 — evidence preparation ongoing
 - **Recently resolved:** Irrig8 → Irrig8 rebrand (2026-03-23)
 - **Recently resolved:** VPC equity math corrected (500,001 / 499,999 split)

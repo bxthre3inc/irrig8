@@ -49,7 +49,6 @@
 - Deliver: ✅ API key instantly
 - Support: ✅ Documentation only
 
-**Problem:** Crowded market. Vendors, Zapier, n8n all doing this.
 
 ---
 

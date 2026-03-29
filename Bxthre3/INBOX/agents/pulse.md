@@ -1,42 +1,61 @@
-# Pulse Health Check — 2026-03-29 14:15 UTC
+# Pulse — System Health Monitor Log
 
-## Summary
+**Last Run:** 2026-03-29T15:17:54Z
+
+---
+
+## Results Summary
+
 | System | Status | Response Time | Notes |
 |--------|--------|---------------|-------|
-| zo.space | ✅ 200 | < 2s | Healthy |
-| AgentOS API | ⚠️ 404 | 0.001s | Endpoint not found (may not exist) |
-| n8n connector hub | ❌ 521 | — | Server error |
-| Airtable | ⚠️ 404 | — | Auth missing (expected without token) |
-| Linear | ⚠️ 400 | — | Auth missing (expected without token) |
-| Gmail | ⚠️ 401 | — | Auth missing (expected without token) |
+| zo.space | ✅ HEALTHY | 0.288s | HTTP 200, returning valid HTML |
+| AgentOS API | ⚠️ UNKNOWN | 0.001s | HTTP 404 - endpoint may not exist |
+| n8n Connector Hub | ❌ DOWN | 0.136s | HTTP 502 Bad Gateway |
+| Airtable | ✅ CONNECTED | — | All tools accessible |
+| Linear | ✅ CONNECTED | — | All tools accessible |
+| Gmail | ✅ CONNECTED | — | All tools accessible |
+| Google Calendar | ✅ CONNECTED | — | 10 events retrieved |
 
-## Details
+---
 
-### ✅ zo.space (https://brodiblanco.zo.space)
-- HTTP 200
-- Returns valid HTML page
-- Response time: < 2s
+## Detailed Findings
 
-### ⚠️ AgentOS API (http://localhost:3099/api/agentos)
-- HTTP 404
-- Endpoint may not exist or different path
-- Response time: 0.001s
+### zo.space ✅
+- **URL:** https://brodiblanco.zo.space
+- **Response:** 200 OK in 0.288s
+- **Status:** Healthy — site is serving correctly
 
-### ❌ n8n connector hub (https://n8n-connector-hub-brodiblanco.zocomputer.io)
-- HTTP 521
-- Web server error — service down
+### AgentOS API ⚠️
+- **URL:** http://localhost:3099/api/agentos
+- **Response:** 404 Not Found in 0.001s
+- **Status:** Service is running (port 3099 responding), but `/api/agentos` endpoint does not exist
+- **Action:** Verify expected endpoint path or update health check
 
-### ⚠️ Airtable (connected)
-- Auth test required — 404 expected without valid token
-- Integration connected, full test requires OAuth
+### n8n Connector Hub ❌
+- **URL:** https://n8n-connector-hub-brodiblanco.zocomputer.io
+- **Response:** 502 Bad Gateway in 0.136s
+- **Status:** DOWN — n8n service returning gateway error
+- **Escalation:** P2 — Integration latency/service unreachable
 
-### ⚠️ Linear (connected)
-- Auth test required — 400 expected without valid token
-- Integration connected, full test requires OAuth
+### Integrations ✅
+- **Airtable:** Connected, 16 actions available
+- **Linear:** Connected, 18 actions available
+- **Gmail:** Connected, 15 actions available
+- **Google Calendar:** Connected, 10 events retrieved
 
-### ⚠️ Gmail (connected)
-- Auth test required — 401 expected without valid token
-- Integration connected, full test requires OAuth
+---
 
-## Escalation
-- **P3**: n8n connector hub returning 521 — investigate service
+## Escalations
+
+| Priority | System | Issue | Action |
+|----------|--------|-------|--------|
+| P2 | n8n Connector Hub | 502 Bad Gateway | Investigate n8n service status |
+| P3 | AgentOS API | 404 on /api/agentos | Verify expected endpoint path |
+
+---
+
+## Next Check
+Scheduled: Next periodic run (interval configured in agent schedule)
+
+---
+*Pulse v1.0 — Bxthre3 System Health Monitor*

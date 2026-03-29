@@ -2,13 +2,11 @@
 **Owner:** Press (Head of Press & Communications)
 **Grants Lead:** Casey | **Research:** Raj | **Writer:** Drew
 **Updated:** 2026-03-26 | v2
-**Supersedes:** ESTCP ER26-FS-01 (missed — archived)
 
 ---
 
 ## SITUATION
 
-- ESTCP ER26-FS-01: **NOT SUBMITTED** — deadline passed. Package archived.
 - Database backups: **BROKEN** — 0-byte dumps, no valid backup
 - Stripe: **TEST MODE** — no real payments accepted
 
