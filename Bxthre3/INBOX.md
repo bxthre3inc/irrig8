@@ -149,6 +149,26 @@ Key issues:
 
 ---
 
+## 🟠 P2 | pulse | 2026-03-29 13:55 UTC
+
+**n8n Connector Hub Offline**
+
+| System | Status | Latency | Notes |
+|--------|--------|---------|-------|
+| zo.space | ✅ | 282ms | Healthy |
+| AgentOS API | ⚠️ | 16ms | 404 Not Found |
+| n8n Connector Hub | 🔴 | 187ms | 521 Down |
+| Airtable | ✅ | — | Connected |
+| Linear | ✅ | — | Connected |
+| Gmail | ✅ | — | Connected |
+| Google Calendar | ✅ | — | Connected |
+
+**Impact:** Webhook triggers for system failure alerts (backup-complete, agentos-down) will not fire.
+
+**Action:** Investigate n8n server at ts4.zocomputer.io — origin server not responding.
+
+---
+
 *All agent INBOXes: `Bxthre3/INBOX/agents/`*
 *All department INBOXes: `Bxthre3/INBOX/departments/`*
 
@@ -181,3 +201,12 @@ Webhooks need manual configuration in n8n UI:
 3. /webhook/agentos-down → P1 alert to brodiblanco
 
 ---
+
+## 🟢 P3 | Decision Alert Agent | 2026-03-29 14:00 UTC
+
+2 urgent decisions reported to brodiblanco via SMS.
+- Bxthre3 holding company filings (due 2026-04-01)
+- ESTCP Phase 2 field sensor deployment (due 2026-04-01)
+
+---
+

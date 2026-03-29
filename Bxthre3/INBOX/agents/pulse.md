@@ -1,64 +1,34 @@
-# Pulse Health Check Report
-
-**Run:** 2026-03-29 13:50:00 UTC  
-**Agent:** Pulse — System Health Monitor  
-**Status:** ✅ ALL SYSTEMS HEALTHY
-
----
+# Pulse Health Check Log
+**Last Run:** 2026-03-29 14:05 UTC
 
 ## System Status
 
-### 1. zo.space (https://brodiblanco.zo.space)
-- **Status:** ✅ HEALTHY
-- **Response Time:** 736ms (< 2s threshold)
-- **Response:** HTML served correctly
-- **Notes:** Site rendering normally
+| System | Status | Response Time | Notes |
+|--------|--------|---------------|-------|
+| zo.space | ✅ Healthy | 0.46s | HTTP 200 |
+| AgentOS API | ✅ Healthy | 0.17s | HTTP 200 |
+| n8n Connector Hub | 🔴 DOWN | 0.15s | HTTP 521 (Cloudflare origin unreachable) |
+| Airtable | ✅ Healthy | ~0.4s | Connected - 1 base (AgentOS Base) |
+| Linear | ✅ Healthy | ~0.5s | Connected as getfarmsense@gmail.com |
+| Gmail | ✅ Healthy | - | OAuth connected |
 
-### 2. AgentOS API (http://localhost:3099/api/agentos)
-- **Status:** ⚠️ EXPECTED BEHAVIOR
-- **Response Time:** 1.4ms
-- **Response:** "Not Found" — this endpoint path doesn't exist
-- **Notes:** Main zo.space serves at port 3099. No dedicated /api/agentos endpoint. This is expected; the AgentOS functionality operates through Zo Computer itself.
+## Alerts
 
-### 3. n8n Connector Hub (https://n8n-connector-hub-brodiblanco.zocomputer.io)
-- **Status:** ✅ HEALTHY
-- **Response Time:** 171ms (< 2s threshold)
-- **Response:** HTML (Cloudflare protection page)
-- **Notes:** n8n instance is reachable
+### 🔴 P1 - n8n Connector Hub (n8n-connector-hub-brodiblanco.zocomputer.io)
+- **Issue:** HTTP 521 - Origin connection refused
+- **Start Time:** 2026-03-29 14:05 UTC
+- **Status:** DOWN > 0 min (no uptime data)
+- **Escalation:** P2 to INBOX (not P1 until > 5 min)
 
-### 4. Airtable Connectivity
-- **Status:** ✅ HEALTHY
-- **Connection:** OAuth connected (getfarmsense@gmail.com)
-- **Base Found:** "AgentOS Base" (appHg8lr1v409yKBc)
-- **Latency:** ~3.8s (within acceptable range)
+### P3 - n8n unavailable
+- n8n webhook triggers will not fire until service is restored
 
-### 5. Linear Integration
-- **Status:** ✅ HEALTHY
-- **Connection:** OAuth connected (getfarmsense@gmail.com)
-- **Team:** BX3 (6 active issues)
-- **Latency:** ~5.1s (within acceptable range)
+## Actions Taken
+1. Logged status to this file
+2. No SMS sent (not P1 yet)
 
-### 6. Gmail Integration
-- **Status:** ✅ HEALTHY
-- **Connection:** OAuth connected (getfarmsense@gmail.com)
-- **Recent Check:** Successfully retrieved latest email
-- **Latency:** ~3.3s (within acceptable range)
+## Next Check
+- Scheduled: Next interval per agent configuration
+## 🟡 P2 | pulse | 2026-03-29 14:06 UTC
 
-### 7. Google Calendar Integration
-- **Status:** ✅ HEALTHY
-- **Connection:** OAuth connected (getfarmsense@gmail.com)
-- **Calendar:** Primary calendar active, UTC timezone
-- **Latency:** ~3.1s (within acceptable range)
-
----
-
-## Escalation Log
-- **P1:** None
-- **P2:** None  
-- **P3:** None
-
----
-
-## Next Scheduled Run
-- Interval: Every 15 minutes (via Pulse agent scheduler)
-- Log Location: `Bxthre3/INBOX/agents/pulse.md`
+n8n connector hub (https://n8n-connector-hub-brodiblanco.zocomputer.io) returning HTTP 521. zo.space, AgentOS API, Airtable, Linear, Gmail all healthy.
