@@ -42,7 +42,6 @@
 
 - Targeting Colorado San Luis Valley row crop farmers (potatoes, barley, wheat, alpine hay)
 - Water Court hearing June 29, 2026 creates urgency for water rights compliance solutions
-- ESTCP grant submission pending (March 26 deadline) — may create opportunity for follow-on sensor sales
 - FarmSense brand retired, using Irrig8 going forward
 
 ---

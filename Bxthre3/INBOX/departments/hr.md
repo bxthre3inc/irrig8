@@ -54,7 +54,6 @@
 ### Operations (Casey reporting)
 - **Tasks completed:** 5/5
 - **Escalations:** 4 (P2 × 4)
-- **Venture statuses:** Irrig8 STANDBY, AgentOS LIVE, VPC PLANNING, Starting 5 NOT STARTED, ESTCP SUSPENDED
 - **Health:** 🟢 OPERATIONAL
 
 ### IP-Legal (Vault reporting)
@@ -71,7 +70,6 @@
 ### Grants (Casey reporting)
 - **Active grants:** 7 batches
 - **Past due:** RAIN outreach HF-001/002
-- **Upcoming:** ESTCP Phase II LOI due **April 15, 2026**
 - **Health:** 🟡 MONITORING — human hire decision pending for next grant push
 
 ---
@@ -105,7 +103,6 @@ Two conflicting sources:
 | Meeting orchestrator failure (×2) | Logger | 🔴 ACTIVE | ORG-CHART.md + meeting-helpers.py missing — repeating pattern |
 | Water Court evidence gaps | Water-Court | 🔴 ACTIVE | 3 critical gaps: no field data, no calibration certs, no expert witness |
 | Provisional patent deadline | Vault | 🟡 APRIL 23 | Patent filing approach not yet approved |
-| ESTCP ER26-FS-01 | Casey | ✅ SUBMITTED | All signatures obtained, awaiting brodiblanco sign-off |
 
 ---
 
@@ -161,7 +158,6 @@ Two conflicting sources:
 ## 8. CULTURE & ALIGNMENT ASSESSMENT
 
 **Observed patterns:**
-- ESTCP submission completed with full agent signatures — strong coordination culture
 - Meeting orchestrator failures on consecutive days suggest infrastructure debt
 - Stub Finder actively catching phantom agents — quality discipline improving
 - Repeated INBOX routing violations — agents still surfacing P1s directly to brodiblanco instead of routing through department leads

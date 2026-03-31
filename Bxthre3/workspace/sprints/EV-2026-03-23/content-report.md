@@ -9,13 +9,11 @@
 
 ## 1. Summary of Evening Deep-Work Activity
 
-Evening sprint focused on deep work supporting ESTCP grant finalization and documentation preparation for tomorrow's overnight sprint. Services remain intentionally offline to conserve Zo space resources—content work centered on document preparation, gap analysis, and unblocker identification.
 
 ---
 
 ## 2. Deep Work Items
 
-### ESTCP Grant Content Support
 - **Status:** 🔴 At Risk — 3 days to deadline
 - **Completed:**
   - Technical proposal review (complete)
@@ -37,7 +35,6 @@ Evening sprint focused on deep work supporting ESTCP grant finalization and docu
 
 ---
 
-## 3. ESTCP Grant Support Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -48,14 +45,11 @@ Evening sprint focused on deep work supporting ESTCP grant finalization and docu
 | Environmental Review | 🔴 Missing | Required for submission |
 | SF-424 Form | 🔴 Missing | Federal form required |
 
-**Critical Path:** ESTCP submission March 26 is the single highest-impact financial event this quarter (+$830K if awarded).
 
 ---
 
 ## 4. Unblockers for Tomorrow's Overnight Sprint
 
-1. **Service Restart Required** — Backend service must be registered and running for ESTCP demo functionality (engineering priority)
-2. **SF-424 Form Completion** — Must be completed via Grants.gov or ESTCP portal before March 25
 3. **Environmental Review Document** — Determine if combined with technical proposal or uploaded separately
 4. **Team Signature Reconciliation** — Confirm all 4 internal signatures obtained (Maya, Theo, Drew, Casey)
 
@@ -63,7 +57,6 @@ Evening sprint focused on deep work supporting ESTCP grant finalization and docu
 
 ## 5. Next Steps
 
-1. **Immediately:** Confirm team signature status on ESTCP technical appendices
 2. **By March 24:** Complete SF-424 form via Grants.gov
 3. **By March 25:** Resolve environmental review document requirement
 4. **Pre-sprint:** Verify backend service registration before overnight sprint begins

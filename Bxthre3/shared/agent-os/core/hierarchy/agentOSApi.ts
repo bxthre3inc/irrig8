@@ -3,7 +3,7 @@ import type { Employee, Manager, Executive } from './types';
 
 // AgentOS v6.0.0 — Canonical API (SPEC.md v6.0 locked 2026-03-26)
 
-const CANONICAL_VERSION = '6.0.0';
+const CANONICAL_VERSION = '0.2.2';
 
 // Canonical 19-agent roster (SPEC.md §4.1)
 const CANONICAL_AGENT_IDS = new Set([
@@ -92,7 +92,6 @@ const AGENT_TASKS: Record<string, Array<{id:string;title:string;priority:string;
     {id:'t-dev-1',   title:'Deploy Irrig8 Sensor Firmware v2.1',priority:'P1',status:'IN_PROGRESS',due:'Today',  description:'Push OTA update to LRZ1/LRZ2 field units'},
   ],
   casey:[
-    {id:'t-casey-1', title:'ESTCP Phase II Submission',        priority:'P0',status:'BLOCKED',    due:'Apr 15',  description:'Complete full ESTCP Phase II proposal for DOE'},
   ],
   maya:[
     {id:'t-maya-1',  title:'SBIR Phase 1 Narrative Draft',     priority:'P0',status:'IN_PROGRESS',due:'Today',  description:'Complete first draft for DOE submission'},
@@ -146,7 +145,6 @@ const INTEGRATIONS = [
 
 const STARTING5 = [
   {name:'Zoe Patel',  archetype:'Chief of Staff',     specialty:'Orchestration & Strategy',   currentFocus:'AgentOS v6.0 architecture',         metrics:{tasksOwned:2,completionRate:0.97,escalations:0}},
-  {name:'Maya Patel',  archetype:'Grant Strategist',    specialty:'SBIR / ESTCP Proposals',     currentFocus:'SBIR Phase 1 narrative',           metrics:{tasksOwned:1,completionRate:0.90,grants:3}},
   {name:'Drew',        archetype:'Sales Lead',          specialty:'Revenue & Partnerships',     currentFocus:'VPC platform launch',              metrics:{tasksOwned:1,completionRate:0.93,pipeline:'.4M'}},
   {name:'Casey Wu',    archetype:'Marketing Lead',       specialty:'Brand & Demand Gen',         currentFocus:'Irrig8 launch campaign',          metrics:{tasksOwned:1,completionRate:0.85,reach:'12K'}},
   {name:'Vance',       archetype:'Pattern Architect',   specialty:'Gap Detection & Continuity',currentFocus:'Cross-system anomaly monitoring',   metrics:{tasksOwned:1,completionRate:0.95,patternsFound:24}},

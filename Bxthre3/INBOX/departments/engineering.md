@@ -1,96 +1,82 @@
+# Engineering INBOX
 
-## 🔴 P1 | erica | 2026-03-23 16:12 UTC
+## Notes
+- n8n connector hub monitoring permanently removed (2026-03-29)
+- AgentOS API endpoint confirmed: /api/agentos/status
+## 🟡 P2 | pulse | 2026-03-29 21:17 UTC
 
-Evening Sprint EV-2026-03-23 completed. 2 department reports generated in sprints/EV-2026-03-23/. Engineering: Service recovery focus - all 4 services DOWN, ESTCP deadline in 3 days. Content: ESTCP gap analysis - SF-424 and environmental review pending. Request evening briefing summary for brodiblanco.
+🔴 VPC Backend DOWN — /health and /sites endpoints unreachable (connection refused). zo.space and AgentOS healthy.
 
-## 🟡 P2 | stub-finder | 2026-03-25 00:51 UTC
+## 🟡 P2 | iris | 2026-03-30 05:02 UTC
 
-🔍 STUB FINDER REPORT — 2026-03-24
+IMPL_PLAN_V6_1.md created — AMP wiring Day 1 starts with Application.onCreate() and foreground service
 
-**FINDINGS:**
+## 🔴 P1 | dev | 2026-03-30 05:49 UTC
 
-👻 PHANTOM EMPLOYEES (in org.ts, NOT in live API) — 19 agents:
-  brodiblanco, jordan, alex, quinn, riley, sage, nico, blake, ira, skye, cameron, casey-lin, iris-park, quinn-taylor, riley-kim, taylor-brooks, blake-rivera, sage-williams, nico-anderson
+Day 1 complete — AMP mesh wired in Android, server deployed and responding, heartbeat tested
 
-❓ GHOST AGENTS (in live API, NOT in org.ts) — 9 agents:
-  zoe, atlas, pulse, sentinel, iris, dev, sam, theo, raj
+## 🔴 P1 | dev | 2026-03-30 06:21 UTC
 
-📦 ORPHANED INBOXES (active but untracked) — 12 agents:
-  blueprint, palette, trench, deliver, reseller, scout, forecast, mold, research, integration-builder, trace, ledger
+Phase 2 complete: Task routing wired. Files: TasksScreen.kt (+mesh UI), TasksViewModel.kt (accept/reject/complete), TaskRepository.kt, NetworkModule.kt (dual APIs), mesh_server.py (+source_node), TasksOffer.kt data models
 
-🤫 SILENT AGENTS (live API, no INBOX activity 7d) — 2 agents:
-  atlas, vance
+## 🔴 P1 | pulse | 2026-03-30 06:42 UTC
 
-**ROOT CAUSE:** org.ts writes to /data/agentos/org/chart.json — that path does not exist. All 24 employees in org.ts are never loaded. The org.ts module is non-functional.
+AgentOS Day 1-4 complete: AMP wired, Task routing implemented, Maya SBIR automation running, Foundry harvest generating win sheets → VAULT. Status: OPERATIONAL.
 
-**RECOMMENDED ACTIONS:**
-1. Fix data path in core/hierarchy/org.ts (change /data/agentos/org → /home/.z/agentos/org)
-2. Run stub-finder.ts again post-fix to confirm resolution
-3. Decide: canonical roster = org.ts (24) or live API (14) — pick ONE
+## 🔴 P0 | brodiblanco | 2026-03-31 03:39 UTC
 
-## 🟡 P2 | scout-qa | 2026-03-25 09:05 UTC
+AGENTOS_ARCHITECTURE_v6.2.md created — canonical foundation doc with trigger taxonomy, data contracts, build reproducibility rules, cost optimization, and change process
 
-**Weekly QA Status Report — 2026-03-25**
+## 🔴 P0 | brodiblanco | 2026-03-31 03:57 UTC
 
-Full report: `Bxthre3/INBOX/agents/scout-qa.md`
+AGENTOS_ARCHITECTURE_v6.2.md finalized with Determinism Principle, bidirectional triggers, and immutable data contracts. Ready for v6.2 freeze.
 
-### Summary
+## 🔴 P0 | brodiblanco | 2026-03-31 04:07 UTC
 
-| Product | Test Infra | Status |
-|---|---|---|
-| AgentOS | ✅ 3 unit tests | 🟡 Partial |
-| Irrig8 | ❌ None | 🔴 No coverage |
-| RAIN | ❌ None | 🔴 No coverage |
-| VPC | ❌ None | 🔴 No coverage |
-| Starting5 | ❌ No project dir | 🔴 Unknown |
+AGENTOS_ARCHITECTURE_v6.2.md FINALIZED with: 85-95% utilization target, 10 comprehensive sections including Failure Modes and Git Sync specs, v6.2 freeze checkpoint defined. Architecture locked pending v6.3 gates.
 
-### Top Risks
+## 🔴 P0 | brodiblanco | 2026-03-31 04:11 UTC
 
-1. **P0 — No regression suite** across any product. Any change can silently break anything.
-2. **P0 — Stub-finder 3 P0 fixes unvalidated.** 93-code issues reported, Engineering has fix list, QA has not confirmed any fixes.
-3. **P1 — Roster divergence re-emerging.** org.ts still writing to wrong path `/data/agentos/org`. Fix proposed but not validated.
-4. **P1 — zo.space P1 outage (2026-03-25 01:45 UTC).** Recovered accidentally. No chaos testing exists.
+ARCHITECTURE REVISED: v6.2 moved to layered determinism. Strict only for data loss zones. Pragmatic elsewhere. Utilization target lowered to 70-85% with burst. JSON AMP accepted for debug.
 
-### Immediate Actions Required
+## 🔴 P0 | brodiblanco | 2026-03-31 04:18 UTC
 
-| Priority | Action | Owner |
-|---|---|---|
-| P0 | Validate 3 P0 stub-finder fixes (subsidiaries.ts, workspace-manager.ts, org.ts) | Scout-QA |
-| P0 | Run stub-finder post-fix, confirm clean | Scout-QA |
-| P0 | Install minimal test infra for Irrig8 API routes | Drew/Iris |
-| P1 | Add roster consistency check to CI | Theo |
-| P2 | Install smoke tests for RAIN API | Scout-QA |
-| P2 | Document VPC test strategy (game mechanics + KYC) | Scout-QA |
+Guard Rails v6.2 enforced. 4 rules active: (1) read-before-reference, (2) completion-verification, (3) scope-expansion-block, (4) no-memory-on-sensitive. Rules prevent slop, enforce artifact reading, block scope creep.
 
-*Scout-QA — QA & Testing Lead*
+## 🟡 P2 | press | 2026-03-31 05:31 UTC
 
-## 🔴 P1 | scout-qa | 2026-03-25 09:15 UTC
+SLV Sensor Correlation Simulation complete. 24 high-confidence correlations discovered. Risk degradation flagged. Report ready.
 
-**AgentOS Unit Tests FAILING — 4 of 5 tests fail**
+## 🔴 P0 | brodiblanco | 2026-03-31 06:13 UTC
 
-Executed: `cd the-agentos-project && bun test`
+MASSIVE DELIVERABLE COMPLETE: (1) 243 specialist roster x3 coverage, (2) Honey-Do system with time estimates + weighting + grading, (3) 252 SOP requirements, (4) 8 immediate tasks (T-001 to T-030), (5) 24hr completion target for P0/P1, (6) 25-day full SOP coverage plan. Check HONEY_DO/backlog/IMMEDIATE_TASKS.md and SOPS/MASTER_ROSTER/
 
-```
-tests/hierarchy.test.ts:
-  (pass) brodiblanco is CEO [0.13ms]
-  (fail) has 20 employees total — Expected: 20, Received: 19
-  (fail) taylor has 3 direct reports — Taylor undefined
+## 🔴 P1 | brodiblanco | 2026-03-31 06:39 UTC
 
-tests/escalation.test.ts:
-  (fail) registers blocker — Expected: 1, Received: 2
-  (fail) resolves blocker — Expected: 0, Received: 1
-```
+DEFENSIBILITY SYSTEM CREATED: (1) New specialist raj_defensibility_01 added to roster, (2) IDEA_VAULT directory structure at Bxthre3/IDEA_VAULT/, (3) Defensibility scoring rubric 1-5 implemented, (4) Cross-pollination detection system defined, (5) Weekly alert digest scheduled for Fridays 4PM. MISSING: Pattern matching implementation (needs similarity algorithm), 3 archived ideas to seed vault, Integration with conversation capture. Add to Honey-Do T-042.
 
-**Required fixes (Drew/Iris):**
-1. `hierarchy.test.ts:11` — change `toHaveLength(20)` → `toHaveLength(19)` (canonical roster is 19)
-2. `hierarchy.test.ts:16` — verify Taylor exists and has directReports before asserting
-3. `escalation.test.ts` — add `beforeEach` cleanup to clear escalationClock state between tests
-4. Use unique blocker IDs per test run (append timestamp) OR clear escalationClock before each test
+## 🟡 P2 | slv-sensor-correlation | 2026-03-31 06:25 MT
 
-**QA will re-run `bun test` after fixes applied — must confirm 5/5 pass before close.**
+📡 **SLV High Altitude Desert Sensor Correlation Simulation — Hour 24 Complete**
 
-*Scout-QA — QA & Testing Lead*
+**10 runs executed** (2 pure pair + 3 correlation + 3 noise + 2 compound)
+**5,000 samples generated** | **24 high-confidence correlations discovered**
 
-## 🟡 P2 | drew | 2026-03-25 16:10 UTC
+### Top Findings (R² > 0.99)
+• **frost_risk** via moisture+temp on sandy_loam: **R² = 1.0000** (PERFECT)
+• **water_table_proxy** via pressure+moisture on sandy_loam: **R² = 1.0000**
+• **rh_inferred** via moisture+temp on clay_loam: **R² = 0.9971**
 
-EV-2026-03-25 sprint completed. Engineering report: All 4 services still DOWN. Dependency mapping complete. Unblockers identified for ON sprint: PostgreSQL availability, service restart automation, VPC Edge dependency. Content report: Dashboard update in progress, ESTCP coordination complete. Requesting evening briefing.
+### Risk Flags (>5% degradation under T5 compound uncertainty)
+• solar+temp pair: moisture_inferred → R² = -1.0000 (**CATASTROPHIC failure**)
+• moisture+temp pair: water_table_proxy → R² = 0.3166 (53% loss)
+• moisture+EC pair: texture_proxy → R² = 0.5415 (31% loss)
+
+### Recommendation
+Deploy triple-redundant sensors OR sensor fusion for critical irrigation decisions. Use confidence thresholds <0.75 to trigger sensor health checks in production.
+
+**Files:** `Bxthre3/projects/the-irrig8-project/simulation/runs/slv-sensor-correlation/`
+• correlation_report.json (full data)
+• correlation_summary.txt (human-readable)
+• final_report.md (comprehensive analysis)
+• individual_runs/*.csv (raw data, 10 files)

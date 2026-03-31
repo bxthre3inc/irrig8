@@ -57,7 +57,6 @@
 
 ## Notes
 
-- ESTCP ER26-FS-01 submitted — all agent signatures obtained (Maya, Theo, Drew, Casey)
 - Water Court hearing June 29, 2026 — field data gaps remain P1
 - Palette (Design) awaiting creative brief for Irrig8 explainer animations
 
@@ -84,13 +83,11 @@ All 4 ventures reviewed. Status unchanged from yesterday — all in pre-launch/s
 **P1 Items:** None currently active.
 
 **Blockers:**
-- Irrig8: Funding gate — services intentionally offline (pending ESTCP decision)
 - The Starting 5: Definition sprint not scheduled
 - VPC: Platform not built (Engineering dependency)
 
 **Key Dates:**
 - Water Court Hearing: June 29, 2026 (95 days)
-- ESTCP ER26-FS-01: Awaiting decision
 - SLV Pilot Deployment: June 2026 target
 
 **No customer implementations active. Standing by for funding decisions and Engineering availability.**

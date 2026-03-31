@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build a Biz - Onboarding</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 { color: #1a1a2e; margin-bottom: 4px; font-size: 28px; }
+    .subtitle { color: #666; margin-bottom: 24px; font-size: 14px; }
+    
+    /* Progress Bar */
+    .progress-container { margin-bottom: 32px; }
+    .progress-steps { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .progress-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+    .step-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .step-circle.active { background: #4361ee; color: white; }
+    .step-circle.completed { background: #2ecc71; color: white; }
+    .step-label { font-size: 11px; color: #888; margin-top: 4px; text-align: center; max-width: 70px; }
+    .progress-bar { height: 4px; background: #e0e0e0; border-radius: 2px; }
+    .progress-fill { height: 100%; background: #4361ee; border-radius: 2px; transition: width 0.3s; width: 0%; }
+    
+    /* Form Sections */
+    .section { display: none; }
+    .section.active { display: block; }
+    .section-title { font-size: 18px; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    
+    .form-group { margin-bottom: 18px; }
+    label { display: block; margin-bottom: 6px; color: #333; font-weight: 500; font-size: 14px; }
+    label .required { color: #e74c3c; }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #4361ee; }
+    textarea { min-height: 100px; resize: vertical; }
+    select { cursor: pointer; }
+    
+    /* Checkbox */
+    .checkbox-group { display: flex; align-items: flex-start; gap: 12px; }
+    .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; cursor: pointer; }
+    .checkbox-group label { margin-bottom: 0; cursor: pointer; font-weight: 400; }
+    
+    /* Buttons */
+    .btn-group { display: flex; gap: 12px; margin-top: 24px; }
+    button {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #4361ee; color: white; }
+    .btn-primary:hover { background: #3a56d4; }
+    .btn-secondary { background: #e0e0e0; color: #333; }
+    .btn-secondary:hover { background: #d0d0d0; }
+    button:disabled { background: #999; cursor: not-allowed; }
+    
+    /* Screens */
+    .success { text-align: center; padding: 60px 20px; }
+    .success h2 { color: #2ecc71; margin-bottom: 16px; }
+    .success p { color: #666; }
+    .hidden { display: none !important; }
+    #loginError { color: #e74c3c; margin-top: 10px; text-align: center; }
+    .auto-save-indicator { font-size: 12px; color: #888; text-align: right; margin-bottom: 16px; }
+    .auto-save-indicator.saving { color: #f39c12; }
+    .auto-save-indicator.saved { color: #2ecc71; }
+    
+    /* Inline Hints */
+    .field-hint {
+      display: block;
+      color: #666;
+      font-size: 13px;
+      font-weight: 400;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-left: 3px solid #4361ee;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Login Screen -->
+    <div id="loginScreen">
+      <h1>🔐 Access Required</h1>
+      <p class="subtitle">Enter your password to continue</p>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter password">
+        <p id="loginError"></p>
+      </div>
+      <button class="btn-primary" onclick="checkPassword()">Enter</button>
+    </div>
+
+    <!-- Onboarding Form -->
+    <div id="onboardingScreen" class="hidden">
+      <div class="auto-save-indicator" id="autoSaveIndicator"></div>
+      <div class="progress-container">
+        <div class="progress-steps" id="progressSteps"></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+      <form id="onboardingForm"></form>
+      <div class="btn-group">
+        <button type="button" class="btn-secondary" id="prevBtn" onclick="prevSection()">← Back</button>
+        <button type="button" class="btn-primary" id="nextBtn" onclick="nextSection()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Success Screen -->
+    <div id="successScreen" class="hidden">
+      <div class="success">
+        <h2>✅ Submitted!</h2>
+        <p>Your application has been received. We'll be in touch soon.</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ===== CONFIGURATION =====
+let CONFIG = null;
+let currentSection = 0;
+let formData = {};
+const SESSION_KEY = 'bab-auth';
+
+// ===== INIT =====
+async function init() {
+  const res = await fetch('config/form.json');
+  CONFIG = await res.json();
+  
+  if (isSessionValid()) {
+    showScreen('onboardingScreen');
+    renderForm();
+  } else {
+    showScreen('loginScreen');
+  }
+}
+
+// ===== SESSION =====
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+}
+function setSession() { localStorage.setItem(SESSION_KEY, JSON.stringify({ timestamp: Date.now() })); }
+function isSessionValid() {
+  const s = getSession();
+  return s && s.timestamp && (Date.now() - s.timestamp) < CONFIG.sessionExpiryMs;
+}
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+// ===== RENDER =====
+function renderForm() {
+  // Progress steps
+  const stepsHtml = CONFIG.sections.map((s, i) => `
+    <div class="progress-step">
+      <div class="step-circle ${i === 0 ? 'active' : ''}" id="step-${i}">${s.icon}</div>
+      <div class="step-label">${s.title}</div>
+    </div>
+  `).join('');
+  document.getElementById('progressSteps').innerHTML = stepsHtml;
+  updateProgress();
+
+  // Load saved data
+  const saved = localStorage.getItem('bab-data');
+  if (saved) formData = JSON.parse(saved);
+
+  // Render sections
+  const form = document.getElementById('onboardingForm');
+  form.innerHTML = CONFIG.sections.map((section, si) => `
+    <div class="section ${si === 0 ? 'active' : ''}" id="section-${si}">
+      <div class="section-title">${section.icon} ${section.title}</div>
+      ${section.fields.map(f => renderField(f)).join('')}
+    </div>
+  `).join('');
+  
+  // Populate saved values
+  Object.keys(formData).forEach(id => {
+    const el = document.querySelector(`[name="${id}"]`);
+    if (el) {
+      if (el.type === 'checkbox') el.checked = formData[id];
+      else el.value = formData[id];
+    }
+  });
+
+  updateNavButtons();
+}
+
+function renderField(f) {
+  const req = f.required ? '<span class="required">*</span>' : '';
+  const hint = f.hint ? `<small class="field-hint">${f.hint}</small>` : '';
+  let input = '';
+  switch (f.type) {
+    case 'textarea':
+      input = `<textarea id="${f.id}" name="${f.id}" placeholder="${f.placeholder || ''}" ${f.validation?.minLength ? `minlength="${f.validation.minLength}"` : ''}></textarea>`;
+      break;
+    case 'select':
+      input = `<select id="${f.id}" name="${f.id}">
+        ${f.options.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+      </select>`;
+      break;
+    case 'checkbox':
+      return `<div class="form-group checkbox-group">
+        <input type="checkbox" id="${f.id}" name="${f.id}" ${f.required ? 'required' : ''}>
+        <label for="${f.id}">${f.label} ${req}<br><small style="color:#666">${f.text || ''}</small></label>
+      </div>`;
+    default:
+      const attrs = [];
+      if (f.validation) {
+        if (f.validation.minLength) attrs.push(`minlength="${f.validation.minLength}"`);
+        if (f.validation.max) attrs.push(`max="${f.validation.max}"`);
+        if (f.validation.min) attrs.push(`min="${f.validation.min}"`);
+        if (f.validation.step) attrs.push(`step="${f.validation.step}"`);
+        if (f.validation.pattern) attrs.push(`pattern="${f.validation.pattern}"`);
+      }
+      input = `<input type="${f.type}" id="${f.id}" name="${f.id}" 
+        placeholder="${f.placeholder || ''}" ${f.required ? 'required' : ''} ${attrs.join(' ')}>`;
+  }
+  return `<div class="form-group">
+    <label for="${f.id}">${f.label} ${req}</label>
+    ${hint}
+    ${input}
+  </div>`;
+}
+
+// ===== NAVIGATION =====
+function showSection(index) {
+  document.querySelectorAll('.section').forEach((s, i) => {
+    s.classList.toggle('active', i === index);
+  });
+  currentSection = index;
+  updateProgress();
+  updateNavButtons();
+}
+
+function updateProgress() {
+  CONFIG.sections.forEach((s, i) => {
+    const circle = document.getElementById(`step-${i}`);
+    circle.className = 'step-circle';
+    if (i < currentSection) circle.classList.add('completed');
+    else if (i === currentSection) circle.classList.add('active');
+  });
+  document.getElementById('progressFill').style.width = 
+    `${(currentSection / (CONFIG.sections.length - 1)) * 100}%`;
+}
+
+function updateNavButtons() {
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  prevBtn.style.visibility = currentSection === 0 ? 'hidden' : 'visible';
+  nextBtn.textContent = currentSection === CONFIG.sections.length - 1 ? 'Submit ✓' : 'Next →';
+}
+
+function nextSection() {
+  if (currentSection < CONFIG.sections.length - 1) {
+    showSection(currentSection + 1);
+  } else {
+    submitForm();
+  }
+}
+
+function prevSection() {
+  if (currentSection > 0) showSection(currentSection - 1);
+}
+
+// ===== AUTO-SAVE =====
+function autoSave() {
+  const indicator = document.getElementById('autoSaveIndicator');
+  indicator.textContent = 'Saving...';
+  indicator.className = 'auto-save-indicator saving';
+  
+  CONFIG.sections.forEach(s => {
+    s.fields.forEach(f => {
+      const el = document.querySelector(`[name="${f.id}"]`);
+      if (el) formData[f.id] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+  });
+  
+  localStorage.setItem('bab-data', JSON.stringify(formData));
+  
+  setTimeout(() => {
+    indicator.textContent = '✓ Saved';
+    indicator.className = 'auto-save-indicator saved';
+    setTimeout(() => { indicator.textContent = ''; indicator.className = 'auto-save-indicator'; }, 2000);
+  }, 500);
+}
+
+// Listen for input changes
+document.addEventListener('input', (e) => {
+  if (e.target.name) autoSave();
+});
+document.addEventListener('change', (e) => {
+  if (e.target.name) autoSave();
+});
+
+// ===== SUBMIT =====
+async function submitForm() {
+  const btn = document.getElementById('nextBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const submitData = { submittedAt: new Date().toISOString() };
+  CONFIG.sections.forEach(s => {
+    s.fields.forEach(f => {
+      const el = document.querySelector(`[name="${f.id}"]`);
+      if (el) submitData[f.id] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+  });
+
+  try {
+    const res = await fetch(CONFIG.submitEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(submitData)
+    });
+    if (res.ok) {
+      localStorage.removeItem('bab-data');
+      showScreen('successScreen');
+    } else throw new Error('Server error');
+  } catch (err) {
+    alert('Submission failed. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Submit ✓';
+  }
+}
+
+// ===== SCREENS =====
+function showScreen(id) {
+  ['loginScreen', 'onboardingScreen', 'successScreen'].forEach(i => {
+    document.getElementById(i).classList.add('hidden');
+  });
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function checkPassword() {
+  const pw = document.getElementById('password').value;
+  if (pw === CONFIG.password) {
+    setSession();
+    showScreen('onboardingScreen');
+    renderForm();
+  } else {
+    document.getElementById('loginError').textContent = 'Incorrect password';
+  }
+}
+
+// Enter key for password
+document.getElementById('password')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') checkPassword();
+});
+
+init();
+</script>
+</body>
+</html>

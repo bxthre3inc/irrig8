@@ -38,7 +38,6 @@ Own business intelligence and advanced analytics across all Bxthre3 ventures. Bu
 ---
 
 ## Current Priorities
-1. **ESTCP Grant (IRR-001)** — $1.5M, deadline March 26 — BI data package for Water Court evidence (March 24)
 2. **VPC Analytics** — CI failures block data collection; CI remediation needed
 3. **Irrig8 Validation** — CAPEX/OPEX validated, field data ready for modeling
 4. **BI Infrastructure** — Department standup blocked; ORG-CHART.md + meeting-helpers.py need restoration
@@ -66,7 +65,6 @@ Own business intelligence and advanced analytics across all Bxthre3 ventures. Bu
 
 ### Grants Intelligence
 - Pipeline: 5 opportunities tracked
-- ESTCP Phase II: Active, $1.5M, deadline April 15
 - GFS Scoring: Active across all ventures
 
 ---
@@ -75,7 +73,6 @@ Own business intelligence and advanced analytics across all Bxthre3 ventures. Bu
 
 | Venture | Health | Key Metric | Status |
 |---|---|---|---|
-| **Irrig8** | 🟡 | ESTCP progress | Field validation complete |
 | **RAIN** | 🟢 | Pipeline active | $256K NSF opportunity |
 | **Starting5** | 🟡 | Architecture pending | Q2 planning |
 | **VPC** | 🔴 | CI failures | Edge validation needed |
@@ -104,7 +101,6 @@ Own business intelligence and advanced analytics across all Bxthre3 ventures. Bu
 
 ### Immediate Priorities
 1. **VPC CI fix** → unlocks full analytics pipeline
-2. **Irrig8 field data package** → ESTCP Water Court evidence (March 24)
 3. **AgentOS cost dashboard** → surface cost analytics to leadership
 4. **VPC cohort baseline** → establish LTV/churn tracking once CI fixed
 

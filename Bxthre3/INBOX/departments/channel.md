@@ -72,3 +72,8 @@
 | Zoe | Agency partners | Referral fee |
 | VPC | Affiliate managers | Revenue share |
 | VPC | Casino aggregators | Revenue share |
+
+## Last Standup: 2026-03-31
+**Pipeline:** 8 partners across Irrig8 (Tier 1-2). VPC, Starting 5, Zoe still at 0 named targets.
+**Blockers:** No named VPC affiliate manager or casino aggregator targets. Starting 5 / Zoe pipelines empty.
+**Outstanding from 03-25:** Outreach sequences, value props, onboarding template still pending.

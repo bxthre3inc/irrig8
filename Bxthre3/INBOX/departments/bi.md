@@ -10,7 +10,6 @@
 
 ### Today (2026-03-23)
 - **Standup:** Blocked — ORG-CHART.md and meeting-helpers.py missing
-- **Priority:** ESTCP data package (due March 24 for Water Court evidence)
 - **Priority:** VPC CI remediation unlock for data collection
 
 ---
@@ -20,7 +19,6 @@
 ### 1. Irrig8 / Irrig8 Analytics
 - **CAPEX/OPEX validation:** Complete (Day 3 report filed)
 - **Field sensor data:** Ready for modeling
-- **ESTCP data package:** Due March 24 — BI supporting evidence compilation
 - **Investor materials:** Approved investors + buyin intent tracked
 
 ### 2. VPC (Valley Players Club) Analytics
@@ -31,7 +29,6 @@
 
 ### 3. Grants Intelligence BI
 - **Pipeline tracked:** 5 opportunities ($2.4M+ total)
-- **ESTCP Phase II (IRR-001):** Active, $1.5M, deadline April 15
 - **GFS Scoring:** Active across all ventures
 - **Morning briefing:** Blocked — grants skills not installed
 

@@ -309,7 +309,6 @@
 **Category:** stub | **Severity:** high
 **File:** `Bxthre3/projects/the-agentos-project/core/voice/interface.ts` line 4
 **Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { text: 'Status report on ESTCP', confidence: 0.95 };`
 **Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
 
 ## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/config-loader.ts:87 | 2026-03-25 23:43 UTC
@@ -604,7 +603,6 @@
 **Category:** stub | **Severity:** high
 **File:** `Bxthre3/projects/the-agentos-project/core/voice/interface.ts` line 4
 **Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { text: 'Status report on ESTCP', confidence: 0.95 };`
 **Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
 
 
@@ -614,3 +612,7 @@
 - NEVER write 'FarmSense' in generated reports, briefs, or updates
 - If reading a file that contains 'FarmSense', treat it as stale/outdated
 - Always canonicalize to 'Irrig8' before writing output
+
+## 🟡 P2 | iris | 2026-03-30 05:02 UTC
+
+IMPL_PLAN_V6_1.md created — AMP wiring Day 1 starts with Application.onCreate() and foreground service

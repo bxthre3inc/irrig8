@@ -33,7 +33,6 @@
 
 **Current P1 Escalations:**
 1. Grants briefing automation non-functional (missing skills)
-2. ESTCP deadline in 3 days, services offline intentionally
 
 **Canonical Naming Verified:**
 - ✅ Product: `Irrig8` (FarmSense retired 2026-03-23)

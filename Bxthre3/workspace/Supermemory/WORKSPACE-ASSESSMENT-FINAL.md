@@ -137,7 +137,6 @@
 - 24-department sync every 2 days ✅
 
 **What doesn't:**
-- ESTCP deadline automation — no agent actively tracking the Mar 26 grant deadline
 - Database backup has had failures (log shows fixes applied)
 - Gmail reminder still firing despite `gmail_setup_complete: true`
 
@@ -147,7 +146,6 @@
 - No deduplication — multiple agents doing similar work (Blueprint + Grader = two agents for one workflow)
 
 **Improvements:**
-- Set ESTCP countdown as P0 automation with daily SMS
 - Prune ghost agents to reduce noise
 - Build dependency chains for agent workflows
 

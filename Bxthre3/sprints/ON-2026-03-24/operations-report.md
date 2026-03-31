@@ -3,7 +3,6 @@
 **Sprint Window:** 22:00–23:00 UTC (4:00–5:00 PM Mountain)  
 **Lead:** Casey  
 **Type:** Overnight Sprint  
-**Context:** ESTCP suspended — reorganizing for future grants
 
 ---
 
@@ -16,7 +15,6 @@ Operations focused on grant pipeline audit and unified dashboard creation. All v
 - AgentOS: LIVE (zo.computer operational)
 - Valley Players Club: PLANNING (legal docs drafted)
 - The Starting 5: NOT STARTED (needs definition sprint)
-- ESTCP: SUSPENDED (materials archived)
 
 ---
 
@@ -38,7 +36,6 @@ Operations focused on grant pipeline audit and unified dashboard creation. All v
 
 | Priority | Item | Destination |
 |----------|------|--------------|
-| P2 | ESTCP suspended - project disorganized | grants dept |
 | P2 | The Starting 5 needs definition sprint | Atlas |
 | P2 | Irrig8 funding gate remains active | INBOX.md |
 | P2 | No human team hire confirmed for grant applications | Atlas |

@@ -3,18 +3,26 @@
 
 ---
 
-## 2026-03-24 | First Scan — Technology Landscape
+## 2026-03-31 | Weekly R&D Technology Scan — Late March 2026
 
-### Key Findings for Bits (CTO)
+### Executive Summary
 
-**Priority 1 — Model Context Protocol (MCP)**
-MCP is becoming the de-facto standard for connecting AI agents to tools. This is the most important architectural decision in the near term. Recommendation: wire MCP into Zoe's tool layer before it becomes table-stakes.
+Three developments this week warrant immediate CTO attention:
 
-**Priority 2 — GPT-5.4 Thinking/Pro**
-OpenAI's first model built explicitly for agentic workflows. Benchmarks show it outperforms on multi-agent orchestration. Recommendation: run a Zoe vs GPT-5.4 Thinking benchmark on complex agent orchestration. If it wins, Architecture needs a migration plan.
+1. **GPT-5.4 is live** — native computer use, 1M token context, agentic workflows. Benchmark needed.
+2. **MCP reached enterprise inflection** — 56 production servers, DomainTools MCP live, AI-SPM emerging as security category.
+3. **OpenClaw accelerating** — inside OpenAI ecosystem, wearable integrations live, enterprise gate still present.
 
-**Priority 3 — OpenClaw Threat**
-Open-source agent platform, 250K+ GitHub stars, likened to Linux by Jensen Huang. Commoditization risk is real. Bxthre3's moat is vertical depth (Irrig8 farming domain) + deterministic data (sensor ground-truth). This positioning must be articulated clearly.
+### Priority Findings for Bits (CTO)
+
+**P1 — MCP Integration**
+MCP has crossed the enterprise inflection point. 56 production servers, major vendors (DomainTools, Itential) shipping MCP. This is the most important architectural decision in Q2. Bits should schedule scoping with Engineering this week.
+
+**P1 — GPT-5.4 Benchmark**
+GPT-5.4 Thinking is built explicitly for agentic workflows. Need to define pass/fail criteria for Zoe vs. GPT-5.4 Thinking on complex multi-agent orchestration. If it wins, Architecture needs a migration plan.
+
+**P2 — OpenClaw Positioning**
+AgentCon San Francisco (May 4) could drive another wave of adoption. "Why AgentOS wins over OpenClaw" positioning doc needed before then. Focus: domain depth + deterministic sensor data vs. horizontal tooling.
 
 ### Full Report
 See: `Bxthre3/INBOX/agents/scout.md`

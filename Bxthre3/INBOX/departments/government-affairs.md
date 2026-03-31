@@ -11,20 +11,16 @@
 
 Lead all government, defense, and public sector initiatives for Bxthre3 Inc.
 
-- **Current Priority:** ESTCP grant management, reporting, and compliance
 - **Future Scope:** DIU, USDA grants, state agtech initiatives, federal research partnerships, public sector sales
 
 ---
 
-## Active Priority — ESTCP ER26-FS-01
 
 | Field | Detail |
 |---|---|
 | **Status** | CLOSED — Package not submitted by deadline |
-| **Archive** | `docs/archive/ESTCP-suspended/` |
 | **Decision** | Defer to next cycle; preserve all materials for re-submission |
 
-### Post-ESTCP Priority Grants
 
 | Grant | Funder | Amount | Deadline | Status |
 |---|---|---|---|---|
@@ -33,7 +29,6 @@ Lead all government, defense, and public sector initiatives for Bxthre3 Inc.
 | CO Climate Resilience (STA-CO-002) | CO OEM | TBD | 2026-04-30 | Research |
 | EQIP 90% Vendor Enrollment | USDA NRCS | Recurring revenue | Rolling | Active |
 
-### ESTCP Phase 2 Field Sensors
 
 - **Deadline:** 2026-04-01 (6 days)
 - **Owner:** Dev (Engineering)
@@ -95,7 +90,6 @@ Lead all government, defense, and public sector initiatives for Bxthre3 Inc.
 
 ## Dependencies
 
-- **Engineering (Dev):** ESTCP Phase 2 sensor deployment — due 2026-04-01
 - **Grants (Casey/Raj):** HOT queue management, CIG Colorado LOI
 - **Legal (Raj):** Regulatory compliance for federal applications
 - **Field Ops (Irrig8):** LRZ3/LRZ4 deployment for field evidence
@@ -108,7 +102,6 @@ Lead all government, defense, and public sector initiatives for Bxthre3 Inc.
 2. [ ] Contact NRCS Monte Vista for EQIP vendor enrollment process — **DRAFTING**
 3. [x] DIU CSO landscape scan — complete (this document)
 4. [ ] Initiate CDPHE Water Conservation grant discovery — **RESEARCHING**
-5. [ ] Coordinate with Dev on ESTCP Phase 2 field sensor deliverables — **PENDING**
 
 ---
 
@@ -175,7 +168,6 @@ Lead all government, defense, and public sector initiatives for Bxthre3 Inc.
 
 | Priority | Item | Owner | Status |
 |---|---|---|---|
-| P1 | ESTCP Phase 2 sensors — Dev deliverables due 2026-04-01 | Dev | IN PROGRESS |
 | P1 | CIG Colorado LOI — deadline 2026-04-30 | Casey/Raj | RESEARCH |
 | P2 | EQIP vendor enrollment — NRCS Monte Vista | Government | INITIATING |
 | P2 | CDPHE Water Conservation grant discovery | Government | PENDING |
@@ -213,7 +205,6 @@ Lead all government, defense, and public sector initiatives for Bxthre3 Inc.
 | EQIP vendor enrollment | ✅ Process mapped — need outreach call |
 | CDPHE grant discovery | ✅ Researched — needs direct inquiry |
 | DIU CSO scan | ✅ Complete |
-| ESTCP Phase 2 sensors | ⏳ Dev — due 2026-04-01 |
 
 **Tomorrow:**
 1. Draft outreach email/call script for NRCS CO state office (CIG Colorado)

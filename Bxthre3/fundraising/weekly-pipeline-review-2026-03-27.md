@@ -133,7 +133,6 @@ Pass          ██             1 deal    (Quintana Farm - sold)
 
 | Grant | Venture | Funder | Amount | Stage | Deadline |
 |-------|---------|--------|--------|-------|----------|
-| ESTCP Phase II | Irrig8 | DoD ESTCP | $1.5M | WRITING | 2026-04-15 |
 | USDA SBIR Phase I | Irrig8 | USDA NIFA | $125K | PROSPECT | 2026-04-30 |
 | NSF SBIR Phase I | RAIN | NSF | $256K | PROSPECT | 2026-05-15 |
 | NSF SBIR Phase I | AgentOS | NSF | $256K | PROSPECT | 2026-06-01 |
@@ -141,7 +140,6 @@ Pass          ██             1 deal    (Quintana Farm - sold)
 | D.E. Shaw Outreach | RAIN | D.E. Shaw | $50K | OUTREACH | 2026-03-23 |
 | Man Group Outreach | RAIN | Man Group | $75K | OUTREACH | 2026-03-23 |
 
-*Note: ESTCP ER26-FS-01 deadline was 2026-03-26 — status confirmation needed from Maya.*
 
 ---
 
@@ -153,7 +151,6 @@ Pass          ██             1 deal    (Quintana Farm - sold)
 | Sage Legal delay risk | 🟡 Medium | Drew | Docs submitted 2026-03-24; follow up EOD |
 | Irrig8 distribution outreach not started | 🟡 Medium | Drew | Drew to prioritize per Nexus Corp Dev report |
 | AgTech VC pipeline not in market | 🟡 Medium | Drew | Q2 2026 target; no immediate action |
-| ESTCP deadline may have passed | 🔴 High | Maya | Needs confirmation — was deadline March 26? |
 
 ---
 
@@ -164,7 +161,6 @@ Pass          ██             1 deal    (Quintana Farm - sold)
 3. **Irrig8 distribution strategy:** Direct-to-farmer vs. dealer-first approach?
 4. **AgTech VC outreach:** Warm intro preferred or cold outreach acceptable?
 5. **Irrig8 Seed Round:** Formal target list + timeline for Q2 2026?
-6. **ESTCP status:** Did submission go out before March 26 deadline?
 
 ---
 
@@ -178,7 +174,6 @@ Pass          ██             1 deal    (Quintana Farm - sold)
 | 🟡 | VPC-CP-002/003 | Identify 2–3 additional cash partners |
 | 🟡 | IRR-DIST-001/002 | Draft pivot manufacturer one-pager + dealer outreach |
 | 🟡 | IRR-DIST-007 | Initiate USDA NRCS EQIP vendor enrollment conversation |
-| 🟡 | Grants | Confirm ESTCP status; advance USDA SBIR |
 
 ---
 

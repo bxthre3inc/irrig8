@@ -2,7 +2,46 @@
 **Bxthre3 Inc | Gavel — Regulatory Affairs Lead**
 **Reports to:** Counsel (Legal), Anchor (CRO)
 **Meeting Cadence:** Daily standup 8:15 AM
-**Last Updated:** 2026-03-25 09:05 UTC
+**Last Updated:** 2026-03-31 09:05 UTC
+
+---
+
+## 🚨 EMERGENCY REGULATORY UPDATE — March 31, 2026
+
+**Source:** Multi-state legislative tracking, March 2026[^1][^2][^3]
+
+### Critical: Sweepstakes Casino Ban Wave Accelerating
+
+VPC's 47-state operational assumption is **NO LONGER VALID**. Multiple states have moved from proposal to law/enforcement in the past 30 days:
+
+| State | Bill | Status | Effective Date | Penalty |
+|-------|------|--------|----------------|---------|
+| **Indiana** | HB 1052 | ✅ **SIGNED INTO LAW** | July 1, 2026 | $100,000 civil/operator |
+| **Minnesota** | SF 4474 | ⚠️ Advanced March 25, 2026 | TBD | TBD |
+| **Virginia** | HB 161 | ⚠️ Subcommittee passed | TBD (regulations by Sept 2026) | $250,000 civil |
+| **Maryland** | SB112/HB295 | ⚠️ Committee hearings | TBD | $100K + **3 years prison** |
+| **Mississippi** | SB 2104 | ⚠️ Senate unanimous | TBD | TBD |
+| **Maine, Arkansas, Florida, Illinois, Ohio, Massachusetts** | Various | 🔍 Under consideration | 2026 session | TBD |
+
+### VPC Operational Impact
+
+**Current geo-block list:** WA, ID, Guam, PR, USVI
+**Required additions IMMEDIATELY:**
+- **Indiana** — Law effective July 1, 2026. Indiana players permissible pre-July 1; must geo-block by July 1.
+- **Virginia** — Ban in force once regulations published (est. September 2026). Monitor closely.
+- **Minnesota** — If bill passes as written, add to prohibited list.
+- **Maryland** — Criminal penalties. Add to prohibited list if bill passes.
+
+### Additional Federal Risk
+
+**Prediction Markets Are Gambling Act** (Schiff/Curtis) — Bipartisan Senate bill introduced March 2026. Would prohibit CFTC-registered entities from listing sports/casino-style contracts. Does NOT directly target sweepstakes (different legal theory) but adds federal scrutiny to the gaming space.[^4]
+
+### Required Actions
+
+1. **Add Indiana to prohibited jurisdictions** — geo-block by July 1 at latest; ideally at launch
+2. **Monitor Virginia, Minnesota, Maryland** — add to prohibited list as bills become law
+3. **Flag for Sage Legal** — Update counsel on accelerating state bans; this affects legal opinion scope
+4. **Reassess 47-state assumption** — With IN, MN, MD, VA moving: VPC's addressable market at launch may be **< 40 states**
 
 ---
 
@@ -18,7 +57,7 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 |---------|-------------------|---------------|
 | **Irrig8** | FDA FSMA, USDA, water rights, environmental, pesticide/fertilizer rules | Federal + Colorado |
 | **Starting 5** | AI disclosure (EU AI Act, state AI laws), GDPR, CCPA, data privacy | Federal + EU + US states |
-| **Valley Players Club** | iGaming, KYC/AML, sweepstakes law, Bank Secrecy Act | 47 states; WA/ID/GUAM/PR/USVI prohibited; FL/NY blocked for redemption |
+| **Valley Players Club** | iGaming, KYC/AML, sweepstakes law, Bank Secrecy Act | 47 states; WA/ID/GUAM/PR/USVI prohibited; IN signed law July 1, 2026; VA/MN/MD under ban progress; FL/NY blocked for redemption |
 | **Zoe / The Zoe Project** | AI regulation, open source licensing (AGPL/GPL), API compliance | Federal + open source community |
 | **AgentOS** | AI agent regulation, employment law for AI workers | Federal |
 
@@ -92,7 +131,6 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 
 ---
 
-### 🟡 P2 — Irrig8: ESTCP Grant (Deadline March 26, 2026)
 
 **Grant:** ER26-FS-01 — Zero-Trust Spatial Water Management
 **Amount:** $830,000 ($450K Y1 + $380K Y2)
@@ -100,7 +138,6 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 
 **Status:** All agent signatures obtained. Package ready. **brodiblanco signature required.**
 
-**What needs action:** Add signature to `Bxthre3/projects/the-irrig8-project/docs/management/ESTCP_SUBMISSION_FINAL.md`
 
 **FSMA relevance:** This grant funds Irrig8's spatial water management validation — directly supports FDA/USDA compliance infrastructure for food safety.
 
@@ -146,10 +183,10 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 | No water court expert witness | Irrig8 | 🔴 Critical | 98 days to hearing |
 | No deployed field data for water court | Irrig8 | 🔴 Critical | Must deploy NOW |
 | MSB determination unresolved | VPC | 🟡 High | Needs FinCEN counsel |
-| ESTCP deadline March 26 | Irrig8 | 🟡 High | 1 day — needs signature |
 | Biometric data retention conflict | VPC | 🟡 Medium | BIPA vs BSA conflict |
 | AI disclosure gaps | Starting 5 | 🟡 Medium | Gap analysis needed |
 | Open source licensing | Zoe | 🟢 Low | License review needed |
+| Indiana ban | VPC | 🟡 Medium | Law effective July 1, 2026 |
 
 ---
 
@@ -160,7 +197,6 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 | Sage Legal engagement approval | Legal | 🔴 IMMEDIATE |
 | VPC attorney engagement ($1,500–$3,000) | Legal | March 25 |
 | Water rights counsel engagement (CO) | Legal | This week |
-| ESTCP signature | brodiblanco | March 26 |
 | MSB determination (FinCEN counsel) | Legal | This week |
 | Expert witness retainer (hydrology) | Legal | This week |
 

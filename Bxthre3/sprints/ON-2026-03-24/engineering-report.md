@@ -3,7 +3,6 @@
 **Sprint Window:** 22:00–23:00 UTC (4:00–5:00 PM Mountain)  
 **Lead Engineer:** Drew  
 **Type:** Overnight Sprint  
-**Context:** ESTCP suspended — reorganizing for future grants
 
 ---
 
@@ -37,7 +36,6 @@ Overnight sprint executed with focus on grant pipeline audit, unified dashboard,
 | Priority | Item | Destination |
 |----------|------|--------------|
 | P1 | All 4 services still DOWN after multiple sprints | INBOX.md |
-| P1 | ESTCP grant suspended - materials archived | grants department |
 | P2 | No human team hire confirmed for next grant push | Atlas (via INBOX) |
 
 **Total Escalations:** 3

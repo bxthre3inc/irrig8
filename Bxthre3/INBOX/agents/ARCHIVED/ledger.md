@@ -51,24 +51,20 @@ Own the accounting and financial controls for Bxthre3. Ensure accurate financial
 
 | Venture | Status | Financial Impact |
 |---------|--------|------------------|
-| **Irrig8** | 🔴 ESTCP grant due Mar 26 | +$830K if awarded |
 | **RAIN** | 🟡 Early stage | Minimal OpEx |
 | **Starting5** | 🟡 Development | Minimal OpEx |
 | **VPC** | 🟡 Pre-launch | $5K allocated, revenue-positive Month 3 |
 | **ARD** | 🟡 Development | Minimal OpEx |
 
-**Critical Path:** ESTCP grant submission (March 26) is the single highest-impact financial event this quarter.
 
 ---
 
 ## Current Priorities
 
-- [ ] **CONFLICT:** Grants pipeline shows ESTCP IRR-001 = $1.5M (Apr 15), but CFO brief shows $830K (Mar 26). Need reconciliation.
 - [ ] Confirm team structure with Balance (CFO)
 - [ ] Establish month-end close calendar (Day 5 close target)
 - [ ] Set up INBOX routing for financial escalations
 - [ ] Assess chart of accounts — consolidate for multi-entity structure
-- [ ] Review grant accounting controls (ESTCP, cost share tracking)
 
 ## Short-Term Priorities (Week 1)
 
@@ -85,7 +81,6 @@ Own the accounting and financial controls for Bxthre3. Ensure accurate financial
 - [ ] Fixed asset register setup
 - [ ] Prepaid expense amortization schedule
 - [ ] Accrual schedule template
-- [ ] ESTCP cash draw schedule (post-award)
 
 ---
 

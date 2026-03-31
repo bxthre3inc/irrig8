@@ -75,7 +75,6 @@ Valley Players Club
 | BATCH-07-FED-SBIR-EDA | Active | SBIR/EDA focused |
 | BATCH-08-STATE-SBA-DOD | Active | State + SBA + DOD |
 
-**Note:** ESTCP (BATCH-02) was **suspended** — project still unorganized for grant apps.
 
 ---
 
@@ -106,7 +105,6 @@ Valley Players Club
 1. Consolidate grant materials into `Bxthre3/grants/`
 2. Create unified status dashboard
 3. Verify all system dependencies are documented
-4. Review ESTCP suspension decision with Atlas
 
 ---
 

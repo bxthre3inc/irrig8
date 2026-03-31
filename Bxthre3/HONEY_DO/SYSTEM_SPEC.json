@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "system_name": "Honey-Do List",
+  "owner": "brodiblanco",
+  
+  "weighting": {
+    "complexity": {
+      "1": {"label": "Trivial", "multiplier": 0.5},
+      "2": {"label": "Simple", "multiplier": 1.0},
+      "3": {"label": "Moderate", "multiplier": 2.0},
+      "4": {"label": "Complex", "multiplier": 4.0},
+      "5": {"label": "Strategic", "multiplier": 8.0}
+    },
+    "urgency": {
+      "P0": {"label": "Critical", "hours_max": 2, "escalation": "SMS"},
+      "P1": {"label": "High", "hours_max": 8, "escalation": "INBOX"},
+      "P2": {"label": "Normal", "hours_max": 24},
+      "P3": {"label": "Low", "hours_max": 72},
+      "P4": {"label": "Backlog", "hours_max": 168}
+    },
+    "skill": {
+      "J": {"label": "Junior", "multiplier": 2.0},
+      "M": {"label": "Mid", "multiplier": 1.0},
+      "S": {"label": "Senior", "multiplier": 0.6},
+      "E": {"label": "Expert", "multiplier": 0.4}
+    }
+  },
+  
+  "time_estimates": {
+    "research": {"min": 1, "max": 4},
+    "writing": {"min": 0.5, "max": 8},
+    "coding": {"min": 1, "max": 16},
+    "review": {"min": 0.25, "max": 2},
+    "testing": {"min": 0.5, "max": 4},
+    "deployment": {"min": 0.5, "max": 2},
+    "analysis": {"min": 1, "max": 6},
+    "coordination": {"min": 0.5, "max": 3},
+    "legal_review": {"min": 2, "max": 8},
+    "financial_modeling": {"min": 4, "max": 16}
+  },
+  
+  "grading": {
+    "A": {"label": "Exceptional", "confidence": 0.2},
+    "B": {"label": "Good", "confidence": 0.1},
+    "C": {"label": "Acceptable", "confidence": 0.0},
+    "D": {"label": "Below Standard", "confidence": -0.1},
+    "F": {"label": "Failed", "confidence": -0.2}
+  },
+  
+  "sop_tracking": {
+    "required": [
+      "AGENT_LIFECYCLE_SOP",
+      "TASK_ROUTING_SOP",
+      "ESCALATION_SOP",
+      "HONEY_DO_HANDLING_SOP"
+    ],
+    "freshness_days": 30,
+    "mandatory": true
+  }
+}

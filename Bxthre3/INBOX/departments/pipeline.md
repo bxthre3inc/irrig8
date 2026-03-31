@@ -1,7 +1,7 @@
 # Pipeline Department — INBOX
 **Agent:** Pipeline (Deal Flow Manager — Bxthre3 Inc / AgentOS Finance Division)
 **Reports to:** Reach (VP Investor Outreach)
-**Last Updated:** 2026-03-27 09:10 UTC
+**Last Updated:** 2026-03-31 09:10 UTC
 
 ---
 
@@ -62,7 +62,7 @@ Own the deal pipeline CRM, stage management, next-step tracking, and ensure no o
 
 | Deal ID | Entity | Type | Stage | Amount | Status | Last Action | Next Step | Owner |
 |---------|--------|------|-------|--------|--------|-------------|-----------|-------|
-| VPC-CP-001 | Sage (Founding Cash Partner) | Cash Partnership (1% min equity) | Term Sheet | 2.5% equity + $2,500 + 10% take rate | 🔴 P1 | Legal docs submitted 2026-03-24 | Sage delivers mark-up by 2026-03-27 | Drew |
+| VPC-CP-001 | Sage (Founding Cash Partner) | Cash Partnership (1% min equity) | Term Sheet | 2.5% equity + $2,500 + 10% take rate | 🔴 P1 | Legal docs submitted 2026-03-24 | Sage delivers mark-up by 2026-03-27 — **OVERDUE 4 DAYS** | Drew (**STALE 6 days**) |
 | VPC-CP-002 | TBD Cash Partner #2 | Cash Partnership | Sourced | $2,500+ | 🟡 Pending | Not identified | Prospect identification this week | Drew |
 | VPC-CP-003 | TBD Cash Partner #3 | Cash Partnership | Sourced | $2,500+ | 🟡 Pending | Not identified | Prospect identification this week | Drew |
 
@@ -89,13 +89,13 @@ Own the deal pipeline CRM, stage management, next-step tracking, and ensure no o
 
 | Deal ID | Entity | Type | Stage | Acres | Status | Last Action | Next Step | Owner |
 |---------|--------|------|-------|-------|--------|-------------|-----------|-------|
-| IRR-FARM-001 | Maverick Potato Co | Customer (Pilot) | Targeted | 2,500+ | 🔴 P1 | Identified 2026-03-25 | Intro outreach | Drew |
-| IRR-FARM-002 | Skyline Potato Co | Customer (Pilot) | Targeted | 3,000+ | 🔴 P1 | Identified 2026-03-25 | Intro outreach | Drew |
+| IRR-FARM-001 | Maverick Potato Co | Customer (Pilot) | Targeted | 2,500+ | 🔴 P1 | Identified 2026-03-25 | Intro outreach | Drew (**STALE**) |
+| IRR-FARM-002 | Skyline Potato Co | Customer (Pilot) | Targeted | 3,000+ | 🔴 P1 | Identified 2026-03-25 | Intro outreach | Drew (**STALE**) |
 | IRR-FARM-003 | Mix Farms | Customer (Pilot) | Research | 800+ | 🟡 P2 | Research 2026-03-25 | Qualifying call | Drew |
 | IRR-FARM-004 | Proximity Malt Colorado | Customer/Partner | Research | 5,000+ | 🟡 P2 | Research 2026-03-25 | Qualifying call + partnership explore | Drew |
 | IRR-FARM-005 | Subdistrict 1 / RGWCD | Customer (Aggregated) | Research | 500+ | 🟡 P2 | Research 2026-03-25 | Intro outreach | Drew |
 | IRR-FARM-006 | Burris Farms | Customer | Research | 3,500+ | 🟡 P2 | Research 2026-03-25 | Intro outreach | Drew |
-| IRR-FARM-007 | Jessica Bradshaw / CPAC | Industry Org (Gateway) | Contacted | 52,000 collective | 🔴 P1 | Contacted 2026-03-25 | Verify email + intro call by 2026-03-30 | Drew |
+| IRR-FARM-007 | Jessica Bradshaw / CPAC | Industry Org (Gateway) | Contacted | 52,000 collective | 🔴 P1 | Contacted 2026-03-25 | Verify email + intro call by 2026-03-30 — **1 DAY OVERDUE** | Drew (**STALE 6 days**) |
 | IRR-FARM-008 | Quintana Farm | Customer (Historical) | Pass | N/A | ⚫ Archived | Research 2026-03-25 | N/A — operation sold | Drew |
 
 ### M&A / Inbound Opportunities
@@ -106,7 +106,7 @@ Own the deal pipeline CRM, stage management, next-step tracking, and ensure no o
 
 ---
 
-## Key Metrics — 2026-03-27
+## Key Metrics — 2026-03-31
 
 | Metric | Value |
 |--------|-------|
@@ -116,51 +116,57 @@ Own the deal pipeline CRM, stage management, next-step tracking, and ensure no o
 | Farm Prospects | 7 active (1 archived) |
 | Seed Round | $3.5M identified, not in market |
 | Grants Pipeline | 6 active (coordinate with Maya) |
-| Blockers | Sage Legal delay, $5K VPC budget unconfirmed |
+| Blockers | Sage Legal delay (4 days overdue), $5K VPC budget unconfirmed, Drew INBOX stale 6 days |
 
 ---
 
-## This Week's Next Actions
+## 🚨 This Week's Overdue Actions — Drew Owner (Stale INBOX)
 
-| Priority | Deal | Action | Due | Owner |
-|----------|------|--------|-----|-------|
-| 🔴 P1 | VPC-CP-001 (Sage) | Confirm Sage mark-up delivery | 2026-03-27 | Drew |
-| 🔴 P1 | IRR-FARM-007 (CPAC) | Verify Jessica Bradshaw email | 2026-03-26 | Drew |
-| 🔴 P1 | IRR-FARM-007 (CPAC) | Draft CPAC intro email | 2026-03-28 | Drew |
-| 🔴 P1 | VPC | Confirm $5K launch budget | 2026-03-27 | Drew |
-| 🟡 P2 | VPC-CP-002/003 | Identify 2–3 cash partner prospects | 2026-03-31 | Drew |
-| 🟡 P2 | IRR-DIST-001/002 | Draft pivot manufacturer one-pager | 2026-03-31 | Drew |
-| 🟡 P2 | IRR-DIST-006 | Request Planet Labs dev API access | 2026-03-31 | Drew |
+| Priority | Deal | Action | Due | Days Overdue |
+|----------|------|--------|-----|--------------|
+| 🔴 P1 | VPC-CP-001 (Sage) | Confirm Sage mark-up delivery | 2026-03-27 | **4 days** |
+| 🔴 P1 | VPC-CP-001 (Sage) | Confirm $5K launch budget | 2026-03-27 | **4 days** |
+| 🔴 P1 | IRR-FARM-007 (CPAC) | Verify Jessica Bradshaw email | 2026-03-26 | **5 days** |
+| 🔴 P1 | IRR-FARM-007 (CPAC) | Draft CPAC intro email | 2026-03-28 | **3 days** |
+| 🔴 P1 | IRR-FARM-007 (CPAC) | Execute intro call | 2026-03-30 | **1 day overdue** |
+| 🟡 P2 | IRR-FARM-001/002 | Intro outreach to Maverick + Skyline | 2026-03-31 | TODAY |
+| 🟡 P2 | VPC-CP-002/003 | Identify 2–3 cash partner prospects | 2026-03-31 | TODAY |
+| 🟡 P2 | IRR-DIST-001/002 | Draft pivot manufacturer one-pager | 2026-03-31 | TODAY |
+| 🟡 P2 | IRR-DIST-006 | Request Planet Labs dev API access | 2026-03-31 | TODAY |
+| 🟡 P2 | IRR-DIST-007 | Initiate USDA NRCS EQIP vendor enrollment | 2026-03-31 | TODAY |
 
 ---
 
 ## Blockers / Escalations
 
-| Blocker | Severity | Mitigation |
-|---------|----------|------------|
-| Sage Legal delay (VPC-CP-001) | 🟡 Medium | Docs submitted 2026-03-24; follow up |
-| VPC founding partner capital ($5K) | 🔴 High | Needs brodiblanco approval |
-| Irrig8 distribution outreach not started | 🟡 Medium | Drew to prioritize this week |
-| AgTech VC pipeline not in market | 🟡 Medium | Q2 2026 seed round — plan ahead |
+| Blocker | Severity | Owner | Mitigation |
+|---------|----------|-------|------------|
+| Drew INBOX stale (6 days) | 🔴 P1 | Drew / brodiblanco | Drew needs re-activation or re-assignment |
+| Sage Legal delay (VPC-CP-001) | 🔴 High | Drew | Follow up today; mark-up 4 days overdue |
+| VPC founding partner capital ($5K) | 🔴 High | Drew / brodiblanco | Needs brodiblanco approval — never confirmed |
+| CPAC intro call — 1 day overdue | 🔴 High | Drew | Unknown if call happened — may have lost contact |
+| Irrig8 distribution outreach not started | 🟡 Medium | Drew | Drew to prioritize |
 
 ---
 
 ## Outstanding Decisions Needed
 
-1. **VPC launch budget:** Approve $5K allocation for founding cash partner close?
-2. **Irrig8 distribution strategy:** Direct-to-farmer vs. dealer-first approach?
-3. **AgTech VC outreach:** Warm intro preferred or cold outreach acceptable?
-4. **Irrig8 Seed Round:** Target list + timeline for Q2 2026?
+1. **VPC budget approval:** Approve $5K allocation for founding cash partner close?
+2. **Drew re-activation:** Drew is 6 days stale. Re-assign VPC-CP-001?
+3. **CPAC status:** Did the 2026-03-30 intro call happen?
+4. **Irrig8 distribution strategy:** Direct-to-farmer vs. dealer-first approach?
+5. **AgTech VC outreach:** Warm intro preferred or cold outreach acceptable?
+6. **Irrig8 Seed Round:** Target list + timeline for Q2 2026?
 
 ---
 
 ## Coordination Notes
 
 - **Grants:** Coordinating with Maya (Grants) — grants pipeline is separate, tracked via `grants-hq` skill
-- **Sales (Drew):** Drew owns all active deal execution; Pipeline owns CRM integrity + reporting
+- **Sales (Drew):** Drew owns all active deal execution; Pipeline owns CRM integrity + reporting; **Drew INBOX stale 6 days — needs re-activation**
 - **Corp Dev (Nexus):** Nexus owns strategic partnership framing; Pipeline owns pipeline data integrity
 - **Finance:** Need to establish debt financing tracking (no current tracking in place)
 
 ---
 
-*Pipeline Department — INBOX initialized 2026-03-27*
+*Pipeline Department — INBOX updated 2026-03-31*

@@ -3,13 +3,11 @@
 **Sprint Window:** 16:00–16:30 UTC (10:00–10:30 AM Mountain)  
 **Lead Engineer:** Drew  
 **Type:** Evening Deep-Work Sprint  
-**Context:** ESTCP suspended — reorganizing for future grant opportunities
 
 ---
 
 ## 1. Summary
 
-Strategic pivot: **ESTCP application suspended**. Resources redirecting to organizational cleanup and infrastructure consolidation to position Bxthre3 for future grant opportunities.
 
 **Tonight's Actions Completed:**
 
@@ -30,7 +28,6 @@ Strategic pivot: **ESTCP application suspended**. Resources redirecting to organ
 |------|--------|-------|
 | Full workspace audit | ✅ COMPLETE | 4 ventures, 25+ agents, 788 files mapped |
 | Unified project manifest | ✅ COMPLETE | `Bxthre3/PROJECT_MANIFEST.md` |
-| Grant folder structure | ✅ COMPLETE | 7 active batches + ESTCP archived |
 | Overnight sprint brief | ✅ COMPLETE | `sprints/ON-2026-03-24/BRIEF.md` |
 
 ### P1 — High
@@ -84,7 +81,6 @@ Strategic pivot: **ESTCP application suspended**. Resources redirecting to organ
 
 **Archive (2):**
 - ARKAD (Real Estate Arbitrage) — Archived
-- ESTCP — Suspended, materials archived
 
 **System Status:**
 - All services intentionally offline (Irrig8 funding gate)

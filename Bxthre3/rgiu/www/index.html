@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>RGIU | Rio Grande Intelligence Unit</title>
+  <style>
+    body { font-family: system-ui; background: #0a0a0a; color: #fff; max-width: 900px; margin: 0 auto; padding: 2rem; }
+    h1 { color: #00d4aa; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0; }
+    .stat { background: #1a1a1a; padding: 1rem; border-radius: 8px; text-align: center; }
+    .stat-value { font-size: 2rem; font-weight: bold; color: #00d4aa; }
+    .stat-label { color: #666; font-size: 0.8rem; }
+    .cta { background: #00d4aa; color: #000; padding: 1rem 2rem; text-decoration: none; display: inline-block; border-radius: 4px; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>RGIU</h1>
+  <p>Rio Grande Intelligence Unit - Automated distressed asset discovery</p>
+  
+  <div class="stats">
+    <div class="stat"><div class="stat-value" id="hot">0</div><div class="stat-label">HOT DEALS</div></div>
+    <div class="stat"><div class="stat-value" id="leads">0</div><div class="stat-label">INVESTORS</div></div>
+    <div class="stat"><div class="stat-value" id="rev">$0</div><div class="stat-label">PENDING</div></div>
+  </div>
+  
+  <h2>How It Works</h2>
+  <ol>
+    <li><strong>Scout Agent:</strong> Monitors county records for distress signals</li>
+    <li><strong>Appraise Agent:</strong> Calculates max offer price + ROI</li>
+    <li><strong>Outreach Agent:</strong> Matches deals to investor criteria</li>
+    <li><strong>Revenue Agent:</strong> Tracks finder fees to sustainability</li>
+  </ol>
+  
+  <a class="cta" href="mailto:rgiu@bxthre3.com">Contact Deal Flow Team</a>
+
+  <script>
+    fetch('/api/stats').then(r => r.json()).then(data => {
+      document.getElementById('hot').textContent = data?.hot_deals || 0;
+      document.getElementById('leads').textContent = data?.investor_count || 0;
+      document.getElementById('rev').textContent = '$' + ((data?.pending_revenue || 0)).toLocaleString();
+    });
+  </script>
+</body>
+</html>

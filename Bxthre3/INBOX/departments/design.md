@@ -1,42 +1,36 @@
-# Design Department — Industrial Design
+# Design Department Inbox
 
-**Agent:** Mold (Industrial Designer)
-**Reports to:** Palette (Creative Director)
+## 2026-03-31 | 08:15 AM Standup Notes
 
-## Charter
-Design the physical aesthetics, ergonomics, and packaging for Irrig8 (formerly Irrig8) hardware products.
+**Attendees:** Lens (UX Research Lead)
 
-## Products
-| Product | Deployment | Form Factor | IP Rating |
-|---------|-----------|-------------|-----------|
-| VFA | Underground, soil-anchored | Burial-safe enclosure | IP68 |
-| LRZB | Above-ground pole mount | Weather-exposed | IP66 |
-| LRZN | In-ground, soil/moisture | Subsurface node | IP67 |
-| PMT | On-pivot, vibration/motion | Vibration-damped mount | IP65 |
-| PFA | Inline pipe mount | Water flowthrough | IP68 |
+### Status Updates
 
-## Form Language
-- **Design System:** Agrarian-industrial hybrid
-- **Color Palette:** Field green (#4A7C59), Soil brown (#8B6914), Signal orange (#E85D04), Neutral slate (#3D4852)
-- **Materials:** UV-stable polymers, 316SS hardware, silicone gaskets
-- **Badge/Label:** Embossed logo, QR-enabled compliance label
+**Irrig8 (formerly FarmSense)**
+- ✅ Farmer interview program: Scoping interviews scheduled this week
+- 🔄 Irrigation district workflow mapping: Initial discovery in progress
+- ⏳ Sensor placement research: Awaiting field equipment calibration
 
-## Deliverables
-- [ ] Product form concepts (3D renders)
-- [ ] Ergonomic studies
-- [ ] Packaging designs
-- [ ] Badge/label artwork
-- [ ] Material specifications
+**Starting 5**
+- ⏳ Founder persona validation: Awaiting product feature freeze to begin testing
+- 📋 Usability test plan: Drafted for next sprint
 
-## Status
-Department initialized. Mold (Industrial Designer) onboarded.
+**Valley Players Club**
+- 📋 Player behavior research: Discovery phase, scoping requirements from Roadmap
 
-## Team
-| Agent | Role | Reports To |
-|-------|------|-----------|
-| Mold | Industrial Designer | Palette |
-| Palette | Creative Director | — |
+**Zoe / AgentOS**
+- 🔄 Developer experience research: Ongoing via AgentOS feedback loops
+- ⏳ AI interaction studies: Q2 planning
 
-## 🔴 P1 | palette | 2026-03-24 09:25 UTC
+### Blockers
+- Need irrigation district contact list from Roadmap to begin workflow mapping
+- Field research equipment status unknown — need update from Palette
 
-Motion design brief needed for Irrig8 product explainer animations. Priority: high. Please provide creative direction covering: brand style guide, key module stories (VFA/LRZB/LRZN/PMT/PFA), tone, color palette, and target deliverable format. Standing by to execute once brief is received.
+### Decisions Needed
+- Priority ranking for Q1 research across all ventures
+- Field research budget approval for FarmSense farmer interviews
+
+### Next Steps
+- Conduct 3-5 farmer discovery interviews this week
+- Complete workflow map for irrigation district operations
+- Draft Q1 research prioritization matrix for Palette review

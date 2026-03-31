@@ -2,7 +2,6 @@
 
 **Window:** 2026-03-24 00:00–08:00 UTC (Mar 23 6PM–2AM Mountain)  
 **Lead:** Drew  
-**Context:** ESTCP suspended — reorganizing for future grants
 
 ---
 
@@ -58,7 +57,6 @@ At sprint end:
 | AgentOS | LIVE | zo.computer service operational |
 | Valley Players Club | PLANNING | Legal docs drafted, platform not started |
 | The Starting 5 | NOT STARTED | Needs definition sprint |
-| ESTCP | SUSPENDED | Materials archived, project disorganized |
 
 ---
 

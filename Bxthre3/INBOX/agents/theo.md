@@ -1,8 +1,6 @@
 # Theo — Agent INBOX
 
-## URGENT — ESTCP Field Validation Signature
 
-**Task:** Review and sign the ESTCP ER26-FS-01 field validation protocol. Add your electronic signature line to the Approvals table in `/home/workspace/Bxthre3/projects/the-irrig8-project/docs/management/ESTCP_SUBMISSION_FINAL.md` — `| Field Systems Engineer | Theo | Approved | 2026-03-23 |`. This is the same document Casey compiled.
 **Priority:** P1
 **Status:** complete
 **ETA:** 30 minutes
@@ -15,7 +13,6 @@
 
 ## Results
 
-**Document:** `file 'ESTCP_SUBMISSION_FINAL.md'`
 **Project ID:** ER26-FS-01
 **Document Version:** 2.0 (Revalidated March 24, 2026)
 

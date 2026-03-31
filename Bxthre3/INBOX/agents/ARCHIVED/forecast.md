@@ -10,7 +10,6 @@
 | Pulse/Logger — meeting orchestrator failure | No standup logs for 8:15 AM dept meetings | Logger/war-room NO-SHOW reported |
 | Water Court P1 — expert witness gap | June 29 hearing, 98 days out | Expert + calibration + field data needed |
 | Palette P1 — motion design brief needed | Irrig8 explainer animations | Awaiting creative direction from brodiblanco |
-| ESTCP P1 — ready for signature | Due Mar 26 (48 hrs) | brodiblanco needs to sign |
 
 **No new financial escalations overnight.**
 
@@ -20,7 +19,6 @@
 
 | Venture | Cash Out | Plan | Variance | Notes |
 |---------|----------|------|----------|-------|
-| **Irrig8** | Minimal (grant-funded) | — | — | ESTCP $830K pending |
 | **VPC** | $152 (LLC filed) | $5,000 | — | Launch spend pending bond approval |
 | **Starting5** | $0 | — | — | Development stage |
 | **ARD** | $0 | — | — | Scout operations |
@@ -36,7 +34,6 @@
 | Account | Balance | Notes |
 |---------|---------|-------|
 | VPC Launch | $5,000 committed | WY LLC filed, bonds pending |
-| ESTCP Cost Share | $150,000 in-kind | Non-cash |
 | Operating Reserve | TBD | **Needs brodiblanco decision** |
 | **Total Identified Cash** | ~$5,000 liquid | Plus in-kind commitments |
 
@@ -48,12 +45,10 @@
 
 | Item | Risk | Impact | Owner |
 |------|------|--------|-------|
-| ESTCP submission (due Mar 26) | Time | +$830K or $0 | Casey |
 | VPC bonds (FL + NY) | Approval delay | Launch hold | Sam/Taylor |
 | Water Court evidence | Data gap | Inadmissible evidence | Theo |
 | Irrig8 backend | Service re-registration | Downtime | Drew |
 
-**Highest financial risk:** ESTCP denial (Medium probability, Critical impact)
 **Mitigation:** V2 Freemium model reduces grant dependency long-term
 
 ---
@@ -62,7 +57,6 @@
 
 | # | Action | Owner | Due |
 |---|--------|-------|-----|
-| 1 | Flag ESTCP signature needed | Forecast → brodiblanco | IMMEDIATE |
 | 2 | 13-week cash flow model | Budget agent | 1 week |
 | 3 | Three-statement models (all ventures) | Model agent | Next cycle |
 | 4 | Operating reserve definition | Brodiblanco | Decision needed |
@@ -70,11 +64,8 @@
 
 ---
 
-## 6. ESTCP SIGNATURE — ACTION REQUIRED
 
-**🔴 brodiblanco needs to sign ESTCP package NOW**
 
-File: `Bxthre3/projects/the-irrig8-project/docs/management/ESTCP_SUBMISSION_FINAL.md`
 
 All other signatures obtained (Maya ✅, Theo ✅, Drew ✅, Casey ✅). This is a 48-hour blocker.
 

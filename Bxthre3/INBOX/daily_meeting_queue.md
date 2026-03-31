@@ -7,7 +7,22 @@
 
 ## 2026-03-29
 
-**No new product ideation detected this cycle.**
+### New Product Detected: BUILDBZ (Valley Build-A-Biz LLC)
+
+**Status:** Draft created in ThinkTank/ — 8 fields require decisions
+
+---
+
+### TODOs for BUILDBZ
+
+[2026-03-29] **[BUILDBZ]**: Decide `problem_statement` @brodiblanco
+[2026-03-29] **[BUILDBZ]**: Decide `solution_hypothesis` @brodiblanco
+[2026-03-29] **[BUILDBZ]**: Decide `target_users` @brodiblanco
+[2026-03-29] **[BUILDBZ]**: Decide `success_metrics` @brodiblanco
+[2026-03-29] **[BUILDBZ]**: Decide `estimated_scope` @brodiblanco
+[2026-03-29] **[BUILDBZ]**: Decide `business_model.equity_split` @brodiblanco
+[2026-03-29] **[BUILDBZ]**: Decide `technical_requirements.sales_engine` @brodiblanco
+[2026-03-29] **[BUILDBZ]**: Decide `technical_requirements.fulfillment_engine` @brodiblanco
 
 ---
 

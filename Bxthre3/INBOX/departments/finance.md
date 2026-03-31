@@ -12,11 +12,9 @@ FP&A function formally stood up 2026-03-24. Key infrastructure still being estab
 
 ## Ventures Financial Summary
 
-### Irrig8 (Priority: 🔴 P1 — ESTCP due Mar 26)
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| Grant Request | $830,000 | ESTCP ER26-FS-01 |
 | Year 1 Budget (if awarded) | $450,000 | Personnel $180K, Hardware $120K, Software $150K |
 | Year 2 Budget | $380,000 | Personnel $200K, Hardware $80K, Software $100K |
 | Cost Share | $150,000 (in-kind) | Non-cash |
@@ -34,7 +32,6 @@ FP&A function formally stood up 2026-03-24. Key infrastructure still being estab
 - 2029: $150M Series C
 
 **Blockers:**
-- ESTCP submission — Casey coordinating, due Mar 26
 - Backend service re-registration — Drew
 
 ---
@@ -86,7 +83,6 @@ FP&A function formally stood up 2026-03-24. Key infrastructure still being estab
 | Bucket | Amount | Type | Status |
 |--------|--------|------|--------|
 | VPC Launch | $5,000 | Cash | Committed |
-| ESTCP Cost Share | $150,000 | In-kind | Committed |
 | Operating Reserve | TBD | Cash | **Needs definition** |
 | Immediate Capital Need | $0 | — | No additional outlay required |
 
@@ -96,7 +92,6 @@ FP&A function formally stood up 2026-03-24. Key infrastructure still being estab
 
 | Priority | Owner | Due | Status |
 |----------|-------|-----|--------|
-| ESTCP submission | Casey | Mar 26 | 🔴 48 hrs |
 | VPC bonds (FL + NY) | Sam/Taylor | Pending | 🟡 Waiting |
 | Three-statement models (all 5 ventures) | Model agent | Next cycle | 🟡 Not started |
 | 13-week cash flow forecast | Forecast/Budget | 1 week | 🟡 Not started |
@@ -109,7 +104,6 @@ FP&A function formally stood up 2026-03-24. Key infrastructure still being estab
 
 | Risk | Probability | Impact | Owner |
 |------|-------------|--------|-------|
-| ESTCP denial | Medium | 🔴 Critical | Casey (backup: USDA SBIR) |
 | VPC bond delay | Low | 🟡 Moderate | Sam/Taylor |
 | Burn rate exceeds runway | Unknown | 🔴 Critical | Forecast/Budget |
 | Irrig8 backend outage | High | 🟡 Moderate | Drew |
@@ -128,7 +122,6 @@ FP&A function formally stood up 2026-03-24. Key infrastructure still being estab
 
 ## Next Steps
 
-1. **This week:** ESTCP submission (highest priority)
 2. **Next week:** VPC bonds, 13-week cash flow model
 3. **Month-end:** First monthly variance report
 4. **Next quarter:** Full QFU with three-statement models for all ventures
@@ -136,3 +129,27 @@ FP&A function formally stood up 2026-03-24. Key infrastructure still being estab
 ---
 
 *Next brief: March 31, 2026*
+
+## 🟡 P2 | split | 2026-03-31 15:09 UTC
+
+Split agent activated — initializing revenue operations infrastructure
+
+---
+
+## 🟡 P2 | Claim | 2026-03-31 15:10 UTC
+
+**Tax Manager activated** — initializing tax function for Bxthre3 Inc / AgentOS Finance Division.
+
+**Immediate asks from Balance:**
+- Entity structure chart (C-Corp + all LLCs)
+- Payroll provider identification
+- Q1 estimated tax payment status
+- VPC gaming tax exposure assessment
+
+**Status:** Identifying all tax compliance gaps across federal, CO state, gaming (VPC), agricultural (Irrig8), and international (Zoe) scopes.
+
+*Claim — Tax Manager*
+
+## 🔴 P1 | reserve | 2026-03-31 15:11 UTC
+
+TREASURY BLOCKED — No financial data exists in workspace. Cannot produce cash position report, 13-week forecast, runway analysis, or burn rate dashboard. P1 — Balance (CFO) must provide: (1) Bank account list with balances, (2) SAFE/convertible note registry, (3) Grant advance account details, (4) Payroll schedule and account. Treasury function is non-operational until foundational data is provided.

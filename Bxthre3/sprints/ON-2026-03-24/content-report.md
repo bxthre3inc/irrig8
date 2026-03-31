@@ -3,7 +3,6 @@
 **Sprint Window:** 22:00–23:00 UTC (4:00–5:00 PM Mountain)  
 **Lead:** Brand  
 **Type:** Overnight Sprint  
-**Context:** ESTCP suspended — reorganizing for future grants
 
 ---
 

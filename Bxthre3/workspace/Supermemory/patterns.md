@@ -50,6 +50,15 @@
 
 ---
 
+## Gmail Setup Status
+
+- **gmail_setup_complete**: true
+- **verified_at**: 2026-03-29T21:20:00Z
+- **verification_method**: Test email sent successfully via Gmail API
+- **note**: App Password is configured and working
+
+---
+
 ## Preferences
 
 - **Viewport constraints:** "fit within the viewport without any scrolling ever" (for PDFs, QR destinations)
@@ -63,7 +72,6 @@
 | Priority | Item | Status |
 |---|---|---|
 | P1 | Database backup agent fix (SQLite, not PG) | 🔴 In progress |
-| P1 | ESTCP ER26-FS-01 grant deadline | 🔴 Mar 26 (tomorrow) |
 | P1 | Water Court evidence prep | Ongoing |
 | P2 | ApiService.kt → real endpoints | Engineering |
 | P2 | /api/grants and /api/tasks fix | Engineering |

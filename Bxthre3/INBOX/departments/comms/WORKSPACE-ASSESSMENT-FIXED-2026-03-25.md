@@ -19,7 +19,6 @@
 | 4 | INBOX System Integrity | 6/10 | 🟡→🟢 | Backup agent fixed; duplicate P1 alert deleted; KNOWN_AGENTS updated |
 | 5 | Zo Space Home + Branding | 7/10 | 🟢 | Home page live and functional |
 | 6 | Project Structure | 8/10 | 🟢→🟢 | All projects in `projects/`; vpc-start.sh path fixed |
-| 7 | Grants Pipeline | 7/10 | 🟢 | Active; ESTCP deadline Mar 26 is P1 |
 | 8 | Skills Infrastructure | 7/10 | 🟢 | All installed; no health checks |
 | 9 | Irrig8 IP & Strategy | 6/10 | 🟡 | Grant-first documented; Irrig8 retired correctly |
 | 10 | Documentation & Memory | 6/10 | 🔴→🟡 | SOUL.md created; AGENTS.md current |
@@ -48,7 +47,6 @@
 ### P1 — Requires Immediate Action
 | Item | Owner | Deadline |
 |---|---|---|
-| ESTCP ER26-FS-01 grant submission | Maya + Casey | **Mar 26, 2026** |
 
 ### P2 — This Week
 | Item | Category | Owner |

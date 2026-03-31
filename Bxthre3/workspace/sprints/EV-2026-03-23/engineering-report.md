@@ -5,7 +5,6 @@
 **Sprint Window:** 16:00–16:30 UTC (10:00–10:30 AM Mountain)  
 **Lead Engineer:** Drew  
 **Type:** Evening Deep-Work Sprint  
-**Context:** ESTCP Grant Deadline: March 26, 2026 (3 days)
 
 ---
 
@@ -19,13 +18,11 @@ This evening deep-work sprint focused on service recovery and unblocking tomorro
 - VPC Edge (port 3001): DOWN
 - PostgreSQL (port 5432): DOWN
 
-With only 3 days until the ESTCP Grant deadline, service restoration is **P0 priority**.
 
 ---
 
 ## 2. Deep Work Items
 
-### P0 — Critical (ESTCP Deadline Blocker)
 
 | Item | Status | Notes |
 |------|--------|-------|

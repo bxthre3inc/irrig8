@@ -29,7 +29,6 @@ Evening sprint executed with focus on content and documentation tasks from ON-20
 
 | Priority | Item | Destination |
 |----------|------|--------------|
-| P2 | ESTCP materials need reorganization | grants department |
 
 **Total Escalations:** 1
 
@@ -40,7 +39,6 @@ Evening sprint executed with focus on content and documentation tasks from ON-20
 | Action | Owner | Priority |
 |--------|-------|----------|
 | Finalize dashboard update | Drew | P1 |
-| Coordinate with grants on ESTCP | Drew | P2 |
 
 **Report Generated:** 2026-03-24 16:35 UTC  
 **Next Sprint:** ON-2026-03-24
