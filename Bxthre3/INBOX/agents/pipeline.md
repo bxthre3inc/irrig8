@@ -1,126 +1,165 @@
-# Pipeline — Agent INBOX
-**Agent:** Pipeline (Deal Flow Manager)
-**Department:** Finance / Investor Relations
+# Pipeline — Deal Flow Manager INBOX
+**Agent:** Pipeline
+**Role:** Deal Flow Manager — Bxthre3 Inc / AgentOS Finance Division
 **Reports to:** Reach (VP Investor Outreach)
-**Initialized:** 2026-03-27
+**Department:** Investor Relations
+**Last Updated:** 2026-04-06 09:20 MT
 
 ---
 
-## 🟡 P2 | pipeline | 2026-03-31 15:05 UTC
+## Deal Pipeline — Master (2026-04-06)
 
-**DAILY STANDUP — 2026-03-31 08:15 AM**
+### Active Pipeline Summary
 
-Pipeline Deal Flow Manager running daily standup. Drew (Sales) INBOX is **6 days stale** (last update: 2026-03-25 16:10 UTC). All four 🔴 P1 deals are Drew-owned with overdue actions. Drew flagged for re-activation.
+| Deal / Investor | Type | Stage | Score | Owner | Next Action | Due |
+|---|---|---|---|---|---|---|
+| Valley Irrigation | Equipment Distribution | 2-Researched | 29/35 | Reach | Obtain S. Luis Valley dealer list | Apr 7 |
+| Reinke | Equipment Distribution | 2-Researched | 27/35 | Reach | Initiate outreach via 402-365-7251 | Apr 7 |
+| Nutrien | Ag Retail Partnership | 2-Researched | 29/35 | Drew | Build target list, identify DM | TBD |
+| Wilbur-Ellis | Ag Retail Partnership | 2-Researched | 26/35 | Drew | Build target list | TBD |
+| CHS | Ag Retail Partnership | 2-Researched | 26/35 | Drew | Build target list | TBD |
+| VPC Game Studios (proprietary) | Gaming Partnership | 2-Researched | 26/35 | Drew | Compile top 10 target list | Apr 8 |
+| VPC Aggregator Partnerships | Gaming Partnership | 2-Researched | — | Drew | Build target list | Apr 8 |
+| VPC Cash-in-Person Network | Gaming Partnership | 2-Researched | 28/35 | Drew | Identify network partners | Apr 8 |
+| VPC Payment Processor | Gaming Partnership | 2-Researched | — | Drew | Identify processor | Apr 8 |
+| AgTech VCs (20 targets) | Strategic Investment | 2-Researched | — | Reach | Finalize top 20 with contacts | Apr 7 |
+| USDA SBIR Grant | Government Grant | Applied | — | Maya | SUBMITTED — awaiting result | Apr 5 |
+| ARPA-E OPEN 2026 | Government Grant | Applied | — | Maya | Await panel review | May 1 |
 
-### 🚨 OVERDUE ITEMS — Drew Owner (Stale INBOX)
-| Deal | Action | Due | Days Overdue |
-|------|--------|-----|--------------|
-| VPC-CP-001 (Sage) | Confirm Sage mark-up delivery | 2026-03-27 | **4 days** |
-| VPC-CP-001 (Sage) | Confirm $5K budget + POs | 2026-03-27 | **4 days** |
-| IRR-FARM-007 (CPAC) | Verify Jessica Bradshaw email | 2026-03-26 | **5 days** |
-| IRR-FARM-007 (CPAC) | Draft intro email | 2026-03-28 | **3 days** |
-| IRR-FARM-007 (CPAC) | **Intro call** | **2026-03-30** | **1 day overdue** |
+### Pipeline by Stage
 
-### Pipeline Snapshot
-- **Total Active Pursuits:** 18
-- **Hot Deal — VPC-CP-001 (Sage):** Term Sheet stage. Docs submitted 2026-03-24. Sage mark-up ETA 2026-03-27 — **4 days overdue, no confirmation received.** Blockers: $5K budget + $1,242 POs unconfirmed. Owner: Drew (stale).
-- **Hot Deal — IRR-FARM-007 (CPAC):** Stage: Contacted. Gateway to 52,000 SLV acres. **Email verification 5 days overdue. Intro call 1 day overdue — unknown if executed.** Owner: Drew (stale).
+| Stage | Count | Deals |
+|---|---|---|
+| 1. Sourced | 0 | — |
+| 2. Researched | 11 | All active deals above |
+| 3. Contacted | 0 | Outreach not yet initiated |
+| 4. Responded | 0 | — |
+| 5. Meeting Held | 0 | — |
+| 6. Interest | 0 | — |
+| 7. Term Sheet | 0 | — |
+| 8. Closed | 0 | — |
+| 9. Pass | 3 | 45Z CI, Irrig8 Data API, AcreSense-style Farm Manager |
 
-### Deal Stage Distribution
-| Stage | Count |
-|-------|-------|
-| Sourced | 12 |
-| Researched | 2 |
-| Contacted | 1 |
-| Responded | 0 |
-| Meeting Held | 0 |
-| Interest | 2 |
-| Term Sheet | 1 |
-| Closed | 0 |
-| Pass | 1 |
+### Dead Deal Autopsy
 
-### Critical: Drew INBOX Stale — 6 Days
-Drew is the **sole owner of all active pursuits**. Pipeline cannot track pipeline without owner updates. Drew was flagged at 5 days stale in 2026-03-30 standup — now at 6 days.
-
-### Escalation Note
-**Drew INBOX is 6 days stale.** All four 🔴 P1 deals are Drew-owned with overdue actions. Recommend brodiblanco re-activate Drew or re-assign deals immediately to prevent opportunities from falling through the cracks.
-
-### Key Files
-- CRM: `file 'Bxthre3/fundraising/deal-pipeline.csv'`
-- CRM Backup: `file 'Bxthre3/fundraising/deal-pipeline-backup-2026-03-31.csv'`
-- Department INBOX: `file 'Bxthre3/INBOX/departments/pipeline.md'`
-- Standup log: `file 'Bxthre3/investor-relations/standup-2026-03-31.md'`
-- Weekly review: `file 'Bxthre3/fundraising/weekly-pipeline-review-2026-03-27.md'` (pending this week's update)
-
-### Next Standup: 2026-04-01 08:15 AM
+| Deal | Stage Failed | Reason |
+|---|---|---|
+| 45Z CI Certification | Gate 2 (Automation) | Requires patent filing + LOIs + >60% human involvement |
+| Irrig8 Data API | Gate 3 (Speed) | No SFDs deployed; no proprietary moat; 6-12 month delay |
+| AcreSense-style Farm Manager | Gate 1 (Blue Ocean) | Crowded market; Polsia launched $29/mo US farm manager |
 
 ---
 
-## 🟡 P2 | pipeline | 2026-03-30 15:10 UTC
+## Fundraising Targets (Canonical from IR Department)
 
-**DAILY STANDUP — 2026-03-30 08:15 AM**
-
-Pipeline Deal Flow Manager running daily standup. Drew (Sales) has not filed an INBOX update since 2026-03-25 — 5 days stale. Several critical actions are overdue.
-
-### 🚨 OVERDUE ITEMS — 3-Day Rule Triggered
-| Deal | Action | Due | Days Overdue |
-|------|--------|-----|---------------|
-| VPC-CP-001 (Sage) | Confirm Sage mark-up delivery | 2026-03-27 | **3 days** |
-| VPC-CP-001 (Sage) | Confirm $5K budget + POs | 2026-03-27 | **3 days** |
-| IRR-FARM-007 (CPAC) | Verify Jessica Bradshaw email | 2026-03-26 | **4 days** |
-| IRR-FARM-007 (CPAC) | Draft intro email | 2026-03-28 | **2 days** |
-| IRR-FARM-007 (CPAC) | Intro call | 2026-03-30 | **TODAY** |
-
-### Pipeline Snapshot
-- **Total Active Pursuits:** 18
-- **Hot Deal — VPC-CP-001 (Sage):** Term Sheet stage. **Docs submitted 2026-03-24. Mark-up ETA 2026-03-27 — UNCONFIRMED. 3 days overdue.** Blockers: $5K budget + $1,242 POs unconfirmed. Owner: Drew.
-- **Hot Deal — IRR-FARM-007 (CPAC):** Stage: Contacted. Gateway to 52,000 SLV acres. **Email verification 4 days overdue. Intro call due TODAY 2026-03-30.** Owner: Drew.
-
-### Deal Stage Regression Risk
-| Deal | Previous Stage | Current Stage | Regression? |
-|------|---------------|---------------|--------------|
-| IRR-DIST-001 | Researched | Researched | No |
-| IRR-DIST-002 | Researched | Researched | No |
-| VPC-CP-001 | Term Sheet | Term Sheet | No — but overdue actions threaten close |
-| IRR-FARM-007 | Contacted | Contacted | No — but overdue prep threatens response |
-
-### Key Files
-- CRM: `file 'Bxthre3/fundraising/deal-pipeline.csv'`
-- CRM Backup: `file 'Bxthre3/fundraising/deal-pipeline-backup-2026-03-30.csv'`
-- Department INBOX: `file 'Bxthre3/INBOX/departments/pipeline.md'`
-- Standup log: `file 'Bxthre3/investor-relations/standup-2026-03-30.md'`
-- Weekly review: `file 'Bxthre3/fundraising/weekly-pipeline-review-2026-03-27.md'` (pending update)
-
-### Coordination
-- Drew: deal execution — **OVERDUE ACTIONS — needs re-activation**
-- Maya: grant writing/execution (Pipeline tracks CRM)
-- Nexus: strategic framing for partnerships
-- Reach: investor outreach support (Pipeline provides data)
-
-### Escalation Note
-Drew INBOX is 5 days stale. Drew is the sole owner of all active pursuits. If Drew does not respond by 2026-03-31 standup, recommend brodiblanco re-assign or re-activate Drew.
-
-### Next Standup: 2026-03-31 08:15 AM
+| Venture | Raise | Instrument | Stage | Priority |
+|---|---|---|---|---|
+| Irrig8 | $5-10M | Series A | Target Jul 2026 | P1 |
+| Valley Players Club | $1-3M | Strategic | Pre-launch | P1 |
+| The Starting 5 | $2-5M | Seed/A | Development | P2 |
+| Zoe / AgentOS | $1-2M | Strategic | IP remediation | P2 |
+| Bxthre3 corporate | $500K | SAFE ($5M cap) | Active | P1 |
 
 ---
 
-## Coordination Notes
+## Critical Cash Context
 
-| Counterpart | Role | Handoff |
-|-------------|------|---------|
-| Drew (Sales Lead) | Deal execution | Drew owns all active pursuit execution |
-| Maya (Grants) | Grant writing/submission | Pipeline owns grants pipeline CRM; Maya owns execution |
-| Nexus (VP Partnerships) | Strategic framing | Nexus owns corp-dev; Pipeline owns pipeline data |
-| Reach (VP IR) | Investor outreach | Pipeline supports Reach with data |
+| Item | Amount | Date |
+|---|---|---|
+| Cash on hand | $130,450 | Apr 1 |
+| Bridge needed | $400,000 | Jul 1 |
+| Runway | ~13 weeks | — |
 
----
-
-## Escalation Rules
-
-- **P1 → INBOX.md** (→ brodiblanco via SMS): Any deal at Term Sheet stage with a signed agreement pending or any blocker that threatens close
-- **P2 → Pipeline INBOX:** Deals requiring Pipeline-level intervention (cold pipeline, stale deals, stage regression)
-- **Grants P1/P2 → Maya INBOX first:** Pipeline does not write grants — only tracks them
+*Source: `13-week-cash-flow-Q2-2026.md`*
 
 ---
 
-*Pipeline — initialized 2026-03-27*
+## Unit Economics — Irrig8 (Investor Talking Points)
+
+| Metric | Value |
+|---|---|
+| Hardware margin | 37.5% |
+| CAC | $1,850 |
+| ARPU (annual) | $4,250 |
+| LTV | $63,750 |
+| LTV/CAC | 34.5× |
+| CAC payback | 5.2 months |
+| Farmer 10-yr ROI | 540% |
+| Farmer payback | 3.2 months |
+| Target ARR at Series A | $5.4M (1,280 fields) |
+
+*Source: `FPA/unit-economics/unit-economics-dashboard-irrig8.md`*
+
+---
+
+## Key Blocker — Investor Outreach
+
+**Cannot launch outreach until:**
+1. Irrig8 pitch deck v1 delivered (Pitch + brodiblanco — due Apr 4)
+2. Cap table + SAFE/note registry delivered (Balance — due Apr 5)
+3. AgentOS IP remediation complete (Iris — ongoing, 93 stub findings)
+
+---
+
+## Meeting Cadence
+
+| Meeting | Time | Attendees |
+|---|---|---|
+| Daily IR Standup | 8:15 AM MT | Network, Pitch, Pipeline, Reach |
+| Weekly Pipeline Review | Friday 2:00 PM MT | Balance (CFO), Reach |
+| Next standup | 2026-04-07 08:15 AM MT | — |
+
+---
+
+## Investor Target Pool (Tier 1 Summary — 38 targets)
+
+| Sector | Tier 1 Targets | Contacted | Met |
+|---|---|---|---|
+| AgTech / Irrig8 | 15 | 0 | 0 |
+| Gaming / VPC | 11 | 0 | 0 |
+| AI SaaS / Zoe | 12 | 0 | 0 |
+| **Total** | **38** | **0** | **0** |
+
+*Full target list: `fundraising/investor-tracker/investor-targets-v1.csv` [VERIFY]*
+
+---
+
+## Tools & Infrastructure Status
+
+| Tool | Status | Notes |
+|---|---|---|
+| HubSpot CRM | Not connected | Coordinate w/ Velocity |
+| Pipeline spreadsheet | Not built | Backup CRM — needs build |
+| Meeting notes DB | Not built | — |
+| Follow-up calendar | Not connected | Google Calendar integration available |
+| Real-time dashboard | Not built | — |
+
+---
+
+## Next Actions
+
+| # | Action | Owner | Due |
+|---|---|---|---|
+| 1 | Verify weekly pipeline review report for Apr 7 | Pipeline | Apr 6 EOD |
+| 2 | Build pipeline spreadsheet (backup CRM) | Pipeline | Apr 7 |
+| 3 | Confirm USDA SBIR submission status with Maya | Pipeline | Apr 6 |
+| 4 | Confirm pitch deck v1 delivery from Pitch | Reach | Apr 4 |
+| 5 | Confirm cap table delivery from Balance | Reach | Apr 5 |
+| 6 | Begin outreach to Valley Irrigation + Reinke | Reach | Apr 7 |
+
+---
+
+## IR Team Reference
+
+| Role | Agent | Status |
+|---|---|---|
+| Head of IR | Oracle | Active |
+| VP Investor Outreach | Reach | Active |
+| IR Manager | Network | Active |
+| Pitch & Presentation Specialist | Pitch | Active |
+| Deal Flow Manager | **Pipeline** | Active |
+
+---
+
+*Pipeline — Deal Flow Manager | Initialized 2026-04-06*
+*Reports to: Reach (VP Investor Outreach)*

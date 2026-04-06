@@ -1,618 +1,88 @@
-# Iris — Agent INBOX
+# IRIS INBOX — April 6, 2026
 
-## Daily Reports
+## 🔴 P0 ACTIVE: Investor Protector Dashboard — PARALLEL MODE
 
----
-
-## Hand-offs
+**Status:** ACCELERATED — building NOW with mock data, not waiting for Dev
 
 ---
 
-## Blockers
+## NEW APPROACH: Parallel Tracks (Not Sequential)
+
+| Track | What | Status |
+|-------|------|--------|
+| **A** | UI with MOCK data | STARTING NOW |
+| **B** | Real API | Dev builds in parallel |
+| **C** | Integration | Swap mocks for real API when ready |
 
 ---
 
-## Notes
+## TODAY'S DELIVERABLE (April 6)
+
+Build `/investor` dashboard with:
+1. **Static JSON mock** representing ideal state
+2. **All UI components** — charts, metrics, tables
+3. **Responsive layout** — mobile + desktop
+
+**Mock data structure:**
+```json
+{
+  "snapshot_date": "2026-04-06",
+  "velocity_score": 99.7,
+  "p0_completed_7d": 2,
+  "p1_completed_7d": 867,
+  "funding_pipeline": {
+    "submitted": 3,
+    "pending": 7,
+    "approved": 0
+  },
+  "metrics": {
+    "execution": {"score": 99.7, "trend": "up"},
+    "artifacts": {"docs": 1676, "code": 218, "ratio": 2.67},
+    "costs": {"monthly": 127, "trend": "flat"},
+    "verification": {"auditable": 87, "total": 87}
+  }
+}
+```
 
 ---
-*Last updated: 2026-03-23*
 
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/config-loader.ts:87 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/config-loader.ts` line 87
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { level: rule.level, score, reason: rule.reason };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/config-loader.ts:91 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/config-loader.ts` line 91
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { level: "MEDIUM", score: 40, reason: "Default" };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/crypto-rails.ts:190 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/crypto-rails.ts` line 190
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { success: true };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts:82 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts` line 82
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { approved: true };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts:88 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts` line 88
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { approved: true };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts` line 1
-**Description:** Phantom agent id in code: nico
-**Snippet:** `nico`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts` line 1
-**Description:** Phantom agent id in code: sage
-**Snippet:** `sage`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts` line 1
-**Description:** Phantom agent id in code: alex
-**Snippet:** `alex`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts` line 1
-**Description:** Phantom agent id in code: jordan
-**Snippet:** `jordan`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/goals/strategy.ts:161 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/goals/strategy.ts` line 161
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { status: 'off_track', driftDetected: true, actionRequired: 'Goal not found' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/archive-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/archive-lead.ts` line 1
-**Description:** Phantom agent id in code: riley
-**Snippet:** `riley`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/commercialization-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/commercialization-lead.ts` line 1
-**Description:** Phantom agent id in code: jordan
-**Snippet:** `jordan`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/finance-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/finance-lead.ts` line 1
-**Description:** Phantom agent id in code: quinn
-**Snippet:** `quinn`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/ideation-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/ideation-lead.ts` line 1
-**Description:** Phantom agent id in code: alex
-**Snippet:** `alex`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts` line 1
-**Description:** Phantom agent id in code: skye
-**Snippet:** `skye`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts:38 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts` line 38
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { approved: true, cost };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts:40 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts` line 40
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { approved: false, cost };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/intelligence-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/intelligence-lead.ts` line 1
-**Description:** Phantom agent id in code: blake
-**Snippet:** `blake`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/ir-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/ir-lead.ts` line 1
-**Description:** Phantom agent id in code: ira
-**Snippet:** `ira`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/legal-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/legal-lead.ts` line 1
-**Description:** Phantom agent id in code: sage
-**Snippet:** `sage`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/marketing-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/marketing-lead.ts` line 1
-**Description:** Phantom agent id in code: cameron
-**Snippet:** `cameron`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/people-lead.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/people-lead.ts` line 1
-**Description:** Phantom agent id in code: nico
-**Snippet:** `nico`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 1
-**Description:** Phantom agent id in code: alex
-**Snippet:** `alex`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 1
-**Description:** Phantom agent id in code: jordan
-**Snippet:** `jordan`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:80 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 80
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: false, canAutoRoute: true, category: 'grant-coordinator' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:85 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 85
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: true, canAutoRoute: false, category: 'security-escalation' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:90 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 90
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: true, canAutoRoute: false, category: 'investor-direct' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:95 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 95
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: true, canAutoRoute: false, category: 'technical-strategy' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:99 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 99
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: false, canAutoRoute: true, category: 'auto-route' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/visionary-assistant.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/visionary-assistant.ts` line 1
-**Description:** Phantom agent id in code: alex
-**Snippet:** `alex`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/personas/engine.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/personas/engine.ts` line 1
-**Description:** Phantom agent id in code: quinn
-**Snippet:** `quinn`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/personas/engine.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/personas/engine.ts` line 1
-**Description:** Phantom agent id in code: avery
-**Snippet:** `avery`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/personas/engine.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/personas/engine.ts` line 1
-**Description:** Phantom agent id in code: jordan
-**Snippet:** `jordan`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/personas/engine.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/personas/engine.ts` line 1
-**Description:** Phantom agent id in code: riley
-**Snippet:** `riley`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/proposal-system.ts:87 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/proposal-system.ts` line 87
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { ...proposal, status: "executed" };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/runtime/daemon.ts:1 | 2026-03-25 05:36 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/runtime/daemon.ts` line 1
-**Description:** Phantom agent id in code: architect
-**Snippet:** `architect`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/voice/interface.ts:4 | 2026-03-25 05:36 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/voice/interface.ts` line 4
-**Description:** Hardcoded object literal return (mock/stub)
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/config-loader.ts:87 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/config-loader.ts` line 87
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { level: rule.level, score, reason: rule.reason };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/config-loader.ts:91 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/config-loader.ts` line 91
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { level: "MEDIUM", score: 40, reason: "Default" };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/crypto-rails.ts:190 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/crypto-rails.ts` line 190
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { success: true };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts:82 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts` line 82
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { approved: true };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts:88 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts` line 88
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { approved: true };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts` line 1
-**Description:** Phantom agent id in code: nico
-**Snippet:** `nico`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts` line 1
-**Description:** Phantom agent id in code: alex
-**Snippet:** `alex`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts` line 1
-**Description:** Phantom agent id in code: sage
-**Snippet:** `sage`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/execution/workspace-manager.ts` line 1
-**Description:** Phantom agent id in code: jordan
-**Snippet:** `jordan`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/goals/strategy.ts:161 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/goals/strategy.ts` line 161
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { status: 'off_track', driftDetected: true, actionRequired: 'Goal not found' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/archive-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/archive-lead.ts` line 1
-**Description:** Phantom agent id in code: riley
-**Snippet:** `riley`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/commercialization-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/commercialization-lead.ts` line 1
-**Description:** Phantom agent id in code: jordan
-**Snippet:** `jordan`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/finance-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/finance-lead.ts` line 1
-**Description:** Phantom agent id in code: quinn
-**Snippet:** `quinn`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/ideation-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/ideation-lead.ts` line 1
-**Description:** Phantom agent id in code: alex
-**Snippet:** `alex`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts` line 1
-**Description:** Phantom agent id in code: skye
-**Snippet:** `skye`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts:38 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts` line 38
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { approved: true, cost };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts:40 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/infrastructure-lead.ts` line 40
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { approved: false, cost };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/intelligence-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/intelligence-lead.ts` line 1
-**Description:** Phantom agent id in code: blake
-**Snippet:** `blake`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/ir-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/ir-lead.ts` line 1
-**Description:** Phantom agent id in code: ira
-**Snippet:** `ira`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/legal-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/legal-lead.ts` line 1
-**Description:** Phantom agent id in code: sage
-**Snippet:** `sage`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/marketing-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/marketing-lead.ts` line 1
-**Description:** Phantom agent id in code: cameron
-**Snippet:** `cameron`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/leads/people-lead.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/leads/people-lead.ts` line 1
-**Description:** Phantom agent id in code: nico
-**Snippet:** `nico`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 1
-**Description:** Phantom agent id in code: alex
-**Snippet:** `alex`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 1
-**Description:** Phantom agent id in code: jordan
-**Snippet:** `jordan`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:80 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 80
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: false, canAutoRoute: true, category: 'grant-coordinator' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:85 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 85
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: true, canAutoRoute: false, category: 'security-escalation' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:90 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 90
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: true, canAutoRoute: false, category: 'investor-direct' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:95 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 95
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: true, canAutoRoute: false, category: 'technical-strategy' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts:99 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/overwatch-v2.ts` line 99
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { requiresYou: false, canAutoRoute: true, category: 'auto-route' };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/mentor/visionary-assistant.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/mentor/visionary-assistant.ts` line 1
-**Description:** Phantom agent id in code: alex
-**Snippet:** `alex`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/personas/engine.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/personas/engine.ts` line 1
-**Description:** Phantom agent id in code: jordan
-**Snippet:** `jordan`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/personas/engine.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/personas/engine.ts` line 1
-**Description:** Phantom agent id in code: quinn
-**Snippet:** `quinn`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/personas/engine.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/personas/engine.ts` line 1
-**Description:** Phantom agent id in code: avery
-**Snippet:** `avery`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/personas/engine.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/personas/engine.ts` line 1
-**Description:** Phantom agent id in code: riley
-**Snippet:** `riley`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/proposal-system.ts:87 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/proposal-system.ts` line 87
-**Description:** Hardcoded object literal return (mock/stub)
-**Snippet:** `return { ...proposal, status: "executed" };`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/runtime/daemon.ts:1 | 2026-03-25 23:43 UTC
-**Category:** phantom_agent | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/runtime/daemon.ts` line 1
-**Description:** Phantom agent id in code: architect
-**Snippet:** `architect`
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
-
-## [P1] STUB FINDER CCR | Bxthre3/projects/the-agentos-project/core/voice/interface.ts:4 | 2026-03-25 23:43 UTC
-**Category:** stub | **Severity:** high
-**File:** `Bxthre3/projects/the-agentos-project/core/voice/interface.ts` line 4
-**Description:** Hardcoded object literal return (mock/stub)
-**Required Action:** Replace stub with real implementation. File resolution in INBOX when fixed.
-
+## DESIGN SPECS (Copy from existing)
+
+**Layout:**
+- Dark theme (#0f172a background)
+- Accent: #00d4ff (cyan)
+- Grid: 3-column main + sidebar
+
+**Sections:**
+1. **Header** — Logo, date selector, "Export Report" button
+2. **Scorecard row** — 4 cards: Velocity, Deliverables, Costs, Verification
+3. **Trend charts** — Velocity 30-day sparkline, P0/P1 burn-down
+4. **Active projects** — Table with status, last update, blockers
+5. **Funding tracker** — Pipeline visualization
+6. **Audit trail** — Last 5 verifiable actions with hashes
 
 ---
-## BRAND COMPLIANCE (auto-inserted by farmsense-to-irrig8-sync.py)
-**FarmSense was retired 2026-03-23. Use ONLY 'Irrig8' as the product name.**
-- NEVER write 'FarmSense' in generated reports, briefs, or updates
-- If reading a file that contains 'FarmSense', treat it as stale/outdated
-- Always canonicalize to 'Irrig8' before writing output
 
-## 🟡 P2 | iris | 2026-03-30 05:02 UTC
+## DO NOT WAIT FOR
 
-IMPL_PLAN_V6_1.md created — AMP wiring Day 1 starts with Application.onCreate() and foreground service
+- [ ] Real API from Dev
+- [ ] Live data sources
+- [ ] Theo deployment review
+
+**SHIP MOCK VERSION TODAY.** We'll swap data sources later.
+
+---
+
+## ACCEPTANCE CRITERIA
+
+- [ ] Dashboard renders at `brodiblanco.zo.space/investor`
+- [ ] All 6 sections visible
+- [ ] Mobile responsive
+- [ ] Export to PDF button (mock)
+- [ ] Auto-refresh every 60s (mock data rotates)
+
+**Deadline: April 6, 11:59 PM MT**
+
+---
+
+*Accelerated mode: Build the airplane while flying it.*

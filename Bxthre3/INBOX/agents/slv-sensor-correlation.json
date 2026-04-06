@@ -1,0 +1,76 @@
+{
+  "agent": "slv-sensor-correlation-specialist",
+  "timestamp": "2026-04-02T11:40:11.517903",
+  "batch_id": "slv_20260402_112449",
+  "simulation_count": 10,
+  "findings": {
+    "high_confidence_correlations": [
+      {
+        "target": "moisture_ec_texture",
+        "r2": 0.858,
+        "viability": "PRODUCTION"
+      },
+      {
+        "target": "frost_risk",
+        "r2": 1.0,
+        "viability": "PRODUCTION"
+      },
+      {
+        "target": "microbial_activity",
+        "r2": 0.999,
+        "viability": "PROMISING"
+      },
+      {
+        "target": "phosphorus_proxy",
+        "r2": 0.946,
+        "viability": "PRODUCTION"
+      },
+      {
+        "target": "potassium_proxy",
+        "r2": 0.941,
+        "viability": "PRODUCTION"
+      }
+    ],
+    "risk_degradations": [
+      {
+        "pair": "moisture_ec",
+        "baseline": 0.954,
+        "under_risk": 0.81,
+        "degradation_pct": 15.1
+      },
+      {
+        "pair": "moisture_temp",
+        "baseline": 0.937,
+        "under_risk": 0.806,
+        "degradation_pct": 14.0
+      },
+      {
+        "pair": "pressure_moisture",
+        "baseline": 0.971,
+        "under_risk": 0.815,
+        "degradation_pct": 16.1
+      }
+    ],
+    "insufficient_targets": [
+      {
+        "target": "water_table_depth",
+        "r2": -0.091,
+        "reason": "heternogeneity_susceptibility"
+      }
+    ]
+  },
+  "recommendations": [
+    "Deploy moisture+ec as primary sensor pair for texture inference (85% accuracy)",
+    "Use moisture+temp for frost risk detection (100% accuracy)",
+    "Triple-sensor config required for nutrient proxy viability",
+    "Implement confidence thresholds <0.75 to trigger sensor health checks",
+    "Avoid single-depth water table estimation due to heterogeneity risk"
+  ],
+  "output_files": [
+    "outputs/batch_20260402_112449.json",
+    "reports/slv_tier2_tier3_report_20260402_113742.txt",
+    "reports/slv_tier2_tier3_results_20260402_113742.json",
+    "reports/SLV_CORRELATION_REPORT_20260402_1138.md"
+  ],
+  "priority": "P3"
+}

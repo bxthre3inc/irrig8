@@ -1,99 +1,68 @@
 # INBOX — Claim (Tax Manager)
 **Bxthre3 Inc / AgentOS Finance Division**
-**Initialized:** 2026-03-31 15:05 UTC
-**Reports to:** Balance (CFO)
+**Updated:** 2026-04-03 17:50 UTC
 
 ---
 
-## Role Scope
+## ✅ VPC STATUS CLARIFIED
 
-**Federal Taxes:**
-- C-Corp federal income tax (Bxthre3 parent)
-- Pass-through entity taxes (LLC subsidiaries — K-1s)
-- Payroll taxes (federal + state)
-- R&D tax credit analysis (Irrig8 hardware + software)
-- Employee vs. contractor classification
+**brodiblanco (2026-04-03 17:50 UTC):**
 
-**State Taxes:**
-- Colorado income tax / franchise tax
-- State payroll taxes (CO, remote employees)
-- State sales tax (software subscriptions, hardware sales)
-- State gross receipts taxes
+> "VPC has no documentation filed and is not yet a legally licensed and operating business, it's purely planned out."
 
-**Gaming-Specific (Valley Players Club):**
-- Gaming tax compliance
-- Tribal revenue sharing
-- State gaming fee payments
+| Item | Previous Assumption | Corrected Status |
+|------|-------------------|------------------|
+| **Entity Formation** | WY LLC exists | **Not filed — planning only** |
+| **Operating Status** | Pre-launch | **Pre-formation** |
+| **Gaming Tax Exposure** | FL/NY/WY obligations | **None — no business yet** |
+| **Bond Requirement** | P1 blocking issue | **Deferred until formation** |
+| **State Nexus** | Multi-state gaming | **None — no revenue/no ops** |
 
-**Agricultural-Specific (Irrig8):**
-- Agricultural property tax (equipment, sensors)
-- USDA program payment tax treatment
-- Commodity income timing
-
-**International (Zoe):**
-- Foreign contractor withholding
-- Digital services tax if applicable
-
-**Deliverables:**
-- Annual tax provision (estimate + actual)
-- Quarterly estimated tax payments (federal + state)
-- Annual tax return preparation (1120, 1065, 1099s)
-- R&D tax credit claim (annual)
-- Payroll tax filings (940, 941, state)
-- Sales tax nexus analysis and filings
-- Tax provision modeling (for Board)
-- 83(b) election support for employees
-- Stock option tax guidance
+**Tax Implication:**
+- **Q1 2026:** Zero VPC tax liability (no operations, no formation)
+- **No estimated taxes due** for VPC (not yet a taxable entity)
+- **Bxthre3 Inc only** exposure for Q1 (if any revenue generated)
 
 ---
 
-## Current Status: 🔴 INITIALIZING
+## 🔴 REMAINING P1: CO Sales Tax Nexus
 
-**Critical Gaps Identified:**
-1. No tax entity structure documented
-2. No payroll system identified (no Gusto/Rippling/ADP record)
-3. No sales tax nexus analysis on record
-4. No R&D credit prior art or documentation
-5. No VPC gaming tax compliance documented (FL/NY bonds pending)
-6. No Colorado agricultural property tax filings on record
-7. No foreign contractor withholding setup for Zoe
+**Due:** April 15, 2026 (12 days)
 
----
+**Scope Now Limited To:**
+- **Bxthre3 Inc only** (parent C-Corp)
+- **Revenue streams:** AgentOS, Irrig8 contracts, advisory
+- **VPC excluded:** Until formation/operations commence
 
-## Immediate Priorities (This Week)
+**Question for brodiblanco:**
+> Confirm Bxthre3 Inc had **zero taxable sales/revenue** in Q1 2026?
+> 
+> If YES → $0 filing is correct  
+> If NO → Need revenue figure for estimated payment
 
-| Priority | Action | Owner | Due |
-|----------|--------|-------|-----|
-| P0 | Establish entity structure (C-Corp + LLC chart) | Claim | 2026-04-01 |
-| P0 | Identify payroll provider and current compliance status | Claim | 2026-04-01 |
-| P1 | VPC gaming tax compliance review (FL/NY bonds × tax exposure) | Claim | 2026-04-02 |
-| P1 | Colorado sales tax nexus analysis (software + hardware) | Claim | 2026-04-03 |
-| P1 | Foreign contractor / Zoe withholding assessment | Claim | 2026-04-03 |
-| P2 | R&D credit documentation framework (Irrig8) | Claim | 2026-04-07 |
-| P2 | Q1 estimated tax payment review (due Apr 15) | Claim | 2026-04-07 |
+**Note:** Cash position ($130K beginning Apr 1, $493K Q2 net burn) suggests minimal/no taxable income. Safe to file $0 if no objections.
 
 ---
 
-## Known Entity Intelligence
+## Q2 PRIORITY MATRIX (Revised)
 
-| Entity | Type | State | Tax Relevance |
-|--------|------|-------|--------------|
-| Bxthre3 Inc | C-Corp | CO (assumed) | Federal 1120, CO franchise |
-| Valley Players Club | WY LLC | WY | Pass-through 1065, gaming tax |
-| Irrig8 | LLC (assumed) | CO | Pass-through 1065, ag property |
-| Zoe (AgentOS) | Contractor | International | Withholding, DST |
-
----
-
-## Blockers
-
-| Blocker | Impact | Owner |
-|---------|--------|-------|
-| No financial data access granted | Cannot model tax liability | Balance |
-| No payroll provider identified | Payroll tax exposure unknown | Balance |
-| VPC FL/NY bond status unresolved | Gaming tax compliance blocked | Sam/Taylor |
+| Priority | Action | Due | Status |
+|----------|--------|-----|--------|
+| 🔴 P1 | CO Sales Tax — $0 or payment? | Apr 15 | Pending brodiblanco confirmation |
+| 🟡 P2 | VPC formation timeline | TBD | On hold pending Series A |
+| 🟡 P2 | Bxthre3 Inc FY2025 close | TBD | Blocked on Balance data access |
 
 ---
 
-*Standing for daily Finance standup at 8:15 AM MT*
-*Next update: 2026-04-01 08:15 AM*
+## BLOCKERS
+
+| Blocker | Severity | Owner |
+|---------|----------|-------|
+| Q1 revenue confirmation (Y/N) | 🔴 P1 | brodiblanco |
+| Balance/CFO data access | 🟡 P2 | Balance |
+
+---
+
+*Standing by for Q1 revenue confirmation.*
+
+*Reports to: Balance (CFO) | brodiblanco (Founder)*

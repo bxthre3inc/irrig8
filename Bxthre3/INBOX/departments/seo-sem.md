@@ -1,93 +1,51 @@
-# INBOX — SEO & SEM Department
+# SEO/SEM Department INBOX
 
-**Lead:** Rank
-**Ventures:** Irrig8, Starting 5, Valley Players Club, Zoe, Bxthre3 corporate
-**Standup cadence:** Daily 8:15 AM MT
-**Reports to:** Brand (VP Marketing), Optimize (Growth)
+> **Department:** SEO & SEM | **Lead:** Rank
+> **Reports to:** Brand (VP Marketing), Optimize (Growth)
 
 ---
 
-## Department Mission
+## Department Overview
 
-Own search engine optimization, paid search, and online visibility for all Bxthre3 ventures. Drive organic and paid acquisition through search engines, directories, and marketplaces.
+### Scope
+| Venture | SEO | SEM (Google Ads) | Other |
+|---------|-----|------------------|-------|
+| Irrig8 | Precision irrigation keywords | Ag keywords, water management | Directory listings |
+| Starting 5 | Startup advice, SaaS category | SaaS trial keywords | — |
+| Valley Players Club | Gaming/discovery terms | Regulated categories [VERIFY] | App Store optimization |
+| Zoe | AI/developer keywords | AI assistant keywords | Marketplace visibility |
+| Bxthre3 corporate | Investor-facing content | — | Founder brand SEO |
 
----
+### Meeting Cadence
+- **Daily Standup:** 8:15 AM MT (Mon-Fri)
+- **Weekly Report:** Fridays → Brand + Optimize
 
-## Search Scope by Venture
 
-| Venture | SEO | SEM / Paid |
-|---------|-----|-----------|
-| **Irrig8** | Precision irrigation keywords, soil health, center-pivot irrigation, local/regional ag directories | Google Ads — ag keywords (irrigation, farm tech, precision ag) |
-| **Starting 5** | Startup advice keywords, SaaS category keywords, "AI co-founder", startup growth | Google Ads — SaaS keywords, startup accelerator |
-| **Valley Players Club** | App store optimization (ASO), cash sweepstakes gaming keywords | Google Ads — regulated categories (gaming, sweepstakes) |
-| **Zoe** | AI/developer keywords, "AI assistant", "digital employee", marketplace (GPT Store, etc.) | Google Ads — AI/developer audience |
-| **Bxthre3 corporate** | Investor-facing SEO, founder brand keywords (Jeremy Beebe), venture studio | — |
+## 2026-04-03 Morning Standup Summary
 
----
+**Lead:** Rank | **Time:** 09:10 MT | **Status:** Department Initialized
 
-## Directory Listings (Priority: Irrig8)
+### Campaign Status
 
-- Google Business Profile
-- Bing Places
-- Yelp for Business
-- AgPal (USDA partnership directory)
-- FarmCredit vendor directories
-- State agricultural directories (Colorado Dept of Ag)
-- Irrigation association directories
+| Campaign | Status | Blockers |
+|---------|--------|----------|
+| Irrig8 Google Ads | Planning | Keyword volume verification, landing page needed |
+| Starting 5 Google Ads | Planning | Product-market fit copy, CTA page |
+| VPC Google Ads | 🔴 BLOCKED | Compliance (→ Raj P1 escalated) |
+| Zoe Google Ads | Planning | GitHub repo public, marketplace listings needed |
+| Bxthre3 Corporate | Planning | Investor content, founder brand assets |
 
----
+### Wins Today
+- Department structure established
+- Keyword research docs created for all 5 ventures
+- VPC compliance issue identified and escalated
 
-## Paid Search — Google Ads Account Structure
+### Blockers Requiring Resolution
+1. **VPC Compliance** — Raj must review gambling/gaming ad policy (P1)
+2. **Google Ads Account** — No account structure exists yet (needs Bx3 credit card/access)
+3. **Landing Pages** — No dedicated landing pages confirmed for any venture
 
-```
-Bxthre3 Inc (MCC)
-├── Irrig8
-│   ├── Search — Precision Irrigation
-│   ├── Search — Farm Tech / IoT
-│   └── Display — Retargeting
-├── Starting 5
-│   ├── Search — SaaS Startup Tools
-│   └── Search — AI Co-Founder
-├── Valley Players Club
-│   ├── Search — Sweepstakes Gaming (age-gated)
-│   └── Search — Casino-like games
-├── Zoe
-│   ├── Search — AI Assistant keywords
-│   └── Search — Developer AI tools
-└── Bxthre3 Corporate
-    └── (awareness only, founder brand)
-```
-
----
-
-## Key Metrics & KPIs
-
-| KPI | Current | Target |
-|-----|---------|--------|
-| Organic sessions (Irrig8) | — | +20% MoM |
-| Organic sessions (Starting 5) | — | +15% MoM |
-| Google Ads CTR (all campaigns) | — | >3% |
-| Google Ads ROAS | — | >3x |
-| Directory listing count (Irrig8) | — | 50+ |
-| Keyword ranking position 1-3 (per venture) | — | 10 per venture |
-
----
-
-## blockers
-
-- No Google Ads account access confirmed
-- No existing SEO baseline data
-- No conversion tracking implemented
-- No content calendar for SEO
-
----
-
-## Standup Log
-
-| Date | Summary |
-|------|---------|
-| 2026-03-31 | Department initialized. Rank agent onboarded. Awaiting Brand/Optimize alignment on campaign authorization. |
-
----
-
-*Last updated: 2026-03-31 09:05 UTC*
+### Tomorrow 8:15 AM MT — First Full Standup
+- Report: VPC compliance resolution status
+- Report: Keyword verification (Ahrefs/Semrush data)
+- Planning: Irrig8 directory listing audit

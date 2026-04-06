@@ -2,33 +2,39 @@
 
 > Arbitrage + compliance monitoring
 
-## Active Investigations
+---
 
-## VPC Compliance
-- WY LLC formation: pending
-- FL/NY sweepstakes bonds: pending
-
-## Water Court
-- Hearing: June 29, 2026
-- Evidence package: in progress
+## 🚫 WATER COURT — ABANDONED
+**Status:** Closed — budget constraint
 
 ---
-*Regulatory horizon: clear*
 
-## 🔴 P1 | water-court-evidence | 2026-03-31 10:05 UTC
+## 🟢 VPC — CLARIFIED STATUS
 
-**3 Critical Water Court Gaps — Weekly Status Update**
+**brodiblanco update (2026-04-03 17:50 UTC):**
 
-All 3 P1 gaps remain UNRESOLVED. Escalation chain executed:
-
-| Action | Result |
+| Aspect | Status |
 |--------|--------|
-| INBOX.md P1 | ✅ Live in canonical INBOX |
-| rain.md INBOX | ✅ Updated |
-| n8n webhook | ❌ FAILED (502) |
-| SMS to brodiblanco | ✅ Sent 2026-03-31 |
+| **Business Formation** | Planned only — NOT filed |
+| **Legal Licensing** | N/A — pre-operational |
+| **Active Operations** | No — planning phase |
+| **FL/NY Bonds** | **DEFERRED** — not blocking |
+| **Launch Strategy** | All legal states; FL/NY excluded until bonds secured |
 
-**Checked:** `irrig8-validation/day3-final-validation-report.md` — CapEx/OpEx analysis only. Does NOT contain SLV field telemetry data. Gap remains.
+**Regulatory Implication:**
+- No immediate gaming tax exposure (not yet operating)
+- No bond requirement until actual operations commence
+- No state registrations needed until entity formation
+- Clean slate — formation/licensing can be sequenced post-Series A if desired
 
-**15 days to April 15 deadline.** Expert witness retention is critical path — without it, expert brief cannot be filed by June 8 (T-21 days before June 29 hearing).
+**Action:** Monitor FL/NY bond markets; no immediate action required.
 
+---
+
+## ACTIVE INVESTIGATIONS
+
+- None — horizon clear
+
+---
+
+*Rain | Regulatory | 2026-04-03*

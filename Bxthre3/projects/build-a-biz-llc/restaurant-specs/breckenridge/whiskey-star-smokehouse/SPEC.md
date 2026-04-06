@@ -14,9 +14,9 @@
 |-------|-------|
 | **Business Name** | Whiskey Star Smokehouse |
 | **Address** | 231 S Main St, Breckenridge, CO 80424 |
-| **Phone** | [Research] |
-| **Website** | Has Website |
-| **Social Media** | [Research] |
+| **Phone** | (970) 453-9683 ✅ |
+| **Website** | https://whiskeystarbreck.com/ ✅ |
+| **Social Media** | Facebook, Instagram @whiskeystarbreck |
 
 ---
 
@@ -26,8 +26,8 @@
 |-------|-------|
 | **Cuisine Type** | BBQ, Texan Smokehouse |
 | **Price Range** | $$$ (tourist + local) |
-| **Hours** | [Research] |
-| **Delivery** | DoorDash, UberEats |
+| **Hours** | Mon-Thu: 11:30am-10:30pm (Kitchen 11:30am-9:30pm); Fri: 11:30am-12am; Sat: 11am-12am; Sun: 11am-10:30pm |
+| **Delivery** | ToastTab online ordering |
 
 ---
 
@@ -36,8 +36,9 @@
 | Platform | Status | Details |
 |----------|--------|---------|
 | Google | Claimed | 4.5+ stars |
-| DoorDash | Active | Primary |
-| UberEats | Active | Secondary |
+| DoorDash | Inactive (as of Dec 2021) | Was previously active |
+| UberEats | Inactive | Was previously active |
+| ToastTab | Active | Primary ordering platform |
 
 ### Google Rating: ⭐ 4.5+ — Prime Main Street Location
 
@@ -72,9 +73,16 @@
 
 ## Assets to Collect
 
-- [ ] Logo
-- [ ] BBQ meat shots (brisket, ribs)
-- [ ] Full menu with prices
+- [x] Logo
+- [x] BBQ meat shots (brisket, ribs)
+- [x] Full menu with prices
+
+## Assets Collected (Date: 2026-04-05)
+- **Logo:** `assets/logo.png`
+- **Menu:** `assets/menu.md`
+- **Hero Photo:** `assets/hero.jpg`
+- **Brand Colors:** #8B4513 #D4AF37 #1C1C1C
+- **Owner Contact:** Phone: (970) 453-9683 | Email: whiskeystarbreck@gmail.com | Website: https://whiskeystarbreck.com/ | Owner name: Not found online
 
 ---
 

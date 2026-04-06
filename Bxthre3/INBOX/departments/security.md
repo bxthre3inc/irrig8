@@ -10,7 +10,8 @@
 
 | Severity | Issue | Status | Assigned | Notes |
 |---|---|---|---|---|
-| P1 | Hardcoded credentials in irrig8-code/backend/.env | **RESOLVED** | Sentinel | .env file removed, .gitignore added to exclude .env files, start.sh validates secrets in production |
+| P1 | Hardcoded credentials in irrig8-code/backend/.env | **RESOLVED** | Sentinel | .env file removed, .gitignore added, start.sh validates secrets in production |
+| 🔴 P1 | AgentOS kill-switch stubs returning `{ approved: true }` — production safety gap | **OPEN** | Iris | No regression test. Any traffic through these paths has zero approval enforcement. Sentinel flagged 2026-03-31 |
 
 ---
 
@@ -39,9 +40,16 @@
 - `server/src/security.test.ts` covers: CORS validation, security headers, health check
 - Tests confirm CORS whitelist: `['http://localhost:5173', 'https://vpc-brodiblanco.zocomputer.io', 'http://localhost:5176']`
 
-### ✅ CLEARED: AgentOS API
-- 5/5 services confirmed UP in Sentinel's latest scan (2026-03-31)
-- AgentOS health endpoint operational
+### ✅ CLEARED: AgentOS API (per Sentinel 2026-03-31)
+- 5/5 services confirmed UP in Sentinel's latest scan
+
+### 🔴 NEW — AgentOS Kill-Switch Stubs (P1 — Production Safety Gap)
+- **File:** `Bxthre3/projects/the-agentos-project/core/execution/kill-switch.ts` (lines 82, 88)
+- **Finding:** Hardcoded `return { approved: true };` — bypasses all safety guards
+- **Risk:** Any production traffic through these paths has zero actual approval enforcement
+- **Also flagged:** 100+ stub CCRs in AgentOS codebase (per Sentinel T&S standup 2026-03-31)
+- **Escalated to:** Iris (engineering lead) — INBOX handoff 2026-03-31
+- **Test coverage:** No regression test exists for this kill-switch behavior (per QA-Lead 2026-03-31)
 
 ---
 
@@ -50,11 +58,13 @@
 - [x] Sentinel runs periodic security scans — ACTIVE
 - [x] Secrets management verified — CLEAR
 - [x] SQL injection vectors checked — CLEAR
+- [x] AgentOS kill-switch stub P1 flagged — OPEN (Iris assigned)
 - [ ] Vulnerabilities in third-party dependencies (npm/pip) — PENDING dependency audit
 - [ ] Access control policy enforcement — Baseline established
 - [ ] Data breach monitoring — Ongoing
 - [ ] Patch management tracking — PENDING
 - [ ] Port/network exposure audit — IN PROGRESS
+- [ ] AgentOS stub code audit — PENDING (100+ stubs flagged)
 
 ---
 
@@ -64,6 +74,7 @@
 |---|---|---|---|
 | 2026-03-23 | Hardcoded JWT_SECRET, SECRET_KEY, DB_PASSWORD in .env | P1 | Fixed - .env removed, .gitignore added, start.sh validates secrets |
 | 2026-03-31 | Security Assessment Round 1 | — | No new P1/P2 issues found. VPC server cleared. AgentOS services verified. |
+| 2026-03-31 | AgentOS kill-switch stubs returning `{ approved: true }` | 🔴 P1 | Escallated to Iris — production safety gap, no regression test |
 
 ---
 
@@ -71,14 +82,69 @@
 
 | Metric | Value | Status |
 |---|---|---|
-| P1 vulnerabilities | 0 (1 resolved) | ✅ |
+| P1 vulnerabilities | 1 open (kill-switch stubs) | 🔴 ACTIVE |
 | P2 vulnerabilities | 1 known (Irrig8 .env.example placeholders) | ✅ Monitored |
 | Services monitored | 5 (AgentOS) + 1 (VPC) | ✅ |
 | Secret exposures | 0 | ✅ |
 | SQL injection vectors | 0 | ✅ |
 | XSS vectors | 0 (active code) | ✅ |
 | Security test coverage | 1 suite (VPC) | ⚠️ Expand |
+| Dependency audit | Not started | ❌ PENDING |
 
 ---
 
-*Last updated: 2026-03-31 by Vault*
+*Last updated: 2026-04-01 by Vault*
+
+## 🟡 P2 | sentinel | 2026-04-01 20:48 UTC
+
+Phase 2 Subtask: Task auto-escalation system. Monitor agent ratings, auto-escalate P0 tasks when completion rates drop. Output: rating_engine/escalation.py
+
+## Security Scan — 2026-04-06 (Morning)
+
+**Scanner:** Sentinel  
+**Time:** 06:10 UTC  
+**Scope:** Secrets exposure, AgentOS health, service availability
+
+### ✅ Secrets Exposure — CLEAR
+- No API_KEY, SECRET, PASSWORD, or TOKEN patterns found exposed in workspace
+- No Stripe keys detected
+- VPC JWT_SECRET fallback is dev-only, not reachable in production
+
+### 🟡 AgentOS API — STABILITY EVENT (Not a Security Incident)
+- **06:10 UTC:** AgentOS API reached FATAL state (workdir path misconfigured in service config)
+- **Fix Applied:** Workdir updated to `/home/workspace/Bxthre3/projects/agentic/the-agentos-project/backend`
+- **Resolution:** Service restored — `/health` endpoint responding
+- **Classification:** Operational misconfiguration — not a breach or exploit
+- **Related risk:** Service instability could mask a real attack — recommending monitoring elevation
+
+### ✅ Service Availability
+| Service | Status | Notes |
+|---------|--------|-------|
+| AgentOS API | ✅ UP | Restored 06:10 UTC |
+| Ollama | ✅ UP | PID 231 |
+| VPC Server | ✅ UP | Uptime 9:42:51 |
+
+### 🔴 P1 Kill-Switch Stubs — OPEN (Iris assigned)
+No change in status. Remains highest security priority per 2026-04-01 assessment.
+
+### 🔴 P1 — Sentinel Escalation | 2026-04-01 20:48 UTC
+**Task auto-escalation system** — Sentinel building rating engine + escalation pipeline. Status: IN PROGRESS.
+
+---
+
+## Updated: Ongoing Security Monitoring
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Secrets exposure | ✅ CLEAR | No findings |
+| AgentOS API stability | 🟡 MONITOR | Restored but had FATAL event |
+| AgentOS kill-switch stubs | 🔴 P1 OPEN | Iris assigned |
+| Sentinel T&S scan | ✅ CLEAR | No new findings |
+| Dependency audit | ❌ PENDING | Not started |
+| AgentOS stub code audit | ❌ PENDING | 100+ stubs unverified |
+| Access control policy | ⚠️ BASELINE | Enforcement not tested |
+| Data breach monitoring | ✅ ONGOING | Sentinel active |
+
+---
+
+*Last updated: 2026-04-06 09:05 UTC by Vault*

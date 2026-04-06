@@ -12,11 +12,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Business Name** | Presley's |
-| **Address** | Pueblo, CO |
-| **Phone** | [Research] |
-| **Website** | None |
-| **Social Media** | [Research] |
+| **Business Name** | Presley's (The Lunchbox) |
+| **Address** | 109 E C St, Pueblo, CO 81003 |
+| **Phone** | (719) 252-5170 |
+| **Website** | https://thelunchboxfoodtruckpueblo.com |
+| **Email** | thelunchbox.llc@yahoo.com |
+| **Social Media** | Instagram @presleysthe_lunchbox_ |
+| **Hours** | Thu-Sat: 11am-9pm, Sun: 11am-7pm, Mon-Wed: Closed |
+| **Owner/Manager** | Jessica "Presley" Casack and Ed Casack |
 
 ---
 
@@ -63,6 +66,15 @@
 - [ ] Logo
 - [ ] Food photos
 - [ ] Menu with prices
+
+---
+
+## Assets Collected (Date: 2026-04-03)
+- **Logo:** ✅ COLLECTED `assets/logo.png` (Presley's sign)
+- **Menu:** https://thelunchboxfoodtruckpueblo.com
+- **Hero Photo:** ✅ COLLECTED `assets/hero.jpg` (red food truck)
+- **Brand Colors:** ✅ EXTRACTED #D32F2F #FFFFFF #212121
+- **Owner Contact:** Jessica "Presley" Casack + Ed Casack | Phone: (719) 252-5170 | Email: thelunchbox.llc@yahoo.com
 
 ---
 

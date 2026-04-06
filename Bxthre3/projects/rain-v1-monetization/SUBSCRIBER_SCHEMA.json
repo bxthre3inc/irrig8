@@ -1,0 +1,319 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RAIN Subscriber Schema",
+  "description": "Schema for RAIN service subscriber records",
+  "type": "object",
+  "required": ["id", "email", "created_at"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique subscriber identifier (UUID)",
+      "example": "usr_8f3a2b1c4d5e6f7g"
+    },
+    "contact_info": {
+      "type": "object",
+      "description": "Primary contact information",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary email address",
+          "example": "farmer@example.com"
+        },
+        "email_verified": {
+          "type": "boolean",
+          "description": "Whether email has been verified",
+          "default": false
+        },
+        "phone": {
+          "type": "string",
+          "description": "Optional phone number for SMS alerts",
+          "example": "+1-555-123-4567"
+        },
+        "name": {
+          "type": "string",
+          "description": "Subscriber's full name",
+          "example": "John Smith"
+        },
+        "company": {
+          "type": "string",
+          "description": "Company or farm name (optional)",
+          "example": "Sunset Valley Farms"
+        }
+      },
+      "required": ["email"]
+    },
+    "subscription_tier": {
+      "type": "object",
+      "description": "Current subscription tier details",
+      "properties": {
+        "tier_id": {
+          "type": "string",
+          "enum": ["free", "monthly", "weekly", "daily", "quarterly"],
+          "description": "Selected pricing tier",
+          "example": "weekly"
+        },
+        "tier_name": {
+          "type": "string",
+          "description": "Human-readable tier name",
+          "example": "Weekly Plan"
+        },
+        "upgrade_2x": {
+          "type": "boolean",
+          "description": "Whether 2x Results Upgrade is active",
+          "default": false
+        },
+        "billing_period": {
+          "type": "string",
+          "enum": ["monthly", "quarterly", "annual"],
+          "description": "Current billing period",
+          "example": "monthly"
+        }
+      },
+      "required": ["tier_id"]
+    },
+    "payment_status": {
+      "type": "object",
+      "description": "Payment and subscription status",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["active", "trialing", "past_due", "canceled", "unpaid", "paused", "free"],
+          "description": "Current subscription status",
+          "example": "active"
+        },
+        "stripe_customer_id": {
+          "type": "string",
+          "description": "Stripe customer ID",
+          "example": "cus_AbCdEfGhIjKlMn"
+        },
+        "stripe_subscription_id": {
+          "type": "string",
+          "description": "Stripe subscription ID (if applicable)",
+          "example": "sub_AbCdEfGhIjKlMn"
+        },
+        "current_period_start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Start of current billing period",
+          "example": "2026-04-01T00:00:00Z"
+        },
+        "current_period_end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "End of current billing period",
+          "example": "2026-04-30T23:59:59Z"
+        },
+        "cancel_at_period_end": {
+          "type": "boolean",
+          "description": "Whether subscription will cancel at period end",
+          "default": false
+        },
+        "trial_end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Trial period end date (if trialing)",
+          "example": "2026-04-15T00:00:00Z"
+        },
+        "payment_method": {
+          "type": "object",
+          "description": "Default payment method details",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["card", "bank_transfer", "paypal"],
+              "description": "Payment method type"
+            },
+            "last_four": {
+              "type": "string",
+              "description": "Last four digits of card/account",
+              "example": "4242"
+            },
+            "brand": {
+              "type": "string",
+              "description": "Card brand (if applicable)",
+              "example": "visa"
+            }
+          }
+        }
+      },
+      "required": ["status"]
+    },
+    "preferences": {
+      "type": "object",
+      "description": "User preferences and settings",
+      "properties": {
+        "regions": {
+          "type": "array",
+          "description": "Tracked regions (up to tier limit)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Region identifier",
+                "example": "US-CO-WEST"
+              },
+              "name": {
+                "type": "string",
+                "description": "Region display name",
+                "example": "Western Colorado"
+              }
+            }
+          },
+          "maxItems": 10
+        },
+        "alert_settings": {
+          "type": "object",
+          "description": "Alert and notification preferences",
+          "properties": {
+            "email_alerts": {
+              "type": "boolean",
+              "description": "Enable email alerts",
+              "default": true
+            },
+            "sms_alerts": {
+              "type": "boolean",
+              "description": "Enable SMS alerts",
+              "default": false
+            },
+            "alert_threshold": {
+              "type": "string",
+              "enum": ["all", "significant", "critical"],
+              "description": "Minimum alert level to notify",
+              "default": "significant"
+            },
+            "digest_frequency": {
+              "type": "string",
+              "enum": ["realtime", "daily", "weekly"],
+              "description": "How often to send digest emails",
+              "default": "daily"
+            }
+          }
+        },
+        "timezone": {
+          "type": "string",
+          "description": "User's timezone for scheduling",
+          "default": "America/Denver",
+          "example": "America/New_York"
+        },
+        "language": {
+          "type": "string",
+          "description": "Preferred language",
+          "default": "en-US",
+          "example": "es-US"
+        }
+      }
+    },
+    "signup": {
+      "type": "object",
+      "description": "Signup and acquisition details",
+      "properties": {
+        "signup_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When subscriber first signed up",
+          "example": "2026-04-04T15:30:00Z"
+        },
+        "signup_source": {
+          "type": "string",
+          "description": "How user discovered RAIN",
+          "example": "twitter_ad"
+        },
+        "signup_page": {
+          "type": "string",
+          "description": "URL of signup page",
+          "example": "https://rain.bxthre3.com/landing"
+        },
+        "referral_code": {
+          "type": "string",
+          "description": "Referral code used (if any)",
+          "example": "FARMER20"
+        },
+        "utm_campaign": {
+          "type": "string",
+          "description": "UTM campaign tracking",
+          "example": "spring_2026_launch"
+        },
+        "free_report_downloaded": {
+          "type": "boolean",
+          "description": "Whether free report was downloaded",
+          "default": false
+        },
+        "free_report_download_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When free report was downloaded"
+        }
+      },
+      "required": ["signup_date"]
+    },
+    "engagement": {
+      "type": "object",
+      "description": "Engagement and usage metrics",
+      "properties": {
+        "last_login": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last dashboard login",
+          "example": "2026-04-04T10:00:00Z"
+        },
+        "login_count": {
+          "type": "integer",
+          "description": "Total number of logins",
+          "default": 0,
+          "minimum": 0
+        },
+        "reports_viewed": {
+          "type": "integer",
+          "description": "Number of reports accessed",
+          "default": 0,
+          "minimum": 0
+        },
+        "alerts_clicked": {
+          "type": "integer",
+          "description": "Number of alert emails clicked",
+          "default": 0,
+          "minimum": 0
+        },
+        "nps_score": {
+          "type": "integer",
+          "description": "Net Promoter Score (0-10)",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "nps_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When NPS was last collected"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "System metadata",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Record creation timestamp"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Record last update timestamp"
+        },
+        "version": {
+          "type": "integer",
+          "description": "Schema version",
+          "default": 1
+        },
+        "notes": {
+          "type": "string",
+          "description": "Internal notes about subscriber"
+        }
+      },
+      "required": ["created_at"]
+    }
+  }
+}

@@ -35,7 +35,26 @@ Own localization and internationalization across all Bxthre3 ventures. Adapt pro
 
 ---
 
+## TM Tool Recommendations (2026-04-01)
+
+| Tool | Use Case | Recommendation |
+|------|----------|----------------|
+| Memsource | Ventures (Irrig8, VPC, Starting 5) | Recommended — cloud-native, API-friendly |
+| Crowdin | Zoe open source community | Recommended — GitHub integration |
+| OmegaT | Backup / low-budget | Available |
+
+---
+
 ## Standup History
+
+### 2026-04-01 | Standup #2
+
+**Actions taken:**
+- Sent sync requests to Brand, Frame, Roadmap leads
+- Started TM tool research (Memsource + Crowdin recommendation)
+- Began Irrig8 Spanish cultural adaptation prep
+
+**Status:** Awaiting sync responses. TM tool selection in progress.
 
 ### 2026-03-31 | Standup #1
 
@@ -56,3 +75,7 @@ Own localization and internationalization across all Bxthre3 ventures. Adapt pro
 - Roadmap (VP Product): localization milestones in product roadmap
 
 **Next:** Awaiting kickoff sync with Brand, Frame, and Roadmap leads to align on priorities and timeline.
+
+## 🟡 P2 | locale | 2026-04-01 15:08 UTC
+
+Localization standup #2 complete. Awaiting Brand/Frame/Roadmap sync responses. TM tool research in progress. Irrig8 Spanish cultural adaptation prep started.

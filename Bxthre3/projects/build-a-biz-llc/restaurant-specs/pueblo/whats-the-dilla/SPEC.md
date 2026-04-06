@@ -1,4 +1,4 @@
-# Whats The Dilla — App Spec
+# What's The Dilla — App Spec
 ## Build-A-Biz Restaurant Spec
 
 **Last Updated**: 2026-03-30  
@@ -12,12 +12,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Business Name** | Whats The Dilla |
-| **Address** | Pueblo, CO |
-| **Phone** | [Research] |
-| **Website** | None |
-| **Social Media** | Strong branding [Research] |
-| **Owner/Manager** | [Research] |
+| **Business Name** | What's The Dilla |
+| **Address** | 4301 Walking Stick Blvd, Pueblo, CO 81001 |
+| **Phone** | (719) 553-1187 |
+| **Website** | https://www.whatsthedilla.com/ |
+| **Social Media** | Facebook, Instagram [Research] |
+| **Owner/Manager** | [Research needed] |
+| **Hours** | Daily 8am-7:40pm (varies by day) |
 
 ---
 
@@ -51,9 +52,10 @@ Trendy, playful, Mexican street food with modern twist. "What's the dill
 | Platform | Status | Details |
 |----------|--------|---------|
 | Google | Claimed | 4.6 stars |
-| Yelp | [Research] | Likely present |
 | DoorDash | Active | Primary |
 | UberEats | Active | Secondary |
+| Grubhub | Active | Third platform |
+| Postmates | Active | Fourth platform |
 
 ### Google Rating: ⭐ 4.6
 
@@ -92,6 +94,15 @@ Trendy, playful, Mexican street food with modern twist. "What's the dill
 - [ ] Food photos
 - [ ] Menu with prices
 - [ ] Birria specialty shots
+
+---
+
+## Assets Collected (Date: 2026-04-03)
+- **Logo:** ✅ COLLECTED `assets/logo.png` (colorful quesadilla design)
+- **Menu:** https://www.whatsthedilla.com/menus
+- **Hero Photo:** [Needs collection — golf course view]
+- **Brand Colors:** ✅ EXTRACTED #1A1A1A #FFC107 #4CAF50
+- **Owner Contact:** Phone: (719) 553-1187 | Website: https://www.whatsthedilla.com/ | Owner name: [Research needed]
 
 ---
 

@@ -224,14 +224,14 @@
 - **Estimated Monthly Orders**: Medium
 
 ### China Garden Chinese Restaurant — Monte Vista
-- **Address**: Monte Vista, CO
-- **Phone**: 
-- **Cuisine**: Chinese
-- **Current Platforms**: DoorDash, Uber Eats
-- **Commission Pain Estimate**: 20-25%
-- **Google Rating**: 4.6 stars (328 reviews)
-- **Why Order App**: Family-run Chinese with strong review count. Only Chinese restaurant in town - no competition for direct ordering.
-- **Estimated Monthly Orders**: Medium
+- **Address**: 819 1st Ave, Monte Vista, CO 81144  
+- **Phone**: (719) 852-2002  
+- **Cuisine**: Chinese  
+- **Current Platforms**: DoorDash, Uber Eats  
+- **Commission Pain Estimate**: 20-25%  
+- **Google Rating**: 4.6 stars (328 reviews)  
+- **Why Order App**: Family-run Chinese with strong review count. Only Chinese restaurant in town - no competition for direct ordering.  
+- **Estimated Monthly Orders**: Medium  
 
 ### Don Carlos Taco Shop #5 — Pueblo
 - **Address**: 430 S Santa Fe Ave, Pueblo, CO 81003
@@ -255,17 +255,228 @@
 
 ---
 
-## Summary - New Leads
+## NEW LEADS - April 2, 2026 (UPDATED 2026-04-03)
 
-| Location | Count | Top Priority |
-|----------|-------|--------------|
-| Colorado Springs | 4 | Rocky Bowl Bistro, Nom Nom Thai |
-| Pueblo | 3 | El Pampano Foods, Tacos Navarro |
-| Breckenridge | 1 | Whiskey Star Smokehouse |
-| Monte Vista | 2 | THAI BANGKOK, China Garden |
+### THE FALLOUT RESTAURANT & BAR — Pueblo
+- **Address**: 1227 S Prairie Ave, Pueblo, CO 81005
+- **Phone**: (719) 369-9607
+- **Cuisine**: Bar & Grill, Comfort Food, Sloppers
+- **Current Platforms**: Likely DoorDash/UberEats
+- **Commission Pain Estimate**: $8,000-12,000/year
+- **Google Rating**: 4.8 stars (270 reviews)
+- **Hours**: Tue-Sat: 12PM-12AM/2AM, Sun: 12PM-9PM, Mon: Closed
+- **Why Order App**: High rating + karaoke/bar concept = high-margin items. Sloppers (Pueblo specialty) = local loyalty. Limited hours = advance ordering valuable.
+- **Estimated Monthly Orders**: Medium
+- **Status**: SPEC created, hero photo collected, phone verified
 
-**Total New ORDER APP READY Leads: 10**
+### GAIA MASALA AND BURGER — Colorado Springs
+- **Address**: 12 S Tejon St, Colorado Springs, CO 80903
+- **Phone**: (719) 698-4629
+- **Cuisine**: Indian, Mediterranean, American, Burgers (Fusion)
+- **Current Platforms**: Likely DoorDash, UberEats (high volume = multiple platforms)
+- **Commission Pain Estimate**: $23,000-39,000/year (HIGH — 2,691 reviews!)
+- **Google Rating**: 4.9 stars (2,691 reviews) ⭐ EXCEPTIONAL
+- **Hours**: Daily 10AM-3AM (late night = huge delivery opportunity)
+- **Why Order App**: 2,691 reviews = massive volume. Late hours (3AM) = untapped delivery window. Fusion cuisine = unique positioning. Commission pain is ACUTE.
+- **Estimated Monthly Orders**: Very High
+- **Status**: SPEC created, hero photo collected, phone verified
+
+### Clean Eatz — Pueblo
+- **Address**: 201 S Union Ave, Pueblo, CO 81003
+- **Phone**: (719) 248-0095
+- **Cuisine**: Healthy, Meal Prep, Wraps
+- **Current Platforms**: Likely DoorDash
+- **Commission Pain Estimate**: $6,000-10,000/year
+- **Google Rating**: 4.8 stars
+- **Hours**: Mon-Fri: 11AM-7PM, Sat-Sun: 11AM-3PM
+- **Why Order App**: Meal prep model = recurring weekly orders. Commission destroys subscription pricing. Health-conscious customers = loyal repeat buyers.
+- **Estimated Monthly Orders**: Medium (recurring)
+- **Status**: SPEC created, hero photo collected, phone verified
+
+### Gramp's Kitchen & Catering — Pueblo
+- **Address**: 1549 E Evans Ave, Pueblo, CO 81004
+- **Phone**: (719) 994-5908
+- **Cuisine**: Mexican, Homestyle, Catering
+- **Current Platforms**: Likely DoorDash
+- **Commission Pain Estimate**: $8,000-12,000/year
+- **Google Rating**: 4.9 stars ⭐ EXCEPTIONAL
+- **Hours**: Mon-Fri: 9AM-1PM (lunch only, catering focus)
+- **Why Order App**: "Catering" = high-ticket B2B opportunity. 4.9 stars = exceptional local reputation. Limited hours = catering focus = bulk orders. Gramp = family-run story.
+- **Estimated Monthly Orders**: Medium (High-value catering)
+- **Status**: SPEC created, hero photo collected, phone verified
 
 ---
 
-*Last Updated: 2026-03-30*
+## NEW LEADS - April 4, 2026 (SPECS CREATED) 🔥
+
+### La Forchetta da Massi — Pueblo
+- **Address**: 126 S Union Ave, Pueblo, CO 81003
+- **Phone**: (719) 253-0126
+- **Cuisine**: Authentic Italian (Chef from Milan)
+- **Current Platforms**: DoorDash, Uber Eats
+- **Commission Pain Estimate**: $15,600-36,400/year (HIGH — premium pricing)
+- **Google Rating**: 4.7 stars ⭐
+- **Tripadvisor**: #3 of 218 Pueblo restaurants
+- **Founded**: 2016
+- **Hours**: Tue-Sat: 4:30PM-9:30PM (dinner only)
+- **Why Order App**: Tripadvisor #3 = destination dining. Italian = high ticket + loyal customers. Limited hours = advance ordering valuable. Chef-owned = personal brand.
+- **Estimated Monthly Orders**: Medium (High-value)
+- **Status**: SPEC created, assets needed
+
+### ChooJai Sushi Thai & Ramen — Colorado Springs
+- **Address**: 2925 W Colorado Ave, Colorado Springs, CO 80904
+- **Phone**: (720) 954-5148
+- **Cuisine**: Sushi, Thai, Ramen (Triple Asian)
+- **Current Platforms**: DoorDash, Uber Eats (likely)
+- **Commission Pain Estimate**: $19,500-46,800/year (HIGH — 4.9 stars!)
+- **Google Rating**: 4.9 stars (EXCEPTIONAL) ⭐⭐
+- **Special Feature**: AYCE (All You Can Eat) Sushi
+- **Why Order App**: 4.9 stars = exceptional quality. Triple cuisine = broad appeal. AYCE drives volume. Sushi customers = high lifetime value.
+- **Estimated Monthly Orders**: High
+- **Status**: SPEC created, assets needed
+
+### Don Carlos Taco Shop #5 — Pueblo
+- **Address**: 430 S Santa Fe Ave, Pueblo, CO 81003
+- **Phone**: (719) 934-4271
+- **Cuisine**: Mexican / Fast Food / Tacos
+- **Current Platforms**: DoorDash
+- **Commission Pain Estimate**: $18,720-46,800/year (HIGH — volume)
+- **Google Rating**: 4.6 stars (100+ reviews)
+- **Hours**: Daily 6AM-10PM (16 hours!)
+- **Why Order App**: #5 in chain = proven model. EXTENDED HOURS = huge delivery window. Late night till 10PM = untapped market. Multiple locations = potential for rollout.
+- **Estimated Monthly Orders**: High
+- **Status**: SPEC created, assets needed
+
+---
+
+## NEW LEADS - April 5, 2026 (Restaurant Scout Agent) 🔥
+
+### Summa — Colorado Springs
+- **Address**: Colorado Springs, CO (Research ongoing)
+- **Phone**: Research needed
+- **Cuisine**: Global Comfort Cuisine
+- **Current Platforms**: Likely DoorDash/UberEats (high rating = high volume)
+- **Commission Pain Estimate**: $10,000-18,000/year
+- **Google Rating**: 4.7 stars
+- **Why Order App**: Global comfort cuisine = broad appeal. 4.7 stars indicates quality + volume.
+- **Estimated Monthly Orders**: Medium-High
+- **Status**: Initial research complete
+
+### Lazy Dog Restaurant & Bar — Colorado Springs
+- **Address**: Colorado Springs, CO (Research ongoing)
+- **Phone**: Research needed
+- **Cuisine**: Global Comfort Fare, Dog-Friendly
+- **Current Platforms**: Likely DoorDash/UberEats
+- **Commission Pain Estimate**: $12,000-22,000/year
+- **Google Rating**: 4.7 stars
+- **Why Order App**: Dog-friendly concept = family appeal. Global comfort menu = high reorder rate.
+- **Estimated Monthly Orders**: Medium-High
+- **Status**: Initial research complete
+
+### 503W — Colorado Springs
+- **Address**: Colorado Springs, CO (Research ongoing)
+- **Phone**: Research needed
+- **Cuisine**: Gastropub, Asian-Fusion
+- **Current Platforms**: Likely DoorDash/UberEats
+- **Commission Pain Estimate**: $10,000-20,000/year
+- **Google Rating**: 4.7 stars
+- **Why Order App**: Asian-fusion gastropub = millennial target demo. High check averages.
+- **Estimated Monthly Orders**: Medium
+- **Status**: Initial research complete
+
+### Tacos Fuego — Pueblo
+- **Address**: Pueblo, CO (Research ongoing)
+- **Phone**: Research needed
+- **Cuisine**: Mexican, Tacos, Cocktails
+- **Current Platforms**: Likely DoorDash
+- **Commission Pain Estimate**: $8,000-14,000/year
+- **Google Rating**: 4.5 stars
+- **Why Order App**: Outdoor seating + cocktails = established local presence. Tacos = high frequency orders.
+- **Estimated Monthly Orders**: Medium
+- **Status**: Initial research complete
+
+### Chop — Pueblo
+- **Address**: Pueblo, CO (Research ongoing)
+- **Phone**: Research needed
+- **Cuisine**: American, Lunch & Dinner
+- **Current Platforms**: Likely DoorDash/UberEats
+- **Commission Pain Estimate**: $10,000-18,000/year
+- **Google Rating**: 4.7 stars
+- **Why Order App**: High rating + dedicated lunch/dinner service = established customer base.
+- **Estimated Monthly Orders**: Medium
+- **Status**: Initial research complete
+
+### D C's On B Street — Pueblo
+- **Address**: Pueblo, CO (Research ongoing)
+- **Phone**: Research needed
+- **Cuisine**: American, Lunch & Dinner
+- **Current Platforms**: Likely DoorDash
+- **Commission Pain Estimate**: $8,000-15,000/year
+- **Google Rating**: 4.6 stars
+- **Why Order App**: Consistent lunch/dinner service = predictable order volume. Good candidate for loyalty features.
+- **Estimated Monthly Orders**: Medium
+- **Status**: Initial research complete
+
+---
+
+## NEW LEADS - April 6, 2026 (Restaurant Scout Agent) 🔥
+
+### Tokki — Colorado Springs
+- **Address**: 182 E Cheyenne Mountain Blvd, Colorado Springs, CO 80906
+- **Phone**: (719) 375-0185
+- **Cuisine**: Asian Fusion / Tapas / Ramen / Bento
+- **Current Platforms**: DoorDash, ToastTab (direct)
+- **Commission Pain Estimate**: $10,000-20,000/year
+- **Google Rating**: 4.8 stars (157+ reviews) ⭐ HIGH
+- **Hours**: Lunch 11AM-2PM, Dinner 5PM-9PM/10PM (varies by day)
+- **Why Order App**: High-end Asian fusion with bento/lunch specials. Has ToastTab but losing DoorDash customers. Dual ordering systems = customer confusion.
+- **Estimated Monthly Orders**: Medium-High
+- **Status**: NEW LEAD — Needs spec creation
+
+### The Sunflour Cafe — Monte Vista
+- **Address**: 278 US 285, Monte Vista, CO 81144
+- **Phone**: (719) 852-6945
+- **Email**: sunflower68@gmail.com
+- **Cuisine**: Breakfast, Lunch, Bakery, Catering
+- **Current Platforms**: ToastTab (direct ordering), Cake.net
+- **Commission Pain Estimate**: $6,000-12,000/year
+- **Google Rating**: 4.7 stars (413 reviews) ⭐
+- **Hours**: Mon-Fri 7AM-2PM, Sat 7AM-12PM (breakfast only), Sun: Closed
+- **Why Order App**: 413 reviews = very popular local spot. Catering focus = B2B opportunity. Limited weekend hours = pre-order value. Strong bakery/cafe brand.
+- **Estimated Monthly Orders**: Medium (catering = high value)
+- **Status**: NEW LEAD — Needs spec creation
+
+### Quincy's Steak & Spirits — Monte Vista
+- **Address**: 138 Adams St, Monte Vista, CO 81144
+- **Phone**: (719) 852-2233
+- **Cuisine**: Steakhouse, American, Spirits
+- **Current Platforms**: DoorDash, Uber Eats, Grubhub (3 PLATFORMS!)
+- **Commission Pain Estimate**: $18,000-32,000/year (HIGH — 904 reviews!)
+- **Google Rating**: 4.4 stars (904 reviews) — Exceptional review volume
+- **Hours**: Tue-Sat: 5PM-8PM (dinner only)
+- **Owner**: Joy (and husband) — purchased in 2024 per Facebook
+- **Why Order App**: 904 reviews in small town = destination restaurant. 3 platforms = triple commission pain! Steakhouse = high ticket = high commission in absolute dollars. Limited hours = advance reservations/ordering valuable.
+- **Estimated Monthly Orders**: Medium-High (high value per order)
+- **Status**: NEW LEAD — Needs spec creation
+
+---
+
+## Summary - ALL LEADS (Updated 2026-04-06)
+
+| Location | Count | Top Priority |
+|----------|-------|--------------|
+| Colorado Springs | 8 | Rocky Bowl Bistro, Nom Nom Thai, GAIA MASALA, Momo Korean, ChooJai Sushi, Tokki |
+| Pueblo | 12 | El Pampano Foods, Tacos Navarro, THE FALLOUT, Presley's, La Forchetta, Don Carlos #5 |
+| Breckenridge | 1 | Whiskey Star Smokehouse |
+| Monte Vista | 8 | THAI BANGKOK (5.0★), China Garden, The Sunflour Cafe, Quincy's Steakhouse |
+
+**Total Active Leads: 29**
+**Tier 1 (4.5+ stars): 17**
+**Tier 2 (4.0-4.4 stars): 7**
+**Tier 3 (New): 5**
+**Specs Created: 20**
+**Assets Complete: 12**
+
+---
+
+*Last Updated: 2026-04-06*

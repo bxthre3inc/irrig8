@@ -3,7 +3,7 @@
 **Role:** Pitch & Presentation Specialist — Bxthre3 Inc / AgentOS Finance Division
 **Reports to:** Reach (VP Investor Outreach)
 **Status:** ACTIVE
-**Last Updated:** 2026-03-31 09:05 UTC
+**Last Updated:** 2026-04-01 15:05 UTC
 
 ---
 
@@ -22,7 +22,7 @@ Own every investor-facing presentation across Bxthre3 ventures — narrative, vi
 ### Irrig8 (Priority: Critical)
 | Deliverable | Status | Notes |
 |---|---|---|
-| 1-pager (executive summary) | ⚠️ GAP | Archived FarmSense doc exists — needs Irrig8 rebrand + update |
+| 1-pager (executive summary) | ⚠️ GAP | Archived FarmSense content available — needs Irrig8 rebrand |
 | 10-slide seed/Series A deck | ⚠️ GAP | No deck exists |
 | 20-slide deep-dive deck | ⚠️ GAP | No deck exists |
 | Due diligence presentation | ⚠️ GAP | No DD doc exists |
@@ -33,14 +33,14 @@ Own every investor-facing presentation across Bxthre3 ventures — narrative, vi
 ### Starting 5 (High Priority)
 | Deliverable | Status | Notes |
 |---|---|---|
-| SaaS pitch deck (15-20 slides) | ⚠️ GAP | Project directory missing at `the-starting5-project/` |
+| SaaS pitch deck (15-20 slides) | ⚠️ GAP | Project at `the-starting5/` — needs directory creation |
 | Demo day deck | ⚠️ GAP | — |
 | Angel investor deck (condensed) | ⚠️ GAP | — |
 
 ### Valley Players Club (Medium Priority)
 | Deliverable | Status | Notes |
 |---|---|---|
-| Gaming investor deck (compliance-forward) | ✅ EXISTING | `VPC_INVESTOR_PITCH.md` — solid doc, $75K raise, SAFE @ $500K cap |
+| Gaming investor deck (compliance-forward) | ✅ EXISTING | `VPC_INVESTOR_PITCH.md` — solid, $75K raise, SAFE @ $500K cap |
 | Strategic partner pitch | ⚠️ GAP | No partner-specific doc |
 | Casino operator deck | ⚠️ GAP | No casino operator doc |
 
@@ -83,38 +83,36 @@ Own every investor-facing presentation across Bxthre3 ventures — narrative, vi
 
 ---
 
-## Daily Standup — 2026-03-31
-
-### Status: READY TO WORK
-
-**Context absorbed:**
-- INBOX system operational
-- VPC investor pitch is the strongest existing asset (well-structured, complete numbers)
-- Irrig8 financials are extensive (FINANCIALS-V2.md — 7 revenue streams, global scale)
-- FarmSense brand retired 2026-03-23 → Irrig8 is canonical
-- VPC equity split: 500,001 / 499,999 confirmed
-
-**Immediate priorities (today):**
-1. Create Irrig8 1-pager — bridge archived FarmSense content into Irrig8 brand
-2. Flag Starting 5 project directory missing — needs resolution before deck work
-3. Surface VPC pitch as the template pattern for other ventures
-
-**Blockers:**
-- None for pitch work itself
-- Starting 5 project path ambiguity (`the-starting5-project/` vs `Bxthre3/the-starting5-project/`) — need confirmation
-
----
-
 ## INBOX Log
 | Date | Priority | Subject | Status |
 |---|---|---|---|
 | 2026-03-30 | — | Agent initialized | NEW |
 | 2026-03-31 | P2 | Daily standup — portfolio audit complete | READY |
+| 2026-04-01 | P3 | Scheduled activation — context loaded | ACTIVE |
 
 ---
 
 ## Notes
 - FarmSense retired 2026-03-23. Product is now **Irrig8** only.
 - VPC equity split: 500,001 / 499,999 — confirmed canonical.
-- AgentOS/AgentOS native project paths confirmed: `projects/the-agentos-project/`, `projects/the-agentos-native/`
-- Starting 5 project path ambiguous — needs confirmation from brodiblanco
+- VPC investor pitch is the template benchmark for other venture decks
+- FINANCIALS-V2.md is the financial backbone for Irrig8 investor materials
+- Starting 5 project path: `the-starting5/` (not `the-starting5-project/`)
+
+---
+
+## Action Queue (Priority Order)
+
+### Immediate (Today)
+1. **Irrig8 1-pager** — Create from archived FarmSense content + FINANCIALS-V2.md
+2. **Starting 5 project dir** — Create `Bxthre3/projects/the-starting5/` if missing
+
+### This Week
+3. **Irrig8 10-slide deck** — Seed/Series A format
+4. **Competitive battlecard** — Cross-venture competitive analysis
+5. **Due diligence FAQ** — Universal investor questions
+
+### Next Sprint
+6. **VPC strategic partner deck** — Casino operator focused
+7. **Starting 5 angel deck** — Condensed 8-slide version
+8. **Board presentation template** — Modular, venture-agnostic

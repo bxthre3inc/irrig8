@@ -1,37 +1,38 @@
-# Theo — Agent INBOX
+# THEO INBOX — April 6, 2026
 
+## 🟡 P1 QUEUED: Investor Protector Deployment
 
-**Priority:** P1
-**Status:** complete
-**ETA:** 30 minutes
+**Status:** BLOCKED until Iris Day 4 (API + UI ready)
 
-## Status
+### Day 8-10: Deployment (3 days)
 
-- Status: complete
-- Completed: 2026-03-23
-- Blockers: None
+| Task | Day | Status |
+|------|-----|--------|
+| Create zo.space route `/investor` | 8 | ⏳ WAITING |
+| Create API route `/api/investor/metrics` | 8 | ⏳ WAITING |
+| Configure public access | 9 | ⏳ WAITING |
+| Test end-to-end | 10 | ⏳ WAITING |
 
-## Results
-
-**Project ID:** ER26-FS-01
-**Document Version:** 2.0 (Revalidated March 24, 2026)
-
-**Signature verified — already present in Approvals table:**
+**Deployment Spec:**
 ```
-| Field Systems Engineer | Theo | Approved | 2026-03-23 |
+Route: /investor
+Type: page
+Public: true
+Auth: none (investor-facing)
+
+Route: /api/investor/metrics
+Type: api
+Public: true
+Response: Aggregated JSON from data/*.json
 ```
 
-No amendment required. Signature line was present and correctly formatted upon review.
+**Unblock Condition:**
+- Dev: `/api/investor/metrics` endpoint returning valid JSON
+- Iris: `/investor` page component ready for route
 
-**Document Review Summary:**
-- Technical approach (Regression Kriging + SDI-12 + Sentinel-2 NDVI) — sound
-- Accuracy claims properly caveated as engineering projections (not empirical field data)
-- Validation timeline on track: field deployment May 1, 2026, validation start May 15, 2026
-- AgentOS digital workforce section (Section 4) — adequately documented
-- Budget request ($830K total) — consistent with scope
-- Supporting documents complete: Field Validation Protocol, Cybersecurity Risk Assessment, Technical Decision Log, AgentOS Workforce Evidence
-
-**Recommendation:** Approved for submission.
+**Sovereign Trigger:** Message "DEPLOY INVESTOR PROTECTOR" → begin Day 8 tasks
 
 ---
-*Managed by AgentOS Runner v1.1*
+
+*Last update: April 6, 2026 — 00:35 UTC*  
+*Blocked by: Iris (UI) + Dev (API)*

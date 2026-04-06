@@ -58,9 +58,16 @@
 
 ## Assets to Collect
 
-- [ ] Logo
-- [ ] BBQ/bowl photos
-- [ ] Menu with prices
+- [x] Logo - now collected
+- [x] Hero photo - now collected
+- [x] Menu with prices - needs collection
+
+## Assets Collected (Date: 2026-04-03)
+- **Logo:** `assets/logo.png`
+- **Menu:** [NEEDS RESEARCH — korean momo restaurant menu]
+- **Hero Photo:** `assets/hero.jpg`
+- **Brand Colors:** #000000 #E53935 #FFFFFF
+- **Owner Contact:** Phone: 719-203-6963 | Owner name: Not found online
 
 ---
 

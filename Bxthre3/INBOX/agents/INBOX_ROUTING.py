@@ -38,8 +38,8 @@ PRIORITY_PALETTE = {
     "P3": "🟢 P3",
 }
 
-KNOWN_AGENTS = ["maya", "raj", "casey", "drew", "theo", "taylor", "sam", "iris", "sentinel", "zoe", "pulse", "grader", "chronicler", "press", "shelf", "pipeline", "rank"]
-KNOWN_DEPTS = ["engineering", "product", "grants", "legal", "growth", "corp-dev", "finance", "warehouse", "seo-sem"]
+KNOWN_AGENTS = ["maya", "raj", "casey", "drew", "theo", "taylor", "sam", "iris", "sentinel", "zoe", "pulse", "grader", "chronicler", "press", "shelf", "pipeline", "rank", "purchase", "source", "balance", "atlas"]
+KNOWN_DEPTS = ["engineering", "product", "grants", "legal", "growth", "corp-dev", "finance", "warehouse", "seo-sem", "procurement", "source", "treasury"]
 
 
 def ensure_dirs():

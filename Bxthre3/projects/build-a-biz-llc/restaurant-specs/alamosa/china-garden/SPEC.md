@@ -1,10 +1,21 @@
 # China Garden Chinese Restaurant — App Spec
 ## Build-A-Biz Restaurant Spec
 
-**Last Updated**: 2026-03-30  
-**Location**: Alamosa, CO  
+**Last Updated**: 2026-04-01  
+**Location**: 819 1st Ave, Monte Vista, CO 81144  
 **Status**: Lead — Priority Tier 1  
 **Recommended Template**: modern-minimal
+
+---
+
+## ⚠️ LOCATION CORRECTION
+
+The restaurant is located in **Monte Vista, CO** (not Alamosa as previously listed).
+
+| Corrected Field | Value |
+|----------------|-------|
+| **Address** | 819 1st Ave, Monte Vista, CO 81144 |
+| **Phone** | (719) 852-2002 |
 
 ---
 
@@ -13,10 +24,11 @@
 | Field | Value |
 |-------|-------|
 | **Business Name** | China Garden Chinese Restaurant |
-| **Address** | Alamosa, CO |
-| **Phone** | [Research] |
-| **Website** | None |
+| **Address** | 819 1st Ave, Monte Vista, CO 81144 |
+| **Phone** | (719) 852-2002 |
+| **Website** | None found |
 | **Social Media** | [Research] |
+| **Hours** | Mon/Wed-Sun: 11AM-9PM, Tue: Closed |
 
 ---
 
@@ -58,17 +70,28 @@
 
 ---
 
-## Assets to Collect
+## Assets — Collection Status
 
-- [ ] Logo
-- [ ] Menu item photos
-- [ ] Full menu with prices
+| Asset | Status | Path/Source |
+|-------|--------|-------------|
+| Logo | ✅ COLLECTED | `assets/logo.png` |
+| Hero Photo | ✅ COLLECTED | `assets/hero.jpg` |
+| Menu | ✅ COLLECTED | `assets/menu.md` |
+| Brand Colors | ✅ EXTRACTED | `assets/brand-colors.json` |
+| Owner Contact | ⚠️ PARTIAL | Phone: (719) 852-2002 |
+
+## Assets Collected (Date: 2026-04-05)
+- **Logo:** `assets/logo.png` (storefront signage)
+- **Menu:** `assets/menu.md`
+- **Hero Photo:** `assets/hero.jpg`
+- **Brand Colors:** #D32F2F #FFC107 #FFFFFF
+- **Owner Contact:** Phone: (719) 852-2002 | Owner name: Not found online [Research ongoing]
 
 ---
 
 ## Notes / Lore
 
-Family-run Chinese with 328 reviews = established customer base. Only Chinese in Alamosa = no direct competition for direct ordering. Chinese food = very high reorder rate.
+Family-run Chinese with 328 reviews = established customer base. Only Chinese in Monte Vista area = no direct competition for direct ordering. Chinese food = very high reorder rate.
 
 ---
 

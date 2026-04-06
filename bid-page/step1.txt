@@ -1,0 +1,22 @@
+import { useState, useEffect } from "react";
+import { ChevronRight } from "lucide-react";
+
+export default function Bid() {
+  const [step, setStep] = useState(1);
+  const [pay, setPay] = useState("phased");
+  const [opts, setOpts] = useState({ h: true, s: true, c: true, w: false, p: false });
+  const [total, setTotal] = useState(10000);
+
+  useEffect(() => {
+    let t = 10000;
+    if (opts.h) t += 500;
+    if (opts.s) t += 800;
+    if (opts.c) t += 800;
+    if (opts.w) t += 400;
+    if (opts.p) t = Math.round(t * 1.35);
+    if (pay === "once") t = Math.round(t * 0.95);
+    setTotal(t);
+  }, [opts, pay]);
+
+  const toggle = k => setOpts(p => ({ ...p, [k]: !p[k] }));
+  const fmt = n => n.toLocaleString();

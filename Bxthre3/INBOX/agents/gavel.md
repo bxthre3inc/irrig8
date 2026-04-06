@@ -1,48 +1,82 @@
 # Gavel — Regulatory Affairs Lead
 **Bxthre3 Inc | AgentOS Compliance Department**
 
-## Daily Standup — March 31, 2026 (8:15 AM)
+## Daily Standup — April 1, 2026 (8:15 AM)
 
 ### Status: ACTIVE
 
 ---
 
-### 🚨 Critical Development: Sweepstakes Casino Ban Wave
+## 🔴 P1 — VPC: Sage Legal Approval STILL BLOCKING LAUNCH
 
-**News today:** Indiana HB 1052 signed into law effective July 1, 2026. Minnesota, Virginia, Maryland, Mississippi advancing bans. Nine states total considering sweepstakes restrictions in 2026 legislative session.
+**No change from yesterday.** Documents drafted and ready. $1,500–$3,000 engagement approved but not executed.
 
-**Impact to VPC:**
-- 47-state operational assumption is NO LONGER VALID
-- Must add Indiana to prohibited list (effective July 1, 2026)
-- Virginia, Minnesota, Maryland require monitoring — add to prohibited if bills pass
-- VPC addressable market at launch may drop below 40 states
-
-**Action required:** Flag for Sage Legal; update VPC prohibited jurisdictions list.
+**Every day of delay = launch pushed further past March 31 deadline.**
 
 ---
 
-### P1 — VPC: Sage Legal Approval STILL PENDING
+## 🚨 P1 — VPC: Addressable Market Shrinking
 
-- Documents drafted and ready for review
-- $1,500–$3,000 engagement approved but not executed
-- Every day of delay pushes launch past March 31
+**Indiana HB 1052 signed into law March 31.** Effective July 1, 2026.
 
-### P2 — Irrig8: Water Court (98 days remaining)
+**VPC prohibited jurisdictions now:**
+- WA, ID, Guam, PR, USVI (permanent)
+- **Indiana** — effective July 1, 2026
 
-- No field data, no expert witness, no calibration certs
-- Grant ER26-FS-01 deadline was March 26, 2026
+**Under active ban progress (add to prohibited list if bills pass):**
+- Virginia (HB 161 — regulations by Sept 2026)
+- Minnesota (SF 4474 — advanced March 25)
+- Maryland (SB112/HB295 — criminal penalties)
 
-### P2 — Starting 5: AI Disclosure
+**Impact:** 47-state assumption is dead. Launch market may be **< 40 states** if MN/MD pass.
 
-- Gap analysis needed for EU AI Act, CO/UT/CA/IL state AI laws
-- BIPA vs BSA biometric data retention conflict unresolved
+**Action:** Flag for Sage Legal — ban wave changes legal opinion scope. Counsel needs to know.
 
-### P2 — Zoe/AgentOS: Open Source Licensing
+---
 
-- License review needed (AGPL vs GPL implications)
+## P2 — Irrig8: Water Court (97 days remaining)
+
+No field data. No expert witness. No calibration certs. Grant ER26-FS-01 deadline missed (was March 26).
+
+**Must act this week:**
+1. Retain hydrology expert (4–6 week lead time on expert report)
+2. Source NIST-traceable sensors
+3. Deploy minimum viable pilot in SLV
+
+---
+
+## P2 — Starting 5: AI Disclosure Gap Analysis
+
+**EU AI Act:** High-risk system disclosures, transparency, human oversight — what applies to AI co-founders?
+**CO AI Act (HB 23-1057):** Algorithmic discrimination disclosures, annual bias audits
+**UT/CA/IL AI laws:** Consumer protection disclosures
+
+**BIPA conflict still unresolved:** Biometric data (facial recognition for KYC) — 3-year BIPA retention vs 5-year BSA requirement.
+
+---
+
+## P2 — Zoe / AgentOS: Open Source Licensing
+
+License review needed — AGPL vs GPL implications for third-party API callers. AGPL network use = distribution.
+
+---
+
+## P2 — Data Privacy (CCPA/GDPR)
+
+**Starting 5 + VPC:** Consumer data collection, lawful basis, retention schedules. Privacy Policy draft exists but needs gap analysis against current regulatory requirements.
+
+---
+
+## Pending Decisions
+
+| Decision | Owner | Urgency |
+|----------|-------|---------|
+| Sage Legal engagement ($1,500–$3,000) | brodiblanco | 🔴 IMMEDIATE |
+| Indiana geo-block implementation | Engineering | July 1 deadline |
+| Water rights counsel engagement | Legal | This week |
+| Hydrology expert retainer | Legal | This week |
 
 ---
 
 **Reports to:** Counsel (Legal), Anchor (CRO)
-**Location:** `Bxthre3/INBOX/departments/regulatory.md`
-**Last Updated:** 2026-03-31 09:05 UTC
+**Last Updated:** 2026-04-01 15:05 UTC

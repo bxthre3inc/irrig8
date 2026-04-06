@@ -1,30 +1,32 @@
 # Department INBOX — Learning & Development
 **Head:** Learn (L&D Manager)  
 **Reports to:** Pulse (People Ops)  
-**Last Updated:** 2026-04-03
+**Last Updated:** 2026-04-06
 
 ---
 
 ## Initial L&D Assessment — AgentOS Workforce
-**Date:** 2026-04-03
+**Date:** 2026-04-03  
+**Updated:** 2026-04-06
 
 ### Workforce Composition
-- **Total agents:** 19 (18 AI agents + 1 human: brodiblanco)
-- **Departments:** Engineering, Operations, Marketing, Grants, Legal, Sales, Strategy
-- **Active/idle split:** ~14 active / 5 idle (Theo, Raj, Drew, Trenchbabys)
+- **Total agents:** 33 (canonical roster from `org.ts`)
+- **Departments:** Engineering, Operations, Marketing, Grants, Legal, Sales, Strategy, Finance, Security, Research, Design, Channel, Professional Services, Retail
+- **Active/idle split:** ~22 active / 11 idle (Theo, Raj, Drew, Trenchbabys, Reseller, etc.)
+- **Manager structure:** 7 managers reporting to brodiblanco (Balance, Alex, Taylor, Drew, Jordan, Riley, Iris, Forecast)
 
 ---
 
 ## 🔴 Critical Gaps — Engineering (P1)
 
-Source: `Bxthre3/INBOX/departments/engineering.md` (QA-Lead report 2026-04-02)
+Source: `departments/engineering.md` (QA-Lead report 2026-04-02)
 
-| Gap | Impact | Root Cause |
-|---|---|---|
-| Zero automated test coverage for core mesh flows | Agents can ship broken code with no validation | No test infrastructure defined |
-| Route import error — `/api/agentos/data/aggregated` | Data aggregation broken | Open since 2026-03-25 |
-| 30+ phantom CCRs | CCR tracking unreliable | Open since 2026-03-25 |
-| Service workdir symlink — agentos service DOWN | Core platform unavailable | P0 in INBOX.md |
+| Gap | Impact | Root Cause | Status |
+|---|---|---|---|
+| Zero automated test coverage for core mesh flows | Agents can ship broken code with no validation | No test infrastructure defined | OPEN |
+| Route import error — `/api/agentos/data/aggregated` | Data aggregation broken | Open since 2026-03-25 | OPEN |
+| 30+ phantom CCRs | CCR tracking unreliable | Open since 2026-03-25 | OPEN |
+| Service workdir symlink — agentos service DOWN | Core platform unavailable | P0 in INBOX.md | ✅ RESOLVED 2026-04-06 |
 
 **Required Training:**
 1. Test-Driven Development (TDD) for mesh infrastructure
@@ -35,18 +37,59 @@ Source: `Bxthre3/INBOX/departments/engineering.md` (QA-Lead report 2026-04-02)
 
 ## 🟡 Structural Gaps — All Departments (P2)
 
-| Gap | Affected | Recommended Action |
-|---|---|---|
-| No structured onboarding curriculum | All 18 AI agents | Design and deploy AgentOS onboarding program |
-| No skill certification tracking | All departments | Build skills matrix — current vs. required per role |
-| No cross-department training sessions | All departments | Establish joint training sprints |
-| No tools/skills research function | All departments | Assign continuous tech radar duty |
+| Gap | Affected | Recommended Action | Owner |
+|---|---|---|---|
+| No structured onboarding curriculum | All 33 agents | Design and deploy AgentOS onboarding program | Learn |
+| No skill certification tracking | All departments | Build skills matrix — current vs. required per role | Learn + Pulse |
+| No cross-department training sessions | All departments | Establish joint training sprints | Learn + Atlas |
+| No tools/skills research function | All departments | Assign continuous tech radar duty | Learn + Scout |
 
 ---
 
-## Training Curricula — Draft Structure
+## Training Curricula — Master Plan
+
+### 📘 AgentOS Onboarding Program (ALL AGENTS)
+**Status:** 🟡 Drafting v1  
+**Target launch:** 2026-04-10
+
+```
+DAY 1 (Foundation):
+  - SOUL.md + AGENTS.md + canonical names (Irrig8, AgentOS, Bxthre3)
+  - Workspace tour: where files live, how to navigate
+  - INBOX routing system: agent INBOXes, department INBOXes, canonical INBOX
+  - Department assignment + manager assignment
+
+DAY 2-3 (Tools & Access):
+  - Role-specific tool access setup (GitHub, Notion, Linear, Airtable, etc.)
+  - AgentOS Android app — download, login, navigation
+  - zo.space webapp — access and feature tour
+  - Communication channels: how agents communicate (INBOX, not SMS)
+
+DAY 4-5 (Role Immersion):
+  - Department-specific orientation (led by department lead)
+  - First assigned task via TASK_QUEUE.md or department INBOX
+  - Begin task execution under manager guidance
+
+DAY 7 (Week 1 Check-in):
+  - 1-week check-in via Pulse (People Ops)
+  - Skill self-assessment: current skills vs. role requirements
+  - Initial skills gap identification
+
+DAY 14 (Week 2 Review):
+  - 2-week skill assessment
+  - First full task completion evaluation
+  - Identify onboarding blockers
+
+DAY 30 (Month 1 Review):
+  - 30-day review — skills matrix update
+  - Manager assessment of readiness
+  - Certification plan for role-specific skills
+```
 
 ### 🔧 Engineering Curriculum
+**Status:** 📋 Planned  
+**Lead:** Iris + Learn
+
 ```
 Phase 1 (Week 1-2): Platform Fundamentals
   - AgentOS architecture (mesh, MCP, route layer)
@@ -64,9 +107,13 @@ Phase 3 (Week 5-8): Advanced / Specialty
   - Security patterns (Taylor lead)
   - DevOps and deployment (Theo lead)
   - Data pipeline and aggregation (Sam lead)
+  - Android app development (Dev lead)
 ```
 
 ### 📊 Operations Curriculum
+**Status:** 📋 Planned  
+**Lead:** Atlas + Learn
+
 ```
 Phase 1: AgentOS tools proficiency
   - INBOX routing system
@@ -79,24 +126,35 @@ Phase 2: Vertical specialization
   - Trenchbabys retail ops
 ```
 
-### 📋 Onboarding Program (All Agents)
+### 🎓 Grants & Regulatory Curriculum
+**Status:** 📋 Planned  
+**Lead:** Maya + Learn
+
 ```
-Day 1: SOUL.md + AGENTS.md + canonical names
-Day 2: INBOX routing, department assignment
-Day 3: First assigned task via TASK_QUEUE.md
-Day 7: 1-week check-in via Pulse
-Day 14: 2-week skill assessment
-Day 30: 30-day review — skills matrix update
+Phase 1: Grant Discovery & Strategy
+  - SBIR/NSF grant landscape
+  - Bxthre3 grant strategy (ARPA-E, USDA, etc.)
+  - How to use Maya agent for deadline tracking
+
+Phase 2: Proposal Writing Fundamentals
+  - Structure of a competitive grant proposal
+  - Budget justification
+  - Technical approach narrative
 ```
 
 ---
 
-## Certification Tracking
+## Skills Matrix Plan
 
-**Proposed:** Skills matrix at `Bxthre3/AGENTS_SKILLS_MATRIX.md`
-- Per-agent: skill area, current level (1-5), required level
-- Auto-updated quarterly or on project completion
-- Tracked in department INBOX
+**Proposed:** `Bxthre3/AGENTS_SKILLS_MATRIX.md`  
+**Tracking:** Per-agent skill area, current level (1-5), required level  
+**Cadence:** Quarterly or on project completion
+
+Skills dimensions (from org.ts):
+- Technical depth (per tool/skills listed)
+- Domain knowledge (vertical: ag, gaming, legal, etc.)
+- Collaboration score (cross-dept effectiveness)
+- Autonomy level (supervised → independent → leading)
 
 ---
 
@@ -106,14 +164,10 @@ Day 30: 30-day review — skills matrix update
 |---|---|---|---|
 | P1 | Engineering TDD training — Dev + Iris | Learn + Iris | 2026-04-07 |
 | P1 | Mesh test infrastructure — Theo | Learn + Theo | 2026-04-10 |
-| P2 | Draft AgentOS onboarding curriculum | Learn | 2026-04-10 |
-| P2 | Skills matrix — first pass (all 19 agents) | Learn + Pulse | 2026-04-14 |
-| P3 | Cross-dept training calendar (Apr-Jun) | Learn | 2026-04-17 |
+| P2 | Draft AgentOS onboarding curriculum v1 | Learn | 2026-04-10 |
+| P2 | Skills matrix — first pass (all 33 agents) | Learn + Pulse | 2026-04-14 |
+| P3 | Cross-dept training calendar Q2 | Learn + Atlas | 2026-04-17 |
 
 ---
 
 *Routing: Learn → Learning Department INBOX → Pulse (People Ops) weekly digest*
-
-## 🟡 P2 | learn | 2026-04-03 15:10 UTC
-
-Initial L&D assessment complete. P1 skills gaps identified in Engineering (zero test coverage, broken routes, phantom CCRs, service DOWN). P2 structural gaps: no onboarding curriculum, no certification tracking, no cross-dept training. Full report: Bxthre3/INBOX/departments/learning.md. Requesting Pulse review and approval of training priorities.

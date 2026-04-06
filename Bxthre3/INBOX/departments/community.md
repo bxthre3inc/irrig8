@@ -41,4 +41,19 @@
 
 ## Last Updated
 
-2026-04-02
+2026-04-03 — first standup complete, department INBOX structured
+
+## Platform Tradeoffs (Draft — Awaiting Brand)
+
+| Platform | Pros | Cons | Best For |
+|----------|------|------|---------|
+| Discord | Real-time chat, rich integrations, free, developer-heavy | Moderation overhead | Zoe OSS, VPC, Developer community |
+| Circle | Professional, threaded discussions, newsletter-native | Paid, less dev-centric | Starting 5, Irrig8 |
+| Email list (Substack/ConvertKit) | Direct to inbox, monetization built-in | One-way, low engagement | Bxthre3 Corporate, Investor updates |
+| Forum (Discourse) | Best archive/search, community-owned | Setup/maintenance cost | Irrig8 farmers (asynchronous) |
+
+**Tribe recommendation:** Hybrid — Discord for dev/OSS (Zoe, VPC), Circle for founders (Starting 5), email for corporate/investors (Bxthre3).
+
+---
+
+*Community Department — Tribe*

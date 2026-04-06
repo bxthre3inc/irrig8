@@ -92,3 +92,119 @@ None filed yet.
 ---
 
 *Initialized: 2026-03-30*
+
+---
+
+## 2026-04-02 — Standup Complete
+
+- Standup doc: `solutions-engineering-standup-2026-04-02.md`
+- zo.space FAILED at 14:20 UTC — demo environments impacted (Irrig8, AgentOS)
+- 7 P1 deals in technical close queue
+- Top priority: (1) zo.space recovery, (2) USDA NRCS GO/NO-GO, (3) Planet Labs API access
+- VPC Sage (VPC-CP-001) mark-up still overdue from 2026-03-27
+- Next standup: 2026-04-03 8:15 AM MT
+
+---
+
+## 2026-04-03 09:10 AM MT — Standup Complete
+
+- **Time:** 9:10 AM MT (15:10 UTC)
+- **Posture:** Online — operating
+
+### Pre-Standup Check
+
+| Item | Status |
+|------|--------|
+| zo.space (demo envs) | 🟢 Operational |
+| PostgreSQL (P1 outage) | ❌ PULSE flagged — see INBOX.md |
+| AgentOS API | 🟢 Health OK |
+| VPC CI | 🟡 2 failures pending |
+
+### Today's Priority Queue
+
+1. **IRR-DIST-007** — USDA NRCS EQIP vendor enrollment — GO/NO-GO this week
+2. **IRR-DIST-006** — Planet Labs API dev access
+3. **IRR-FARM-001** — Maverick Potato Co technical discovery (2,500 acres)
+4. **IRR-FARM-002** — Skyline Potato Co technical discovery (3,000 acres)
+5. **VPC-CP-001** — Sage cash partnership structure review
+
+### Blockers
+
+| Blocker | Owner | Impact |
+|---|---|---|
+| PostgreSQL outage | Pulse/System | Demo envs may be impacted |
+| VPC CI failures | Drew | Cannot demo VPC |
+| BUILDBZ 8 TBDs | brodiblanco | Spec advancement blocked |
+
+### Handoff Items
+
+- Drew: Sage (VPC-CP-001) markup overdue since 2026-03-27
+- Maya: USDA SBIR deadline 2026-04-05 (2 days) — technical narrative assistance available if needed
+
+---
+
+*Next standup: 2026-04-04 8:15 AM MT*
+
+## 2026-04-06 09:15 AM MT — Daily Standup
+
+**Time:** 9:15 AM MT (15:15 UTC)  
+**Posture:** Online — operating
+
+### Pre-Standup Check
+
+| Item | Status | Verified |
+|------|--------|----------|
+| zo.space (demo envs) | 🟢 Operational | ✅ Live API confirmed |
+| AgentOS API | 🟢 Operational | ✅ 200 OK, v6.0.0, 19 agents |
+| `/api/agentos/status` | 🟢 200 OK | ✅ |
+| VPC CI | 🟡 2 failures | ⚠️ Pending Drew |
+| Irrig8 Web UI | 🟢 Live | ✅ |
+
+### Demo Environment Status
+
+**zo.space startup errors (10 routes, all from 03:51 UTC):**
+- Root cause: Old import errors from startup batch — cleared
+- All `/api/agentos/*` routes now returning 200
+- AgentOS dashboard live: 19 agents, 16 active, avgHealth 0.91
+
+### Today's Priority Queue (Solutions Engineering)
+
+| # | Deal | Venture | Action | Status |
+|---|------|---------|--------|--------|
+| 1 | IRR-DIST-007 | Irrig8 | USDA NRCS EQIP vendor enrollment GO/NO-GO | 🔴 This week |
+| 2 | IRR-DIST-006 | Irrig8 | Planet Labs API dev access | 🟡 Awaiting |
+| 3 | IRR-FARM-001 | Irrig8 | Maverick Potato Co technical discovery (2,500 acres) | 🟡 Pending |
+| 4 | IRR-FARM-002 | Irrig8 | Skyline Potato Co technical discovery (3,000 acres) | 🟡 Pending |
+| 5 | IRR-FARM-007 | Irrig8 | Jessica Bradshaw / CPAC (52K acre gatekeeper) | 🟡 Pending |
+| 6 | VPC-CP-001 | VPC | Sage cash partnership structure review | 🟡 Overdue since 2026-03-27 |
+| 7 | GRANT-004 | AgentOS | NSF SBIR Phase I technical narrative | 🟡 Maya owns |
+
+### Blockers
+
+| Blocker | Owner | Impact |
+|---|---|---|
+| VPC CI 2 failures | Drew | Cannot demo VPC |
+| BUILDBZ 16 TBDs | brodiblanco | Spec advancement blocked |
+| USDA NRCS EQIP | Decision needed | IRR-DIST-007 at risk |
+
+### Handoff Items
+
+- **Dev:** USDA NRCS technical requirements doc needed for IRR-DIST-007 GO/NO-GO
+- **Drew:** VPC CI failures — Sage markup still overdue from 2026-03-27
+- **Maya:** NSF SBIR technical narrative — Architect available for API/integration specs if needed
+
+### Technical Close Readiness Summary
+
+| Deal | Integration Type | Readiness |
+|------|-----------------|-----------|
+| Valley Irrigation (IRR-DIST-001) | Pivot manufacturer API | Pre-POC |
+| Reinke (IRR-DIST-002) | Distribution partnership | Pre-POC |
+| USDA NRCS (IRR-DIST-007) | EQIP vendor enrollment | GO/NO-GO needed |
+| Maverick Potato (IRR-FARM-001) | 2,500 acres, sensor integration | Pre-POC discovery |
+| Skyline Potato (IRR-FARM-002) | 3,000 acres | Pre-POC discovery |
+| CPAC (IRR-FARM-007) | 52K acre gatekeeper | Technical intro needed |
+| Sage VPC (VPC-CP-001) | Cash partnership | Structure review overdue |
+
+---
+
+*Next standup: 2026-04-07 8:15 AM MT*

@@ -14,9 +14,11 @@
 |-------|-------|
 | **Business Name** | Tacos Navarro |
 | **Address** | 223 E Northern Ave, Pueblo, CO 81006 |
-| **Phone** | 719-546-6280 |
+| **Phone** | (719) 546-6280 |
+| **Email** | tacosnavarro2004@gmail.com |
 | **Website** | None |
-| **Social Media** | [Research] |
+| **Social Media** | Facebook: facebook.com/tacosnavarro223 |
+| **Hours** | Mon-Sat: 11am-3pm (lunch only), Sun: Closed |
 
 ---
 
@@ -27,6 +29,7 @@
 | Google | Claimed | 4.6 stars (161 reviews) |
 | DoorDash | Active | Primary |
 | Grubhub | Active | Secondary |
+| Facebook | Active | Ordering available |
 
 ### Google Rating: ⭐ 4.6 — "Goto spot for carne asada street tacos"
 
@@ -54,6 +57,15 @@
 ### Should Have
 - [x] Loyalty program
 - [x] Gift cards
+
+---
+
+## Assets Collected (Date: 2026-04-03)
+- **Logo:** ✅ COLLECTED `assets/logo.png` ("Home of the Street Tacos" sign)
+- **Menu:** DoorDash/Grubhub listing
+- **Hero Photo:** [Needs collection]
+- **Brand Colors:** ✅ EXTRACTED #1A1A1A #FFFFFF #9E9E9E
+- **Owner Contact:** Phone: (719) 546-6280 | Email: tacosnavarro2004@gmail.com | Owner name: [Research needed]
 
 ---
 

@@ -1,97 +1,90 @@
 # RAIN Daily Intelligence Brief
-**Date:** 2026-03-31
+**Date:** 2026-04-06
 **Agent:** RAIN-Research
 
 ---
 
-## Executive Summary
-Fresh regulatory intelligence gathered across crypto, agricultural water, and hedge fund sectors. Citations verified. Cost models validated.
+## 1. Regulatory Intelligence — Top Developments
+
+### 🔐 Cryptocurrency / Stablecoin
+
+| Item | Source | Key Finding |
+|------|--------|-------------|
+| CFTC Sues 3 States on Prediction Markets | CNBC (2026-04-02) | CFTC + DOJ sued Arizona, Connecticut, Illinois — states attempting to regulate Polymarket/Kalshi. Federal preemption claim signals major jurisdictional shift. |
+| Coinbase OCC Trust Bank Approval | CNBC (2026-04-02) | Conditional OCC approval for Coinbase as federal-supervised trust bank — stablecoin payments infrastructure unlocked. |
+| Fed Governor Barr on Stablecoins | Federal Reserve (2026-03-31) | Stablecoin reserve assets, regulatory arbitrage risks, capital/liquidity requirements under GENIUS Act implementation. |
+| GENIUS Act Stablecoin Framework | Forbes (2026-04-05) | Trump admin champions GENIUS Act — major step toward integrating blockchain into traditional securities. |
+| DOL 401(k) Crypto/Alt Assets Rule | HR Dive (2026-04-01) | Safe harbour for crypto, private equity, real estate in 401(k) plans — opens trillions to alternative assets. |
+
+**Signals:** CFTC federal preemption battle with states = new arbitrage surface. Stablecoin institutional adoption accelerating. DOL rule creates 401(k) wrapper arbitrage.
+
+### 🌾 Agricultural Water Regulation
+
+| Item | Source | Key Finding |
+|------|--------|-------------|
+| Colorado Drought — Record Low Snowpack | Successful Farming (2026-04) | Colorado snowpack lowest on record for early April — extreme drought doubling. 2026 crop risk elevated. |
+| Colorado Drought — Freakishly Dry Spring | CNN (2026-04-06) | Extreme drought at highest level in 5 years, highest for April in 20+ years. Earlier runoff, water restrictions expanding. |
+| Colorado Water Panel — Ag Future | The Fence Post (2026-04-06) | April 14 panel on drought impacts — Colorado Water Trust + Eagle River Coalition hosting. Policy solutions being explored. |
+| EPA Microplastics/Pharmaceuticals in Drinking Water | Reuters (2026-04-02) | EPA proposing microplastics + pharmaceuticals on Contaminant Candidate List — first-ever. 60-day comment period. |
+| EPA Record-High Renewable Fuel Standards | Farm Progress (2026-04-04) | RFS volumes: 26.81B gallons 2026, 27.02B 2027. Biomass-based diesel up 60%. E15 summer waiver granted. |
+
+**Signals:** Colorado water scarcity = Irrig8 market validation. EPA microplastics listing will drive agricultural runoff compliance costs.
+
+### 📊 ESG / Hedge Fund Regulatory Changes
+
+| Item | Source | Key Finding |
+|------|--------|-------------|
+| DOL 401(k) Alternative Assets Rule | FindLaw (2026-04-01) | ERISA fiduciary safe harbour for private equity, crypto, commodities in 401(k). Fiduciaries get maximum discretion. |
+| Hedge Fund Q1 Performance | Business Insider (2026-04-06) | Balyasny down 4.3% March, LMR down 2.4%. Schonfeld flat March, up 0.9% YTD. Chaotic start to 2026. |
+| Chris Rokos £190M Cambridge Gift | Bloomberg (2026-03-31) | £251M donation from hedge fund Rokos Capital — largest UK university gift. Signals hedge fund wealth accumulation despite volatility. |
+
+**Signals:** DOL rule opens retail retirement funds to alternative assets — new arbitrage surfaces. Hedge fund volatility creating regulatory scrutiny opportunity.
 
 ---
 
-## 1. Cryptocurrency / Stablecoin Regulation
+## 2. Citation Verification
 
-### Key Developments
-- **SEC pivots to crypto-friendly posture** under Chairman Atkins. New guidance defines 4 asset categories (digital commodities, collectibles, tools, stablecoins under GENIUS Act) — none generally subject to federal securities laws. [^1]
-- **Stablecoin yield crackdown:** Clarity Act proposal would prohibit platforms from offering yield on stablecoin balances (resembles bank deposit). Circle (CRCL) dropped 8% on news. [^2]
-- **Non-dollar stablecoins surge:** €3.83B monthly volume post-regulation (vs $383M prior year). EU regulations inadvertently pushing toward non-USD stablecoins. [^3]
-- **SEC staff cuts:** GAO report finds 12%+ workforce reduction across all mission-critical divisions. [^4]
-
-### RAIN Application
-Regulatory arbitrage opportunity: SEC crypto-friendly shift creates jurisdiction shopping between US (GENIUS Act) vs EU (MiCA). Meanwhile EU regulations pushing volume to non-USD stablecoins — arbitrage window for dollar-denominated products.
-
-**Citation verified:** IRS Revenue Ruling 2023-14 (staking) confirmed at https://www.irs.gov/pub/irs-drop/rr-23-14.pdf
+| Scenario | Citation Status | Notes |
+|----------|-----------------|-------|
+| Crypto Staking "Yield" vs "Interest" | ✅ VERIFIED | IRS Revenue Ruling 2023-14 confirmed. IRS Revenue Procedure 2025-31 adds grantor trust staking safe harbor. |
+| Carbon Credit Double-Claiming (EU-UK) | ✅ VERIFIED | Carbon Market Watch confirms EU double counting problem. EU Carbon Removal Certification Framework lacks corresponding adjustments. |
+| De Minimis VAT Evasion (Retail) | ⚠️ NEEDS UPDATE | EU abolished €150 threshold for non-EU imports effective 2026. **New source needed for 2026 reform specifics.** |
 
 ---
 
-## 2. Agricultural Water Regulation
+## 3. Model Cost Verification — All Correct
 
-### Key Developments
-- **Colorado River crisis:** Lake Powell flows approaching record lows. 10-year total at Lees Ferry at 81.24M acre-feet — threatening mandatory cuts. [^5]
-- **Denver Water restrictions:** First mandatory outdoor watering restrictions in 10+ years. Snowpack at 42-55% of normal. [^6]
-- **Farmworker overtime bill** advancing in Colorado Senate. [^7]
-- **Community water panel** April 14 in Avon CO — climate action week focus. [^8]
+| Scenario | Calculation | Result |
+|----------|-------------|--------|
+| CRYPTO-001 | (500 × 10,000) + 5,000 + 12,000 | 5,017,000 ✅ |
+| CARBON-001 | (1,200 × 50,000) + 25,000 + 85,000 | 60,110,000 ✅ |
+| VAT-001 | (150 × 75,000) + 8,000 + 35,000 | 11,293,000 ✅ |
+| AGRI-001 | (800 × 2,500) + 15,000 + 45,000 | 2,060,000 ✅ |
 
-### RAIN Application
-Colorado River Compact of 1922 does NOT address groundwater substitution rights — creating arbitrage window for water rights restructuring. USDA EQIP subsidies may be inadvertently funding water transfers.
-
-**Citation verified:** Colorado River Compact at https://compacts.csg.org/wp-content/uploads/2024/03/Colorado-River-Compact.pdf
+**No cost model errors detected.**
 
 ---
 
-## 3. Hedge Fund Regulatory Changes
+## 4. Hedge Fund Monitoring — Regulatory Arbitrage Signals
 
-### Key Developments
-- **DOL rule for 401(k) alternative investments:** New proposed rule gives plan fiduciaries "maximum discretion" for private equity, crypto, commodities in retirement plans. [^9]
-- **Delaware Supreme Court** rejects expanding insider trading liability for hedge funds with board representation. [^10]
-- **ESMA/MAR amendments:** Listing Act changes to Market Abuse Regulation taking effect. [^11]
+| Source | Finding |
+|--------|---------|
+| @AgentBotega (Apr 4, 2026) | Prediction markets = regulatory arbitrage vis-à-vis sportsbooks |
+| @defi_kay_ (Jan 17, 2026) | DeFi projects operating as de facto hedge funds through regulatory gaps |
+| @Tokentone_EN (Mar 13, 2026) | Wealth taxes driving capital flight to crypto-friendly jurisdictions — institutional arbitrage |
+| Business Insider (Apr 6, 2026) | Hedge funds down in Q1 — chaotic markets, Trump admin volatility |
+| Bloomberg (Mar 31, 2026) | Chris Rokos £190M donation — hedge fund wealth despite market chaos |
 
-### X/Twitter Discourse (2026)
-- DeFi operators running "public venture/hedge fund" structures via regulatory arbitrage. [^12]
-- AI trading amid antitrust crackdown — hedge funds targeting +126% returns via enforcement gaps. [^13]
-- SoFi using ASC 820 (successor to IFRS 13) for asset valuation arbitrage. [^14]
-- Bridgewater 2026 roadmap hints at global portfolio regulatory arbitrage. [^15]
-
----
-
-## 4. ESG Reporting
-
-### Key Developments
-- **EU carbon double-counting:** Carbon Market Watch documents ongoing EU ETS/UK ETS double claiming problem. [^16]
-- **EPA RFS volumes:** Historic 2026-2027 renewable fuel volume obligations finalized. Highest-ever requirements. [^17]
+**Key Theme:** Prediction markets emerging as primary regulatory arbitrage battleground in 2026.
 
 ---
 
-## 5. Citations Verified (2026-03-31)
+## 5. Action Items
 
-| Scenario | Status | Source |
-|----------|--------|--------|
-| CRYPTO-001 (Staking) | ✓ VERIFIED | https://www.irs.gov/pub/irs-drop/rr-23-14.pdf |
-| CARBON-001 (EU-UK) | ✓ VERIFIED | https://carbonmarketwatch.org/2024/03/22/the-eus-double-counting-problem/ |
-| VAT-001 (De Minimis) | ✓ VERIFIED | https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32006L0112 |
-| AGRI-001 (Water Rights) | ✓ VERIFIED | https://compacts.csg.org/wp-content/uploads/2024/03/Colorado-River-Compact.pdf |
+- [ ] Update mockData.ts EU VAT citation — EU reform deal final text needed
+- [ ] Add new RAIN scenario: DOL 401(k) alternative assets arbitrage
+- [ ] Monitor CFTC vs states prediction market lawsuits — potential new scenario
 
 ---
 
-## 6. Cost Model Validation
-
-All 4 scenarios verified ✓
-
-| Scenario | Formula | Total |
-|----------|---------|-------|
-| CRYPTO-001 | (500 × 10,000) + 5,000 + 12,000 | $5,017,000 |
-| CARBON-001 | (1,200 × 50,000) + 25,000 + 85,000 | $60,110,000 |
-| VAT-001 | (150 × 75,000) + 8,000 + 35,000 | $11,293,000 |
-| AGRI-001 | (800 × 2,500) + 15,000 + 45,000 | $2,060,000 |
-
----
-
-## 7. New Intelligence Flags
-
-1. **EU VAT de minimis reform (2025):** EU abolished €150 threshold for non-EU imports — update VAT-001 scenario to reflect new landscape.
-2. **SEC crypto guidance:** New 4-category framework may require new scenario for "stablecoin yield" classification arbitrage.
-3. **DOL 401(k) rule:** Opens new regulatory arbitrage for alternative investment products in retirement accounts.
-
----
-
-*RAIN Intelligence — 2026-03-31*
+*RAIN Intelligence — 2026-04-06 | Freshness: OPERATIONAL*

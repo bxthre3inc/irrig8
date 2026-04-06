@@ -1,7 +1,7 @@
 # Prime — Product Operations Lead INBOX
 **Agent:** Prime
 **Role:** Product Operations Lead — AgentOS Product Management Department
-**Last Updated:** 2026-03-31 09:05 UTC
+**Last Updated:** 2026-04-06 09:10 UTC (8:10 AM MT)
 
 ---
 
@@ -27,55 +27,119 @@ Own product operations — the machinery that keeps product management running s
 - Product council facilitation
 
 **Reports to:** Roadmap (VP Product), Atlas (COO)
-
 **Meeting Cadence:** Runs daily standup within Product Ops at 8:15 AM
 
 ---
 
-## Active Projects (from Portfolio)
+## 🟢 Standup | 2026-04-06 | 09:10 UTC (8:10 AM MT)
 
-| Venture | Tier | Prime's Role |
-|---|---|---|
-| Irrig8 | 1 - Flagship | Product ops for farmOS |
-| Valley Players Club | 2 - Growth | Launch coordination |
-| The Starting 5 | 2 - Growth | Product positioning |
-| AgentOS | 3 - Emerging | Core platform product ops |
-| BUILDBZ | 4 - Incubation | Blocked — awaiting decisions |
-| Trenchbabys | 4 - At Risk | Needs triage |
+### Status: OPERATIONAL — Active Session
+
+**Note:** Today is All-Hands day (April 6, 2026 | 3:00 PM MT). Product Ops standup is abbreviated.
 
 ---
 
-## Standup Status
+### Surface Items
 
-**Last Standup:** 2026-03-31 09:05 UTC
-**Next Standup:** 2026-04-01 08:15 AM MT
-
-### Today's Surface Items
-
-| # | Item | Owner | Priority | Status |
+| # | Item | Priority | Owner | Status |
 |---|---|---|---|---|
-| 1 | BUILDBZ blocked on 8 decisions | brodiblanco | 🔴 P1 | Awaiting input |
-| 2 | AgentOS v6.2 architecture locked | brodiblanco/iris | 🟢 Complete | Shipped |
-| 3 | VPC equity corrected | brodiblanco | 🟢 Complete | Resolved |
-| 4 | Trenchbabys idle — sunset/pivot needed | brodiblanco | 🟡 P2 | Awaiting decision |
-| 5 | SLV sensor correlation complete | press/sam | 🟢 Complete | 24 correlations found |
+| 1 | ARPA-E OPEN 2026 deadline | 🔴 P1 | brodiblanco + Maya | **26 days remaining (2026-05-01)** |
+| 2 | 7 provisional patents — filing window | 🔴 P1 | brodiblanco + Raj | **39 days remaining (2026-05-15)** |
+| 3 | Water Court hearing | 🔴 P1 | Rain + brodiblanco | **83 days remaining (2026-06-29)** |
+| 4 | SymphonyOS LLC formation | 🔴 P1 | Raj | IP separation — blocking patent filing |
+| 5 | RICE/ICE prioritization framework | 🟡 P2 | Prime | **Awaiting Roadmap + Atlas approval** |
+| 6 | AgentOS feature backlog | 🟡 P2 | Prime + Roadmap | Unprioritized |
+| 7 | Q2 Roadmap review window | 🟡 P2 | Prime + Roadmap | **73 days remaining (Jun 15)** |
+| 8 | Product Council — charter | 🟡 P2 | Prime + Roadmap | Not started |
 
 ---
 
-## Queue
+### All-Hands Day Protocol (2026-04-06)
 
-- [ ] Initialize Product Ops department INBOX (departments/product-ops.md)
-- [ ] Establish roadmap review cadence with Roadmap (VP Product)
-- [ ] Define RICE/ICE prioritization framework for product features
-- [ ] Map feature flags across active ventures (Irrig8, VPC, AgentOS)
-- [ ] Draft launch checklist template for cross-functional GTM
-- [ ] Coordinate with Scout/R&D on competitive analysis cadence
-- [ ] Coordinate with Lens on user research schedule
+Today is All-Hands. No new initiatives launched today. Product Ops focuses on:
+- Observation and cross-ventures intelligence gathering
+- Following up on priority signals from All-Hands
+- Prep for post-All-Hands priority consolidation
 
 ---
 
-*Prime — Product Operations Lead*
+### This Week's Targets
 
-## 🟡 P2 | prime | 2026-03-31 15:10 UTC
+| # | Target | Status |
+|---|---|---|
+| 1 | RICE/ICE framework — route for approval to Roadmap + Atlas | ⏳ In Progress |
+| 2 | AgentOS feature backlog — initialize document | ⏳ Not Started |
+| 3 | Irrig8 feature backlog — coordinate with Irrig8 field agent | ⏳ Not Started |
+| 4 | GTM launch checklist — draft template | ⏳ Not Started |
+| 5 | Product Council charter — draft | ⏳ Not Started |
 
-Prime initialized — Product Ops department created. Surface item: BUILDBZ 8-decision blocker P1 requiring brodiblanco decisions
+---
+
+### Blockers
+
+| Blocker | Owner | Impact |
+|---|---|---|
+| SymphonyOS LLC not yet formed | Raj | Patents cannot be filed under correct entity |
+| Roadmap (VP Product) — first sync not yet completed | Prime → Roadmap | Framework + backlog cannot advance without sign-off |
+| Atlas (COO) — first sync not yet completed | Prime → Atlas | Reporting alignment pending |
+
+---
+
+### Cross-Functional Status
+
+| Interface | Status | Notes |
+|---|---|---|
+| Roadmap (VP Product) | ⏳ Pending | First sync — schedule this week |
+| Atlas (COO) | ⏳ Pending | First sync — schedule this week |
+| Engineering (iris/dev) | ⏳ Pending | Feature delivery pipeline not defined |
+| Brand/Marketing (casey) | ⏳ Pending | GTM coordination pending framework |
+| Sales (drew) | ⏳ Pending | GTM coordination pending framework |
+| Scout/R&D | ⏳ Ad-hoc | Competitive intel ad-hoc |
+| Lens | ⏳ Ad-hoc | User research ad-hoc |
+| Ventures (Navigate) | ⏳ Ad-hoc | Cross-venture synergies not mapped |
+
+---
+
+### Product Metrics Context
+
+| Product | Stage | Key Metric | Target |
+|---|---|---|---|
+| Irrig8 | Field ops | Water savings % | [TBD] |
+| VPC | Pre-launch | Jurisdictional compliance | Jul 1 geo-block |
+| AgentOS | Platform | Agent utilization rate | [TBD] |
+| AgentOS | Platform | Task completion rate | [TBD] |
+
+---
+
+### Financial Context
+
+| Metric | Value | Source |
+|---|---|---|
+| Q2 Opening Cash | $130,450 | FPA |
+| 13-Week Burn | ($493K) → ($362K) ending Jun 30 | FPA |
+| Bridge Needed | $400K before Jul 1 | IR |
+| Series A Target | $15M, Jul 2026 | IR |
+| Current ARR | $0 (pre-revenue) | IR |
+
+---
+
+## Archive
+
+### 🟡 Standup | 2026-04-03 | 15:20 UTC (8:20 AM MT)
+
+**Department INBOX initialized:** `departments/product-ops.md` created.
+
+| # | Item | Priority | Owner | Status |
+|---|---|---|---|---|
+| 1 | RICE/ICE prioritization framework | 🔴 P1 | Prime | Init doc needed this week |
+| 2 | AgentOS feature backlog | 🔴 P1 | Prime + Roadmap | Awaiting roadmap sync |
+| 3 | Irrig8 feature backlog | 🟡 P2 | Prime + Irrig8 | Water court capacity drag |
+| 4 | Feature flag dashboard | 🟡 P2 | Prime + Iris | Not started |
+| 5 | GTM launch checklist template | 🟡 P2 | Prime + Casey | Not started |
+| 6 | Product Council charter | 🟡 P2 | Prime + Roadmap | Not started |
+| 7 | Q2 Roadmap review window | 🟡 P2 | Prime + Roadmap | 73 days remaining |
+| 8 | Cross-venture synergies | 🟡 P2 | Prime | Not started |
+
+---
+
+*Prime — Product Operations Lead | Standup 2026-04-06 09:10 UTC*

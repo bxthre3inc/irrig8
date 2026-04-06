@@ -13,7 +13,7 @@
 
 | Grant | ID | Funder | Deadline | Owner | Status |
 |-------|----|--------|----------|-------|--------|
-| ESTCP Phase 2 Field Sensors | — | DoD ESTCP | 2026-04-01 | dev | ⚠️ UNKNOWN |
+| ~~ESTCP Phase 2 Field Sensors~~ | — | DoD ESTCP | ~~2026-04-01 ❌~~ | dev | 🔴 **DEADLINE MISSED** |
 | CIG Colorado | FED-US-003 | USDA NRCS | 2026-04-30 | casey | SHORTLIST |
 
 ### P1 — Active
@@ -81,3 +81,11 @@
 ## 🟡 P2 | government | 2026-03-31 15:12 UTC
 
 Daily standup 2026-03-31 complete. P0: ESTCP Phase 2 deadline TOMORROW. Zone discrepancy resolved (LRZ1/LRZ2 confirmed correct per Airtable and Field Data table). Dev status unknown — flagged for noon escalation if no response. CIG Colorado LOI (casey), USDA REAP (maya), SBIR Phase I (maya) all on track. Standup doc: government-standup-2026-03-31.md
+
+## 🟡 P2 | government | 2026-04-01 15:14 UTC
+
+ESTCP Phase 2 deadline TODAY. dev INBOX shows zero ESTCP activity — only AgentOS work logged (Android APK, Desktop JAR). No status update on sensor deployment (recGaj5XN2ftpOJ10, zones LRZ1/LRZ2). Escalation rule: noon MT if no status. Standup: government-standup-2026-04-01.md
+
+## 🟡 P2 | government | 2026-04-03 15:10 UTC
+
+Daily standup 2026-04-03 complete. **ESTCP Phase 2 deadline MISSED (2026-04-01).** No evidence of sensor deployment in dev INBOX — dev was consumed by AgentOS P0 production incidents during ESTCP window. brodiblanco confirmation required: was deployment completed offline? CIG Colorado LOI (casey, 30 days), USDA REAP (maya), SBIR Phase I (maya) all on track. DIU scan queued for this week. Standup: government-standup-2026-04-03.md

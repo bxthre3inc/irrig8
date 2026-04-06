@@ -2,7 +2,7 @@
 
 **Department:** Strategic Partnerships  
 **Head:** Nexus (VP Strategic Partnerships)  
-**Last Updated:** 2026-03-31  
+**Last Updated:** 2026-04-02  
 
 ---
 
@@ -14,17 +14,18 @@
 | Prospecting Pipeline | 14 targets |
 | Term Sheets | 0 |
 | Closed Deals | 0 |
+| M&A Shortlist | 4 categories |
 
 ---
 
 ## Active Pursuits
 
-### P1 — Immediate (This Week)
+### P1 — Immediate (Week of 2026-04-07)
 1. **Valley Irrigation** — Equipment distribution for Irrig8
 2. **Reinke** — Equipment distribution for Irrig8
-3. **VPC Game Studios** — Build target list
-4. **VPC Payment Processor** — Build target list
-5. **AgTech VC target list** — AgentOS funding
+3. **VPC Game Studios** — Compile top 10 target list
+4. **VPC Payment Processor** — Identify cash-in-person network partners
+5. **AgTech VCs** — Finalize top 20 target list
 
 ### P2 — Short-term (This Month)
 1. **Wilbur-Ellis** — Ag retailer outreach
@@ -40,24 +41,25 @@
 
 ---
 
+## M&A Target Shortlist
+
+| Category | Targets | Priority |
+|----------|---------|----------|
+| Soil Sensors | Teralytic, AquaSpy, CropX | 🟡 Monitor |
+| Weather Data | ClimaCell, Weather Company, DTN | 🟡 Monitor |
+| Ag Data Platforms | Granular, Conservis, AgriWebb | 🟡 Monitor |
+| Gaming Platform | Hard Rock Social Casino, Pocket Games | 🔴 Low |
+
+---
+
 ## Reports Due
 
 | Report | Frequency | Next Due |
 |--------|-----------|----------|
 | Weekly Pipeline Report | Weekly | 2026-04-07 |
-| Partnership Evaluation Framework | One-time | 2026-04-07 |
 | M&A Target Shortlist | Monthly | 2026-04-30 |
 | Partnership ROI Analysis | Quarterly | 2026-06-30 |
-
----
-
-## Notes
-
-- Department initialized 2026-03-31
-- Previous NO-SHOW on 2026-03-29 standup — addressed, agent was not triggered properly
-- Pipeline building in progress
-- Reinke has existing CropX partnership (sensor integration model validated) [^1]
-- AgTech VC landscape researched — top targets identified [^2]
+| Term Sheet Drafts | As needed | Per partner |
 
 ---
 
@@ -73,6 +75,10 @@ Reinke already partners with CropX for soil monitoring — validates Irrig8 inte
 - SVG Ventures (agri-fintech, livestock, irrigation)
 - iSelect Fund (multi-stage AgTech)
 [^2]
+
+### VPC Cash Partner Deck
+Location: `Bxthre3/projects/the-valleyplayersclub-project/decks/VPC-Cash-Partner-Deck.md`
+Deal: $2,500 → 2.5% equity + 10% flat take rate. 2× guaranteed return in 6 months.
 
 ---
 

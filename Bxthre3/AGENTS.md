@@ -1,7 +1,22 @@
 # AGENTS.md — Bxthre3 Workspace Memory Index
 
-> **Last Updated:** 2026-03-24
+> **Last Updated:** 2026-04-06  
+> **Chronicler Snapshot:** `file '/home/.z/supermemory/2026-04-06/chronicler-snapshot.md'`  
 > **Purpose:** Routing index — tells all agents where to find and store information.
+
+---
+
+## Standards & Principles
+
+| Document | Purpose | Every Agent Must |
+|----------|---------|------------------|
+| `SOUL.md` | Behavioral identity, tone, principles | Read before acting |
+| `DOCUMENT_STANDARDS.md` | Document types, templates, quality gates | Follow for all outputs |
+
+**Key Principles:**
+- Principle #5: **Verify or Die (Zero Hallucination)** — no fabrication, cite everything
+- Document standards: 16 types defined with approved format
+- Unsourced = unsent
 
 ---
 
@@ -80,6 +95,7 @@ Canonical data: the-agentos-project/core/hierarchy/org.ts  (19 employees)
 | raj | `Bxthre3/INBOX/agents/raj.md` | 2026-03-24 |
 | casey | `Bxthre3/INBOX/agents/casey.md` | 2026-03-24 |
 | theo | `Bxthre3/INBOX/agents/theo.md` | 2026-03-24 |
+| shield | `Bxthre3/INBOX/agents/shield.md` | 2026-04-03 |
 
 ---
 
@@ -123,7 +139,8 @@ Department report          → Bxthre3/INBOX/departments/{dept}.md
 | vpc | VPC Agent | Gaming Operations | Operations | active |
 | trenchbabys | Trenchbabys Agent | Retail Operations | Sales | idle |
 
-> **Roster Merger — 2026-03-25:** Canonical roster now 19 (18 AI + brodiblanco). Previously diverged across 3 environments: org.ts had 24 fictional Arkad employees, shared/agent-os had 33 hardcoded agents, live zo.space API had 14. All 3 now unified at 19. 4 new vertical agents added: irrig8, rain, vpc, trenchbabys.
+> **Roster Merger — 2026-03-25:** Canonical roster now 19 (18 AI + brodiblanco). Previously diverged across 3 environments: org.ts had 24 fictional Arkad employees, shared/agent-os had 33 hardcoded agents, live zo.space API had 14. All 3 now unified at 19. 4 new vertical agents added: irrig8, rain, vpc, trenchbabys.  
+> **2026-04-05:** Specialist agent `soil-variability-mapper` created (P1) for SLV 1m soil mapping — see `file 'Bxthre3/INBOX/agents/soil-variability-mapper.md'`
 
 ---
 

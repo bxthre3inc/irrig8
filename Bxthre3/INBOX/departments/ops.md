@@ -68,3 +68,83 @@ No nested `Bxthre3` directories found under `Bxthre3/projects/`.
 ---
 
 **Summary:** 1 HIGH severity issue (broken submodule `Trash/credswallet-temp`), 4 LOW severity issues. Recommend resolving the broken submodule first, then consolidating truncated/fragment artifacts.
+
+---
+
+## 2026-04-06 — Weekly Workspace Cleanup Audit
+
+**Status:** Issues Found
+
+---
+
+### Issue 1: Orphaned Submodule Reference (Broken)
+- **Severity:** HIGH
+- **Path:** `Bxthre3/ARCHIVE/mcp-mesh_20260330`
+- **Description:** `git submodule status` returns `fatal: no submodule mapping found in .gitmodules for path 'Bxthre3/ARCHIVE/mcp-mesh_20260330'`. An entry exists in `.git/modules` but not in `.gitmodules` — likely a partial cleanup of a deleted submodule.
+- **Recommended Action:** Run `git submodule deinit Bxthre3/ARCHIVE/mcp-mesh_20260330 2>/dev/null; git rm --cached Bxthre3/ARCHIVE/mcp-mesh_20260330 2>/dev/null; rm -rf .git/modules/Bxthre3/ARCHIVE/mcp-mesh_20260330 2>/dev/null` to cleanly remove the orphaned reference. Then commit.
+
+---
+
+### Issue 2: Uncommitted Submodule Changes — the-irrig8-project
+- **Severity:** HIGH
+- **Path:** `Bxthre3/projects/the-irrig8-project`
+- **Description:** Submodule has 5 modified uncommitted files in `simulation/runs/slv-sensor-correlation/` — correlation reports, summaries, and CSV data files.
+- **Recommended Action:** Commit inside the submodule first, then update parent reference. Do not leave uncommitted simulation output in submodules.
+
+---
+
+### Issue 3: Uncommitted Submodule Changes — the-agentos-project
+- **Severity:** HIGH
+- **Path:** `Bxthre3/projects/the-agentos-project`
+- **Description:** Submodule shows modified `.gitmodules`, `AmbientCapture-LOG.md`, `AGENTS.md`, and a deleted `ARCHIVE/mcp-mesh_20260330`. Cross-linked submodule state is dirty.
+- **Recommended Action:** Commit inside the-agentos-project first. The cross-linked `.gitmodules` modification suggests the parent repo and this submodule share git history — investigate before forcing any resets.
+
+---
+
+### Issue 4: Uncommitted Submodule Changes — the-valleyplayersclub-project
+- **Severity:** HIGH
+- **Path:** `Bxthre3/projects/the-valleyplayersclub-project`
+- **Description:** Submodule has 5 deleted Gradle lock/checkpoint files in `android-native/.gradle/8.4/`.
+- **Recommended Action:** Commit the deletions inside the submodule to clean up the Gradle state.
+
+---
+
+### Issue 5: Orphaned Submodule Registrations — Missing Project Dirs
+- **Severity:** LOW
+- **Paths:** `Bxthre3/projects/the-zoe-project`, `Bxthre3/projects/the-ard-project`
+- **Description:** Both are registered in `.gitmodules` and `.git/config` as submodules but the directories do not exist on disk.
+- **Recommended Action:** If these projects are active, clone them. If retired, run `git submodule deinit <path>` and `git rm --cached <path>` to remove the registration cleanly.
+
+---
+
+### Issue 6: Truncated Directory Fragments at Workspace Root
+- **Severity:** LOW
+- **Paths:** `Bxthre3/projects/ard-pro`, `Bxthre3/projects/ard-project/`, `Bxthre3/projects/flee`, `Bxthre3/projects/the`, `Bxthre3/projects/the-ag`, `Bxthre3/projects/the-agentos-pro`, `Bxthre3/projects/the-rain-pro`, `Bxthre3/projects/the-start`, `Bxthre3/projects/the-trench`, `Bxthre3/projects/trenchbabys-project/`, `Bxthre3/projects/valley`, `Bxthre3/projects/zo-computer-android/`, `Bxthre3/projects/zo-space-android/`, `Bxthre3/projects/zoe-seo/`
+- **Description:** Many truncated or oddly-named project directory fragments at workspace root level and inside `Bxthre3/projects/`. These suggest interrupted copy/move operations or partial project creation.
+- **Recommended Action:** Inspect each — consolidate anything with valid content into `Bxthre3/projects/<canonical-name>/`. Delete anything that is empty or junk. These should not exist as sibling fragments.
+
+---
+
+### Issue 7: Large Volume of Uncommitted Workspace Changes
+- **Severity:** LOW (workflow)
+- **Description:** 90+ files modified (`M`) and 200+ files untracked (`??`) across the workspace — INBOX updates, agent reports, meeting logs, daily standups, telemetry reports, ThinkTank documents, and project artifacts.
+- **Recommended Action:** Routine commit discipline. Prioritize committing completed verifiable work. The sheer volume suggests agents are writing to INBOX faster than commits are happening — consider a daily auto-commit cadence for stable INBOX content.
+
+---
+
+### Trash Status
+Trash directory is empty — no cleanup needed.
+
+---
+
+### Truncated Artifact Scan (Workspace Root)
+No truncated artifact files matching `*Bxthr*`, `*AP_*`, or `*ATION_*` patterns found at workspace root. ✅
+
+---
+
+### Nested Bxthre3 Directories
+No nested `Bxthre3` directories found under `Bxthre3/projects/`. ✅
+
+---
+
+**Summary:** 4 HIGH severity issues (1 broken submodule reference + 3 submodules with uncommitted changes), 3 LOW severity issues. Immediate action: resolve the orphaned submodule reference and commit inside each dirty submodule. Secondary action: audit and consolidate truncated project directory fragments.

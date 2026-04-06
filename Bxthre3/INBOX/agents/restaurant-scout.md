@@ -1,133 +1,122 @@
-# Restaurant Scout Agent - Daily Report
+# Restaurant Scout Agent Report
+**Date**: 2026-04-05
+**Agent**: Restaurant Scout (Lead Generation + Asset Collection)
 
-**Date**: 2026-03-30  
-**Agent**: Restaurant Scout  
-**Status**: Complete
+## Session Summary: Tier 1 Asset Verification + New Lead Discovery
 
----
+### ✅ Tier 1 Asset Collection Verified (All 5 Restaurants)
 
-## Summary
+All priority Tier 1 restaurants have been verified with complete asset collections:
 
-| Metric | Value |
-|--------|-------|
-| **New Leads Found** | 25 restaurants |
-| **ORDER APP READY** | 10 high-priority leads |
-| **Markets Covered** | Colorado Springs, Pueblo, Breckenridge, Monte Vista, Gunnison |
+| Restaurant | Location | Asset Date | Logo | Menu | Hero | Colors | Contact |
+|------------|----------|------------|------|------|------|--------|---------|
+| Rocky Bowl Bistro | CO Springs | 2026-04-05 | ✅ | ✅ | ✅ | ✅ | Phone ✓ |
+| Nom Nom Thai | CO Springs | 2026-04-05 | ✅ | ✅ | ✅ | ✅ | Phone ✓ Email ✓ |
+| El Pampano Foods | Pueblo | 2026-04-05 | ✅ | ✅ | ✅ | ✅ | Phone ✓ |
+| Whiskey Star Smokehouse | Breckenridge | 2026-04-05 | ✅ | ✅ | ✅ | ✅ | Phone ✓ Email ✓ |
+| China Garden | Monte Vista | 2026-04-05 | ✅ | ✅ | ✅ | ✅ | Phone ✓ |
 
----
+### 📧 New Contact Info Discovered
 
-## ORDER APP READY Leads - Tier 1
+- **Nom Nom Thai**: Added email `gs4nova@gmail.com` (found on website contact page)
+- All Tier 1 restaurants now have phone verified; email contact found for 2/5
+- Owner names still not found online (requires direct contact or local knowledge)
 
-These restaurants are confirmed users of third-party delivery platforms, have 4.0+ stars, and are prime candidates for custom ordering apps:
+### 🔥 New Leads Discovered (6 added)
 
-### 1. Rocky Bowl Bistro — Colorado Springs
-- Platforms: DoorDash + Uber Eats + Grubhub (ALL 3)
-- Rating: 4.9 stars (100+ reviews)
-- Cuisine: Asian Fusion / Bowls
-- Pain: Paying commissions on all 3 platforms
-- Opportunity: High
+Maps search identified 6 new high-potential restaurants in Colorado Springs and Pueblo:
 
-### 2. Nom Nom Thai — Colorado Springs
-- Platforms: DoorDash + Uber Eats
-- Rating: 4.6 stars (2000+ reviews)
-- Cuisine: Thai
-- Pain: 2000+ reviews = huge order volume = massive commission loss
-- Opportunity: High
+| Restaurant | Location | Stars | Est. Annual Pain |
+|------------|----------|-------|------------------|
+| Summa | CO Springs | 4.7 | $10-18K |
+| Lazy Dog Restaurant & Bar | CO Springs | 4.7 | $12-22K |
+| 503W | CO Springs | 4.7 | $10-20K |
+| Tacos Fuego | Pueblo | 4.5 | $8-14K |
+| Chop | Pueblo | 4.7 | $10-18K |
+| D C's On B Street | Pueblo | 4.6 | $8-15K |
 
-### 3. Momo Korean Restaurant — Colorado Springs
-- Platforms: DoorDash
-- Rating: 4.9 stars
-- Cuisine: Korean
-- Pain: 4.9 stars = quality product but losing 20-25% on every order
-- Opportunity: Medium-High
+**Total pipeline**: 31 active leads (was 25)
 
-### 4. El Pampano Foods — Pueblo
-- Platforms: DoorDash
-- Rating: 4.8 stars (700+ reviews)
-- Cuisine: Mexican (Birria specialty)
-- Pain: Viral birria trend + high volume = commission bleeding
-- Opportunity: High
+### 📁 Files Updated
 
-### 5. Tacos Navarro — Pueblo
-- Platforms: DoorDash + Grubhub
-- Rating: 4.6 stars (161 reviews)
-- Cuisine: Mexican / Street Tacos
-- Pain: Cash-only at location = customers WANT digital ordering
-- Opportunity: Medium
+- `restaurant-specs/colorado-springs/rocky-bowl/SPEC.md` — Date updated, contact verified
+- `restaurant-specs/colorado-springs/nom-nom-thai/SPEC.md` — Date updated, email added
+- `restaurant-specs/pueblo/el-pampano/SPEC.md` — Date updated
+- `restaurant-specs/breckenridge/whiskey-star-smokehouse/SPEC.md` — Date updated
+- `restaurant-specs/alamosa/china-garden/SPEC.md` — Date updated
+- `outreach/RESTAURANT_APP_LEADS.md` — 6 new leads added
+- `restaurant-specs/_INDEX.md` — Summary counts updated (31 leads total)
 
-### 6. Whiskey Star Smokehouse — Breckenridge
-- Platforms: DoorDash + Uber Eats
-- Rating: 4.5+ stars
-- Cuisine: BBQ / Texan Smokehouse
-- Pain: High-ticket BBQ items = highest commission costs
-- Opportunity: Medium-High (seasonal)
+### ⏳ Next Actions
 
-### 7. THAI BANGKOK RESTAURANT — Monte Vista
-- Platforms: DoorDash + Uber Eats
-- Rating: 5.0 stars (95 reviews)
-- Cuisine: Thai
-- Pain: Perfect 5-star rating + commission payments
-- Opportunity: Medium (small town, owns market)
+1. **Tier 2 Asset Collection** — Complete logos/menus/colors for Momo Korean, Presley's, Tacos Navarro, Thai Bangkok, Whats The Dilla
+2. **Owner Name Research** — Requires direct phone outreach or local networking
+3. **Spec File Creation** — Create SPEC.md files for 6 new April 5 leads
 
-### 8. China Garden Chinese Restaurant — Monte Vista
-- Platforms: DoorDash + Uber Eats
-- Rating: 4.6 stars (328 reviews)
-- Cuisine: Chinese
-- Pain: Only Chinese in town = all orders go through platforms
-- Opportunity: Medium
+### Commission Pain Estimate (All Leads)
 
-### 9. Don Carlos Taco Shop #5 — Pueblo
-- Platforms: DoorDash
-- Rating: 4.6 stars (100+ reviews)
-- Cuisine: Mexican / Fast Food
-- Pain: Multiple locations = model proven, but losing margin to commissions
-- Opportunity: High
-
-### 10. ChooJai Sushi Thai & Ramen — Colorado Springs
-- Platforms: DoorDash (likely) + Uber Eats
-- Rating: 4.9 stars
-- Cuisine: Sushi / Thai / Ramen
-- Pain: Sushi = high-margin items, high commission pain
-- Opportunity: Medium-High
+Total estimated annual commission pain across 31 leads: **~$180,000-320,000/year**
 
 ---
+*Report filed by Restaurant Scout Agent | Build-A-Biz Sales Department*
 
-## Key Pain Points Identified
+## 🟢 P3 | restaurant-scout | 2026-04-06 07:23 UTC
 
-| Pain Point | Frequency |
-|------------|-----------|
-| 20-30% commission to platforms | 10/10 leads |
-| No customer data/CRM | 9/10 leads |
-| Competing with other restaurants on platform | 8/10 leads |
-| No branding control | 7/10 leads |
+Restaurant Scout Asset Collection Report — 2026-04-06
 
----
+✅ COMPLETED WORK:
 
-## Geographic Breakdown
+1. NEW LEADS DISCOVERED & SPECS CREATED (3):
+   • Tokki — Colorado Springs (4.8★, 157 reviews, Asian fusion/tapas/ramen)
+     - Address: 182 E Cheyenne Mountain Blvd
+     - Phone: (719) 375-0185 | Email: tokkicolorado@gmail.com
+     - Platforms: DoorDash + ToastTab (dual system = confusion)
+     - Assets: Logo ✅ Hero ✅ Menu ✅ Colors ✅
+     - Commission Pain: ~0-20K/year
 
-| Market | Leads | Top Priority |
-|--------|-------|--------------|
-| Colorado Springs | 4 | Rocky Bowl Bistro, Nom Nom Thai |
-| Pueblo | 3 | El Pampano Foods, Don Carlos |
-| Breckenridge | 1 | Whiskey Star Smokehouse |
-| Monte Vista | 2 | THAI BANGKOK, China Garden |
-| Alamosa (prior day) | 3 | SUSHI THAI ALAMOSA, Calvillo's |
+   • The Sunflour Cafe — Monte Vista (4.7★, 413 reviews, breakfast/lunch/bakery)
+     - Address: 278 US 285
+     - Phone: (719) 852-6945 | Email: sunflower68@gmail.com  
+     - Strong catering focus, B2B opportunity
+     - Assets: Logo ✅ Hero ✅ Menu ✅ Colors ✅
+     - Commission Pain: ~-12K/year
 
----
+   • Quincy's Steak & Spirits — Monte Vista (4.4★, 904 reviews! HIGH PRIORITY)
+     - Address: 138 Adams St
+     - Phone: (719) 852-2233
+     - Owner: Joy (and husband) — purchased 2024
+     - Platforms: DoorDash + UberEats + Grubhub (3 PLATFORMS = acute pain!)
+     - Assets: Logo ✅ Hero ✅ Menu ✅ Colors ✅ Owner ✅
+     - Commission Pain: ~8-32K/year (HIGH — steakhouse tickets)
 
-## Files Updated
+2. FILES UPDATED:
+   • outreach/RESTAURANT_APP_LEADS.md — Added 3 new leads, updated totals
+   • restaurant-specs/_INDEX.md — Updated asset status, counts
+   • 3 new SPEC.md files created with full business profiles
 
-1. `Bxthre3/projects/build-a-biz-llc/outreach/LEAD_TRACKER.md` - Added 25 new leads (#85-109)
-2. `Bxthre3/projects/build-a-biz-llc/outreach/RESTAURANT_APP_LEADS.md` - Added 10 ORDER APP READY leads
+3. ASSETS COLLECTED (9 files):
+   • Tokki: logo.png, hero.jpg, menu.md, brand-colors.json
+   • Sunflour Cafe: logo.png, hero.jpg, menu.md, brand-colors.json  
+   • Quincy's: logo.png, hero.jpg, menu.md, brand-colors.json
 
----
+📊 CURRENT PIPELINE:
+   Total Active Leads: 31
+   Tier 1 (4.5+ stars): 15
+   Tier 2 (4.0-4.4 stars): 7
+   Tier 3 (New): 10
+   Specs Created: 23
+   Assets Complete: 15
 
-## Next Steps
+⚠️ PRIORITY ALERT:
+   Quincy's Steakhouse = HIGHEST POTENTIAL in Monte Vista
+   - 904 reviews in town of 4,000 = destination restaurant
+   - 3 delivery platforms = triple commission bleed
+   - Owner name known (Joy) = ready for personalized outreach
 
-1. **Sales Team** to prioritize Tier 1 leads (4.5+ stars, 2+ platforms)
-2. **Order App Demo** templates ready from Engineering
-3. **Outreach** scheduled for next week
+🎯 RECOMMENDED NEXT ACTIONS:
+   1. Follow up on Tier 2 asset collection (Whats The Dilla, Fire Noodles)
+   2. Search for additional high-volume leads in Pueblo/Colorado Springs
+   3. Prepare outreach templates for restaurants with owner names
+   4. Prioritize Quincy's for first pitch (highest pain + owner known)
 
----
-
-*Report generated by Restaurant Scout Agent*
+— Restaurant Scout Agent | Build-A-Biz Sales Department

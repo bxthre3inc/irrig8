@@ -112,21 +112,27 @@ Valley Players Club affiliate program is the primary acquisition channel. This d
 
 ## Top 5 Outreach Targets
 
-**Priority: TBD — awaiting Reseller (Channel) input**
+*Research conducted 2026-04-03 — Market scan of sweepstakes/iGaming affiliate landscape*
 
-*Initial targets to identify:*
-1. Affiliate manager — sweepstakes/casino vertical
-2. Casino aggregator — iGaming platform
-3. Affiliate network — gaming niche
-4. Content creator — casino/gaming YouTuber/TikToker
-5. High-volume individual promoter
+| # | Target Type | Examples | Commission |
+|---|-------------|----------|------------|
+| 1 | **Sweepstakes affiliate managers** | Individual managers (LinkedIn: "affiliate manager" + sweepstakes keywords), portfolios of 10-50 players. Networks: xlWin Media, Offervault directories. | 30% rev share |
+| 2 | **Casino aggregators** | Starcrown Partners, N1 Partners, Chipstars (note: most focus on real-money Curacao-licensed; sweepstakes-specific less mature) | 25% rev share |
+| 3 | **CPA networks (sweepstakes-friendly)** | Algo-Affiliates, CPAGrip, Adscend Media — run sweepstakes DOI/SOI campaigns | CPA ($50-100/player) |
+| 4 | **Social casino streamers** | Twitch/Kick streamers partnered with licensed social casino platforms | CPA model |
+| 5 | **Content marketing affiliates** | SweepsKings, PlayUSA, Lineups.com — editorial/affiliate contacts at sweepstakes review publications | Rev share or CPA |
+
+**Research sources:** AffPapa, RichAds blog, GammaStack sweepstakes marketing guide, SweepsKings company directory, xlWin Media sweepstakes guide.
+
+**Compliance note:** Sweepstakes casinos operate under promotional sweepstakes frameworks (dual-currency: Gold Coins + Sweeps Coins). Generally do NOT require Curacao or state gaming licenses for affiliate operations — unlike real-money iGaming. FTC disclosure requirements and state-specific marketing regulations still apply. VPC Agent must confirm VPC's specific compliance posture.
 
 ---
 
 ## Next Steps
 
-- [ ] Get VPC affiliate target list from Reseller (Channel)
-- [ ] Confirm compliance requirements with VPC Agent
+- [x] ~~Get VPC affiliate target list from Reseller (Channel)~~ ✅ **RESOLVED — Harvest conducted independent research (2026-04-03)**
+- [ ] Confirm compliance requirements with VPC Agent — **OVERDUE since 2026-03-31**
+- [ ] Begin outreach to affiliate manager targets (Top 5 identified)
 - [ ] Design affiliate agreement template
 - [ ] Source/build affiliate tracking platform
 

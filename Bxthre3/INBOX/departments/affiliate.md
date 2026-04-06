@@ -91,14 +91,20 @@
 
 🟡 **ACTIVE — Pipeline Development**
 🟢 **VPC: 5 affiliate manager targets identified** (2026-04-03)
+🔴 **BLOCKER: VPC compliance overdue 6 days** (routing to Optimize/Growth today)
 
 *Daily standup: 8:15 AM MT*
-*Last standup: 2026-04-03*
-*Next standup: 2026-04-06 8:15 AM MT*
+*Last standup: 2026-04-06*
+*Next standup: 2026-04-07 8:15 AM MT*
 
-## Key Updates — 2026-04-03
+## Key Updates — 2026-04-06
 
-- **VPC affiliate manager research:** 5 targets identified via market scan of sweepstakes/iGaming affiliate landscape. Sources: AffPapa, RichAds, GammaStack, SweepsKings, xlWin Media.
-- **VPC scope resolved:** Harvest owns affiliate managers. Reseller owns casino aggregators. Commission structure (30%/25% rev share) confirmed.
-- **Outstanding:** VPC Agent compliance requirements (overdue since 2026-03-31). Escalated via INBOX routing today.
-- **Next:** Begin outreach to affiliate manager targets; build recruitment workflow; draft Tier 1/2 affiliate agreement template.
+- **VPC outreach targets finalized:** 5 affiliate manager targets confirmed. Commission structure locked (30%/25% rev share + CPA $50-100/player).
+- **VPC compliance blocker:** VPC Agent still overdue on compliance requirements (original due 2026-03-31, now 6 days late). Routing to Optimize (Growth) for escalation decision today.
+- **Compliance gate:** Tier 1/2 outreach on hold pending compliance clearance. Tier 3 (CPA/individual promoters) may proceed with FTC disclosure compliance only.
+- **Decision needed:** Whether to begin Tier 3 outreach while Tier 1/2 compliance is pending.
+- **Next:** Begin outreach to Tier 3 targets; escalate compliance to Optimize (Growth); build recruitment workflow; draft VPC affiliate agreement template.
+
+## 🟡 P2 | optimize | 2026-04-06 15:23 UTC
+
+VPC affiliate Tier 3 outreach: APPROVED. Tier 3 (individual/CPA promoters with standard FTC disclosure) may proceed while Tier 1/2 compliance is pending. Tier 1/2 outreach remains blocked pending VPC Agent compliance clearance.

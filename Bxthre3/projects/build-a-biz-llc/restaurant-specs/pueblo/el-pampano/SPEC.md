@@ -16,10 +16,10 @@
 | **Address** | 1027 S Pueblo Blvd, Pueblo, CO 81005 | ✅ (different from LEAD_TRACKER!) |
 | **Google Rating** | 4.8 stars | ✅ |
 | **Reviews** | 409 | ✅ (different from LEAD_TRACKER!) |
-| **Phone** | _research needed_ | ❌ |
-| **Website** | _research needed_ | ❌ |
-| **Owner/Manager** | _research needed_ | ❌ |
-| **Third-Party Platforms** | DoorDash (from LEAD_TRACKER — unverified) | ⚠️ |
+| **Phone** | (719) 751-8180 | ✅ |
+| **Website** | https://elpampanofoodsco.com/ | ✅ |
+| **Owner/Manager** | Not found online | ❌ |
+| **Third-Party Platforms** | Direct website ordering | ✅ |
 
 ## ⚠️ Address Discrepancy
 
@@ -27,17 +27,17 @@
 |--------|---------|
 | LEAD_TRACKER | 430 South Santa Fe Ave, Pueblo, CO 81003 |
 | Google Maps (verified) | 1027 S Pueblo Blvd, Pueblo, CO 81005 |
+| Website (verified) | 1027 S Pueblo Blvd, Pueblo, CO 81005 |
 
-_Note: There may be two locations or the tracker address was wrong. Research needed._
+_Note: The tracker address was wrong. The correct address is 1027 S Pueblo Blvd._
 
-## Operations (from Google Maps)
+## Operations (from Google Maps + Website)
 
 | Field | Value | Verified |
 |-------|-------|----------|
 | **Cuisine** | Mexican | ✅ |
 | **Service Options** | Dine-in, Takeout, Delivery | ✅ |
-| **Hours** | Mon-Thu: 3PM-9PM | ✅ |
-| **Hours** | Fri-Sat: 12PM-9PM | ✅ |
+| **Hours** | Mon-Sat: 10:00 AM - 7:00 PM, Sun: Closed | ✅ |
 | **Good For** | Children, Groups | ✅ |
 | **Parking** | Free lot & street | ✅ |
 | **Wheelchair Accessible** | Yes | ✅ |
@@ -57,11 +57,18 @@ _Note: There may be two locations or the tracker address was wrong. Research nee
 
 | Asset | Status | Path/Source |
 |-------|--------|-------------|
-| Logo | ❌ NOT COLLECTED | _do research_ |
-| Hero Photo | ❌ NOT COLLECTED | _do research_ |
-| Menu | ❌ NOT COLLECTED | _do research_ |
-| Brand Colors | ❌ NOT EXTRACTED | _do research_ |
-| Owner Contact | ❌ NOT FOUND | _do research_ |
+| Logo | ✅ COLLECTED | `assets/logo.png` |
+| Hero Photo | ✅ COLLECTED | `assets/hero.jpg` |
+| Menu | ✅ COLLECTED | `assets/menu.md` |
+| Brand Colors | ✅ EXTRACTED | `assets/brand-colors.json` |
+| Owner Contact | ⚠️ PARTIAL | Phone: (719) 751-8180 |
+
+## Assets Collected (Date: 2026-04-05)
+- **Logo:** `assets/logo.png`
+- **Menu:** `assets/menu.md`
+- **Hero Photo:** `assets/hero.jpg`
+- **Brand Colors:** #FDD835 #2E7D32 #D32F2F
+- **Owner Contact:** Phone: (719) 751-8180 | Website: https://elpampanofoodsco.com/ | Owner name: Not found online [Research ongoing]
 
 ## Why This Restaurant = Order App Opportunity
 

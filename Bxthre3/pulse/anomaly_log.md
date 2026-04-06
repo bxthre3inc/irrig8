@@ -1,5 +1,19 @@
 # Pulse Anomaly Log
 
+## 2026-04-05T00:20:00Z
+
+| Service | Status | Details |
+|---------|--------|---------|
+| zo.space | ✅ 200 | Healthy |
+| localhost:3099 | ✅ 200 | Healthy |
+| localhost:3000 | ❌ FAILED | Not running (was never a service) |
+| localhost:8080 | ❌ FAILED | Not running (was never a service) |
+| postgres:5432 | ❌ FAILED | No PostgreSQL running |
+| vpc:5176 | ✅ 200 | Healthy |
+| agentos-api:9000 | ❌ FAILED | **NEW** - workdir missing: /home/workspace/Bxthre3/projects/the-agentos-project/backend (project moved to agentic/?) |
+
+**Action:** agentos-api first failure. Project directory missing — may have been relocated. Monitoring.
+
 ## 2026-03-30T19:00:00Z
 
 | Service | Status | Details |

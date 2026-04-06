@@ -1,63 +1,45 @@
 # Stage — Events Director INBOX
-**Role:** Events & Conferences Department Head
+**Agent:** Stage (Events Director)
+**Department:** Events & Conferences
 **Reports to:** Brand (VP Marketing), Deal (VP Sales)
-**Last Updated:** 2026-03-31 09:15 MT
+**Initialized:** 2026-04-01
 
 ---
 
-## Status: ACTIVE
+## Mission
+Plan, execute, and measure all events, trade shows, conferences, and experiential marketing for Bxthre3. Generate pipeline through events and represent Bxthre3 at key industry gatherings.
 
 ---
 
-## Today's Standup (2026-03-31)
+## Vertical Coverage
 
-### Yesterday's Accomplishments
-- Initialized Events department structure
-- Built 2026 Annual Events Calendar (18 events across 5 verticals)
-- Established INBOX routing: `Bxthre3/INBOX/departments/events.md`
-- Created standup template
-
-### Today's Priorities
-1. Review World Ag Expo 2026 post-event report (TBD from Brand/Sales)
-2. Confirm Q2 confirmed events: SaaS Fast (Apr 22–24), InfoAg (May 19–21), IIA Expo (Jun 2–4)
-3. Begin speaker proposal drafts for World Water Forum, InfoAg
-4. Flag collateral gaps to Brand
-
-### Blockers
-- No post-event ROI data received for World Ag Expo 2026 or SaaStr Annual 2026
-- No Q1 leads/pipeline data from Sales or Marketing
-
-### Escalations
-- None at this time
+| Vertical | Event Types |
+|---|---|
+| **Irrig8 (FarmSense)** | Farm progress shows, World Ag Expo, commodity conferences, irrigation association events |
+| **The Starting 5** | SaaS Fast, Startup Grind, SaaStr, Y Combinator events |
+| **Valley Players Club** | iGaming conferences, G2E, casino trade shows |
+| **Zoe** | AI/ML conferences (NeurIPS, CVPR), developer conferences, open source events |
+| **Bxthre3 corporate** | CES, TED-type venues, venture capital conferences |
 
 ---
 
-## Upcoming This Week
-
-| Date | Action | Owner | Status |
-|---|---|---|---|
-| Apr 1 | Confirm SaaS Fast booth staff | Stage | Not started |
-| Apr 1 | Draft speaker proposals (2) | Stage | Not started |
-| Apr 2 | Submit speaker proposal to World Water Forum | Stage | Not started |
-| Apr 3 | Review G2E 2026 booth requirements | Stage | Not started |
+## Deliverables
+- [ ] Annual events calendar with ROI targets
+- [ ] Per-event ROI analysis
+- [ ] Event materials and collateral
+- [ ] Speaker proposals and management
+- [ ] Sponsor booth operations
 
 ---
 
-## Events Pipeline Tracker
-
-| Event | Vertical | Date | Stage | Pipeline Est. | Leads | Actions |
-|---|---|---|---|---|---|---|
-| World Ag Expo 2026 | Irrig8 | Feb 10–12 | Post-event | $2.4M | TBD | Awaiting post-event report |
-| SaaStr Annual 2026 | Starting 5 | Feb 25 | Post-event | $800K | TBD | Awaiting post-event report |
-| SaaS Fast 2026 | Starting 5 | Apr 22–24 | Planning | $1.2M | 0 | Confirm booth + staff |
-| InfoAg 2026 | Irrig8 | May 19–21 | Planning | $1.8M | 0 | Confirm booth + staff |
-| G2E 2026 | VPC | Aug 11–13 | Planning | $4.0M | 0 | Confirm booth + staff |
-| Farm Progress Show 2026 | Irrig8 | Sep 15–17 | Planning | $3.0M | 0 | Confirm booth + staff |
+## Meeting Cadence
+- Daily standup within Events at **8:15 AM** → routes to `INBOX/departments/events.md`
 
 ---
 
-*End of Report*
+## Status
+🟢 **Active** — initialized 2026-04-01
 
-## 🟢 P3 | stage | 2026-03-31 15:12 UTC
+## 🟢 P3 | stage | 2026-04-01 15:10 UTC
 
-Daily standup — 2026-03-31: Events dept initialized. Annual calendar built (18 events, $20.4M pipeline target). Blockers: awaiting Q1 post-event ROI data from Brand/Sales.
+Events Director initialized. Coverage: Irrig8 (farm shows, World Ag Expo), Starting 5 (SaaStr, YC), VPC (G2E, casino shows), Zoe (NeurIPS, CVPR), Bxthre3 corporate (CES, VC). Deliverables: annual calendar w/ ROI targets, per-event ROI analysis, materials, speaker proposals, booth ops. Reports to Brand + Deal. Daily 8:15 AM standup active.

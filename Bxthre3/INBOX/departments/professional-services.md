@@ -1,9 +1,10 @@
 # Department INBOX — Professional Services
 
-**Head:** Deliver (Professional Services Lead)
-**Scope:** Implementation, onboarding, and customer launch experience for all Bxthre3 ventures
-**Ventures:** Irrig8, AgentOS/Zoe, Valley Players Club, The Starting 5
+**Department:** Professional Services (Deliver)
+**Lead:** Deliver (Professional Services Lead)
 **Reports to:** Grow (Customer Success), Deal (VP Sales), Atlas (COO)
+**Meeting Cadence:** Daily 8:15 AM MT
+**Last Updated:** 2026-04-03 15:10 UTC
 
 ---
 
@@ -13,89 +14,138 @@ Own the professional services function — implementation, onboarding, and custo
 
 ---
 
-## Deliverables Framework
+## Venture Scope
 
-### Per Venture
-- [ ] Implementation playbook (living document)
-- [ ] Customer onboarding timeline (30/60/90 day milestones)
-- [ ] Training materials and certification program
-- [ ] Customer health checkpoints during implementation
-- [ ] Post-implementation handoff to Customer Success
-
-### Standing Cadence
-- **Daily standup:** 8:15 AM (Professional Services standup)
-- **Weekly:** Customer health report per active venture
-- **Per milestone:** Implementation phase report
+| Venture | Path | Implementation Phase |
+|---------|------|---------------------|
+| **Irrig8** | `Bxthre3/projects/the-irrig8-project/` | Pre-launch (pilot) |
+| **AgentOS / Zoe** | `Bxthre3/projects/the-agentos-project/` | Active internal |
+| **Valley Players Club** | `Bxthre3/projects/the-valleyplayersclub-project/` | Planning |
+| **The Starting 5** | `Bxthre3/projects/the-starting5-project/` | Not started |
 
 ---
 
-## Venture Status
+## Deliverables Tracker
 
-| Venture | Phase | Next Milestone | Health |
-|---------|-------|---------------|--------|
-| **Irrig8** | Pre-launch (pilot) | SLV pilot deployment (June 2026) | 🟡 Standby |
-| **AgentOS / Zoe** | Active internal | Workforce expansion | 🟢 Live |
-| **Valley Players Club** | Planning | Platform build + launch | 🟡 Planning |
-| **The Starting 5** | Not started | Definition sprint | 🔴 Not started |
+### Implementation Playbooks
 
----
+| Venture | Status | Last Updated | Notes |
+|---------|--------|-------------|-------|
+| Irrig8 | ❌ Not started | — | Blocked: motion brief pending |
+| AgentOS / Zoe | ❌ Not started | — | Framework needed |
+| Valley Players Club | ❌ Not started | — | Blocked: legal/compliance |
+| The Starting 5 | ❌ Not started | — | Blocked: no project dir |
 
-## Implementation Playbooks
+### Customer Onboarding Timelines (30/60/90 Day)
 
-*(To be created per venture)*
+| Venture | 30-day | 60-day | 90-day | Status |
+|---------|--------|--------|--------|--------|
+| Irrig8 | ❌ | ❌ | ❌ | Funding-gated |
+| AgentOS / Zoe | ❌ | ❌ | ❌ | Framework needed |
+| Valley Players Club | ❌ | ❌ | ❌ | Legal-gated |
+| The Starting 5 | ❌ | ❌ | ❌ | Scope undefined |
 
-### Irrig8 Implementation Playbook
-- **Location:** `Bxthre3/projects/the-irrig8-project/docs/IMPLEMENTATION_PLAYBOOK.md`
-- **Status:** Not started
-- **Scope:** Sensor deployment planning, pivot configuration, irrigation schedule setup, farmer training, go-live support
+### Training Materials
 
-### Valley Players Club Implementation Playbook
-- **Location:** `Bxthre3/projects/the-valleyplayersclub-project/docs/IMPLEMENTATION_PLAYBOOK.md`
-- **Status:** Not started
-- **Scope:** Casino platform integration, white-label setup, launch support
+| Venture | Materials | Certification | Status |
+|---------|-----------|--------------|--------|
+| Irrig8 | ❌ | ❌ | Pending pilot |
+| AgentOS / Zoe | ❌ | ❌ | Framework needed |
+| Valley Players Club | ❌ | ❌ | Platform not ready |
+| The Starting 5 | ❌ | ❌ | Scope undefined |
 
-### The Starting 5 Implementation Playbook
-- **Location:** `Bxthre3/the-starting5-project/docs/IMPLEMENTATION_PLAYBOOK.md`
-- **Status:** Not started
-- **Scope:** Founder onboarding program, AI co-founder setup, first-week workshop
+### Customer Health Checkpoints
 
-### AgentOS / Zoe Enterprise Playbook
-- **Location:** `Bxthre3/projects/the-zoe-project/docs/ENTERPRISE_PLAYBOOK.md`
-- **Status:** Not started
-- **Scope:** Enterprise implementation, API integration, developer onboarding, workshop training
+| Venture | Checkpoint 1 | Checkpoint 2 | Checkpoint 3 | Status |
+|---------|--------------|--------------|--------------|--------|
+| Irrig8 | ❌ | ❌ | ❌ | Pending pilot |
+| AgentOS / Zoe | ❌ | ❌ | ❌ | Framework needed |
+| Valley Players Club | ❌ | ❌ | ❌ | Pre-launch |
+| The Starting 5 | ❌ | ❌ | ❌ | Scope undefined |
 
----
+### Post-Implementation CS Handoff
 
-## Active Items
-
-### 🟡 P2 | Motion Design Brief — Irrig8 Explainer
-**From:** Palette (Design)
-**Priority:** P1 (blocking Vector's production)
-**Action:** Provide creative brief covering brand style guide, module stories (VFA/LRZB/LRZN/PMT/PFA), tone, deliverable format, and priority module
-**Status:** Pending — awaiting direction from brodiblanco
-
-### 🟡 P2 | Water Court — Field Data Gaps
-**From:** water-court agent
-**Priority:** P1
-**Action:** Deploy SLV pilot sensors, retain hydrology expert, source NIST-traceable calibration
-**Timeline:** June 29, 2026 hearing — 98 days remaining
+| Venture | Handoff Doc | CS Accepted | Status |
+|---------|-------------|-------------|--------|
+| Irrig8 | ❌ | ❌ | Pending go-live |
+| AgentOS / Zoe | ❌ | ❌ | Internal — not applicable |
+| Valley Players Club | ❌ | ❌ | Pre-launch |
+| The Starting 5 | ❌ | ❌ | Scope undefined |
 
 ---
 
-## Department Stats
+## Key Blockers (P0–P2)
 
-| Metric | Value |
-|--------|-------|
-| Active ventures | 4 |
-| Implementation playbooks created | 0/4 |
-| Customer onboarding timelines | 0/4 |
-| Active pilots | 0 (pending funding) |
-| Post-implementation handoffs | 0 |
+| Priority | Blocker | Venture | Owner | Resolution Path |
+|----------|---------|---------|-------|----------------|
+| 🔴 P1 | No project directory | The Starting 5 | brodiblanco | Scope + create `Bxthre3/projects/the-starting5-project/` |
+| 🟡 P2 | Sensor funding gate | Irrig8 | brodiblanco | SLV pilot is funding-gated |
+| 🟡 P2 | Motion design brief | Irrig8 | brodiblanco | Creative direction decision needed |
+| 🟡 P2 | Legal/compliance gate | VPC | Raj | WY LLC + bond filings must complete |
+| 🟡 P2 | Platform target undefined | VPC | Dev | PS playbook needs v8.1 feature complete |
 
 ---
 
-*Last updated: 2026-03-24 09:05 UTC*
+## Meeting Log
 
-## 🟡 P2 | deliver | 2026-03-24 15:10 UTC
+### 2026-04-03 — Daily Standup
 
-Deliver agent initialized — Professional Services Lead onboarded. Scope: Irrig8, AgentOS/Zoe, Valley Players Club, The Starting 5.
+**Venture Health:**
+
+| Venture | Health | Trend |
+|---------|--------|-------|
+| Irrig8 | 🟡 Standby | → |
+| AgentOS / Zoe | 🟢 Live | → |
+| VPC | 🟡 Planning | → |
+| The Starting 5 | 🔴 Blocked | → |
+
+**Decisions Made:** None this cycle.
+
+**Action Items:**
+
+| # | Action | Owner | Due |
+|---|--------|-------|-----|
+| 1 | Define Starting 5 scope + create project dir | brodiblanco | ASAP |
+| 2 | Provide Irrig8 motion design brief direction | brodiblanco | This week |
+| 3 | Monitor VPC legal/compliance progress | Raj | Ongoing |
+| 4 | Track Irrig8 sensor funding | brodiblanco | TBD |
+| 5 | Monitor VPC v8.1 development | Dev | Ongoing |
+
+**Notes:**
+- Irrig8: 86 days to Water Court (June 29, 2026). air_rh_moisture sensor validated (R²>0.97). Sensor correlation work ongoing.
+- VPC: v8.1 build in progress. Legal gates (WY LLC, bonds) still open.
+- AgentOS/Zoe: Internal workforce live. Enterprise onboarding framework is next priority.
+
+### 2026-04-02 — Daily Standup
+
+**Venture Health:**
+
+| Venture | Health | Trend |
+|---------|--------|-------|
+| Irrig8 | 🟡 Standby | → |
+| AgentOS / Zoe | 🟢 Live | → |
+| VPC | 🟡 Planning | → |
+| The Starting 5 | 🔴 Blocked | → |
+
+**Decisions Made:** None this cycle.
+
+**Action Items:**
+
+| # | Action | Owner | Due |
+|---|--------|-------|-----|
+| 1 | Define Starting 5 scope + create project dir | brodiblanco | ASAP |
+| 2 | Provide Irrig8 motion design brief direction | brodiblanco | This week |
+| 3 | Monitor VPC legal/compliance progress | Raj | Ongoing |
+| 4 | Track Irrig8 sensor funding | brodiblanco | TBD |
+
+---
+
+## Resources
+
+- Agent INBOX: `Bxthre3/INBOX/agents/deliver.md`
+- Department INBOX: `Bxthre3/INBOX/departments/professional-services.md`
+- Canonical INBOX: `Bxthre3/INBOX.md` (P0/P1 only)
+
+---
+
+*Last updated: 2026-04-03 15:10 UTC — Deliver, Professional Services Lead*

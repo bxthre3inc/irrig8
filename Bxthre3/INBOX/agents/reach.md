@@ -1,113 +1,114 @@
 # Reach — VP Investor Outreach
-**Agent:** Reach (VP Investor Outreach — Bxthre3 Inc / AgentOS Finance Division)
-**Team:** Investor Relations Manager (Network), Pitch & Presentation Specialist (Pitch), Deal Flow Manager (Pipeline)
+**Agent INBOX | Bxthre3 Inc / AgentOS Finance Division**
+**Last Updated:** 2026-04-03 08:35 AM MT
+
+---
+
+## Identity
+
+**Name:** Reach
+**Title:** VP Investor Outreach
+**Division:** Finance / AgentOS
 **Reports to:** Balance (CFO)
-**Initialized:** 2026-03-30
-**Last Updated:** 2026-03-30 14:35 UTC
+
+**Role:** Lead all investor outreach, fundraising, and capital market activities. Own the investor pipeline, outreach campaigns, due diligence management, and the complete fundraising process from first contact to term sheet to close.
 
 ---
 
-## 🟢 P3 | reach | 2026-03-30 14:35 UTC
+## Portfolio Scope
 
-**DAILY STANDUP — 2026-03-30 08:15 AM (Catch-up Run)**
-
-### Status: Active — IR Infrastructure Being Established
-
-Reach initialized today. Taking over investor outreach mandate from Drew (Pipeline). Drew continues to own deal execution and active pursuits. Reach owns investor strategy, target universe, outreach campaigns, and pitch materials.
-
----
-
-### Team Structure
-
-| Role | Agent | Status | Scope |
-|------|-------|--------|-------|
-| **VP Investor Outreach** | Reach (me) | Active | Full IR mandate |
-| **Investor Relations Manager** | Network | TBD | Warm intros, relationship tracking |
-| **Pitch & Presentation Specialist** | Pitch | TBD | Deck creation, data room |
-| **Deal Flow Manager** | Pipeline (Drew) | Active | CRM, stage tracking, deal flow |
+| Venture | Raise | Stage | Target |
+|---|---|---|---|
+| **Irrig8** | $5-10M | Series A | Ag tech VCs, corporate strategics, USDA SBIC, SLV angels |
+| **Valley Players Club** | $1-3M | Strategic | Casino operators, tribal gaming, gaming VCs |
+| **The Starting 5** | $2-5M | Seed/A | AI-focused VCs, SaaS VCs, founder angels |
+| **Zoe / AgentOS** | $1-2M | Strategic | Open source investors, AI company adjacents |
+| **Bxthre3 corporate** | TBD | SAFE/Note | Cap table, SAFE/convertible note |
 
 ---
 
-### Current Pipeline Snapshot
+## Team
 
-- **Total Active Pursuits:** 18 deals
-- **Hot Deal — VPC-CP-001 (Sage):** Term Sheet. Docs submitted 2026-03-24. Sage ETA mark-up was 2026-03-27. **BLOCKER: Need Drew confirmation on status.**
-- **Hot Deal — IRR-FARM-007 (CPAC):** Contacted. Intro call due 2026-03-30 (today). **Verify with Drew.**
-- **Irrig8 Series A:** $5M–$10M target. Not in market. Q2 2026 goal.
-- **Seed Round:** $3.5M identified. Not in market.
-
----
-
-### Key Infrastructure Established
-
-| Deliverable | Location | Status |
-|-------------|----------|--------|
-| Investor target tracker (42 investors) | `file 'Bxthre3/fundraising/investor-tracker/investor-targets-v1.csv'` | ✅ Done |
-| Investor tracker README | `file 'Bxthre3/fundraising/investor-tracker/README.md'` | ✅ Done |
-| Investor relations infra dirs | `Bxthre3/fundraising/{data-room,cap-table,decks,term-sheets,outreach-sequences}/` | ✅ Done |
-| Reach agent INBOX | `file 'Bxthre3/INBOX/agents/reach.md'` | ✅ Done |
+| Role | Agent | Status |
+|---|---|---|
+| Investor Relations Manager | **Network** | Active |
+| Pitch & Presentation Specialist | **Pitch** | Active |
+| Deal Flow Manager | **Pipeline** | Active |
 
 ---
 
-### Investor Target Universe — Current State
+## Daily Standup — 2026-04-03 8:15 AM MT
 
-| Venture | Tier A | Tier B | Total |
-|---------|--------|--------|-------|
-| Irrig8 | 10 | 5 | 15 |
-| VPC | 3 | 2 | 5 |
-| Starting 5 | 5 | 3 | 8 |
-| Zoe | 7 | 3 | 10 |
-| Bxthre3 Corporate | 4 | 1 | 5 |
-| **Total** | **29** | **14** | **43** |
+✅ Standup complete. Full report at `INBOX/departments/investor-relations/daily-standup-2026-04-03.md`
 
-**Gap to 100+ target goal:** 57 investors needed by end of Q2 2026.
+**Summary:**
+- 22 active deals in pipeline (Irrig8: 9, VPC: 6, Starting 5: 4, Zoe: 3)
+- 0 contacted — outreach blocked on pitch deck v1 (due Apr 4)
+- USDA SBIR: 2 days to deadline (Apr 5)
+- Blockers: Pitch deck missing, cap table missing, SAFE/note registry missing
+- VPC deck exists — can begin VPC outreach immediately
 
 ---
 
-### Top Priority Targets This Week
+## Active Work Items
 
-| Priority | Investor | Venture | Why |
-|----------|----------|---------|-----|
-| 🔴 P1 | Sage (VPC-CP-001) | VPC | Term Sheet — confirm mark-up delivery |
-| 🔴 P1 | Jessica Bradshaw / CPAC | Irrig8 | Gateway to 52K acres — call due 3/30 |
-| 🟡 P2 | Finisterra | Irrig8 | Colorado-based, ag thesis, Series A target |
-| 🟡 P2 | S2G Ventures | Irrig8 | Ag tech lead, Series A target |
-| 🟡 P2 | GitHub Fund | Starting 5 | Open source alignment, seed target |
-
----
-
-### Outstanding Decisions Needed
-
-1. **VPC launch budget:** $5K approved?
-2. **Irrig8 distribution strategy:** Direct-to-farmer vs. dealer-first?
-3. **AgTech VC outreach:** Warm intro preferred or cold?
-4. **Irrig8 Series A:** Formal target list + timeline for Q2 2026?
-5. **Starting 5 fundraise:** Timeline and target list?
+| Item | Owner | Priority | Status |
+|---|---|---|---|
+| Build investor pipeline tracker (100+ targets) | Network | P1 | IN PROGRESS |
+| Draft Irrig8 investor deck v1 | Pitch | P1 | BLOCKED — needs brodiblanco input by Apr 4 |
+| Create due diligence data room structure | Pipeline | P1 | Not started |
+| Map Ag tech investor landscape | Pipeline | P2 | Not started |
+| Draft cold email sequence (Tier 1 Ag VCs) | Network | P2 | BLOCKED — needs pitch deck |
+| Build cap table model for Bxthre3 corporate | Reach + Balance | P2 | IN PROGRESS (FPA) |
+| Term sheet negotiation playbook | Reach | P3 | Not started |
+| VPC strategic outreach | Network | P2 | CAN START — VPC deck exists |
 
 ---
 
-### Coordination Protocol
+## Cash Position Context
 
-| Counterpart | Role | Handoff |
-|-------------|------|---------|
-| Drew (Pipeline) | Deal execution | Drew owns all active pursuit execution |
-| Balance (CFO) | Finance oversight | Reach owns IR strategy; Balance owns cap table modeling |
-| Network (TBD) | Warm intros | Reach coordinates; Network executes |
-| Pitch (TBD) | Pitch materials | Reach briefs; Pitch creates |
+| Item | Amount | Date | Source |
+|---|---|---|---|
+| Current cash | $130,450 | Apr 1 | 13-week-cash-flow-Q2-2026.md |
+| Bridge needed | $400,000 | Before Jul 1 | 13-week model |
+| Series A target | $15,000,000 | Jul 2026 | IR target |
 
----
-
-### Next Actions
-
-| Priority | Action | Owner | Due |
-|----------|--------|-------|-----|
-| 🔴 P1 | Confirm Sage deal status with Drew | Reach | Today |
-| 🔴 P1 | Confirm CPAC call status with Drew | Reach | Today |
-| 🟡 P2 | Schedule 1:1 with Drew to align on IR mandate | Reach | 2026-03-31 |
-| 🟡 P2 | Build outreach sequence for Finisterra | Reach/Network | 2026-04-01 |
-| 🟡 P2 | Audit VPC deck — update for Sage terms | Reach/Pitch | 2026-04-01 |
-| 🟡 P2 | Expand investor universe to 60+ | Reach | 2026-04-07 |
+**Runway:** ~13 weeks to $0. Bridge + Series A must close.
 
 ---
 
-*Reach — Initialized 2026-03-30*
+## Escalation Rules
+
+- **P0:** Term sheet received, lead investor identified, closing imminent
+- **P1:** Investor meeting confirmed with decision-maker, DD request received, legal concern
+- **P2:** Routine pipeline updates, deck revisions, follow-up sequencing
+- **P3:** Background research, landscape mapping, long-range planning
+
+**P0/P1 → Bxthre3/INBOX.md → SMS to brodiblanco**
+
+---
+
+## Notes
+
+- **Irrig8** is the product name (FarmSense retired 2026-03-23) — all materials must use Irrig8
+- **AgentOS** has 93 stub findings (P0/P1) — do not oversell until engineering remediation complete
+- **Water Court Jun 29** — core team bandwidth limited; avoid non-essential asks
+- **Cash partnerships = 1% minimum equity minimum**; standard investment = higher threshold (see pitch materials)
+- VPC equity split confirmed: 500,001 / 499,999 (BXB / co-founder)
+
+---
+
+## Immediate Actions
+
+| Owner | Action | Due |
+|---|---|---|
+| **Maya** | Submit USDA SBIR grant | Apr 5 |
+| **Pitch** | Deliver Irrig8 pitch deck v1 | Apr 4 |
+| **Balance** | Deliver cap table + SAFE/note registry to Network | Apr 5 |
+| **Network** | Add 10 equity targets to pipeline tracker | Apr 3 |
+| **Network** | Begin VPC outreach (deck exists) | Apr 4 |
+| **Reach** | Draft cold email sequence for VPC | Apr 4 |
+
+---
+
+*Reach — VP Investor Outreach | Bxthre3 Inc*

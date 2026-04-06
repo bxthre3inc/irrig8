@@ -1,46 +1,67 @@
-# Procurement Department — Operations
+# Procurement Department — Bxthre3 Inc
 
-> **Head:** Purchase (Procurement & Vendor Manager)  
+> **Department:** Procurement & Vendor Management  
+> **Head:** Purchase (Agent)  
+> **Created:** 2026-04-03  
 > **Reports to:** Source (Supply Chain), Balance (CFO), Atlas (COO)  
-> **Meeting Cadence:** Daily 8:15 AM
 
 ---
 
-## Department Status
+## Mission
 
-| Metric | Value |
-|--------|-------|
-| Active Vendors | 0 |
-| Pending POs | 0 |
-| Active Contracts | 0 |
-| Open RFPs | 0 |
+Own all corporate procurement and vendor management for Bxthre3. Ensure the company gets the best value from every vendor relationship.
 
 ---
 
 ## Scope
 
-- Corporate software subscriptions (SaaS tools, cloud services)
-- Hardware components and manufacturing (Irrig8 parts, electronics)
-- Professional services (lawyers, accountants, consultants, contractors)
-- Marketing vendors (agencies, PR firms, event production)
-- IT equipment and peripherals
-- Office supplies and services
-- Corporate insurance policies
-- Event and conference vendors
+| Category | Examples |
+|----------|----------|
+| Corporate SaaS | Subscriptions, cloud services, productivity tools |
+| Hardware / Manufacturing | FarmSense parts, electronics, IoT components |
+| Professional Services | Lawyers, accountants, consultants, contractors |
+| Marketing Vendors | Agencies, PR firms, event production |
+| IT Equipment | Computers, peripherals, networking gear |
+| Office Supplies | Supplies, services, utilities |
+| Corporate Insurance | Policies coordinated with Anchor |
+| Events & Conferences | Vendors, venues, production |
 
 ---
 
-## Key Activities
+## Active Vendors
 
-- Vendor sourcing and RFP process
-- Contract negotiation and review
-- Vendor onboarding and offboarding
-- Purchase order management
-- Corporate card management (coordinated with Ledger)
-- Vendor relationship management
-- Cost benchmarking and negotiation
-- Corporate insurance renewals (coordinated with Anchor)
+| Vendor | Category | Status | Contract | Renewal |
+|--------|----------|--------|----------|---------|
+| — | — | — | — | — |
+
+*No vendors onboarded yet. See Vendor Onboarding Workflow.*
 
 ---
 
-## Last Updated: 2026-03-31 09:10 UTC
+## Pending Actions
+
+| Priority | Item | Owner | Due |
+|----------|------|-------|-----|
+| — | — | — | — |
+
+---
+
+## Meeting Cadence
+
+- **Daily Standup:** 8:15 AM MT — Procurement team sync
+
+---
+
+## Files & References
+
+| Document | Path |
+|----------|------|
+| Vendor Registry | `Bxthre3/PROCUREMENT/vendor-registry.md` |
+| Contract Tracker | `Bxthre3/PROCUREMENT/contracts.md` |
+| Purchase Orders | `Bxthre3/PROCUREMENT/purchase-orders.md` |
+| RFP Templates | `Bxthre3/PROCUREMENT/templates/rfp.md` |
+| Vendor Scorecards | `Bxthre3/PROCUREMENT/scorecards/` |
+
+---
+
+*Last Updated: 2026-04-03

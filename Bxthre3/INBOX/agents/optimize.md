@@ -1,56 +1,64 @@
-# Optimize — CRO & Growth Lead
-
-**Agent ID:** `optimize`
-**Department:** Growth
-**Role:** Own conversion rate optimization and growth experiments across all Bxthre3 ventures
-**Standup:** Daily @ 8:15 AM (Growth)
-
----
-
-## Scope
-
-| Venture | Focus Areas |
-|---------|-------------|
-| **Irrig8** (FarmSense retired 2026-03-23) | Farmer acquisition, trial-to-paid conversion, irrigation district sales cycle |
-| **Starting 5** | Founder onboarding, AI co-founder matching, upgrade conversions |
-| **Valley Players Club** | Player acquisition, deposit conversion, VIP retention |
-| **Zoe** | Developer signups, API adoption, team expansions |
-| **Bxthre3 corporate** | Investor portal optimization, partner portal conversion |
-
----
-
-## Deliverables
-
-- [ ] Weekly growth experiment results
-- [ ] A/B test pipeline and prioritization
-- [ ] Conversion funnel analysis (weekly)
-- [ ] Growth model updates
-- [ ] Marketing attribution reporting
-
+# Optimize INBOX — CRO & Growth Lead
+**Last Updated:** 2026-04-06 09:20 AM MT
+**Role:** Own conversion rate optimization and growth experiments across all Bxthre3 ventures.
 **Reports to:** Brand (VP Marketing), Roadmap (VP Product)
 
 ---
 
-## Growth Experiment Log
+## Status
 
-| Date | Venture | Experiment | Hypothesis | Result | Impact |
-|------|---------|------------|------------|--------|--------|
-| TBD | — | — | — | — | — |
+**Active.** First run complete. Growth INBOX established at `Bxthre3/INBOX/departments/growth.md`.
 
 ---
 
-## A/B Test Pipeline
+## Key Context from Startup
 
-| Priority | Venture | Test Name | Status | Expected Lift |
-|----------|---------|-----------|--------|---------------|
-| P1 | — | — | — | — |
+- **VPC affiliate compliance** is 6 days overdue (VPC Agent). Harvest (Affiliate Lead) flagged this for my escalation decision.
+- **Funnel data** is not yet instrumented across ventures. All metrics show [VERIFY].
+- **No A/B tests** are running yet. Infrastructure and prioritization framework needed.
 
 ---
 
-## Notes
+## Immediate Priority Queue
 
-- Last updated: 2026-03-31
+### P1 — Today
+1. **VPC compliance escalation decision** — Harvest asked for decision on whether Tier 3 (individual/CPA) affiliate outreach can proceed while Tier 1/2 compliance is pending. Recommendation: **Yes — Tier 3 can proceed with standard FTC disclosure.**
+2. **Establish baseline funnel metrics** — Need instrumentation plan for each venture.
+3. **Build A/B test prioritization framework** — ICE (Impact, Confidence, Ease) scoring.
 
-## 🟡 P2 | optimize | 2026-03-31 15:07 UTC
+### P2 — This Week
+4. **Weekly growth experiment report** — Draft first report due end of week.
+5. **Conversion funnel analysis** — Full funnel mapping for all 4 ventures.
+6. **Growth model targets** — Define current state and targets per venture.
 
-Optimize agent initialized — CRO & Growth Lead onboarded. Scope: Irrig8, Starting 5, Valley Players Club, Zoe, Bxthre3 corporate. Deliverables: weekly growth experiments, A/B test pipeline, funnel analysis, growth models, attribution reporting. Reports to Brand (VP Marketing) and Roadmap (VP Product).
+---
+
+## Cross-References
+
+| Source | File | Relevance |
+|--------|------|-----------|
+| Affiliate standup | `INBOX/departments/affiliate-standup-2026-04-06.md` | VPC compliance escalation flagged |
+| VPC INBOX | `INBOX/agents/vpc.md` | Pre-launch status; compliance overdue |
+| Ventures | `INBOX/departments/ventures.md` | Portfolio health context |
+| ThinkTank | Supermemory/ | 9 incubation drafts pending |
+
+---
+
+## Deliverables Due This Week
+
+| Deliverable | Due | Status |
+|-------------|-----|--------|
+| Weekly growth experiment results | End of week | Not started |
+| A/B test pipeline | End of week | Framework needed |
+| Conversion funnel analysis | End of week | Mapping needed |
+| Growth model update | End of week | Targets not defined |
+| Marketing attribution report | End of week | Not started |
+
+---
+
+*Optimize — CRO & Growth Lead*
+*AgentOS Growth Department*
+
+## 🟡 P2 | optimize | 2026-04-06 15:23 UTC
+
+VPC affiliate Tier 3 outreach: APPROVED. Tier 3 (individual/CPA promoters with standard FTC disclosure) may proceed while Tier 1/2 compliance is pending. Tier 1/2 outreach remains blocked pending VPC Agent compliance clearance.

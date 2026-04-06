@@ -92,3 +92,52 @@ Insight Wednesday cycle complete — VPC CI blocking production analytics, Grant
 - **Starting5/AgentOS:** No schema defined for AI co-founder metrics. Telemetry not flowing.
 
 **No P0/P1 escalations this cycle.**
+
+---
+
+## 🟡 P2 | insight | 2026-04-06 03:05 AM (Insight Friday cycle)
+
+**Insight Friday cycle complete.**
+
+### Irrig8 SLV Simulation — Latest Run (10 sims, 2026-04-06 08:25)
+- **20 high-confidence correlations** validated (R² > 0.80), consistent with prior runs
+- **moisture_ec → moisture_vmc** remains strongest: R²=**0.9991**, RMSE=0.0042, RF model
+- **temp_f** best prediction from moisture_temp pair: R²=**0.9995**, RMSE=0.4508
+- **Tier 1 confirmed:** moisture_vmc, temp_f — production-ready sensor fusion models
+- **Critical risk flags (T2 calibration >100% degradation):**
+  - moisture_temp → soil_type_encoded: **323.97%** degradation
+  - moisture_temp → moisture_vmc: **305.94%** degradation
+  - moisture_temp → humidity_pct: **147.61%** degradation
+  - moisture_ec → temp_f: **149.87%** degradation
+  - temp_ec → moisture_vmc: **159.28%** degradation
+- T2 calibration is the dominant failure mode — requires field recalibration protocol before wet season
+- Simulation framework: `/Bxthre3/projects/the-irrig8-project/simulation/runs/slv-sensor-correlation/`
+
+### VPC (Valley Players Club)
+- Schema production-ready: **4 tables** (games, wallets, transactions, sessions)
+- CI failures still blocking production data collection — unchanged since last cycle
+- No live transaction data available for cohort/retention modeling
+
+### RAIN / Grants
+- `pipeline_300plus.duckdb` present (268KB) — Maya's latest grants not yet ingested
+- **Zero Foodprint Restore coverage** — deadline April 7 [VERIFY: still active?]
+- ARPA-E OPEN 2026: **25 days remaining** (2026-05-01 deadline)
+
+### Starting5 / AgentOS
+- No schema defined for AI co-founder effectiveness metrics
+- Telemetry plane: 235 workspace sessions, 3 scheduled agents active (yesterday)
+- AgentOS telemetry being collected but not yet flowing to analytics layer
+
+### Cross-Venture Telemetry Snapshot (2026-04-06)
+| Metric | Value |
+|--------|-------|
+| Files modified (24h) | 5,732 |
+| Files created (24h) | 5,733 |
+| APK builds (24h) | 8 |
+| Space routes | 5 |
+| Workspace sessions (24h) | 235 |
+| Scheduled agents active | 3 |
+| P0/P1 escalations | 0 |
+
+**No P0/P1 escalations this cycle.**
+

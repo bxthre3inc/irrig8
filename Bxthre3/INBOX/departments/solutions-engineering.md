@@ -75,6 +75,30 @@
 
 ---
 
+## 2026-04-02 — Standup (8:15 AM MT)
+
+### Key Updates
+- Standup file created: `solutions-engineering-standup-2026-04-02.md`
+- **zo.space DOWN** — demo environments impacted (Irrig8, AgentOS web UI)
+- VPC Sage (VPC-CP-001) mark-up still overdue from 2026-03-27
+- USDA NRCS EQIP — GO/NO-GO still needed this week
+
+### Today's Actions (2026-04-02)
+1. **[P1]** Confirm zo.space recovery — coordinate with Theo or run `restart_space_server`
+2. **[P1]** IRR-DIST-007 USDA NRCS — GO/NO-GO decision needed this week
+3. **[P2]** IRR-DIST-006 Planet Labs — request dev API access
+4. **[P2]** IRR-FARM-007 CPAC — verify Jessica Bradshaw email, schedule intro call
+5. **[P2]** VPC Sage (VPC-CP-001) — confirm mark-up status
+
+### Blockers Updated
+| Blocker | Owner | Impact | Resolution |
+|---|---|---|---|
+| **zo.space outage** | Theo | Can't demo Irrig8 or AgentOS publicly | `restart_space_server` |
+| VPC CI pipeline (2 failures) | Drew | Can't demonstrate VPC | CI remediation |
+| BUILDBZ 8 TBD fields | brodiblanco | Can't advance spec | Promote or complete fields |
+
+---
+
 ## Pipeline Summary (by Venture)
 
 | Venture | P1 Deals | P2 Deals | Key Technical Gate |
@@ -86,4 +110,86 @@
 
 ---
 
-*Last updated: 2026-03-30 08:10 MT*
+*Last updated: 2026-04-02 08:15 MT*
+## 2026-04-03 — Standup (9:10 AM MT)
+
+### Pre-Sales Pipeline
+
+#### 🔴 P1 — Active Technical Close
+
+| Deal ID | Entity | Stage | Technical Focus | Next Step | Status |
+|---|---|---|---|---|---|
+| VPC-CP-001 | Sage (Founding Cash Partner) | Term Sheet | Cash partnership structure, equity math, take-rate mechanics | Sage delivers mark-up — 2026-03-27 (OVERDUE) | 🔴 |
+| IRR-DIST-001 | Valley Irrigation | Researched | Pivot manufacturer integration, dealer network API | Intro call with dealer network | 🟡 |
+| IRR-DIST-002 | Reinke | Researched | Distribution partnership specs | Intro call with dealer network | 🟡 |
+| IRR-DIST-007 | USDA NRCS | Active | EQIP vendor enrollment — GO/NO-GO needed **this week** | Grant pathway + credibility | 🔴 |
+| IRR-FARM-001 | Maverick Potato Co | Targeted | Pilot — 2,500+ acres organic, tech adopter | Intro outreach | 🟡 |
+| IRR-FARM-002 | Skyline Potato Co | Targeted | Pilot — 3,000+ acres, 3 facilities | Intro outreach | 🟡 |
+| IRR-FARM-007 | Jessica Bradshaw / CPAC | Contacted | Gatekeeper to SLV potato community (52K acres) | Verify email + intro call | 🟡 |
+
+#### 🟡 P2 — Technical Discovery Needed
+
+| Deal ID | Entity | Technical Focus | Priority |
+|---|---|---|---|---|
+| IRR-DIST-006 | Planet Labs | Satellite data feed — dev API access needed | 🟡 |
+| IRR-FARM-003 | Mix Farms | Qualifying call — 800+ acres | 🟡 |
+| IRR-FARM-004 | Proximity Malt Colorado | Partnership explore — malt house integration | 🟡 |
+| IRR-FARM-005 | Subdistrict 1 / RGWCD | Aggregated 500+ acres, 3,000+ wells | 🟡 |
+| VPC-CP-002/003 | TBD Cash Partners x2 | Same structure as VPC-CP-001 | 🟡 |
+| GRANT-004 | NSF SBIR Phase I | Technical narrative for SBIR | 🟡 |
+
+### Demo Environment Status
+
+| Environment | Status | URL/Location | Notes |
+|---|---|---|---|
+| Irrig8 | 🟢 Live | `brodiblanco.zo.space` (Irrig8 routes) | Web UI operational |
+| AgentOS | 🟢 Live | `brodiblanco.zo.space/aos` | 6 tabs, private auth |
+| VPC | 🟡 CI remediation | VPC project dir | 2 failing checks — Drew owner |
+| Starting 5 | 🟡 Planning | Architecture spike blocked | Primitives definition needed |
+| Zoe | 🟢 Live | `brodiblanco.zo.space` | Zo Computer core |
+
+### Integration Architecture — Open Items
+
+| Deal | Integration Type | Status |
+|---|---|---|
+| Valley Irrigation / Reinke | Farm management system API | Awaiting first contact |
+| Planet Labs | Satellite data feed | Dev API access request needed |
+| USDA NRCS | EQIP enrollment system | **GO/NO-GO pending — this week** |
+| Maverick/Skyline pilots | Sensor/IoT integration | Pre-POC technical discovery |
+| VPC Sage | Cash partnership docs | Legal mark-up overdue (2026-03-27) |
+| NSF SBIR (GRANT-004) | AgentOS technical narrative | Maya owner — deadline Apr 5 |
+
+### Open RFPs/RFIs
+
+*TBD — none filed yet*
+
+### Blockers
+
+| Blocker | Owner | Impact | Resolution |
+|---|---|---|---|
+| **PostgreSQL outage (P1)** | Pulse/System | Demo envs may be impacted | Investigating — see INBOX.md |
+| VPC CI pipeline (2 failures) | Drew | Can't demonstrate VPC | CI remediation |
+| BUILDBZ 8 TBD fields | brodiblanco | Can't advance spec | Promote or complete fields |
+
+### Today's Actions (2026-04-03)
+
+1. **[P1]** IRR-DIST-007 USDA NRCS — GO/NO-GO decision **this week**
+2. **[P2]** IRR-DIST-006 Planet Labs — request dev API access
+3. **[P2]** IRR-FARM-001 Maverick Potato Co — technical discovery outreach
+4. **[P2]** IRR-FARM-002 Skyline Potato Co — technical discovery outreach
+5. **[P2]** VPC-CP-001 Sage — confirm mark-up status (overdue since 2026-03-27)
+6. **[P3]** GRANT-004 NSF SBIR — technical narrative support available for Maya
+
+### Handoff
+
+- **Drew:** VPC-CP-001 Sage markup overdue — confirm status
+- **Maya:** USDA SBIR deadline Apr 5 (2 days) — technical narrative assistance available
+
+### Escalations
+
+- PostgreSQL outage (P1) → Pulse handling, INBOX.md flagged
+- zo.space recovered from 2026-04-02 outage — demo envs operational
+
+---
+
+*Last updated: 2026-04-03 09:10 AM MT*

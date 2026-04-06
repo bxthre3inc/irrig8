@@ -1,98 +1,65 @@
-# Nexus — VP Strategic Partnerships INBOX
+# Agent INBOX — Nexus, VP Strategic Partnerships
 
-**Agent:** Nexus  
-**Role:** VP Strategic Partnerships — Corporate Development  
-**Department:** Strategic Partnerships  
-**Venture Alignment:** All Bxthre3 ventures  
-**Status:** Active  
-**Last Updated:** 2026-03-31  
-
----
-
-## Active Partnership Pipeline
-
-### Irrig8 Partnerships
-
-| Partner | Category | Status | Priority | Stage |
-|---------|----------|--------|----------|-------|
-| Valley Irrigation | Distribution / Equipment | 🔍 Prospecting | P1 | Contact list building |
-| Reinke | Distribution / Equipment | 🔍 Prospecting | P1 | Contact list building |
-| Wilbur-Ellis | Ag Retailer / Distribution | 🔍 Prospecting | P2 | Initial research |
-| CHS | Ag Retailer / Distribution | 🔍 Prospecting | P2 | Initial research |
-| Nutrien | Ag Retailer / Distribution | 🔍 Prospecting | P2 | Initial research |
-| USDA / NRCS | Government / Data | 🔍 Prospecting | P2 | Initial research |
-| Cooperative Extension | Research / Distribution | 🔍 Prospecting | P3 | Initial research |
-
-### Valley Players Club Partnerships
-
-| Partner | Category | Status | Priority | Stage |
-|---------|----------|--------|----------|-------|
-| Game Studios | Technology / Content | 🔍 Prospecting | P1 | Building target list |
-| Payment Processor | Payment / Cash-in-Person | 🔍 Prospecting | P1 | Building target list |
-| Affiliate Networks | Channel / Distribution | 🔍 Prospecting | P2 | Building target list |
-| Platform Aggregators | Channel / Distribution | 🔍 Prospecting | P2 | Building target list |
-
-### AgentOS Partnerships
-
-| Partner | Category | Status | Priority | Stage |
-|---------|----------|--------|----------|-------|
-| AgTech VCs | Strategic Investor | 🔍 Prospecting | P1 | Building target list |
-| Gaming Investors | Strategic Investor | 🔍 Prospecting | P2 | Building target list |
+**Agent:** Nexus
+**Role:** VP Strategic Partnerships — AgentOS Corporate Development Department
+**Department:** Strategic Partnerships
+**Reports to:** brodiblanco (CEO)
+**Last Updated:** 2026-04-02
 
 ---
 
-## Deliverables Status
+## Current Status
 
-| Deliverable | Status | Last Updated |
-|-------------|--------|--------------|
-| Weekly Partnership Pipeline Report | ✅ Complete | 2026-03-31 |
-| Partnership Evaluation Framework | ✅ Complete | 2026-03-31 |
-| M&A Target Shortlist | 🔄 In Progress | 2026-03-31 |
-| Term Sheet Drafts | ⬜ Pending | — |
-| Partnership ROI Analysis | ⬜ Pending | — |
-
----
-
-## Research Notes
-
-### Key Findings — Reinke
-
-- **Reinke + CropX partnership** exists (soil monitoring sensor) — potential model for Irrig8 integration [^1]
-- Reinke is world's largest privately held center-pivot manufacturer (Deshler, Nebraska)
-- 80+ years experience, GPS/satellite/touchscreen pioneer
-- Distribution: 100s of dealers across 40+ countries
-- **Opportunity:** Reinke dealer network as distribution channel for Irrig8
-
-### Key Findings — AgTech Investors
-
-- Precision ag IoT solutions are top priority for investors in 2025–2026 [^2]
-- AgTech funding diversifying beyond VC: family offices, corporate VCs, grants
-- Top investors active in irrigation: The Yield Lab, Pymwymic, Corteva Catalyst, SVG Ventures [^2]
+| Metric | Value |
+|--------|-------|
+| Active Partnerships | 0 |
+| Prospecting Pipeline | 14 targets |
+| Term Sheets | 0 |
+| Closed Deals | 0 |
+| M&A Shortlist | 4 categories |
 
 ---
 
-## Escalations
+## Active Pursuits
 
-### P1
-- None
+### P1 — Immediate (Week of 2026-04-07)
+1. **Valley Irrigation** — Equipment distribution for Irrig8
+2. **Reinke** — Equipment distribution for Irrig8
+3. **VPC Game Studios** — Compile top 10 target list
+4. **VPC Payment Processor** — Identify cash-in-person network partners
+5. **AgTech VCs** — Finalize top 20 target list
 
-### P2
-- None
+### P2 — Short-term (This Month)
+1. **Wilbur-Ellis** — Ag retailer outreach
+2. **CHS** — Ag retailer outreach
+3. **Nutrien** — Ag retailer outreach
+4. **USDA/NRCS** — Government partnership
+5. **VPC Affiliate Networks** — Build target list
+6. **Gaming Investors** — Build target list
+
+### P3 — Medium-term (Q2)
+1. **Cooperative Extension** — Research partnership
+2. **VPC Platform Aggregators** — Build target list
 
 ---
 
-## Activity Log
+## M&A Target Shortlist
 
-### 2026-03-31
-- Agent initialized
-- INBOX created
-- Weekly Partnership Pipeline Report created
-- Partnership Evaluation Framework completed
-- Reinke + AgTech investor research conducted
+| Category | Targets | Priority |
+|----------|---------|----------|
+| Soil Sensors | Teralytic, AquaSpy, CropX | 🟡 Monitor |
+| Weather Data | ClimaCell, Weather Company, DTN | 🟡 Monitor |
+| Ag Data Platforms | Granular, Conservis, AgriWebb | 🟡 Monitor |
+| Gaming Platform | Hard Rock Social Casino, Pocket Games | 🔴 Low |
 
 ---
 
-*Routing: Report to `Bxthre3/INBOX/departments/partnerships.md` | Escalations to `Bxthre3/INBOX.md`*
+## Notes
 
-[^1]: https://www.globalagtechinitiative.com/market-watch/reinke-cropx-form-partnership-to-advance-precision-irrigation-technology
-[^2]: https://www.linkedin.com/posts/sepehr-achard-090666179_who-invested-in-agtech-in-2025-a-data-driven-activity-7412847709612756992-waxT
+- VPC Cash Partner Deal: $2,500 → 2.5% equity + 10% flat take rate. 2× guaranteed return in 6 months.
+- Reinke already partners with CropX — validates Irrig8 integration model. Direct: (402) 365-7251
+- AgTech Investors Active in Irrigation (2025–2026): The Yield Lab, Pymwymic, Corteva Catalyst, SVG Ventures, iSelect Fund
+
+---
+
+*Escalations route to `Bxthre3/INBOX.md` (P0/P1 only)*

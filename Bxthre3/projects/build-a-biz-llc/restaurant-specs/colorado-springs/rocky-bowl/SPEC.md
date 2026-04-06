@@ -16,12 +16,12 @@
 | **Address** | 6821 Space Village Ave, Colorado Springs, CO | ✅ |
 | **Google Rating** | 4.9 stars | ✅ |
 | **Reviews** | 427 | ✅ |
-| **Phone** | _research needed_ | ❌ |
-| **Website** | _research needed_ | ❌ |
-| **Owner/Manager** | _research needed_ | ❌ |
-| **Third-Party Platforms** | DoorDash, Uber Eats, Grubhub (from LEAD_TRACKER — unverified) | ⚠️ |
+| **Phone** | (719) 629-9043 | ✅ |
+| **Website** | https://rockybowlbistro.com/ | ✅ |
+| **Owner/Manager** | Not found online | ❌ |
+| **Third-Party Platforms** | Clover Online Ordering (own platform) | ✅ |
 
-## Operations (from Google Maps)
+## Operations (from Google Maps + Website)
 
 | Field | Value | Verified |
 |-------|-------|----------|
@@ -31,7 +31,7 @@
 | **Vegetarian Options** | Yes | ✅ |
 | **Parking** | Free lot & street | ✅ |
 | **Wheelchair Accessible** | Yes | ✅ |
-| **Hours** | _research needed_ | ❌ |
+| **Hours** | Mon-Sat: 10:30 AM - 8:00 PM, Sun: Closed | ✅ |
 
 ## Commission Analysis (ESTIMATED)
 
@@ -50,11 +50,18 @@ _Formula: Avg Order × Weekly Orders × Commission % × 52 weeks_
 
 | Asset | Status | Path/Source |
 |-------|--------|-------------|
-| Logo | ❌ NOT COLLECTED | _do research_ |
-| Hero Photo | ❌ NOT COLLECTED | _do research_ |
-| Menu | ❌ NOT COLLECTED | _do research_ |
-| Brand Colors | ❌ NOT EXTRACTED | _do research_ |
-| Owner Contact | ❌ NOT FOUND | _do research_ |
+| Logo | ✅ COLLECTED | `assets/logo.png` |
+| Hero Photo | ✅ COLLECTED | `assets/hero.jpg` |
+| Menu | ✅ COLLECTED | `assets/menu.md` |
+| Brand Colors | ✅ EXTRACTED | `assets/brand-colors.json` |
+| Owner Contact | ⚠️ PARTIAL | Phone: (719) 629-9043 |
+
+## Assets Collected (Date: 2026-04-05)
+- **Logo:** `assets/logo.png`
+- **Menu:** `assets/menu.md`
+- **Hero Photo:** `assets/hero.jpg`
+- **Brand Colors:** #E85A4F #F5F5F5 #4A4A4A
+- **Owner Contact:** Phone: (719) 629-9043 | Website: https://rockybowlbistro.com/ | Owner name: Not found online [Research ongoing]
 
 ## Research Tasks Remaining
 

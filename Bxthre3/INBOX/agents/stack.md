@@ -2,7 +2,7 @@
 
 **Role:** Platform Engineering Lead — AgentOS Infrastructure Department
 **Reports to:** Bits (CTO)
-**Last Updated:** 2026-03-31 15:05 UTC
+**Last Updated:** 2026-04-06 09:20 AM MT
 
 ---
 
@@ -11,11 +11,24 @@
 | Metric | Value |
 |--------|-------|
 | Services UP | 5/5 |
-| AgentOS API | ✅ UP |
-| MCP Bridge | ✅ UP |
-| Mesh Server | ✅ UP |
-| Control Plane | ✅ UP |
-| VPC Service | ✅ UP |
+| AgentOS API (zo.space) | ✅ UP — 10/10 endpoints healthy |
+| agentos-api (port 9000) | ✅ UP — v7.0.0 |
+| VPC Service (port 5176) | ✅ UP |
+| Shared symlink | ✅ FIXED |
+
+---
+
+## Incident — 2026-04-06
+
+**Issue:** 10 AgentOS API routes failing with `Cannot find module '/home/workspace/Bxthre3/shared/agent-os/core/hierarchy/agentOSApi.js'`
+
+**Root Cause:** `/home/workspace/Bxthre3/shared/agent-os/core` was a standalone empty directory, not a symlink pointing to the actual code.
+
+**Fix:** Created symlink `/home/workspace/Bxthre3/shared/agent-os/core/hierarchy → /home/workspace/Bxthre3/projects/agentic/agent-os/core/hierarchy`
+
+**Resolution:** All endpoints verified HTTP 200. Incident closed.
+
+**Full report:** `INBOX/departments/platform-standup-2026-04-06.md`
 
 ---
 
@@ -35,24 +48,26 @@
 
 ---
 
-## Active Issues
-
-| Priority | Issue | Status |
-|----------|-------|--------|
-| P1 | AgentOS backend deployment: `agentos-backend` workdir doesn't exist at `Bxthre3/projects/agentos-backend` | Needs relocation or deployment path correction |
-| P3 | Platform standup NO-SHOW 2026-03-30 | Must show up today |
-
----
-
 ## Services Under Management
 
 | Service | Port | URL | Status |
 |---------|------|-----|--------|
-| `aos` | 9999 | `https://aos-brodiblanco.zocomputer.io` | ✅ UP |
-| `agentos-zo-bridge-v3` | 8888 | `https://agentos-zo-bridge-v3-brodiblanco.zocomputer.io` | ✅ UP |
-| `agentos-mesh-server` | 7778 | `https://agentos-mesh-server-brodiblanco.zocomputer.io` | ✅ UP |
-| `mcp-mesh-control-plane` | 7777 | `https://mcp-mesh-control-plane-brodiblanco.zocomputer.io` | ✅ UP |
+| `agentos-api` | 9000 | `https://agentos-api-brodiblanco.zocomputer.io` | ✅ UP |
 | `vpc` | 5176 | `https://vpc-brodiblanco.zocomputer.io` | ✅ UP |
+| zo.space AgentOS routes | 3099 | `https://brodiblanco.zo.space/aos` | ✅ UP |
+
+---
+
+## Platform Metrics (2026-04-06)
+
+| Metric | Value |
+|--------|-------|
+| Total Agents | 19 |
+| Active Agents | 16 |
+| Avg Completion Rate | 91% |
+| Total Tasks | 15 |
+| Completed Today | 3 |
+| Open P1s | 14 |
 
 ---
 
@@ -62,6 +77,7 @@
 - MCP Bridge: `Bxthre3/projects/the-agentos-project/mcp-bridge/`
 - Android App: `Bxthre3/projects/the-agentos-native/AgentOS-Native-Source/`
 - Webapp: `https://brodiblanco.zo.space/aos`
+- Standup Report: `Bxthre3/INBOX/departments/platform-standup-2026-04-06.md`
 
 ---
 

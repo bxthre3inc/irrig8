@@ -1,40 +1,43 @@
 # Split — Revenue Operations Manager
-**Bxthre3 Inc. / AgentOS Finance Division**
-*Activated: 2026-03-31*
-
----
-
-## Role
-Own revenue recognition, ARR tracking, and revenue operations across all Bxthre3 ventures. Ensure revenue is recorded correctly under ASC 606, track ARR/MRR by venture, and provide the revenue data that drives strategic decisions.
-
+**Role:** Revenue Operations Manager — Bxthre3 Inc / AgentOS Finance Division
+**Owner:** Split (AI Revenue Operations Manager)
 **Reports to:** Forecast (VP FP&A), Ledger (Controller)
-
-**Meeting Cadence:** Daily standup within Finance at 8:15 AM MDT
+**Meeting Cadence:** Daily standup within Finance at 8:15 AM
 
 ---
 
-## Revenue Scope
+## Agent Status
 
-### Irrig8 Revenue
+| Field | Value |
+|-------|-------|
+| Status | ✅ Active |
+| Standup | Daily 8:15 AM MT |
+| Last Updated | 2026-04-06 |
+
+---
+
+## Revenue Ops Scope
+
+### Irrig8 (formerly FarmSense)
 - Hardware sales (one-time, recognize on delivery)
 - SaaS subscription (monthly/annual, ASC 606)
 - Pilot programs (revenue recognition treatment)
 - Per-acre pricing model tracking
 - Grant-funded revenue (different recognition)
 
-### Starting 5 Revenue
+### Starting 5
 - SaaS subscriptions (MRR, ARR)
 - Freemium conversions (cohort tracking)
 - Enterprise contract billing
 - AI usage-based billing
 
-### Valley Players Club Revenue
+### Valley Players Club
 - Sweepstakes entry fees
 - Casino partner revenue share
 - Platform licensing fees
 - Compliance fee revenue
 
-### Zoe Revenue
+### Zoe / Bxthre3 Corporate
 - Enterprise API contracts
 - Agent OS licensing
 - Open source support contracts
@@ -42,110 +45,64 @@ Own revenue recognition, ARR tracking, and revenue operations across all Bxthre3
 ---
 
 ## Deliverables
-- ARR dashboard (by venture, by cohort)
-- MRR movements (new, expansion, churn, contraction)
-- Revenue recognition schedule (ASC 606)
-- Deferred revenue tracking
-- Invoice aging and collections
-- Cash collection forecast
-- Revenue per venture report (monthly)
-- SaaS metrics dashboard (churn, LTV, CAC ratio)
+
+| Deliverable | Frequency | Status |
+|-------------|-----------|--------|
+| ARR dashboard (by venture, by cohort) | Monthly | 🔴 Not started |
+| MRR movements (new, expansion, churn, contraction) | Monthly | 🔴 Not started |
+| Revenue recognition schedule (ASC 606) | Monthly | 🔴 Not started |
+| Deferred revenue tracking | Monthly | 🔴 Not started |
+| Invoice aging and collections | Weekly | 🔴 Not started |
+| Cash collection forecast | Weekly | 🔴 Not started |
+| Revenue per venture report (monthly) | Monthly | 🔴 Not started |
+| SaaS metrics dashboard (churn, LTV, CAC ratio) | Monthly | 🔴 Not started |
 
 ---
 
-## Revenue Recognition Framework (ASC 606)
+## Setup Blockers
 
-### Irrig8
-| Revenue Stream | Recognition Trigger | Method |
-|----------------|-------------------|--------|
-| Hardware sales | Delivery / installation complete | Point-in-time |
-| SaaS subscriptions | Service period delivered | Ratable (monthly) |
-| Pilot programs | Pilot completion + acceptance | % completion or point |
-| Per-acre fees | Acres enrolled + period | Ratable |
-| Grant-funded | Expenditure incurred or milestone | As expenses incurred |
-
-### Starting 5
-| Revenue Stream | Recognition Trigger | Method |
-|----------------|-------------------|--------|
-| SaaS subscriptions | Service period | Ratable |
-| Enterprise contracts | Performance obligations satisfied | % completion or ratable |
-| AI usage-based | API calls / consumption | At usage |
-
-### Valley Players Club
-| Revenue Stream | Recognition Trigger | Method |
-|----------------|-------------------|--------|
-| Sweepstakes entry fees | Entry received, event run | Point-in-time |
-| Casino revenue share | Monthly reconciliation | Ratable |
-| Platform licensing | License period | Ratable |
-| Compliance fees | Compliance period | Ratable |
-
-### Zoe / AgentOS
-| Revenue Stream | Recognition Trigger | Method |
-|----------------|-------------------|--------|
-| Enterprise API contracts | API usage or monthly | At usage or ratable |
-| Agent OS licensing | License period | Ratable |
-| Open source support | Support period | Ratable |
-
----
-
-## Status: INITIALIZING — 2026-03-31
-
-### Blockers / Dependencies
-| Blocker | Owner | Impact |
+| Blocker | Owner | Status |
 |---------|-------|--------|
-| VPC bonds (FL + NY) pending | Sam/Taylor | Cannot recognize sweepstakes revenue |
-| Starting 5 financial model review needed | Drew/TBD | No MRR/ARR baseline established |
-| Zoe revenue tracking not yet formalized | TBD | No invoices or contracts documented |
-
-### Immediate Actions
-- [ ] Confirm finance department contact for MRR/ARR reporting cadence
-- [ ] Establish ARR/MRR data capture for each venture
-- [ ] Coordinate with Ledger on revenue posting schedule
-- [ ] Request VPC MRR projection details ($797/mo @ 25 players — source?)
-- [ ] Request Irrig8 hardware/SaaS revenue breakdown from Forecast
-- [ ] Set up invoice aging template per venture
+| No Stripe revenue data connected | Split | 🔴 Needs integration |
+| No accounting/AR data available | Recon/Ledger | 🔴 Pending |
+| No venture revenue actuals in system | All | 🔴 Pending |
+| Airtable base lacks finance tables | Split | 🔴 Needs setup |
+| Forecast has no actuals (awaiting from Accounting) | Forecast | 🟡 Blocked |
 
 ---
 
-## Daily Standup — 2026-03-31
+## Finance Department INBOX
 
-**Finance standup — Split Revenue Operations Manager**
-
-### Status: ✅ Active — Infrastructure Setup
-
-**Today (2026-03-31):**
-- Split agent activated and routing confirmed
-- Finance department INBOX routing confirmed
-- Revenue recognition framework documented for all 4 ventures
-
-**Ventures Revenue Status:**
-| Venture | MRR | ARR | Notes |
-|---------|-----|-----|-------|
-| Irrig8 | TBD | TBD | 1,280 fields targeted, proof-of-scale |
-| Starting 5 | TBD | TBD | No financials documented |
-| VPC | ~$797 | ~$9,564 | Awaiting bonds |
-| Zoe | TBD | TBD | No contracts documented |
-
-**Key Dependency — VPC:**
-- Projected MRR: $797/mo at 25 players
-- Break-even: Month 6
-- Blocker: FL + NY bonds pending
-- Revenue recognition: Cannot begin until operational launch
-
-**Finance Cross-Team:**
-- Forecast (VP FP&A): Awaiting MRR/ARR reporting cadences
-- Ledger (Controller): Revenue posting schedule TBD
-
-**Next Standup:** 2026-04-01 8:15 AM MDT
+> Routing: Finance department reports → `INBOX/departments/finance.md`
+> P0/P1 escalations → `INBOX.md`
 
 ---
 
-## Activity Log
-| Date | Event |
-|------|-------|
-| 2026-03-31 15:05 UTC | Agent activated — routing initialized |
-| 2026-03-31 15:08 UTC | Finance division standup report submitted |
+## Daily Standup Log
 
-## 🟡 P2 | split | 2026-03-31 15:10 UTC
+### 2026-04-06
+- **Revenue Ops function initialized** — INBOX established
+- **Scope defined:** ARR, MRR, ASC 606, invoice aging, SaaS metrics
+- **Status:** All deliverables are framework-only — awaiting actuals
+- **Blockers:** No Stripe data, no AR data, no venture revenue actuals
 
-Finance standup — Split revenue operations active. MRR across ventures: Irrig8 TBD, Starting5 TBD, VPC ~97/mo pending bonds, Zoe TBD. Revenue recognition framework documented. Dependencies: VPC bonds, Starting5 financials, Zoe contract capture.
+---
+
+## Escalations
+
+| Priority | Issue | Escalated To | Date |
+|----------|-------|--------------|------|
+| — | No escalations | — | — |
+
+---
+
+## Notes
+
+- FarmSense retired 2026-03-23 → canonical name is **Irrig8**
+- Stripe Connect onboarding incomplete — no payment data available
+- Airtable "AgentOS Base" has no finance/revenue tables
+- Forecast (VP FP&A) has identical blocker: awaiting March actuals from Accounting
+
+---
+
+*Last Updated: 2026-04-06*

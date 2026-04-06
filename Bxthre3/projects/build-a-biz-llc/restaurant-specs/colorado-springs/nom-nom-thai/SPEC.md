@@ -16,10 +16,10 @@
 | **Address** | 3303 N Academy Blvd, Colorado Springs, CO 80917 | ✅ |
 | **Google Rating** | 4.6 stars | ✅ |
 | **Reviews** | 653 | ✅ |
-| **Phone** | _research needed_ | ❌ |
-| **Website** | _research needed_ | ❌ |
-| **Owner/Manager** | _research needed_ | ❌ |
-| **Third-Party Platforms** | DoorDash, Uber Eats (from LEAD_TRACKER — unverified) | ⚠️ |
+| **Phone** | (719) 280-2573 | ✅ |
+| **Website** | https://nomnomthai.co/ | ✅ |
+| **Owner/Manager** | Not found online | ❌ |
+| **Third-Party Platforms** | ZingMyOrder (own ordering platform) | ✅ |
 
 ## Operations (from Google Maps)
 
@@ -27,8 +27,7 @@
 |-------|-------|----------|
 | **Cuisine** | Thai | ✅ |
 | **Service Options** | Dine-in, Takeout, Delivery | ✅ |
-| **Hours** | Mon-Thu: 11AM-3PM, 4PM-9PM | ✅ |
-| **Hours** | Fri-Sat: 11AM-9PM | ✅ |
+| **Hours** | Mon-Thu: 11AM-3PM, 4PM-9PM; Fri-Sat: 11AM-9PM; Sun: Closed | ✅ |
 | **Parking** | Free parking | ✅ |
 | **Wheelchair Accessible** | Yes | ✅ |
 
@@ -47,11 +46,18 @@
 
 | Asset | Status | Path/Source |
 |-------|--------|-------------|
-| Logo | ❌ NOT COLLECTED | _do research_ |
-| Hero Photo | ❌ NOT COLLECTED | _do research_ |
-| Menu | ❌ NOT COLLECTED | _do research_ |
-| Brand Colors | ❌ NOT EXTRACTED | _do research_ |
-| Owner Contact | ❌ NOT FOUND | _do research_ |
+| Logo | ✅ COLLECTED | `assets/logo.png` |
+| Hero Photo | ✅ COLLECTED | `assets/hero.jpg` |
+| Menu | ✅ COLLECTED | `assets/menu.md` |
+| Brand Colors | ✅ EXTRACTED | `assets/brand-colors.json` |
+| Owner Contact | ⚠️ PARTIAL | Phone: (719) 280-2573 |
+
+## Assets Collected (Date: 2026-04-05)
+- **Logo:** `assets/logo.png`
+- **Menu:** `assets/menu.md`
+- **Hero Photo:** `assets/hero.jpg`
+- **Brand Colors:** #E85D04 #F48C06 #2D6A4F
+- **Owner Contact:** Phone: (719) 280-2573 | Email: gs4nova@gmail.com | Website: https://nomnomthai.co/ | Owner name: Not found online
 
 ## Why This Restaurant = Order App Opportunity
 

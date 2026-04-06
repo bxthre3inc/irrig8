@@ -2,39 +2,48 @@
 
 ## Daily Reports
 
-### 2026-03-31 — Security Assessment Round 1 Complete
+### 2026-04-06 — Morning Security Scan
 
-**Scope:** VPC Server, AgentOS API, Sentinel coordination  
-**Result:** CLEAR — No P1/P2 vulnerabilities detected
+**Scanner:** Sentinel (06:10 UTC)  
+**Scope:** Secrets, service health, AgentOS API stability
 
-**Checked:**
-- ✅ Secrets management (VPC .env gitignored, no hardcoded credentials in active code)
-- ✅ SQL injection prevention (parameterized queries confirmed)
-- ✅ XSS vectors (React JSX, no dangerous patterns in active code)
-- ✅ AgentOS service health (5/5 services UP per Sentinel)
-- ✅ CORS policy (whitelist enforced on VPC server)
+---
 
-**Flagged for follow-up:**
-- ⚠️ npm/pip dependency audit — not yet run
-- ⚠️ Port 5176 exposure — currently firewalled, monitor in production
+**🔴 P1 KILL-SWITCH STUBS — Still OPEN (Iris assigned)**
+No change in status from 2026-04-01. Remains the highest security priority.
 
-**Sentinel coordination:** ✅ Synced — Sentinel's 2026-03-31 scan confirms same findings
+**🟡 AGENTOS API — STABILITY EVENT (Resolved)**
+- 06:10 UTC: FATAL state triggered by workdir misconfiguration
+- Fix: Workdir updated to `/home/workspace/Bxthre3/projects/agentic/the-agentos-project/backend`
+- Status: ✅ Service restored, `/health` responding
+- Note: Not a security breach — operational misconfiguration. However, service instability can mask attacks. Flagging for monitoring elevation.
+
+**✅ SECRETS — CLEAR**
+- No exposed API_KEYs, SECRETs, PASSWORDS, or TOKENs
+- No Stripe keys detected
+- VPC .env properly gitignored
+
+**✅ SERVICES — ALL UP**
+- AgentOS API: ✅ UP (restored)
+- Ollama: ✅ UP (PID 231)
+- VPC Server: ✅ UP (uptime 9:42:51)
+
+**SENTINEL COORDINATION — ACTIVE**
+- Sentinel's task auto-escalation system (rating_engine/escalation.py): IN PROGRESS
 
 ---
 
 ## Hand-offs
 
-- Sentinel is handling ongoing real-time monitoring (per 2026-03-31 scan)
-- No escalations to P1 at this time
+| To | Subject | Priority | Status |
+|----|---------|----------|--------|
+| Iris | AgentOS kill-switch stubs (`approved: true`) | 🔴 P1 | OPEN — assigned |
+| Sentinel | Coordination — confirmed aligned on findings | — | ✅ Synced |
 
 ## Blockers
 
-None
-
-## Notes
-
-- Brand canonicalization: Irrig8 is the product name (FarmSense retired 2026-03-23)
-- Security department INBOX updated with full assessment at `Bxthre3/INBOX/departments/security.md`
+None for Vault operations.
 
 ---
-*Last updated: 2026-03-31*
+
+*Last updated: 2026-04-06*

@@ -15,9 +15,11 @@
 | **Business Name** | THAI BANGKOK RESTAURANT |
 | **Address** | 212 Adams St, Monte Vista, CO 81144 |
 | **Phone** | 719-628-2008 |
-| **Website** | Has Website (need URL) |
-| **Social Media** | [Research] |
-| **Owner/Manager** | [Research] |
+| **Website** | https://www.thaibangkokrestaurant.com/ |
+| **Online Ordering** | https://order.thaibangkokco.com/ |
+| **Social Media** | Facebook: Thai Bangkok Restaurant |
+| **Owner/Manager** | [Research needed] |
+| **Hours** | Mon-Sun: 11:00am - 8:30pm |
 
 ---
 
@@ -58,9 +60,9 @@ Traditional Thai with modern accessibility. Authentic flavors, family-friendly.
 | Platform | Status | Details |
 |----------|--------|---------|
 | Google | Claimed | 5.0 stars, 95 reviews |
-| Yelp | [Research] | Likely present |
-| DoorDash | Active | Primary delivery |
-| UberEats | Active | Secondary delivery |
+| DoorDash | Active | Listed |
+| UberEats | Active | Listed |
+| Own Website | Active | Has direct ordering |
 
 ### Google Rating: ⭐ 5.0 (95 reviews) — PERFECT SCORE
 
@@ -99,6 +101,15 @@ Traditional Thai with modern accessibility. Authentic flavors, family-friendly.
 - [ ] Storefront photo
 - [ ] Menu item photos (Pad Thai, curries, etc.)
 - [ ] Full menu with prices
+
+---
+
+## Assets Collected (Date: 2026-04-03)
+- **Logo:** ✅ COLLECTED `assets/logo.png` (ornate Thai-Bangkok logo)
+- **Menu:** https://www.thaibangkokrestaurant.com/
+- **Hero Photo:** ✅ COLLECTED `assets/hero.jpg` (storefront)
+- **Brand Colors:** ✅ EXTRACTED #2E7D32 #FFB300 #D32F2F
+- **Owner Contact:** Phone: 719-628-2008 | Website: https://www.thaibangkokrestaurant.com/ | Owner name: [Research needed]
 
 ---
 

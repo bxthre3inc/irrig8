@@ -3,6 +3,7 @@
 > **Head:** Reseller (Channel Sales Director)
 > **Scope:** Reseller, distributor, and channel partner ecosystem for Bxthre3 ventures
 > **Ventures:** Irrig8, Starting 5, Zoe, Valley Players Club
+> **Reports to:** Deal (VP Sales), Nexus (VP Strategic Partnerships)
 
 ---
 
@@ -17,8 +18,8 @@
 - White-label partners (Starting 5)
 - Developer ecosystem & ISVs (Zoe)
 - Agency partners (Zoe)
-- Affiliate managers (VPC)
-- Casino aggregators (VPC)
+- Casino aggregators (VPC) ← Channel scope
+- Affiliate managers (VPC) ← Harvest scope
 
 ### 2. Partner Enablement
 - Partner onboarding materials
@@ -34,30 +35,50 @@
 
 ---
 
-## Reports To
-- **Deal** (VP Sales)
-- **Nexus** (VP Strategic Partnerships)
-
----
-
-## Pipeline Reports
-
-| Report | Frequency | Status |
-|--------|-----------|--------|
-| Daily Standup | Daily 8:15 AM | Active |
-| Weekly Channel Pipeline | Weekly | Pending |
-| Partner Performance Review | Quarterly | Pending |
-| Comp & Rebate Summary | Monthly | Pending |
-
----
-
 ## Active Channel Partners
 
-*(TBD — pipeline to be established)*
+**Irrig8:**
+| Partner | Type | Tier | Stage | Score | Status |
+|---------|------|------|-------|-------|--------|
+| Valley Irrigation | Irrigation OEM | Tier 1 | Researched | 29/35 | Awaiting dealer list |
+| Reinke | Irrigation OEM | Tier 1 | Researched | 27/35 | Awaiting dealer list |
+| Wilbur-Ellis | Ag retailer | Tier 1 | Researched | 26/35 | Outreach pending pitch deck |
+| Nutrien | Ag retailer | Tier 2 | Researched | 29/35 | Outreach pending pitch deck |
+| CHS | Ag co-op | Tier 2 | Researched | 26/35 | Outreach pending pitch deck |
+| Planet Labs | Satellite data | Tier 2 | Identified | — | Outreach pending pitch deck |
+| USDA NRCS | Government | Tier 2 | Identified | — | EQIP alignment (Maya) |
+| Colorado State University | Research | Tier 2 | Identified | — | Outreach pending pitch deck |
+
+**VPC (Casino Aggregators — Channel scope):**
+| Partner | Type | Tier | Status |
+|---------|------|------|--------|
+| Sweepium | B2B sweepstakes aggregator | P1 | Research phase |
+| SweepNow | B2B sweepstakes platform | P1 | Research phase |
+| GammaSweep | US-based sweepstakes IT | P1 | Research phase |
+| SoftGamings | Casino aggregator | P2 | Sweepstakes capability |
+| Slotegrator | Casino aggregator | P2 | Sweepstakes capability |
+
+**Starting 5 / Zoe:** Pipeline empty — blocked on product owner input.
 
 ---
 
-## Partner Categories by Venture
+## Deliverables Status
+
+| Deliverable | Status | Location |
+|-------------|--------|----------|
+| Outreach sequences (Irrig8 Tier 1) | ✅ Complete | `channel/partners/outreach-sequences.md` |
+| Partner value props (all ventures) | ✅ Complete | `channel/partners/value-props.md` |
+| Partner onboarding welcome packet | ✅ Complete | `channel/partners/partner-onboarding-welcome.md` |
+| Deal registration form | ✅ Complete | `channel/partners/outreach-sequences.md` |
+| VPC casino aggregator targets (P1) | ✅ Identified | Sweepium, SweepNow, GammaSweep |
+| VPC casino aggregator targets (P2) | ✅ Identified | SoftGamings, Slotegrator |
+| Channel comp & rebate framework | 🔴 Not started | Due Q2 |
+| Starting 5 / Zoe pipeline | 🔴 Blocked | Escalated to Deal/Nexus |
+| Q1 Partner Performance Review | 🔴 Not started | Due Q2 start |
+
+---
+
+## Partner Revenue Models
 
 | Venture | Partner Type | Revenue Model |
 |---------|-------------|---------------|
@@ -70,10 +91,62 @@
 | Starting 5 | White-label | Revenue share |
 | Zoe | ISVs | Revenue share |
 | Zoe | Agency partners | Referral fee |
-| VPC | Affiliate managers | Revenue share |
-| VPC | Casino aggregators | Revenue share |
+| VPC | Affiliate managers | 30%/25% rev share (Harvest) |
+| VPC | Casino aggregators | 30%/25% rev share (Channel) |
 
-## Last Standup: 2026-03-31
-**Pipeline:** 8 partners across Irrig8 (Tier 1-2). VPC, Starting 5, Zoe still at 0 named targets.
-**Blockers:** No named VPC affiliate manager or casino aggregator targets. Starting 5 / Zoe pipelines empty.
-**Outstanding from 03-25:** Outreach sequences, value props, onboarding template still pending.
+---
+
+## Commission & Rebate Framework
+
+| Tier | Criteria | Commission |
+|------|----------|------------|
+| Tier 1 (Strategic) | Valley Irrigation, Reinke | 15% first-year sub + 5% renewal |
+| Tier 2 (Preferred) | Nutrien, CHS, Planet Labs | 10% first-year sub |
+| Referral | All ventures | 5% referral fee on closed deal |
+| VPC Aggregator | Sweepium, SweepNow, GammaSweep | 30%/25% rev share |
+| VPC Aggregator (P2) | SoftGamings, Slotegrator | TBD |
+
+---
+
+## Pipeline Summary
+
+| Venture | Identified | Pipeline | Tier 1 | Tier 2 | Outreach | Engagement |
+|---------|-----------|----------|--------|--------|----------|------------|
+| Irrig8 | 8 | 1 | 3 | 5 | 0 | 0 |
+| VPC | 5 | 0 | 3 | 2 | 0 | 0 |
+| Starting 5 | 0 | 0 | — | — | 0 | 0 |
+| Zoe | 0 | 0 | — | — | 0 | 0 |
+| **TOTAL** | **13** | **1** | **6** | **7** | **0** | **0** |
+
+---
+
+## Blockers
+
+| Blocker | Owner | Due | Status |
+|---------|-------|-----|--------|
+| Starting 5 / Zoe pipeline empty | Deal / Nexus | 2026-04-03 | Escalated |
+| Valley Irrigation dealer contact list | Reach | 2026-04-03 | Coordinating |
+| Pitch deck v1 (outreach blocked) | Pitch | 2026-04-04 | BLOCKED |
+| Q1 Partner Performance Review | Channel | Q2 start | Not started |
+
+---
+
+## Cross-Department Handoffs
+
+| Agent/Dept | Deliverable | Due | Status |
+|------------|-------------|-----|--------|
+| Harvest (Affiliate) | VPC scope split confirmed: Channel owns casino aggregators; Harvest owns affiliate managers | — | ✅ Confirmed |
+| Reach | Valley Irrigation + Reinke dealer contact list | 2026-04-03 | Pending |
+| Deal / Nexus | Starting 5 / Zoe named targets | 2026-04-03 | Escalated |
+| Maya | USDA NRCS EQIP alignment (Irrig8) | Ongoing | In progress |
+| Finance (Pipeline) | Partner scores synced to FINANCE/pipeline/ACTIVE.md | Daily | ✅ Synced |
+
+---
+
+## Last Standup: 2026-04-03
+**Pipeline:** 13 active partners (8 Irrig8 Tier 1-2, 5 VPC casino aggregators P1-P2). Starting 5 / Zoe at 0 — escalated.
+**Blockers:** Pitch deck v1 needed before outreach execution. Starting 5 / Zoe target list needed from product owners.
+**Completed:** All outreach materials drafted. VPC casino aggregators identified (5 named). Commission structure aligned with Harvest.
+**Next:** Execute VPC outreach sequences. Resolve Starting 5 / Zoe pipeline. Draft comp & rebate framework.
+
+---

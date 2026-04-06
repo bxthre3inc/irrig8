@@ -22,3 +22,7 @@
 ## Notes
 - Irrig8 is the primary marketing brand
 - Internal codename context: Irrig8 (product), Zoe (AI assistant), ARD (Arkad Digital)
+
+## 🟡 P2 | casey | 2026-04-01 20:48 UTC
+
+Phase 2 Subtask: Rating UI components. Agent scorecards, completion rate badges, trend visualizations. Output: Android + Desktop UI components

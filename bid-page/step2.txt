@@ -1,0 +1,13 @@
+  const opt = (k, n, p, on, c) => (
+    <label key={k} className={`flex gap-3 p-3 rounded-xl cursor-pointer ${on ? bg-${c}-900/20 border border-${c}-500/30 : bg-zinc-800/50}`}>
+      <input type="checkbox" checked={on} onChange={() => toggle(k)} className="w-5 h-5 mt-0.5" />
+      <div className="flex-1">
+        <div className="flex gap-2 items-center">
+          <span className="font-medium text-sm">{n}</span>
+          <span className={`text-xs font-bold px-2 rounded ${on ? bg-${c}-500 text-zinc-950 : bg-zinc-700 text-zinc-400}`}>
+            {on ? (k === 'p' ? '+35%' : `+$${fmt(p)}`) : 'OFF'}
+          </span>
+        </div>
+      </div>
+    </label>
+  );

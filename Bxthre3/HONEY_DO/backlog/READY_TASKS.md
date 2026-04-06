@@ -77,3 +77,21 @@ Assigned: 2026-03-31 | Due: Daily Sprint
 - weekly_digest.py (exists as framework)
 - daily_check.py (exists as framework)
 - health_check.py (exists as framework)
+
+---
+
+## ANDROID-LEAD UPDATE — 2026-04-06
+
+### Build Status: ✅ SUCCESSFUL
+- APK: `Bxthre3/projects/agentic/the-agentos-project/client/android/app/build/outputs/apk/debug/app-debug.apk` (24M)
+- Fixed: Created `local.properties` with SDK path — must be committed
+
+### Open Tasks for Dev:
+| Priority | Task |
+|----------|------|
+| 🟡 P2 | Update `ApiClient` base URL: `https://brodiblanco.zo.space` + `/api/agentos/` prefix |
+| 🟡 P2 | Wire `DashboardTab` to call `apiClient.health()` |
+| 🟡 P2 | Implement real screens for 7 tabs (currently all placeholders) |
+| 🟡 P2 | Add MCP WebSocket client (requires Mesh-Engineer adapter paths) |
+| 🟡 P2 | Fix `generateRoadmap()` — points to non-existent `/v1/roadmaps` |
+| 🟡 P2 | Remove unused `apiClient` param warning in `DashboardTab` |

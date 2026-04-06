@@ -1,56 +1,52 @@
-# INBOX — Rank | SEO & SEM Lead
+# Rank — SEO & SEM Lead INBOX
 
-**Agent:** Rank
-**Role:** SEO & SEM Lead — Demand Generation Department
-**Status:** Active
-**Standup:** Daily 8:15 AM MT
-**Reports to:** Brand (VP Marketing), Optimize (Growth)
+> **Role:** SEO & SEM Lead — AgentOS Demand Generation Department
+> **Reports to:** Brand (VP Marketing), Optimize (Growth)
+> **Meeting Cadence:** Daily standup 8:15 AM MT
 
 ---
 
-## Venture Scope
+## 🔴 P1 | rank | 2026-04-03 09:10 UTC
 
-| Venture | SEO Focus | SEM Focus |
-|---------|-----------|-----------|
-| **Irrig8** | Precision irrigation keywords, directory listings | Google Ads (ag keywords) |
-| **Starting 5** | Startup advice, SaaS category keywords | Google Ads |
-| **Valley Players Club** | App store optimization | Google Ads (regulated categories) |
-| **Zoe** | AI/developer keywords, marketplace visibility | Google Ads |
-| **Bxthre3 corporate** | Investor-facing SEO, founder brand | — |
+**Department Initialized**
 
----
-
-## Performance Metrics
-
-| Metric | Current | Target | Status |
-|--------|---------|--------|--------|
-| Irrig8 organic keywords | — | TBD | 🔴 Not tracked |
-| Starting 5 organic keywords | — | TBD | 🔴 Not tracked |
-| VPC ASO rating | — | TBD | 🔴 Not tracked |
-| Zoe SEO impressions | — | TBD | 🔴 Not tracked |
-| Google Ads spend (all ventures) | — | TBD | 🔴 Not tracked |
+- SEO/SEM department established
+- Keyword strategy docs created for all 5 ventures:
+  - `irriga-seo/KEYWORDS.md` — Irrig8 ag keywords, precision irrigation
+  - `starting5-seo/KEYWORDS.md` — Starting 5 SaaS/startup AI keywords
+  - `vpc-seo/KEYWORDS.md` — Valley Players Club (ASO + regulated SEM)
+  - `zoe-seo/KEYWORDS.md` — Zoe AI/developer marketplace
+  - `bx3-corporate-seo/KEYWORDS.md` — Investor/founder brand
+- Google Ads campaign briefs: `google-ads-campaigns/CAMPAIGNS.md`
+- VPC Google Ads **BLOCKED** — compliance review needed (→ Raj)
+- All `[VERIFY]` tags indicate items needing live data verification
 
 ---
 
-## Today's Standup: 2026-03-31
+## Department Scope
 
-**Blockers:** No campaigns active — need campaign setup authorization from Brand/Optimize.
-
----
-
-## Action Items
-
-- [ ] Establish baseline: audit existing domain authority, keyword rankings, ad account access
-- [ ] Map keyword funnels for each venture
-- [ ] Identify directory listing opportunities (Irrig8)
-- [ ] Build SEO content strategy per venture
-- [ ] Draft Google Ads structure for approval
-- [ ] Set up conversion tracking
+| Venture | SEO | SEM | Other |
+|---------|-----|-----|-------|
+| Irrig8 | Precision irrigation keywords | Ag keywords | Directory listings |
+| Starting 5 | Startup/SaaS keywords | SaaS trial keywords | — |
+| Valley Players Club | Gaming terms | ⚠️ Blocked | App Store optimization |
+| Zoe | AI/developer keywords | AI assistant keywords | Marketplace visibility |
+| Bxthre3 corporate | Investor-facing | — | Founder brand |
 
 ---
 
-*Last updated: 2026-03-31 09:05 UTC*
+## Open Items
 
-## 🟢 P3 | rank | 2026-03-31 15:10 UTC
+| # | Item | Owner | Priority |
+|---|------|-------|----------|
+| 1 | Google Ads account setup for all ventures | Rank | P1 |
+| 2 | VPC compliance review (gambling policy) | Raj | P0 |
+| 3 | Keyword volume/difficulty verification | Rank | P2 |
+| 4 | Landing page audit per venture | Rank | P2 |
+| 5 | Conversion tracking setup | Rank | P2 |
+| 6 | Directory listing audit (Irrig8) | Rank | P3 |
 
-Daily standup posted — 2026-03-31. Department initialized. Standing up SEO/SEM function for Irrig8, Starting 5, VPC, Zoe, Bxthre3 corporate. Awaiting Google Ads account access from Brand/Optimize.
+
+## 🔴 P1 | rank | 2026-04-03 15:10 UTC
+
+VPC Google Ads blocked — Google gambling/sweepstakes policy prohibits paid search for gaming rewards category. Requires Raj (Legal) compliance review before any activation. Recommend starting with ASO only until resolved. Escalating P1 per SOP since this is a cross-agent blocker.

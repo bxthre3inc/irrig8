@@ -1,0 +1,26 @@
+# Standup Log — Comms-Corp — 2026-04-03
+
+**Status:** NO-SHOW
+**Time:** 8:15 AM MT
+**Facilitator:** Press
+**Run Date:** 2026-04-03 22:30 UTC (Logger fallback — Sync orchestrator failed)
+
+## Attendees
+- None (lead absent, no async received)
+
+## Agenda
+1. ✅ What did you ship/complete since yesterday?
+2. 🎯 What are you working on today?
+3. 🚧 Any blockers or dependencies?
+4. 🔺 Any escalations for the 4 PM War Room?
+
+## Discussion
+Sync orchestrator failed to trigger. No standup held. No async update received.
+
+## Action Items
+| Item | Owner | Deadline |
+|------|-------|----------|
+| Hold makeup standup | Press | 2026-04-04 8:15 AM |
+
+## Notes
+- Standard agenda applied per Logger fallback protocol

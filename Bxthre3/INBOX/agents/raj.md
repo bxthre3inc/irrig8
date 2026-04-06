@@ -1,119 +1,147 @@
 # Raj — Agent INBOX
-**Role:** Grant Research & Intelligence
-**Reports to:** Casey
-**Updated:** 2026-03-26 | By: Press
+**Role:** Grant Researcher  
+**Reports to:** Casey (Grants Lead)  
+**Updated:** 2026-04-02 | By: Decision Alert Agent  
 
 ---
 
-## OPERATING MODEL
+## 🔴 YOUR JOB — CONTINUOUS GRANT DISCOVERY & RESEARCH
 
-You are RESEARCH. Casey is MANAGER. Drew is WRITER.
+**New Standing Order:**
+> "Grants and funding team to work round the clock preparing filings — whether they are close to end of app time or not."
 
-**Rule:** 8–10 fit grants — research autonomously. No permission needed. Surface research_complete to Casey.
+**What this means for you:**
+- **NO WAITING FOR DEADLINES** — find and research grants continuously
+- **7+/10 FIT = AUTO-GO** — any grant that scores 7+/10 gets researched same day
+- **NO GO/NO-GO GATES** — research everything that fits, let Casey decide priority
+- **SAME-DAY RESEARCH** — new grant? Research and brief Casey within 24 hours
 
-**Decision from brodiblanco:** UK FETF = SKIP. EIC Accelerator = DEFER. Monte Vista pilot is the priority.
-
----
-
-## HOT QUEUE — Research in Priority Order
-
-### 🔴 Priority 1 — IRRIG8 MONTE VISTA PILOT (all deadlines ≤ 60 days)
-
-**FED-US-003 — CIG Colorado | USDA NRCS | ~$500K | LOI 2026-04-30 | Fit 10/10**
-- [ ] Find the CIG LOI form (NRCS Colorado)
-- [ ] Determine: Is LOI binding or non-binding?
-- [ ] What does the LOI need to include? (Project description, estimated budget,农民 partners?)
-- [ ] Who at NRCS Colorado is the CIG program officer?
-- [ ] Report research_complete to Casey by 2026-03-28
-
-**USDA-FULL-001 — EQIP 90% Reimbursement | USDA NRCS | 90% cost-share | Rolling | Fit 10/10**
-- [ ] Contact NRCS Monte Vista office (719-589-4841)
-- [ ] Ask: Can Bxthre3 be an approved EQIP vendor?
-- [ ] Ask: What does vendor enrollment require?
-- [ ] Ask: Can Irrig8 installation + 3-year sensor contract qualify as "practice" under EQIP?
-- [ ] Report research_complete to Casey by 2026-03-31
-
-**STA-CO-010 — CO Water Conservation Grant | CDPHE | Large | 2026-08-30 | Fit 9/10**
-- [ ] Contact CDPHE water division
-- [ ] Ask: When is next grant cycle? What is typical award size?
-- [ ] Ask: Does irrigation efficiency in San Luis Valley qualify?
-- [ ] Report to Casey
-
-**STA-CO-002 — CO Climate Resilience Grant | CDA | Varies | 2026-04-30 | Fit 8/10**
-- [ ] Find application — is it open now?
-- [ ] What does the application require?
-- [ ] Irrigation optimization as climate adaptation — does this fit the framing?
-- [ ] Report to Casey
-
-### 🟠 Priority 2 — AGENTOS (deadlines further out)
-
-**FED-SBIR-001 — USDA SBIR Phase I | USDA NIFA | $175K | 2026-07-02 | Fit 9/10**
-- [ ] Find program officer for USDA NIFA SBIR
-- [ ] Determine: Does AgentOS qualify as "agricultural technology"?
-- [ ] Research: What do Phase I applications look like? Pull 2–3 examples
-- [ ] Report to Casey
-
-**STA-CO-005 — CO Advanced Industry (OEDIT) | Rolling | Fit 8/10**
-- [ ] What is the OEDIT Advanced Industry application process?
-- [ ] Does Bxthre3 Inc (AgentOS) qualify as an advanced industry company in Colorado?
-- [ ] Report to Casey
-
-### 🟡 Priority 3 — VPC (when bandwidth allows)
-
-**GAM-011 — CO Sweepstakes Casino License | CO Gaming Commission | Regulatory | Rolling | Fit 8/10**
-- [ ] Download CO Gaming Commission sweepstakes license application
-- [ ] What are the requirements? Timeline? Costs?
-- [ ] Report to Casey
+**The Rule:** If it fits the vectors, research it immediately. Don't wait.
 
 ---
 
-## BLOCKED / NEEDS BRODIBLANCO CLARIFICATION
+## DISCOVERY SOURCES (CHECK DAILY)
 
-These vectors need definition before research can be useful:
+- **grants.gov** — federal SBIR/STTR, USDA, NSF, DOE
+- **CO OEDIT** — state advanced industry grants
+- **CDFI Fund** — rural development, NMTC
+- **EDA** — tech hubs, community facilities
+- **NRCS** — EQIP, CIG at state level
+- **CDPHE** — water conservation grants
+- **CSU Ventures** — ag tech innovation
+- **World Bank / UNDP** — international (Rain)
 
-| Vector | Question | Who |
+---
+
+## RESEARCH OUTPUT (SAME DAY)
+
+For each grant discovered (7+/10 fit), produce:
+
+| Field | Your Output |
+|---|---|
+| Grant ID | Assign unique ID (e.g., FED-NEW-001) |
+| Eligibility | Confirmed yes/no with evidence |
+| Deadline | Exact date/time, rolling status |
+| Amount | Award range or exact figure |
+| Fit Score | 0-10 based on vector alignment |
+| Required Docs | Checklist: forms, letters, budgets, etc. |
+| Contact Info | Program officer name/phone/email |
+| Key Requirements | What separates winners from losers |
+| Competitive Intel | Past awardees, award sizes, success rates |
+
+---
+
+## VECTORS TO COVER (ALL ACTIVE)
+
+| Vector | Priority | Examples |
 |---|---|---|
-| ARD | What is it exactly? Agricultural Real Estate Development — describe the project | brodiblanco |
-| Rain | Is Rain operational? Who is the customer? | brodiblanco |
-| The Starting 5 | What is the actual product? | brodiblanco |
+| **Irrig8** | 🔴 P0 | Water, ag tech, irrigation, San Luis Valley |
+| **AgentOS** | 🟠 P1 | AI, workforce, automation, SBIR |
+| **VPC** | 🟡 P2 | Gaming, regtech, sweepstakes, FinTech |
+| **ARD** | 🟡 P2 | Rural dev, real estate, CDFI, EDA |
+| **Rain** | 🟡 P3 | International, World Bank, UNDP, climate |
+| **Starting5** | 🟡 P3 | Sports tech, AI, NSF |
 
 ---
 
-## RESEARCH COMPLETE TEMPLATE
+## DAILY TARGETS
 
-When a grant reaches research_complete, send Casey this:
+- **Minimum 5 new grant prospects identified per day**
+- **Minimum 3 research briefs completed per day**
+- **Zero un-researched grants in queue** (same-day SLA)
+
+---
+
+## WORKFLOW
 
 ```
-Grant: [ID] — [Name]
-Funder: [Funder]
-Amount: [Amount]
-Deadline: [Date]
-Fit: [X/10]
-
-CAN WE WIN?
-[Yes/No — why]
-
-WHAT DO WE NEED TO APPLY?
-- [Doc 1]
-- [Doc 2]
-
-WHAT DO WE NEED FROM BRODIBLANCO?
-- [Specific ask]
-
-NEXT ACTION: [GO / SKIP / DEFER — your recommendation]
+Discover grant (any source)
+    ↓
+Score fit (0-10) within 30 minutes
+    ↓
+If 7+/10 → Research SAME DAY
+    ↓
+Submit research brief to Casey
+    ↓
+Pick next grant (no waiting)
 ```
 
 ---
 
-## REMINDER
+## NO LONGER WAITING FOR
 
-Only escalate to Casey if:
-1. Research is complete and you have a GO/SKIP/DEFER recommendation
-2. You hit a blocker you cannot resolve (missing info, funder not responding)
-3. A deadline is ≤ 14 days and no draft is in progress
+- ❌ GO/NO-GO decisions from brodiblanco
+- ❌ Deadlines to approach before starting
+- ❌ Casey's approval to begin research
+- ❌ Defined project scope (research what could fit)
 
-Do NOT surface: "I found a new grant." — just add it to the pipeline and research it.
+**If in doubt, research it. Let Casey kill it if wrong.**
 
 ---
 
-*Last instruction: 2026-03-26 by Press*
+## BLOCKERS
+
+*None currently — running continuous discovery.*
+
+---
+
+## 🔴 ACCURACY & VERIFICATION — ZERO HALLUCINATION POLICY
+
+**Core Rule:** If you cannot verify it, you cannot report it.
+
+### Required Practices:
+
+| Rule | Standard |
+|------|----------|
+| **Source Citation** | Every fact = source cited (file path or URL) |
+| **No Fabrication** | Never invent amounts, deadlines, eligibility, or requirements |
+| **Official Sources Only** | USDA.gov, NSF.gov, Grants.gov, State portal = canonical |
+| **Uncertainty Flag** | Use `[VERIFY]` tag when information is unclear or inferred |
+| **Cross-Check** | Compare secondary sources against primary funder docs |
+
+### What Is NEVER Allowed:
+- ❌ Guessing grant amounts
+- ❌ Estimating deadlines
+- ❌ Assuming eligibility criteria
+- ❌ Inventing contact information
+- ❌ Paraphrasing without source
+- ❌ Using AI-generated grant details without verification
+
+### Research Output Format:
+```
+GRANT: [Official Name]
+FUNDER: [Source URL]
+AMOUNT: [$X] — Source: [URL]
+DEADLINE: [YYYY-MM-DD] — Source: [URL]
+ELIGIBILITY: [criteria] — Source: [URL]
+REQUIREMENTS: [docs needed] — Source: [URL]
+CONTACT: [name/email] — Source: [URL]
+CONFIDENCE: [High/Medium/Low] — [explain gaps]
+```
+
+**Quality Gate:** Every research brief must have ≥90% sourced facts to pass to Casey. Unsourced claims = rejected.
+
+---
+
+*Last instruction: 2026-04-02 by Decision Alert Agent*  
+*Mode: 24/7 Continuous Discovery*

@@ -1,96 +1,97 @@
-# VP Ventures — Weekly Portfolio Report
-**Navigate | AgentOS Portfolio Management**
-**Date:** 2026-03-31 | **Period:** Week of Mar 24–31, 2026
+# Ventures Department INBOX — Navigate, VP Ventures
+**Last Updated:** 2026-04-06 09:10 AM MT
+**Reporting to:** Atlas (COO), brodiblanco (CEO)
 
 ---
 
-## 📊 Portfolio Health Scorecard
+# Weekly Portfolio Health Scorecard — 2026-04-06
 
-| Venture | Tier | Health | Trend | Notes |
-|---|---|---|---|---|
-| **Irrig8** | 1 - Flagship | 🟢 STRONG | → | Revenue-generating. Water Court Jun 29 — evidence prep ongoing. Rebrand complete. |
-| **Valley Players Club** | 2 - Growth | 🟢 SCALING | ↑ | Services UP. Equity corrected. Gaming ops active. |
-| **The Starting 5** | 2 - Growth | 🟡 ACTIVE | → | AI co-founders SaaS. Active development. |
-| **AgentOS / Zoe** | 3 - Emerging | 🟢 PROMISING | ↑ | Internal capability → product. Webapp + Android live. Roster unified (19 agents). |
-| **ARD / Oferta** | 4 - Incubation | 🟡 MONITOR | → | Real estate arbitrage at 802 Morton St. Pending market conditions. |
-| **The Rain Project** | 4 - Incubation | 🟡 MONITOR | → | Regulatory intelligence. RAIN agent active. Defensibility scoring added. |
-| **Trenchbabys** | 4 - Incubation | 🔴 AT RISK | ↓ | Retail operations idle. Needs resource decision. |
-| **BUILDBZ** | 4 - Incubation | 🔴 STALLED | ↓ | 8 TBD fields pending brodiblanco decisions. Cannot advance without input. |
+## Portfolio Summary
 
----
-
-## 🔴 Flags This Week
-
-### 1. BUILDBZ — Blocked on 8 Decisions
-- **Status:** Cannot advance from Incubation
-- **Blockers:** problem_statement, solution_hypothesis, target_users, success_metrics, estimated_scope, equity_split, sales_engine, fulfillment_engine
-- **Owner:** brodiblanco
-- **Action:** Route to daily meeting queue. Recommend executive decision session this week.
-
-### 2. Trenchbabys — Idle Resource Drain
-- **Status:** Agent idle, no active ops
-- **Risk:** Continued overhead with no output
-- **Recommendation:** Sunset or pivot by EOW.
-
-### 3. Water Court — Jun 29, 2026
-- **Status:** Evidence preparation ongoing
-- **Owner:** RAIN agent + legal
-- **Action:** No action from Ventures unless resource reallocation needed.
+| Tier | Venture | Health | Trend | Notes |
+|------|---------|--------|-------|-------|
+| **T1 - Flagship** | Irrig8 | 🟢 Stable | — | Water Court Jun 29; ARPA-E deadline May 1; 7 patents due May 15 |
+| **T2 - Growth** | Valley Players Club (VPC) | 🟡 Active | ↑ | Gaming ops running; geo-block compliant |
+| **T2 - Growth** | The Starting 5 | 🟢 Active | — | AI co-founders SaaS; AgentOS-powered |
+| **T3 - Emerging** | AgentOS / Zoe | 🟢 Internal | ↑ | Self-Modification Engine + 10-Point Vector integrated |
+| **T4 - Incubation** | 9 ThinkTank drafts | 🟡 Pending | — | 111 [TBD] fields awaiting decisions |
+| **T4 - Incubation** | Rain Project (RAIN) | 🟡 Active | — | Regulatory intelligence; Water Court prep |
+| **T4 - Incubation** | ARD / Oferta | 🟡 Stalled | — | Real estate arbitrage; path unclear |
+| **T4 - Incubation** | Build-A-Biz LLC | 🟡 Active | — | 109 leads; 8 TBD fields blocking spec |
+| **T5 - Sunset** | Trenchbabys | 🔴 Idle | ↓ | Decision overdue: sunset or assign |
 
 ---
 
-## 🟡 Watch List
+## 🚨 Red Flags This Week
 
-| Venture | Concern | Action |
-|---|---|---|
-| ARD/Oferta | Market timing dependent | Monitor monthly |
-| The Rain Project | Defensibility score 8/10 | Complete remaining 2 points |
-| AgentOS | IP patrol 8/10 | Complete fortification |
-
----
-
-## 🟢 Wins This Week
-
-- **AgentOS roster unified** — 19 agents, 3 environments synced
-- **Sentinel security clear** — 5/5 services UP
-- **VPC equity corrected** — 500,001 / 499,999
-- **243 specialist roster x3 coverage** — Honey-Do system deployed
-- **IP defensibility system created** — RAIN + raj defensibility_01 agent
+| # | Venture | Issue | Action Required | Owner |
+|---|---------|-------|----------------|-------|
+| 1 | **Trenchbabys** | Idle since 2026-03-24; no README; decision overdue | Sunset or assign by **2026-04-07** | brodiblanco |
+| 2 | **ThinkTank drafts (9)** | 111 TBD fields blocking promotion to spec | brodiblanco decisions needed | brodiblanco |
+| 3 | **ARD / Oferta** | Path unclear; no active tasks | Strategic decision needed | brodiblanco |
 
 ---
 
-## 📋 Cross-Ventures Synergy Opportunities
+## ThinkTank Pipeline — Incubation Queue
 
-| Source | Destination | Synergy |
-|---|---|---|
-| AgentOS / Zoe | All ventures | Workforce orchestration stack — reuse across all tiers |
-| Irrig8 | AgentOS | Field ops agent (irrig8) demonstrates AgentOS in production |
-| VPC | AgentOS | Integration testing sandbox |
-| RAIN | All ventures | Regulatory intelligence shared |
+| Code | Venture | TBD Count | Priority | Blocker |
+|------|---------|-----------|----------|---------|
+| CORDSR | Firewood Marketplace | 29 | 🔴 High | Core product definition |
+| CARBON8 | Soil Carbon Verification | 21 | 🔴 High | Carbon measurement specs |
+| AGEAAS1 | Ag Equipment-as-a-Service | 21 | 🔴 High | Pricing & fleet structure |
+| BUILDBZ | Valley Build-A-Biz LLC | 16 | 🟡 Medium | Equity model confirmed |
+| PASTURE | PasturePilot Grazing | 6 | 🟢 Lower | Pricing tiers |
+| DATAPIV | SLV Ag Data Reseller | 5 | 🟢 Lower | Legal compliance |
+| SLVCONS | SLV Ag Consulting | 5 | 🟢 Lower | Target channel |
+| AEACRB1 | AgEaaS + Carbon8 Bundle | 4 | 🟢 Lower | Bundle pricing |
+| BUILDAG | Build-A-Biz Ag Venture Studio | 4 | 🟢 Lower | Equity stake |
 
----
-
-## 💡 New Venture Signals
-
-- **BUILDBZ:** Build-a-Biz LLC tool for Valley Build-A-Biz — pending decisions from brodiblanco
-- **Idea Vault:** Defensibility scoring active — 3 archived ideas needed to seed
-
----
-
-## 🏁 Recommended Actions for CEO Approval
-
-1. **DECIDE: BUILDBZ** — 8-field decision session this week or archive
-2. **DECIDE: Trenchbabys** — Sunset or assign active owner by Mar 31 EOW
-3. **APPROVE: AgentOS Tier upgrade** — Recommend moving from Tier 3 → Tier 2 given momentum
-4. **APPROVE: Idea Vault seeding** — Archive 3 existing ideas to seed cross-pollination engine
+**Total:** 111 decisions pending across 9 drafts
 
 ---
 
-## 📅 Reporting Cadence
+## Cross-Ventures Synergy Opportunities
 
-- Next weekly scorecard: **2026-04-07**
-- Ventures standup: **Fridays 9:00 AM MT** (as per org chart)
+| Source | Resource | Target | Opportunity |
+|--------|----------|--------|-------------|
+| AgentOS | Self-Modification Engine | All ventures | Embedded AI capability |
+| Rain (RAIN) | Water Court intelligence | Irrig8 | Evidence preparation |
+| VPC | Sweepstakes ops playbook | Build-A-Biz | Compliance-by-design |
+| Irrig8 | Sensor data | CARBON8, DATAPIV | Verified data layers |
 
 ---
 
-*Navigate — VP Ventures | Bxthre3 Inc*
+## Resource Allocation — This Week
+
+| Priority | Allocation | Venture |
+|----------|------------|---------|
+| P1 | ARPA-E grant (Maya) | Irrig8 |
+| P1 | 7 provisional patents (Raj) | AgentOS |
+| P1 | Water Court evidence (RAIN) | Irrig8 |
+| P2 | ThinkTank TBD resolution | brodiblanco |
+| P2 | Trenchbabys decision | brodiblanco |
+| P2 | CIG Colorado GO/NO-GO (Casey) | VPC |
+
+---
+
+## Recommendations for CEO Approval
+
+1. **Trenchbabys sunset/assign** — No activity since 2026-03-24; decision overdue. Recommend: sunset unless brodiblanco assigns a new owner by 2026-04-07.
+2. **ARD strategic review** — Path unclear; recommend a decision on whether to continue, pivot, or retire.
+3. **ThinkTank promotion** — CARBON8, AGEAAS1, CORDSR are high-potential Blue Ocean ideas. Recommend dedicated decision sessions.
+
+---
+
+## Competitive Landscape — Per Vertical
+
+| Vertical | Landscape |
+|----------|-----------|
+| **AgTech / Precision Ag** | Irrig8 + CARBON8 address SLV center-pivot + carbon verification. DATAPIV positions Bxthre3 as ag data layer. |
+| **SaaS / AI Platforms** | AgentOS is internal infrastructure. Starting 5 is the external product layer. |
+| **Gaming / Entertainment** | VPC operates legally in CO under cash-in-person model. Compliance track clear. |
+| **Infrastructure / Dev Tools** | MCP mesh + self-modification engine are differentiated. IP-protected. |
+
+---
+
+*Navigate — VP Ventures*
+*Filed: 2026-04-06*
