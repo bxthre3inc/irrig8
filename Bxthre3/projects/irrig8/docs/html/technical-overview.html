@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Architecture | FarmSense Investor Materials</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        @layer base {
+            body {
+                font-family: 'Inter', sans-serif;
+            }
+            code, pre {
+                font-family: 'JetBrains Mono', monospace;
+            }
+        }
+        @layer components {
+            .page-break {
+                break-after: page;
+            }
+            .no-break {
+                break-inside: avoid;
+            }
+        }
+    </style>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        @page :first {
+            margin: 0;
+        }
+        .prose-custom h1 {
+            @apply text-4xl font-black text-white mb-6 tracking-tight;
+        }
+        .prose-custom h2 {
+            @apply text-2xl font-bold text-white mt-12 mb-4 pb-2 border-b border-emerald-500/20;
+        }
+        .prose-custom h3 {
+            @apply text-lg font-bold text-emerald-400 mt-8 mb-3;
+        }
+        .prose-custom p {
+            @apply text-slate-300 leading-relaxed mb-4;
+        }
+        .prose-custom ul {
+            @apply list-disc list-inside text-slate-300 mb-4 space-y-1;
+        }
+        .prose-custom ol {
+            @apply list-decimal list-inside text-slate-300 mb-4 space-y-1;
+        }
+        .prose-custom li {
+            @apply leading-relaxed;
+        }
+        .prose-custom strong {
+            @apply text-white font-semibold;
+        }
+        .prose-custom a {
+            @apply text-emerald-400 hover:underline;
+        }
+        .prose-custom blockquote {
+            @apply border-l-4 border-emerald-500 pl-4 italic text-slate-400 my-6;
+        }
+        .prose-custom table {
+            @apply w-full text-left border-collapse mb-6;
+        }
+        .prose-custom th {
+            @apply bg-slate-800 text-emerald-400 font-bold text-xs uppercase tracking-widest p-3 border-b border-slate-700;
+        }
+        .prose-custom td {
+            @apply p-3 border-b border-slate-800 text-slate-300;
+        }
+        .prose-custom tr:hover td {
+            @apply bg-slate-800/50;
+        }
+        .prose-custom code {
+            @apply bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded text-sm;
+        }
+        .prose-custom pre {
+            @apply bg-slate-900 border border-slate-800 p-4 rounded-lg overflow-x-auto mb-4;
+        }
+        .prose-custom pre code {
+            @apply bg-transparent p-0;
+        }
+        /* Print optimizations */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                break-after: page;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- Cover Page Template -->
+<div class="min-h-[297mm] flex flex-col justify-between bg-slate-950 relative overflow-hidden">
+    <!-- Background gradients -->
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#064e3b_0%,_#020617_60%)] opacity-60"></div>
+    <div class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-emerald-950/30 to-transparent"></div>
+    
+    <!-- Grid pattern -->
+    <div class="absolute inset-0 opacity-10" style="background-image: linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px); background-size: 40px 40px;"></div>
+    
+    <div class="relative z-10 flex-1 flex flex-col px-16 py-20">
+        <!-- Top badge -->
+        <div class="flex items-center gap-3 mb-12">
+            <div class="w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-center">
+                <i data-lucide="shield-check" class="w-6 h-6 text-emerald-400"></i>
+            </div>
+            <span class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em]">Strategic Capital Portal</span>
+        </div>
+        
+        <!-- Title -->
+        <div class="flex-1 flex flex-col justify-center">
+            <p class="text-slate-500 font-medium tracking-wider uppercase text-sm mb-4">FS-1 Deterministic Agriculture OS</p>
+            <h1 class="text-6xl font-black text-white tracking-tighter leading-[0.95]">
+                Technical Architecture
+            </h1>
+            <div class="h-1 w-32 bg-gradient-to-r from-emerald-500 to-cyan-400 mt-8 rounded-full"></div>
+        </div>
+        
+        <!-- Metadata -->
+        <div class="grid grid-cols-3 gap-8 pt-12 border-t border-white/5">
+            <div>
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-1">Document Type</p>
+                <p class="text-slate-300 font-medium">Investor Material</p>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-1">Classification</p>
+                <p class="text-emerald-400 font-medium">CONFIDENTIAL</p>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-1">Date</p>
+                <p class="text-slate-300 font-medium">March 11, 2026</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="relative z-10 px-16 py-8 bg-slate-900/50 backdrop-blur border-t border-white/5">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <i data-lucide="sprout" class="w-5 h-5 text-slate-950"></i>
+                </div>
+                <span class="text-white font-bold">FarmSense</span>
+                <span class="text-slate-600">|</span>
+                <span class="text-slate-500 text-sm">FS-1 Deterministic Agriculture OS</span>
+            </div>
+            <p class="text-slate-600 text-sm">CONFIDENTIAL</p>
+        </div>
+    </div>
+</div>
+
+<div class="page-break"></div><!-- Content Page Template -->
+<div class="min-h-[297mm] bg-slate-950 px-16 py-12">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-12 pb-4 border-b border-white/5">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="sprout" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <span class="text-white font-bold">FarmSense</span>
+        </div>
+        <p class="text-slate-500 text-xs font-medium uppercase tracking-widest">Technical Architecture</p>
+    </div>
+    
+    <!-- Main content -->
+    <div class="prose-custom max-w-none">
+        <h1>MASTER SOFTWARE ARCHITECTURE: FarmSense OS &amp; Logic (V2.1)</h1>
+<blockquote>
+<p><strong>The Single Source of Truth for Software Engines, APIs, and Data Flows</strong>
+Consolidates: <a href="http://ARCHITECTURE.md">ARCHITECTURE.md</a>, <a href="http://BLUEPRINT.md">BLUEPRINT.md</a>, <a href="http://FEATURESET.md">FEATURESET.md</a>, BACKEND_SERVICE_MAP.md, IMPLEMENTATION_GUIDE.md, and 2 Software KIs.</p>
+</blockquote>
+<hr>
+<h2>1. System Philosophy &amp; Logic Mandate</h2>
+<p>FarmSense is a <strong>Deterministic Farming Operating System</strong>. It is engineered to replace stochastic “intuition” with a high-fidelity computational engine.</p>
+<h3>1.1 The Deterministic Mandate</h3>
+<ul>
+<li><strong>No Black-Box AI</strong>: All irrigation and trading decisions are deterministic and judgment-based. This is a non-negotiable requirement for <strong>Water Court Admissibility</strong>.</li>
+<li><strong>Evidence-Grade Tech</strong>: Every packet is signed at the edge (<strong>AES-256</strong>), and every decision is logged in a SHA-256 hash-chained compliance ledger.</li>
+<li><strong>Explainable Logic</strong>: Operators must be able to audit why a “Soft-Stop” or “VRI-Update” was issued back to raw sensor telemetry.</li>
+</ul>
+<hr>
+<h2>2. Tiered Lambda Architecture</h2>
+<p>FarmSense functions as a decentralized monolithic grid, balancing low-latency edge reflex with high-capacity cloud geostatistics.</p>
+<h3>2.1 Hierarchical Processing Stack</h3>
+<ol>
+<li><strong>Level 1 (Field):</strong> <strong>LRZN/LRZB/VFA/PFA</strong> (LoRa bursts) -&gt; <strong>PMT Hub</strong> (50m Grid, Compliance Baseline). 900MHz <strong>Chirp Spread CSS</strong> security.</li>
+<li><strong>Level 2 (District):</strong> <strong>DHUs</strong> (NVIDIA Jetson) -&gt; 20m/10m Grid (Optimization Layer). Localized reflex autonomy.</li>
+<li><strong>Level 3 (Regional):</strong> <strong>RSS</strong> (64-Core Threadripper) -&gt; 1m Master Grid + 1cm Point Zoom (Enterprise Tier). Regional DIL vaulting.</li>
+<li><strong>Level 4 (Global):</strong> <strong>Core Compute Cloud</strong> -&gt; Multi-field analytics, Federated Learning, global hydro-economics.</li>
+</ol>
+<pre><code class="language-mermaid">graph TD
+    subgraph &quot;Level 4: Global Cloud&quot;
+        Cloud[Core Compute Cloud]
+    end
+    
+    subgraph &quot;Level 3: Regional&quot;
+        RSS[Regional Superstation - Threadripper]
+    end
+    
+    subgraph &quot;Level 2: District&quot;
+        DHU[District Hub - Jetson Orin]
+    end
+    
+    subgraph &quot;Level 1.5: Field Hub&quot;
+        PMT[Pivot Motion Tracker - ESP32]
+    end
+    
+    subgraph &quot;Level 1: Source Nodes&quot;
+        VFA[Vertical Field Anchor]
+        PFA[Pressure &amp; Flow Anchor]
+        LRZ[Lateral Root Zone]
+    end
+
+    VFA -- &quot;LoRa (900MHz)&quot; --&gt; PMT
+    PFA -- &quot;LoRa (900MHz)&quot; --&gt; PMT
+    LRZ -- &quot;LoRa (900MHz)&quot; --&gt; PMT
+    
+    PMT -- &quot;2.4GHz / LTE-M&quot; --&gt; DHU
+    DHU -- &quot;Fiber / LTE-M&quot; --&gt; RSS
+    RSS -- &quot;Fiber&quot; --&gt; Cloud
+    
+    Cloud -. &quot;Federated Learning&quot; .-&gt; RSS
+    RSS -. &quot;Kriging Matrix&quot; .-&gt; DHU
+    DHU -. &quot;VRI Worksheet&quot; .-&gt; PMT
+</code></pre>
+<h3>2.2 Core Software Tier Stack</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Layer</th>
+<th style="text-align:left">Node</th>
+<th style="text-align:left">Engine Grade</th>
+<th style="text-align:left">Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>L0 (Field)</strong></td>
+<td style="text-align:left">Sensors</td>
+<td style="text-align:left">Bare-Metal C</td>
+<td style="text-align:left">Raw sensing &amp; local deep-sleep management.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>L1 (Hub)</strong></td>
+<td style="text-align:left">PMT</td>
+<td style="text-align:left">ESP32-S3</td>
+<td style="text-align:left">Reflex Logic (IMU Stall → Stop), 50m Grid Compute.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>L2 (District)</strong></td>
+<td style="text-align:left">DHU</td>
+<td style="text-align:left">Orin Nano / Go</td>
+<td style="text-align:left">20m/10m Grid Kriging, AllianceChain PBFT Consensus.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>L3 (Core Compute Engine)</strong></td>
+<td style="text-align:left">RSS / Cloud</td>
+<td style="text-align:left">Python / FastAPI</td>
+<td style="text-align:left">1m Master Grid, Long-term DIL, Legal Vault.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>3. Data Infrastructure &amp; Schemas</h2>
+<h3>3.1 TimescaleDB (Time-Series Telemetry)</h3>
+<p>Standardized monthly chunking for high-velocity sensor data.</p>
+<pre><code class="language-sql">CREATE TABLE sensor_readings (
+    time          TIMESTAMPTZ NOT NULL,
+    device_id     UUID NOT NULL,
+    field_id      UUID NOT NULL,
+    sensor_type   VARCHAR(50), -- 'moisture_10cm', 'moisture_30cm', 'flow_rate'
+    value         DOUBLE PRECISION,
+    quality_score FLOAT,       -- 0.0 to 1.0 confidence
+    metadata      JSONB,       -- RSSI, BatVoltage, ADC_Raw
+    PRIMARY KEY (time, device_id, sensor_type)
+);
+SELECT create_hypertable('sensor_readings', 'time');
+</code></pre>
+<h3>3.2 PostgreSQL (Compliance &amp; Ledger)</h3>
+<p>Implements blockchain-style hash chaining for tamper-proof regulatory reporting.</p>
+<pre><code class="language-sql">CREATE TABLE compliance_logs (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    field_id      UUID REFERENCES fields(id),
+    log_time      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    event_type    VARCHAR(50), -- 'IRRIGATION_EVENT', 'VIOLATION', 'PBFT_COMMIT'
+    details       JSONB NOT NULL,
+    hash          VARCHAR(64), -- SHA-256 of (details + previous_hash)
+    previous_hash VARCHAR(64)
+);
+</code></pre>
+<h3>3.3 TimescaleDB Table: <code>soil_sensor_readings</code></h3>
+<p>(Hypertable chunked by 7 days)</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Column</th>
+<th style="text-align:left">Type</th>
+<th style="text-align:left">Index</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>sensor_id</code></td>
+<td style="text-align:left"><code>UUID</code></td>
+<td style="text-align:left"><code>BTREE</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>timestamp</code></td>
+<td style="text-align:left"><code>TIMESTAMPTZ</code></td>
+<td style="text-align:left"><strong>Clustered</strong></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>field_id</code></td>
+<td style="text-align:left"><code>VARCHAR(32)</code></td>
+<td style="text-align:left"><code>HASH</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>moisture_surface</code></td>
+<td style="text-align:left"><code>FLOAT4</code></td>
+<td style="text-align:left">—</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>moisture_root</code></td>
+<td style="text-align:left"><code>FLOAT4</code></td>
+<td style="text-align:left">—</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>location</code></td>
+<td style="text-align:left"><code>GEOGRAPHY(POINT)</code></td>
+<td style="text-align:left"><code>GIST</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>4. Core Software Engines</h2>
+<h3>4.1 The Core Compute Engine (Soil-Plant-Atmosphere Continuum Synthesis)</h3>
+<p>Hosted at <code>brodiblanco.zo.computer</code>. Responsible for the <strong>Soil-Plant-Atmosphere Continuum (SPAC)</strong> synthesis and generating the <strong>Unified Freshwater Index (UFI)</strong>.</p>
+<ul>
+<li><strong>UFI Hex-Fusion</strong>: Real-time synthesis of UN Regulatory Stress, Satellite Moisture, Vapor Pressure Deficit (VPD), AllianceChain Liquidity, and FarmSense Ground-Truth (60% weight).</li>
+<li><strong>Bayesian Priors</strong>: Establishes moisture probability using historical <strong>Soil Functional Domain (SFD)</strong> profiles and multispectral NDVI baselines.</li>
+<li><strong>Regression Kriging</strong>: Ordinary Kriging corrects Sentinel-2 trend bias using ground-truth LRZN/LRZB/VFA <strong>Dielectric Telemetry</strong>.</li>
+<li><strong>MAD Framework</strong>: <strong>Management Allowable Depletion (MAD)</strong> — utilizes the soil profile as a “Water Battery” to optimize pumping schedules and prevent permanent wilting points.</li>
+</ul>
+<h3>4.2 Adaptive Recalculation Engine (“Fisherman’s Attention”)</h3>
+<p>The PMT continuously executes <strong>Edge-EBK</strong> to generate a 50m-resolution spatial probability grid (16x16 matrix). The execution frequency is dynamically governed by environmental volatility:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Mode</th>
+<th style="text-align:left">Trigger Threshold</th>
+<th style="text-align:left">Logic Execution Frequency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Dormant</strong></td>
+<td style="text-align:left">Stable soil moisture + Pivot Parked</td>
+<td style="text-align:left">Every 4 Hours</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Anticipatory</strong></td>
+<td style="text-align:left">Sunrise / $T &gt; 5^\circ$C rise/hr</td>
+<td style="text-align:left">Every 60 Minutes</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Focus Ripple</strong></td>
+<td style="text-align:left">Anomaly detected (&gt;5% deviation)</td>
+<td style="text-align:left">Every 15 Minutes</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Focus Collapse</strong></td>
+<td style="text-align:left">Mainline Pressure &gt; 1 PSI / Tower Motion</td>
+<td style="text-align:left">Every 5 Seconds</td>
+</tr>
+</tbody>
+</table>
+<h4>Autonomous Edge-EBK Logic</h4>
+<ul>
+<li><strong>FPU Calculation</strong>: The hardware FPU processes <strong>AES-256</strong> chirps from LRZN/LRZB/VFA nodes into a localized 16x16 probability matrix.</li>
+<li><strong>Trajectory Collapse</strong>: In “Collapse” mode, the FPU zeroes calculations on dormant sections, focusing 100% of compute on the active pivot span trajectory.</li>
+<li><strong>Payload Bundling</strong>: The PMT bundles its own High-Fidelity kinematic data, the processed 50m Edge-EBK arrays, and the intercepted VFA/LRZ intelligence into a unified, encrypted <strong>~187-byte Field State Payload</strong>.</li>
+<li><strong>LoRa Mesh Backhaul</strong>: Blasts the unified payload to the District Hub (DHU) via 900MHz LoRa Mesh.</li>
+<li><strong>Zero-Downtime VRI Failover</strong>: Upon loss of DHU mesh-ping, the PMT instantly executes autonomous Variable Rate Irrigation based onlocalized intelligence.</li>
+<li><strong>Aggregate Harmonic Analysis</strong>: Ingests raw current wave descriptors from the <strong>PFA (Level 1)</strong> and executes <strong>Fast Fourier Transform (FFT)</strong> via vector instructions to detect motor cavitation or bearing failure.</li>
+<li><strong>Audit Buffering</strong>: Stores all payload state changes to onboard SPI Flash, burst-transmitting the backlog upon reconnection to preserve the State Engineer audit ledger.</li>
+</ul>
+<h3>4.3 Level 1 “Dumb Chirp” Transformation (VFA &amp; PFA)</h3>
+<p>The Level 1 “Source” nodes (VFA/PFA/LRZ) are optimized for a 10-year battery life and unified silicon (nRF52840):</p>
+<ul>
+<li><strong>AES-256 Encryption at the Edge</strong>: Independently encrypts the localized payload (Soil Moisture or Wellhead Waveform) before transmission.</li>
+<li><strong>Dumb Chirp Mode</strong>: Minimizes CPU cycles by transmitting a fixed-length encrypted burst to the overhead PMT Field Hub.</li>
+<li><strong>Dynamic Ripple Scaling</strong>: Responds to PMT “Ripple” pings, scaling chirp frequency during detected anomalies.</li>
+<li><strong>LPI/LPD Constraints</strong>: Firmware ensures <strong>Chirp Spread Spectrum (CSS)</strong> conforms to Federal Low Probability of Intercept/Detection standards.</li>
+</ul>
+<h4>Volatility Score Logic (Decision Engine)</h4>
+<p><code>Volatility = (Moisture_Δ_1h * 0.4) + (Irrigation_Active * 0.3) + (VPD_Stress * 0.2) + (Wind_Stress * 0.1)</code></p>
+<ul>
+<li><strong>Score &gt; 0.7</strong> → COLLAPSE</li>
+<li><strong>Score &gt; 0.3</strong> → ANTICIPATORY</li>
+<li><strong>Default</strong>    → DORMANT</li>
+</ul>
+<h3>4.3 Decision Engine (Reflex Logic)</h3>
+<p>Sub-cloud orchestrator evaluation field-state conditions.</p>
+<ul>
+<li><code>PMT_STALL</code> → Issue <code>ACTUATE_STOP</code> to PFA Relay.</li>
+<li><code>LINE_PRESSURE_MAX</code> → Issue <code>REFLEX_STOP</code>.</li>
+<li><code>NOZZLE_DROP</code> → Trigger VRI recalculation at 1m.</li>
+</ul>
+<hr>
+<h2>5. Backend Service Map (<code>app/services/</code>)</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Service Module</th>
+<th style="text-align:left">Function</th>
+<th style="text-align:left">Algorithm/Tech</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>rss_kriging.py</code></td>
+<td style="text-align:left">1m Mastering</td>
+<td style="text-align:left">Scikit-learn GPR (RBF + WhiteKernel) + Spatial Prior Fusion.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>csa_alignment.py</code></td>
+<td style="text-align:left">Corner Resolver</td>
+<td style="text-align:left">Law of Cosines Kinematic Handshake resolving joint elbow to ±0.1°.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>trading_service.py</code></td>
+<td style="text-align:left">Water Market</td>
+<td style="text-align:left">PBFT AllianceChain Consensus on DHU Industrial SSDs.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>predictive_maint.py</code></td>
+<td style="text-align:left">Pump Health</td>
+<td style="text-align:left">Current Harmonic Analysis (NXP M7) detecting torque ripple &amp; cavitation.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>spatial_privacy.py</code></td>
+<td style="text-align:left">Data Obfuscation</td>
+<td style="text-align:left">Contextual Anonymization segregating Legal Ledger from Global Analytics.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>globalGAP_compliance</code></td>
+<td style="text-align:left">Certification</td>
+<td style="text-align:left">Automated 1-click sustainability audit trail generation.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>jadc2_adapter.py</code></td>
+<td style="text-align:left">Inter-agency</td>
+<td style="text-align:left">JADC2 / LPI / LPD tactical environmental tactical translation.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>satellite_service</code></td>
+<td style="text-align:left">NDVI/NDWI</td>
+<td style="text-align:left">Sentinel-2 / Landsat-9 Multi-temporal stack with atmospheric correction.</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>decision_engine.py</code></td>
+<td style="text-align:left">Reflex Logic</td>
+<td style="text-align:left">Deterministic rule-based boolean actuation (MAD Framework).</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>6. Security, Authentication &amp; Roles</h2>
+<h3>6.1 Authentication (JWT Flow)</h3>
+<ul>
+<li><strong>Backend</strong>: FastAPI + Bcrypt (Cost Rounds = 12).</li>
+<li><strong>Storage</strong>: <code>sessionStorage</code> (Stateless).</li>
+<li><strong>Secret</strong>: Managed via <code>JWT_SECRET</code> environment variable.</li>
+</ul>
+<h3>6.2 Role-Based Access Control (RBAC)</h3>
+<ul>
+<li><strong>INTERNAL</strong>: Full system admin &amp; OTA management.</li>
+<li><strong>FARMER</strong>: Own field telemetry, VRI command center, trading dashboard.</li>
+<li><strong>REGULATOR</strong>: Compliance audit viewer, non-repudiable ledger access.</li>
+<li><strong>INVESTOR</strong>: Regional equity scores, depletion risk, Water-ROI analytics.</li>
+</ul>
+<hr>
+<h2>7. Strategic Feature Set</h2>
+<ul>
+<li><strong>UFI (Unified Freshwater Index)</strong>: Proprietary bx3 standard for Fresh Water Availability. Uses Hex-Fusion to prioritize hardware Ground-Truth (60%).</li>
+<li><strong>Resolution Pop</strong>: Dynamic UI blur/unlock between <strong>50m Compliance (Free/Base)</strong> and <strong>1m Enterprise (Global/Premium)</strong> spatial tiers based on UFI stress levels.</li>
+<li><strong>Mandate Enforcement Layer</strong>: Automated cross-validation of satellite ET (Evapotranspiration) vs. Badger Meter ground-truth to detect unmetered water “leakage” or unauthorized usage across the subdistrict.</li>
+<li><strong>AllianceChain</strong>: Peer-to-peer water credit trading rights executed via DHU PBFT consensus.</li>
+<li><strong>Rapid Deployment/Dual-Use</strong>: JADC2 adapters translate soil trafficability into tactical terrain maps.</li>
+</ul>
+<hr>
+<h2>8. 20-Week Implementation Roadmap (SLV Pilot)</h2>
+<h3>Phase 1: Foundation (Weeks 1-4)</h3>
+<ul>
+<li><strong>Week 1-2</strong>: Deploy unified CSE stack on <code>brodiblanco.zo.computer</code>. Setup Monitoring (Prometheus/Grafana).</li>
+<li><strong>Week 3-4</strong>: Implement JWT Auth &amp; core SQLAlchemy models for sensor readings.</li>
+</ul>
+<h3>Phase 2: Ingestion &amp; Kriging (Weeks 5-8)</h3>
+<ul>
+<li><strong>Week 5</strong>: Implement high-velocity Sensor Ingestion API (Target: 10K pings/sec).</li>
+<li><strong>Week 6-8</strong>: Deploy 20m Edge Kriging on Jetson Hubs. Integrate Sentinel-2 cloud-filtering (30% threshold).</li>
+</ul>
+<h3>Phase 3: Analytics &amp; Reflex (Weeks 9-12)</h3>
+<ul>
+<li><strong>Week 9-10</strong>: Adaptive Recalculation Engine validation (Dormant → Collapse).</li>
+<li><strong>Week 11-12</strong>: Decision Engine “Soft-Stop” field trials.</li>
+</ul>
+<h3>Phase 4: Portals &amp; Compliance (Weeks 13-16)</h3>
+<ul>
+<li><strong>Week 13-14</strong>: Farmer Dashboard (React 18 + MapLibre GL JS).</li>
+<li><strong>Week 15</strong>: Regulatory Portal for SLV 2026 Water Court hearings.</li>
+<li><strong>Week 16</strong>: Security penetration testing &amp; UAT with pilot farmers.</li>
+</ul>
+<h3>Phase 5: Optimization &amp; Rollout (Weeks 17-20)</h3>
+<ul>
+<li><strong>Week 17-18</strong>: Performance tuning (Kriging &lt; 5 min/field).</li>
+<li><strong>Week 19</strong>: Trainer-the-trainer manual generation.</li>
+<li><strong>Week 20</strong>: <strong>CSU SLV Research Center Pilot Launch</strong> (2 Center Pivots, Full Stack).</li>
+</ul>
+<hr>
+<h2>9. Performance &amp; Health Targets</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Metric</th>
+<th style="text-align:left">Target</th>
+<th style="text-align:left">Critical Threshold</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>API Response (p95)</strong></td>
+<td style="text-align:left">&lt; 200ms</td>
+<td style="text-align:left">500ms</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>20m Grid Calc</strong></td>
+<td style="text-align:left">&lt; 30 sec</td>
+<td style="text-align:left">60 sec</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>1m Grid Master</strong></td>
+<td style="text-align:left">&lt; 5 min</td>
+<td style="text-align:left">10 min</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Sensor Ingestion</strong></td>
+<td style="text-align:left">10,000 / sec</td>
+<td style="text-align:left">5,000 / sec</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>System Uptime</strong></td>
+<td style="text-align:left">99.9%</td>
+<td style="text-align:left">99.5%</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>10. CI/CD &amp; Deployment Strategy</h2>
+<p>Automated deployment is managed via GitHub Actions to the CSE/Zo stack.</p>
+<h3>10.1 Environment Configuration</h3>
+<ul>
+<li><strong>RDC (Oracle)</strong>: Public IP for Map Database. Requires <code>POSTGRES_USER</code>, <code>POSTGRES_PASSWORD</code>.</li>
+<li><strong>Core Compute Engine</strong>: Core Application Server. Requires <code>MAP_DATABASE_URL</code> pointing to the RDC.</li>
+</ul>
+<h3>10.2 Deployment Workflow</h3>
+<ol>
+<li><strong>Push to <code>main</code></strong>: Triggers GitHub Action.</li>
+<li><strong>Step 1 (Validate)</strong>: Lints and unit tests (Pytest/Jest).</li>
+<li><strong>Step 2 (Deploy-RDC)</strong>: Deploys <code>docker-compose.oracle.yml</code> to the map stack.</li>
+<li><strong>Step 3 (Deploy-Zo)</strong>: Deploys <code>docker-compose.zo.yml</code> to the core platform.</li>
+</ol>
+<hr>
+<h2>11. AI Agent Coordination (SOP)</h2>
+<p>This section contains critical invariants for AI Assistants (antigravity/cortex) operating within the FarmSense codebase.</p>
+<h3>11.1 The “Before Creating” Rule</h3>
+<p>Before creating ANY new file, route, or service:</p>
+<ol>
+<li><strong>Audit Documentation</strong>: Start at <code>README.md</code> → 4 Masters.</li>
+<li><strong>Verify Routes</strong>: Check <code>app/api/main.py</code> for existing endpoint definitions.</li>
+<li><strong>Grep Search</strong>: Sweep the workspace for similar logic/classes. <strong>Assumption is always that it already exists.</strong></li>
+</ol>
+<h3>11.2 Core Invariants</h3>
+<ul>
+<li><strong>No Dependencies</strong>: Do not add external Python or JS libraries without explicit architectural review.</li>
+<li><strong>Deterministic Logic</strong>: Never propose or implement black-box ML for irrigation or ledger decision points.</li>
+<li><strong>Version Integrity</strong>: Maintain the Master Documents as the <em>only</em> authoritative technical specifications. Any engineering change must be reflected in the relevant Master first.</li>
+</ul>
+<h2>12. Hybrid Cloud Deployment (Zo + RDC)</h2>
+<p>FarmSense utilizes a split-deployment architecture to separate compute-heavy processing from geospatial data services.</p>
+<h3>12.1 RDC Cloud (Map Stack)</h3>
+<p>Hosts the PostGIS database and tile-service engine.</p>
+<ul>
+<li><strong>Port 5432</strong>: Database access.</li>
+<li><strong>Port 8001</strong>: Tile serving.</li>
+<li><strong>Path</strong>: <code>farmsense-code/deployment/docker/docker-compose.rdc.yml</code></li>
+</ul>
+<h3>12.2 Zo Server (Core Platform)</h3>
+<p>Hosts the FastAPI engine, React frontend, and Audit ledger.</p>
+<ul>
+<li><strong>Environment</strong>: <code>MAP_DATABASE_URL</code> must point to the RDC instance.</li>
+<li><strong>Path</strong>: <code>farmsense-code/deployment/docker/docker-compose.cse.yml</code></li>
+</ul>
+<hr>
+<p><em>Classification: Master Software Asset | Single Source of Truth | Approved 2026-03-07</em></p>
+
+    </div>
+    
+    <!-- Page number -->
+    <div class="fixed bottom-8 right-16 text-slate-600 text-xs font-medium">
+        CONFIDENTIAL — March 11, 2026
+    </div>
+</div>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

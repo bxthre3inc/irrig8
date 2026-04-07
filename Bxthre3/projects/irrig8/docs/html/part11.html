@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part XI: Cybersecurity | FarmSense Master Manual V2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .prose h1 { @apply text-4xl font-black text-slate-900 mb-8 tracking-tight; }
+        .prose h2 { @apply text-2xl font-bold text-slate-800 mt-12 mb-6 pb-2 border-b-2 border-emerald-500; }
+        .prose h3 { @apply text-xl font-bold text-emerald-700 mt-8 mb-4; }
+        .prose h4 { @apply text-lg font-semibold text-slate-700 mt-6 mb-3; }
+        .prose p { @apply text-slate-600 leading-relaxed mb-4; }
+        .prose ul { @apply list-disc list-inside text-slate-600 mb-4 space-y-1; }
+        .prose ol { @apply list-decimal list-inside text-slate-600 mb-4 space-y-1; }
+        .prose table { @apply w-full text-left border-collapse mb-6 text-sm; }
+        .prose th { @apply bg-slate-100 text-slate-800 font-bold p-3 border border-slate-300; }
+        .prose td { @apply p-3 border border-slate-300 text-slate-600; }
+        .prose tr:nth-child(even) { @apply bg-slate-50; }
+        .prose code { @apply bg-slate-100 text-emerald-700 px-2 py-1 rounded text-sm; }
+        .prose pre { @apply bg-slate-900 text-slate-200 p-4 rounded-lg overflow-x-auto mb-6; }
+        .prose blockquote { @apply border-l-4 border-emerald-500 pl-4 italic text-slate-500 my-6; }
+        .nav-link { @apply block px-4 py-2 text-sm text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-all; }
+        .nav-link.active { @apply text-emerald-700 bg-emerald-50 font-medium; }
+        .part-number { @apply inline-flex items-center justify-center w-8 h-8 bg-emerald-500 text-white rounded-lg text-sm font-bold mr-3; }
+        @media print {
+            .no-print { display: none !important; }
+            .prose h1 { page-break-before: always; }
+            .prose h1:first-of-type { page-break-before: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800">FarmSense</h1>
+                    <p class="text-xs text-slate-500">Master Manual V2.1</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-sm text-slate-600 hover:text-emerald-600">Index</a>
+                <a href="part10.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">← Prev</a>
+                <span class="text-sm text-slate-400">11 of 17</span>
+                <a href="part12.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">Next →</a>
+                <a href="FarmSense_Master_Manual_Comprehensive_V2.1.pdf" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm font-medium">Download PDF</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="max-w-7xl mx-auto pt-20 pb-12 px-4">
+        <div class="flex gap-8">
+            <!-- Sidebar Navigation -->
+            <nav class="w-64 flex-shrink-0 no-print">
+                <div class="sticky top-24 bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 class="font-bold text-slate-800 mb-4 px-4">Parts</h2>
+                    <div class="space-y-1">
+                        <a href="part01.html" class="nav-link {}"><span class="part-number">I</span>Executive</a>
+                        <a href="part02.html" class="nav-link {}"><span class="part-number">II</span>Market</a>
+                        <a href="part03.html" class="nav-link {}"><span class="part-number">III</span>Human</a>
+                        <a href="part04.html" class="nav-link {}"><span class="part-number">IV</span>Technical</a>
+                        <a href="part05.html" class="nav-link {}"><span class="part-number">V</span>Hardware</a>
+                        <a href="part06.html" class="nav-link {}"><span class="part-number">VI</span>Interface</a>
+                        <a href="part07.html" class="nav-link {}"><span class="part-number">VII</span>Oracle</a>
+                        <a href="part08.html" class="nav-link {}"><span class="part-number">VIII</span>Pilot</a>
+                        <a href="part09.html" class="nav-link {}"><span class="part-number">IX</span>Operations</a>
+                        <a href="part10.html" class="nav-link {}"><span class="part-number">X</span>Infrastructure</a>
+                        <a href="part11.html" class="nav-link {active}"><span class="part-number">XI</span>Security</a>
+                        <a href="part12.html" class="nav-link {}"><span class="part-number">XII</span>Legal</a>
+                        <a href="part13.html" class="nav-link {}"><span class="part-number">XIII</span>Standards</a>
+                        <a href="part14.html" class="nav-link {}"><span class="part-number">XIV</span>Financial</a>
+                        <a href="part15.html" class="nav-link {}"><span class="part-number">XV</span>Grants</a>
+                        <a href="part16.html" class="nav-link {}"><span class="part-number">XVI</span>Case Study</a>
+                        <a href="part17.html" class="nav-link {}"><span class="part-number">XVII</span>Appendices</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-xi-cybersecurity-sovereign-hardening">PART XI: CYBERSECURITY &amp; SOVEREIGN HARDENING</h1>
+<h2 id="security-architecture">11.0 Security Architecture</h2>
+<p>FarmSense implements defense-in-depth with Zero-Trust principles.</p>
+<h2 id="zero-trust-architecture">11.1 Zero-Trust Architecture</h2>
+<h3 id="core-principles">11.1.1 Core Principles</h3>
+<ol type="1">
+<li>Never trust, always verify</li>
+<li>Least privilege access</li>
+<li>Assume breach</li>
+</ol>
+<h3 id="implementation-layers">11.1.2 Implementation Layers</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Control</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Identity</td>
+<td>SPIFFE/SPIRE workload identity</td>
+</tr>
+<tr class="even">
+<td>Network</td>
+<td>mTLS everywhere (service mesh)</td>
+</tr>
+<tr class="odd">
+<td>Workload</td>
+<td>Distroless containers, read-only FS</td>
+</tr>
+<tr class="even">
+<td>Data</td>
+<td>AES-256-GCM, envelope encryption</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ebpf-kernel-auditing-falco">11.2 eBPF Kernel Auditing (Falco)</h2>
+<h3 id="runtime-detection">11.2.1 Runtime Detection</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Event</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Unauthorized process</td>
+<td>Alert + log</td>
+</tr>
+<tr class="even">
+<td>Sensitive file access</td>
+<td>Alert + log</td>
+</tr>
+<tr class="odd">
+<td>Outbound connection (field)</td>
+<td>Block + alert</td>
+</tr>
+<tr class="even">
+<td>Privilege escalation</td>
+<td>Kill + alert</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lateral-movement-prevention">11.3 Lateral Movement Prevention</h2>
+<h3 id="network-policies">11.3.1 Network Policies</h3>
+<ul>
+<li>Default-deny ingress/egress</li>
+<li>Explicit allow rules only</li>
+<li>Field devices: No direct internet access</li>
+</ul>
+<h3 id="pod-security">11.3.2 Pod Security</h3>
+<ul>
+<li>Read-only root filesystem</li>
+<li>No privileged containers</li>
+<li>Seccomp profiles (runtime syscall filtering)</li>
+</ul>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part10.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part X: Infrastructure</span>
+                    </a>
+                    <a href="part12.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part XII: Water Court Ledger</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
+            <p>FarmSense Master Manual V2.1 | © 2026 Bxthre3 Inc. | CONFIDENTIAL</p>
+            <p class="mt-2">For questions, contact: <a href="mailto:contact@bxthre3.com" class="text-emerald-600 hover:underline">contact@bxthre3.com</a></p>
+        </div>
+    </footer>
+</body>
+</html>

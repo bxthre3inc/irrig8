@@ -1,0 +1,77 @@
+version: '3.8'
+
+# Set POSTGRES_PASSWORD in your .env file or environment
+# Default fallback is 'demo-password' for local development only
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: farmsense
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-demo-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-demo-password}@db:5432/farmsense
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - farmer-dashboard
+      - admin-dashboard
+      - regulatory-portal
+      - research-portal
+      - investor-dashboard
+      - grant-portal
+      - marketing-site
+      - docs-portal
+
+  farmer-dashboard:
+    build:
+      context: ./frontend/farmer-dashboard
+
+  admin-dashboard:
+    build:
+      context: ./frontend/admin-dashboard
+
+  regulatory-portal:
+    build:
+      context: ./frontend/regulatory-portal
+
+  research-portal:
+    build:
+      context: ./frontend/research-portal
+
+  investor-dashboard:
+    build:
+      context: ./frontend/investor-dashboard
+
+  grant-portal:
+    build:
+      context: ./frontend/grant-portal
+
+  marketing-site:
+    build:
+      context: ./frontend/marketing-site
+
+  docs-portal:
+    build:
+      context: ./frontend/docs-portal
+
+volumes:
+  postgres_data:

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Projections | FarmSense Investor Materials</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        @layer base {
+            body {
+                font-family: 'Inter', sans-serif;
+            }
+            code, pre {
+                font-family: 'JetBrains Mono', monospace;
+            }
+        }
+        @layer components {
+            .page-break {
+                break-after: page;
+            }
+            .no-break {
+                break-inside: avoid;
+            }
+        }
+    </style>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        @page :first {
+            margin: 0;
+        }
+        .prose-custom h1 {
+            @apply text-4xl font-black text-white mb-6 tracking-tight;
+        }
+        .prose-custom h2 {
+            @apply text-2xl font-bold text-white mt-12 mb-4 pb-2 border-b border-emerald-500/20;
+        }
+        .prose-custom h3 {
+            @apply text-lg font-bold text-emerald-400 mt-8 mb-3;
+        }
+        .prose-custom p {
+            @apply text-slate-300 leading-relaxed mb-4;
+        }
+        .prose-custom ul {
+            @apply list-disc list-inside text-slate-300 mb-4 space-y-1;
+        }
+        .prose-custom ol {
+            @apply list-decimal list-inside text-slate-300 mb-4 space-y-1;
+        }
+        .prose-custom li {
+            @apply leading-relaxed;
+        }
+        .prose-custom strong {
+            @apply text-white font-semibold;
+        }
+        .prose-custom a {
+            @apply text-emerald-400 hover:underline;
+        }
+        .prose-custom blockquote {
+            @apply border-l-4 border-emerald-500 pl-4 italic text-slate-400 my-6;
+        }
+        .prose-custom table {
+            @apply w-full text-left border-collapse mb-6;
+        }
+        .prose-custom th {
+            @apply bg-slate-800 text-emerald-400 font-bold text-xs uppercase tracking-widest p-3 border-b border-slate-700;
+        }
+        .prose-custom td {
+            @apply p-3 border-b border-slate-800 text-slate-300;
+        }
+        .prose-custom tr:hover td {
+            @apply bg-slate-800/50;
+        }
+        .prose-custom code {
+            @apply bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded text-sm;
+        }
+        .prose-custom pre {
+            @apply bg-slate-900 border border-slate-800 p-4 rounded-lg overflow-x-auto mb-4;
+        }
+        .prose-custom pre code {
+            @apply bg-transparent p-0;
+        }
+        /* Print optimizations */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                break-after: page;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- Cover Page Template -->
+<div class="min-h-[297mm] flex flex-col justify-between bg-slate-950 relative overflow-hidden">
+    <!-- Background gradients -->
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#064e3b_0%,_#020617_60%)] opacity-60"></div>
+    <div class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-emerald-950/30 to-transparent"></div>
+    
+    <!-- Grid pattern -->
+    <div class="absolute inset-0 opacity-10" style="background-image: linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px); background-size: 40px 40px;"></div>
+    
+    <div class="relative z-10 flex-1 flex flex-col px-16 py-20">
+        <!-- Top badge -->
+        <div class="flex items-center gap-3 mb-12">
+            <div class="w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-center">
+                <i data-lucide="shield-check" class="w-6 h-6 text-emerald-400"></i>
+            </div>
+            <span class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em]">Strategic Capital Portal</span>
+        </div>
+        
+        <!-- Title -->
+        <div class="flex-1 flex flex-col justify-center">
+            <p class="text-slate-500 font-medium tracking-wider uppercase text-sm mb-4">Revenue Model & Growth Trajectory</p>
+            <h1 class="text-6xl font-black text-white tracking-tighter leading-[0.95]">
+                Financial Projections
+            </h1>
+            <div class="h-1 w-32 bg-gradient-to-r from-emerald-500 to-cyan-400 mt-8 rounded-full"></div>
+        </div>
+        
+        <!-- Metadata -->
+        <div class="grid grid-cols-3 gap-8 pt-12 border-t border-white/5">
+            <div>
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-1">Document Type</p>
+                <p class="text-slate-300 font-medium">Investor Material</p>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-1">Classification</p>
+                <p class="text-emerald-400 font-medium">STRICTLY CONFIDENTIAL</p>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-1">Date</p>
+                <p class="text-slate-300 font-medium">March 11, 2026</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="relative z-10 px-16 py-8 bg-slate-900/50 backdrop-blur border-t border-white/5">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <i data-lucide="sprout" class="w-5 h-5 text-slate-950"></i>
+                </div>
+                <span class="text-white font-bold">FarmSense</span>
+                <span class="text-slate-600">|</span>
+                <span class="text-slate-500 text-sm">FS-1 Deterministic Agriculture OS</span>
+            </div>
+            <p class="text-slate-600 text-sm">CONFIDENTIAL</p>
+        </div>
+    </div>
+</div>
+
+<div class="page-break"></div><!-- Content Page Template -->
+<div class="min-h-[297mm] bg-slate-950 px-16 py-12">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-12 pb-4 border-b border-white/5">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="sprout" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <span class="text-white font-bold">FarmSense</span>
+        </div>
+        <p class="text-slate-500 text-xs font-medium uppercase tracking-widest">Financial Projections</p>
+    </div>
+    
+    <!-- Main content -->
+    <div class="prose-custom max-w-none">
+        <h1>Financial Projections</h1>
+<h2>Revenue Model &amp; Growth Trajectory</h2>
+<p><strong>Classification:</strong> STRICTLY CONFIDENTIAL<br>
+<strong>Date:</strong> March 2026</p>
+<hr>
+<h2>Market Opportunity: TAM/SAM/SOM</h2>
+<h3>Total Addressable Market (TAM)</h3>
+<p>Global precision irrigation market — <strong>$12.8B by 2030</strong>, CAGR 14.3%</p>
+<p><strong>Drivers:</strong> Water scarcity, climate regulation, labor costs, yield optimization</p>
+<h3>Serviceable Addressable Market (SAM)</h3>
+<p>North American center-pivot operations:</p>
+<ul>
+<li>175,000 pivots across 22M acres</li>
+<li>Average field size: 126 acres</li>
+<li>Annual SaaS potential: <strong>$1.05B</strong> at $499/month average</li>
+</ul>
+<h3>Serviceable Obtainable Market (SOM)</h3>
+<p>Immediate targets:</p>
+<ul>
+<li>SLV Subdistrict 1: 1,280 fields</li>
+<li>RGWCD adjacent districts: 5,000 fields</li>
+<li>First-year penetration target: 320 fields (25%)</li>
+</ul>
+<hr>
+<h2>Revenue Model: Resolution Pop™ Tiers</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Resolution</th>
+<th>Monthly Price</th>
+<th>Annual Price</th>
+<th>Target Segment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Free</strong></td>
+<td>50m</td>
+<td>$0</td>
+<td>$0</td>
+<td>Government / Compliance</td>
+</tr>
+<tr>
+<td><strong>Base</strong></td>
+<td>50m compliance</td>
+<td>$149</td>
+<td>$1,788</td>
+<td>Regulators, small farms</td>
+</tr>
+<tr>
+<td><strong>Plus</strong></td>
+<td>20m optimization</td>
+<td>$299</td>
+<td>$3,588</td>
+<td>Commercial growers</td>
+</tr>
+<tr>
+<td><strong>Enterprise</strong></td>
+<td>1m + predictive</td>
+<td>$499</td>
+<td>$5,988</td>
+<td>Large ops, legal defense</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Volume Discounts:</strong></p>
+<ul>
+<li>2 fields: 5%</li>
+<li>6 fields: 15%</li>
+<li>Subdistrict scale: 25% cap</li>
+</ul>
+<hr>
+<h2>10-Year Cash Flow Projections</h2>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Revenue</th>
+<th>Expenses</th>
+<th>Net Income</th>
+<th>Cumulative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>2026 (Y1)</strong></td>
+<td>$240K</td>
+<td>$1.2M</td>
+<td>-$960K</td>
+<td>-$960K</td>
+</tr>
+<tr>
+<td><strong>2027 (Y2)</strong></td>
+<td>$3.8M</td>
+<td>$2.5M</td>
+<td>$1.3M</td>
+<td>$340K</td>
+</tr>
+<tr>
+<td><strong>2028 (Y3)</strong></td>
+<td>$7.7M</td>
+<td>$4.2M</td>
+<td>$3.5M</td>
+<td>$3.84M</td>
+</tr>
+<tr>
+<td><strong>2029 (Y4)</strong></td>
+<td>$11M</td>
+<td>$5.8M</td>
+<td>$5.2M</td>
+<td>$9.04M</td>
+</tr>
+<tr>
+<td><strong>2030 (Y5)</strong></td>
+<td>$15M</td>
+<td>$8M</td>
+<td>$7M</td>
+<td>$16.04M</td>
+</tr>
+<tr>
+<td><strong>2031 (Y6)</strong></td>
+<td>$22M</td>
+<td>$11M</td>
+<td>$11M</td>
+<td>$27.04M</td>
+</tr>
+<tr>
+<td><strong>2032 (Y7)</strong></td>
+<td>$30M</td>
+<td>$14M</td>
+<td>$16M</td>
+<td>$43.04M</td>
+</tr>
+<tr>
+<td><strong>2033 (Y8)</strong></td>
+<td>$36M</td>
+<td>$17M</td>
+<td>$19M</td>
+<td>$62.04M</td>
+</tr>
+<tr>
+<td><strong>2034 (Y9)</strong></td>
+<td>$40M</td>
+<td>$18.5M</td>
+<td>$21.5M</td>
+<td>$83.54M</td>
+</tr>
+<tr>
+<td><strong>2035 (Y10)</strong></td>
+<td>$45M</td>
+<td>$20M</td>
+<td>$25M</td>
+<td>$108.54M</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>Subdistrict 1 Scale Economics</h2>
+<h3>CAPEX Breakdown (1,280 Fields)</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Per Field</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hardware (LRZ/VFA/PMT/PFA)</td>
+<td>$2,987</td>
+<td>$3,823,360</td>
+</tr>
+<tr>
+<td>Infrastructure (DHU/RSS shells)</td>
+<td>$250</td>
+<td>$320,000</td>
+</tr>
+<tr>
+<td>Installation labor</td>
+<td>$150</td>
+<td>$192,000</td>
+</tr>
+<tr>
+<td><strong>Total CAPEX</strong></td>
+<td><strong>$3,387</strong></td>
+<td><strong>$4,335,360</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>OPEX &amp; Revenue (Annual, 100% Penetration)</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Annual OPEX (maintenance, ops, support)</td>
+<td>$648,000</td>
+</tr>
+<tr>
+<td>Annual Revenue (Enterprise tier avg)</td>
+<td>$7,664,640</td>
+</tr>
+<tr>
+<td><strong>Net Annual Profit</strong></td>
+<td><strong>$7,016,640</strong></td>
+</tr>
+<tr>
+<td><strong>CAPEX Payback Period</strong></td>
+<td><strong>6.2 months</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>Unit Economics</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CAC (Customer Acquisition Cost)</td>
+<td>$650</td>
+</tr>
+<tr>
+<td>LTV (Lifetime Value, 5-year)</td>
+<td>$17,964</td>
+</tr>
+<tr>
+<td><strong>LTV:CAC Ratio</strong></td>
+<td><strong>27.6:1</strong></td>
+</tr>
+<tr>
+<td>Gross Margin</td>
+<td>76%</td>
+</tr>
+<tr>
+<td>Churn Rate (projected)</td>
+<td>&lt;5%</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>Strategic Exit Roadmap</h2>
+<table>
+<thead>
+<tr>
+<th>Timeline</th>
+<th>Event</th>
+<th>Target Valuation</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>2026</strong></td>
+<td>Seed Round A-1</td>
+<td>$8-10M</td>
+<td>CSU pilot validation, DWR pre-engagement</td>
+</tr>
+<tr>
+<td><strong>2027</strong></td>
+<td>Series A</td>
+<td>$25-30M</td>
+<td>Colorado DWR adoption, 500+ fields deployed</td>
+</tr>
+<tr>
+<td><strong>2028</strong></td>
+<td>Series B</td>
+<td>$50-75M</td>
+<td>5,000 fields, adjacent state expansion</td>
+</tr>
+<tr>
+<td><strong>2030</strong></td>
+<td>IPO or Strategic Acquisition</td>
+<td><strong>$200-500M</strong></td>
+<td>National footprint, proven unit economics</td>
+</tr>
+</tbody>
+</table>
+<h3>Strategic Acquisition Targets</h3>
+<table>
+<thead>
+<tr>
+<th>Company</th>
+<th>Rationale</th>
+<th>Estimated Multiple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trimble</td>
+<td>Precision ag portfolio gap</td>
+<td>8-10x ARR</td>
+</tr>
+<tr>
+<td>John Deere</td>
+<td>Water management integration</td>
+<td>10-12x ARR</td>
+</tr>
+<tr>
+<td>Bayer (Climate)</td>
+<td>Digital farming expansion</td>
+<td>8-10x ARR</td>
+</tr>
+<tr>
+<td>Nutrien</td>
+<td>Input optimization platform</td>
+<td>8-10x ARR</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>Federal Grant Registry: Non-Dilutive Capital</h2>
+<h3>Active Pipeline</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>Agency</th>
+<th>Amount</th>
+<th>Deadline</th>
+<th>Status</th>
+<th>Match Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SBIR Phase I</td>
+<td>USDA</td>
+<td>$300K</td>
+<td>Mar 2026</td>
+<td>Preparing</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>SBIR Phase II</td>
+<td>USDA</td>
+<td>$1.1M</td>
+<td>Sep 2026</td>
+<td>Planned</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>CIG</td>
+<td>NRCS</td>
+<td>$75K-$5M</td>
+<td>Apr 2026</td>
+<td>Identified</td>
+<td>50%</td>
+</tr>
+<tr>
+<td>SBIR Phase I</td>
+<td>NSF</td>
+<td>$275K</td>
+<td>May 2026</td>
+<td>Drafting</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>Water-Energy Nexus</td>
+<td>DOE</td>
+<td>$2M-$10M</td>
+<td>Jun 2026</td>
+<td>Scoping</td>
+<td>20-50%</td>
+</tr>
+<tr>
+<td>ARPA-E WATER</td>
+<td>DOE</td>
+<td>$3M-$5M</td>
+<td>Rolling</td>
+<td>Pipeline</td>
+<td>0%</td>
+</tr>
+</tbody>
+</table>
+<h3>5-Year Grant Potential: $12M-$25M (Non-Dilutive)</h3>
+<h3>NRCS Resource Concern Alignment</h3>
+<table>
+<thead>
+<tr>
+<th>NRCS Code</th>
+<th>Conservation Concern</th>
+<th>FarmSense Metric</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>N142</td>
+<td>Aquifer depletion</td>
+<td>Gallons saved/acre</td>
+</tr>
+<tr>
+<td>N143</td>
+<td>Groundwater quality</td>
+<td>Nitrate leaching prevented</td>
+</tr>
+<tr>
+<td>N160</td>
+<td>Energy use</td>
+<td>kWh reduction</td>
+</tr>
+<tr>
+<td>N170</td>
+<td>Soil quality</td>
+<td>Organic matter maintained</td>
+</tr>
+<tr>
+<td>N180</td>
+<td>Air quality</td>
+<td>Diesel pumping reduction</td>
+</tr>
+<tr>
+<td>N210</td>
+<td>Wildlife</td>
+<td>Habitat water preserved</td>
+</tr>
+</tbody>
+</table>
+<h3>Philanthropic &amp; Innovation Prizes</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>Amount</th>
+<th>Alignment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gates Foundation Ag Adaptation</td>
+<td>$1M-$50M</td>
+<td>Smallholder scaling</td>
+</tr>
+<tr>
+<td>Earthshot Prize</td>
+<td>£1M</td>
+<td>Climate protection</td>
+</tr>
+<tr>
+<td>World Food Prize</td>
+<td>$500K</td>
+<td>Food security impact</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>Use of Funds: Seed Round A-1</h2>
+<table>
+<thead>
+<tr>
+<th>Initiative</th>
+<th>Allocation</th>
+<th>Amount (Assuming $3M Raise)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hardware Prototype Manufacturing</td>
+<td>40%</td>
+<td>$1,200,000</td>
+</tr>
+<tr>
+<td>Field Operations Team (CSU Pilot)</td>
+<td>25%</td>
+<td>$750,000</td>
+</tr>
+<tr>
+<td>Software / Kriging Engine Refinement</td>
+<td>20%</td>
+<td>$600,000</td>
+</tr>
+<tr>
+<td>Regulatory / Water Court Preparation</td>
+<td>10%</td>
+<td>$300,000</td>
+</tr>
+<tr>
+<td>Reserve</td>
+<td>5%</td>
+<td>$150,000</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>Risk Factors &amp; Mitigations</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Likelihood</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Regulatory delay</td>
+<td>Medium</td>
+<td>High</td>
+<td>Multiple state pipeline</td>
+</tr>
+<tr>
+<td>Hardware supply chain</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Dual-source strategy</td>
+</tr>
+<tr>
+<td>Competition from incumbents</td>
+<td>Low</td>
+<td>High</td>
+<td>Legal moat, data network effects</td>
+</tr>
+<tr>
+<td>Climate variability</td>
+<td>Low</td>
+<td>Low</td>
+<td>Multi-basin expansion</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><em>© 2026 Bxthre3 Inc. — Classification: STRICTLY CONFIDENTIAL</em>
+<em>Projections based on CSU SLV pilot assumptions and market analysis</em></p>
+
+    </div>
+    
+    <!-- Page number -->
+    <div class="fixed bottom-8 right-16 text-slate-600 text-xs font-medium">
+        CONFIDENTIAL — March 11, 2026
+    </div>
+</div>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

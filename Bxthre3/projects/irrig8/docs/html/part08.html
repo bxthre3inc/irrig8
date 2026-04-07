@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part VIII: Pilot Mission | FarmSense Master Manual V2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .prose h1 { @apply text-4xl font-black text-slate-900 mb-8 tracking-tight; }
+        .prose h2 { @apply text-2xl font-bold text-slate-800 mt-12 mb-6 pb-2 border-b-2 border-emerald-500; }
+        .prose h3 { @apply text-xl font-bold text-emerald-700 mt-8 mb-4; }
+        .prose h4 { @apply text-lg font-semibold text-slate-700 mt-6 mb-3; }
+        .prose p { @apply text-slate-600 leading-relaxed mb-4; }
+        .prose ul { @apply list-disc list-inside text-slate-600 mb-4 space-y-1; }
+        .prose ol { @apply list-decimal list-inside text-slate-600 mb-4 space-y-1; }
+        .prose table { @apply w-full text-left border-collapse mb-6 text-sm; }
+        .prose th { @apply bg-slate-100 text-slate-800 font-bold p-3 border border-slate-300; }
+        .prose td { @apply p-3 border border-slate-300 text-slate-600; }
+        .prose tr:nth-child(even) { @apply bg-slate-50; }
+        .prose code { @apply bg-slate-100 text-emerald-700 px-2 py-1 rounded text-sm; }
+        .prose pre { @apply bg-slate-900 text-slate-200 p-4 rounded-lg overflow-x-auto mb-6; }
+        .prose blockquote { @apply border-l-4 border-emerald-500 pl-4 italic text-slate-500 my-6; }
+        .nav-link { @apply block px-4 py-2 text-sm text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-all; }
+        .nav-link.active { @apply text-emerald-700 bg-emerald-50 font-medium; }
+        .part-number { @apply inline-flex items-center justify-center w-8 h-8 bg-emerald-500 text-white rounded-lg text-sm font-bold mr-3; }
+        @media print {
+            .no-print { display: none !important; }
+            .prose h1 { page-break-before: always; }
+            .prose h1:first-of-type { page-break-before: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800">FarmSense</h1>
+                    <p class="text-xs text-slate-500">Master Manual V2.1</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-sm text-slate-600 hover:text-emerald-600">Index</a>
+                <a href="part07.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">← Prev</a>
+                <span class="text-sm text-slate-400">8 of 17</span>
+                <a href="part09.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">Next →</a>
+                <a href="FarmSense_Master_Manual_Comprehensive_V2.1.pdf" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm font-medium">Download PDF</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="max-w-7xl mx-auto pt-20 pb-12 px-4">
+        <div class="flex gap-8">
+            <!-- Sidebar Navigation -->
+            <nav class="w-64 flex-shrink-0 no-print">
+                <div class="sticky top-24 bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 class="font-bold text-slate-800 mb-4 px-4">Parts</h2>
+                    <div class="space-y-1">
+                        <a href="part01.html" class="nav-link {}"><span class="part-number">I</span>Executive</a>
+                        <a href="part02.html" class="nav-link {}"><span class="part-number">II</span>Market</a>
+                        <a href="part03.html" class="nav-link {}"><span class="part-number">III</span>Human</a>
+                        <a href="part04.html" class="nav-link {}"><span class="part-number">IV</span>Technical</a>
+                        <a href="part05.html" class="nav-link {}"><span class="part-number">V</span>Hardware</a>
+                        <a href="part06.html" class="nav-link {}"><span class="part-number">VI</span>Interface</a>
+                        <a href="part07.html" class="nav-link {}"><span class="part-number">VII</span>Oracle</a>
+                        <a href="part08.html" class="nav-link {active}"><span class="part-number">VIII</span>Pilot</a>
+                        <a href="part09.html" class="nav-link {}"><span class="part-number">IX</span>Operations</a>
+                        <a href="part10.html" class="nav-link {}"><span class="part-number">X</span>Infrastructure</a>
+                        <a href="part11.html" class="nav-link {}"><span class="part-number">XI</span>Security</a>
+                        <a href="part12.html" class="nav-link {}"><span class="part-number">XII</span>Legal</a>
+                        <a href="part13.html" class="nav-link {}"><span class="part-number">XIII</span>Standards</a>
+                        <a href="part14.html" class="nav-link {}"><span class="part-number">XIV</span>Financial</a>
+                        <a href="part15.html" class="nav-link {}"><span class="part-number">XV</span>Grants</a>
+                        <a href="part16.html" class="nav-link {}"><span class="part-number">XVI</span>Case Study</a>
+                        <a href="part17.html" class="nav-link {}"><span class="part-number">XVII</span>Appendices</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-viii-the-pilot-mission-specification">PART VIII: THE PILOT MISSION SPECIFICATION</h1>
+<h2 id="csu-san-luis-valley-research-center-pilot">8.0 CSU San Luis Valley Research Center Pilot</h2>
+<p>The 2-field pilot at CSU SLV RC (Center, Colorado) provides empirical ground truth for the June 29, 2026 Water Court trial.</p>
+<h2 id="pilot-scope">8.1 Pilot Scope</h2>
+<h3 id="field-specifications">8.1.1 Field Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Field A</th>
+<th>Field B</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Size</td>
+<td>126 acres</td>
+<td>118 acres</td>
+</tr>
+<tr class="even">
+<td>Crop</td>
+<td>Russet Burbank (potato)</td>
+<td>Russet Burbard (potato)</td>
+</tr>
+<tr class="odd">
+<td>Soil</td>
+<td>San Luis sandy loam</td>
+<td>Gunbarrel loamy sand</td>
+</tr>
+<tr class="even">
+<td>Irrigation</td>
+<td>Center pivot (Valley)</td>
+<td>Center pivot (Valley)</td>
+</tr>
+<tr class="odd">
+<td>Well depth</td>
+<td>180 ft</td>
+<td>165 ft</td>
+</tr>
+<tr class="even">
+<td>Pump capacity</td>
+<td>800 GPM</td>
+<td>750 GPM</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hardware-deployment">8.1.2 Hardware Deployment</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Field A</th>
+<th>Field B</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT</td>
+<td>1</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>PFA</td>
+<td>1</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>VFA</td>
+<td>2</td>
+<td>2</td>
+<td>4</td>
+</tr>
+<tr class="even">
+<td>LRZB (Reference)</td>
+<td>4</td>
+<td>4</td>
+<td>8</td>
+</tr>
+<tr class="odd">
+<td>LRZN (Basic)</td>
+<td>12</td>
+<td>12</td>
+<td>24</td>
+</tr>
+<tr class="even">
+<td>DHU (shared)</td>
+<td>1</td>
+<td>—</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pilot-investment">8.1.3 Pilot Investment</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hardware</td>
+<td>$12,450</td>
+</tr>
+<tr class="even">
+<td>Installation</td>
+<td>$2,400</td>
+</tr>
+<tr class="odd">
+<td>CSU partnership</td>
+<td>In-kind</td>
+</tr>
+<tr class="even">
+<td><strong>Total</strong></td>
+<td><strong>$14,850</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="timeline-milestones">8.2 Timeline &amp; Milestones</h2>
+<h3 id="pre-season-march-april-2026">8.2.1 Pre-Season (March-April 2026)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Week</th>
+<th>Activity</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1-2</td>
+<td>Site survey, soil cores</td>
+<td>Baseline characterization</td>
+</tr>
+<tr class="even">
+<td>3-4</td>
+<td>VFA installation (permanent shells)</td>
+<td>48” depth verified</td>
+</tr>
+<tr class="odd">
+<td>5-6</td>
+<td>PMT/PFA mounting</td>
+<td>Hardware operational</td>
+</tr>
+<tr class="even">
+<td>7-8</td>
+<td>Network commissioning</td>
+<td>Chirp acknowledgments</td>
+</tr>
+</tbody>
+</table>
+<h3 id="in-season-may-september-2026">8.2.2 In-Season (May-September 2026)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Week</th>
+<th>Activity</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>9-12</td>
+<td>Planting, sensor activation</td>
+<td>Full telemetry</td>
+</tr>
+<tr class="even">
+<td>13-20</td>
+<td>Continuous monitoring</td>
+<td>Kriging validation</td>
+</tr>
+<tr class="odd">
+<td>21-30</td>
+<td>Irrigation optimization</td>
+<td>20-30% water savings</td>
+</tr>
+<tr class="even">
+<td>31-34</td>
+<td>Harvest, data analysis</td>
+<td>ROI verification</td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-season-october-november-2026">8.2.3 Post-Season (October-November 2026)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Week</th>
+<th>Activity</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>35-36</td>
+<td>Sensor extraction</td>
+<td>Sled Hospital processing</td>
+</tr>
+<tr class="even">
+<td>37-40</td>
+<td>Data synthesis</td>
+<td>Court-ready evidence</td>
+</tr>
+<tr class="odd">
+<td>41-44</td>
+<td>Report generation</td>
+<td>Submission to DWR</td>
+</tr>
+</tbody>
+</table>
+<h2 id="hardware-manifest">8.3 Hardware Manifest</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Serial Range</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT V1.6</td>
+<td>2</td>
+<td>PMT-260001/2</td>
+<td>Tower 2-3, Fields A/B</td>
+</tr>
+<tr class="even">
+<td>PFA V1.9</td>
+<td>2</td>
+<td>PFA-260001/2</td>
+<td>Wellheads</td>
+</tr>
+<tr class="odd">
+<td>VFA V2.1</td>
+<td>4</td>
+<td>VFA-260001-4</td>
+<td>48” depth, Fields A/B</td>
+</tr>
+<tr class="even">
+<td>LRZB V1.2</td>
+<td>8</td>
+<td>LRZB-260001-8</td>
+<td>Distributed, Fields A/B</td>
+</tr>
+<tr class="odd">
+<td>LRZN V1.2</td>
+<td>24</td>
+<td>LRZN-260001-24</td>
+<td>Distributed, Fields A/B</td>
+</tr>
+<tr class="even">
+<td>DHU V1.2</td>
+<td>1</td>
+<td>DHU-260001</td>
+<td>35’ pole, shared</td>
+</tr>
+</tbody>
+</table>
+<h2 id="success-criteria">8.4 Success Criteria</h2>
+<h3 id="technical-metrics">8.4.1 Technical Metrics</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Target</th>
+<th>Measurement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Kriging accuracy</td>
+<td>&lt;5% MAPE</td>
+<td>VFA ground-truth validation</td>
+</tr>
+<tr class="even">
+<td>Mesh uptime</td>
+<td>&gt;99.5%</td>
+<td>Network monitoring</td>
+</tr>
+<tr class="odd">
+<td>Water savings</td>
+<td>20-30%</td>
+<td>Flow meter comparison</td>
+</tr>
+<tr class="even">
+<td>Yield improvement</td>
+<td>10%+</td>
+<td>Harvest weighing</td>
+</tr>
+</tbody>
+</table>
+<h3 id="legal-metrics">8.4.2 Legal Metrics</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Target</th>
+<th>Measurement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Data admissibility</td>
+<td>Ruling in favor</td>
+<td>Water Court decision</td>
+</tr>
+<tr class="even">
+<td>Chain of custody</td>
+<td>Unbroken</td>
+<td>Audit log verification</td>
+</tr>
+<tr class="odd">
+<td>Regulatory approval</td>
+<td>“Approved method”</td>
+<td>DWR written recognition</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part07.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part VII: Hydrologic Oracle</span>
+                    </a>
+                    <a href="part09.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part IX: Operations</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
+            <p>FarmSense Master Manual V2.1 | © 2026 Bxthre3 Inc. | CONFIDENTIAL</p>
+            <p class="mt-2">For questions, contact: <a href="mailto:contact@bxthre3.com" class="text-emerald-600 hover:underline">contact@bxthre3.com</a></p>
+        </div>
+    </footer>
+</body>
+</html>

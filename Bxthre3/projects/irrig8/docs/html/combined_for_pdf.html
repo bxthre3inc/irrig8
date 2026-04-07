@@ -1,0 +1,4848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FarmSense Master Manual V2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        h1 { font-size: 2.5rem; font-weight: 900; margin-bottom: 2rem; page-break-before: always; }
+        h1:first-of-type { page-break-before: avoid; }
+        h2 { font-size: 1.75rem; font-weight: 700; margin-top: 3rem; margin-bottom: 1rem; border-bottom: 3px solid #10b981; padding-bottom: 0.5rem; }
+        h3 { font-size: 1.25rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; color: #059669; }
+        h4 { font-size: 1.125rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        p { line-height: 1.7; margin-bottom: 1rem; color: #4b5563; }
+        ul, ol { margin-bottom: 1rem; padding-left: 2rem; }
+        li { margin-bottom: 0.5rem; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.875rem; }
+        th { background-color: #f3f4f6; padding: 0.75rem; text-align: left; font-weight: 700; border: 1px solid #d1d5db; }
+        td { padding: 0.75rem; border: 1px solid #d1d5db; }
+        tr:nth-child(even) { background-color: #f9fafb; }
+        code { background-color: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem; color: #059669; font-size: 0.875rem; }
+        pre { background-color: #111827; color: #e5e7eb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1.5rem; font-size: 0.75rem; }
+        blockquote { border-left: 4px solid #10b981; padding-left: 1rem; font-style: italic; color: #6b7280; margin: 1.5rem 0; }
+        .cover { text-align: center; padding: 8rem 2rem; background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #059669 100%); color: white; page-break-after: always; }
+        .cover h1 { font-size: 3.5rem; margin-bottom: 1rem; page-break-before: avoid; }
+        .cover p { color: #d1fae5; font-size: 1.25rem; }
+        .toc { page-break-after: always; }
+        .toc h2 { border-bottom: 2px solid #10b981; }
+        .toc table { font-size: 0.9rem; }
+        .confidential { text-align: center; padding: 2rem; background: #fef3c7; border: 2px solid #f59e0b; margin: 2rem 0; }
+        @page { size: A4; margin: 20mm; }
+        @page :first { margin: 0; }
+    </style>
+</head>
+<body class="bg-white">
+
+    <div class="cover">
+        <div style="display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.2); border-radius: 9999px; margin-bottom: 2rem;">
+            <span style="width: 0.5rem; height: 0.5rem; background: #34d399; border-radius: 50%;"></span>
+            <span style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Comprehensive Technical Specification</span>
+        </div>
+        <h1>FarmSense Master Manual</h1>
+        <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">V2.1 — The Deterministic Farming Operating System</p>
+        <p style="font-size: 1rem; opacity: 0.8;">6,214 lines | 45,000+ words | 245KB</p>
+        <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.2);">
+            <p style="font-size: 0.875rem;">Bxthre3 Inc.</p>
+            <p style="font-size: 0.75rem; opacity: 0.6;">March 2026</p>
+        </div>
+    </div>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <table>
+            <tr><th>Part</th><th>Title</th><th>Key Contents</th></tr>
+            <tr><td><strong>I</strong></td><td>Executive Foundation</td><td>Hydro-Economic Logic; MAD Framework; PMT Field Hub</td></tr>
+            <tr><td><strong>II</strong></td><td>Market Intelligence</td><td>TAM/SAM/SOM Analysis; Competitive Moat; Federal Grants</td></tr>
+            <tr><td><strong>III</strong></td><td>Human Capital</td><td>Leadership; Org Chart; Scientific Advisory Board</td></tr>
+            <tr><td><strong>IV</strong></td><td>Technical Core</td><td>Tri-Layer Compute; SQL Schema; API Specifications</td></tr>
+            <tr><td><strong>V</strong></td><td>Hardware Ecosystem</td><td>RSS/DHU/PMT/PFA; VFA/LRZN/LRZB; SFD Configs</td></tr>
+            <tr><td><strong>VI</strong></td><td>Interface Layer</td><td>3D Farmer Dashboard; Regulatory Portal; ROI Analytics</td></tr>
+            <tr><td><strong>VII</strong></td><td>Hydrologic Oracle</td><td>SPAC Thermodynamics; Cokriging Math; 40 Global Basins</td></tr>
+            <tr><td><strong>VIII</strong></td><td>Pilot Mission</td><td>CSU SLV Specification; Timeline; Success Criteria</td></tr>
+            <tr><td><strong>IX</strong></td><td>Operations</td><td>Seasonal Deployment; Sled Hospital; Maintenance</td></tr>
+            <tr><td><strong>X</strong></td><td>Infrastructure</td><td>AWS EKS Architecture; GitOps; Disaster Recovery</td></tr>
+            <tr><td><strong>XI</strong></td><td>Cybersecurity</td><td>Zero-Trust; eBPF Auditing; Lateral Movement Prevention</td></tr>
+            <tr><td><strong>XII</strong></td><td>Water Court Ledger</td><td>NREP Standard; Chain of Custody; Data Sovereignty</td></tr>
+            <tr><td><strong>XIII</strong></td><td>Global Standards</td><td>GlobalG.A.P.; Nitrogen Prevention; Carbon MRV</td></tr>
+            <tr><td><strong>XIV</strong></td><td>Financial Backbone</td><td>10-Year Projections; CAPEX/OPEX; Exit Roadmap</td></tr>
+            <tr><td><strong>XV</strong></td><td>Federal Grant Registry</td><td>USDA/NRCS; NSF/DOE; Gates Foundation</td></tr>
+            <tr><td><strong>XVI</strong></td><td>SLV Case Study</td><td>2026 Pilot Results; Reflex Discovery; Legal Validation</td></tr>
+            <tr><td><strong>XVII</strong></td><td>Appendices</td><td>BOM Catalog; Soil Tables; Basin Registry; Glossary</td></tr>
+        </table>
+        <div class="confidential">
+            <p style="font-weight: 700; color: #b45309; margin-bottom: 0.5rem;">⚠️ CONFIDENTIAL</p>
+            <p style="font-size: 0.875rem; color: #92400e;">This document contains proprietary and confidential information of Bxthre3 Inc. Distribution limited to cleared investors and partners.</p>
+        </div>
+    </div>
+<main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-i-executive-foundation">PART I: EXECUTIVE FOUNDATION</h1>
+<h2 id="executive-summary">1.0 Executive Summary</h2>
+<p>FarmSense constitutes the definitive technical, operational, and financial deployment blueprint of a Deterministic Farming Operating System (DFOS), integrating across Subdistrict 1 of the San Luis Valley (SLV), Colorado.</p>
+<h3 id="primary-objectives">1.0.1 Primary Objectives</h3>
+<ul>
+<li>20–30% reduction in irrigation water consumption</li>
+<li>18–22% increase in crop return on investment (ROI)</li>
+<li>Legally defensible Digital Water Ledger for Water Court admissibility</li>
+</ul>
+<h3 id="core-innovation">1.0.2 Core Innovation</h3>
+<p>Replace stochastic, intuition-based agricultural practices with a high-fidelity, rule-based computational engine optimizing the Soil-Plant-Atmosphere Continuum (SPAC) using a multi-layered sensor network.</p>
+<h3 id="economic-catalyst">1.0.3 Economic Catalyst</h3>
+<p>The Rio Grande Basin faces severe hydro-economic crisis. With 89,000 acre-foot annual aquifer depletion and $500/AF groundwater pumping fees (quadrupled from $75-150/AF), FarmSense shifts from agronomic optimization tool to legal necessity.</p>
+<h3 id="leadership">1.0.4 Leadership</h3>
+<p>Jeremy Beebe serves as Chief Executive Officer of bxthre3 inc., with successful startup exit track record (Hempvada).</p>
+<h2 id="hydro-economic-logic-and-the-deterministic-paradigm">1.1 Hydro-Economic Logic and The Deterministic Paradigm</h2>
+<h3 id="the-san-luis-valley-crisis-as-economic-multiplier">1.1.1 The San Luis Valley Crisis as Economic Multiplier</h3>
+<p><strong>Geographic Context:</strong> - Elevation: 7,500-8,000 feet above sea level - Precipitation: 7-10 inches annually - Irrigated agriculture: 300,000 acres dependent on snowmelt and aquifers - Reservoir storage: 26% of historical capacity - Annual aquifer depletion: 89,000 acre-feet</p>
+<h3 id="the-500af-fee-structure">1.1.2 The $500/AF Fee Structure</h3>
+<p>The Rio Grande Water Conservation District (RGWCD) implemented a punitive $500 per acre-foot groundwater pumping fee to combat over-consumption. This represents a quadrupling of previous costs ($75-150/AF).</p>
+<p>For a 126-acre center pivot consuming 252 AF/season: - 20% water reduction = 50.4 AF saved per season - 50.4 AF × $500/AF = $25,200 direct savings per pivot annually - FarmSense Enterprise Tier subscription: $499/month ($5,988/year) - First-year ROI: 421% return on subscription cost</p>
+<h3 id="the-deterministic-shift">1.1.3 The Deterministic Shift</h3>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 50%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Dimension</th>
+<th>Current Industry Standard</th>
+<th>FarmSense DFOS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Observation</td>
+<td>Visual scouting / manual soil probe</td>
+<td>1m centimetric Kriging with ground-truth validation</td>
+</tr>
+<tr class="even">
+<td>Calculation</td>
+<td>Crop-coefficient (static, FAO-56)</td>
+<td>SPAC thermodynamics (dynamic, real-time)</td>
+</tr>
+<tr class="odd">
+<td>Decision</td>
+<td>Intuition-based pumping schedules</td>
+<td>Edge-calculated VRI prescription</td>
+</tr>
+<tr class="even">
+<td>Evidence</td>
+<td>Paper logs, human memory</td>
+<td>SHA-256 sovereign ledger, cryptographic proofs</td>
+</tr>
+<tr class="odd">
+<td>Resolution</td>
+<td>Field-scale (variable)</td>
+<td>1m grid, legally admissible</td>
+</tr>
+</tbody>
+</table>
+<h2 id="spac-modeling-and-edaphic-variability">1.2 SPAC Modeling and Edaphic Variability</h2>
+<p>FarmSense utilizes 11 domain-specific, explainable engines. All irrigation and trading decisions are deterministic and judgment-based — a non-negotiable requirement for Water Court admissibility.</p>
+<h3 id="soil-layer-edaphic">1.2.1 Soil Layer (Edaphic)</h3>
+<p><strong>Parameters Monitored:</strong> - Soil Matric Potential (SMP) — measure of energy required to extract water - Volumetric Water Content (VWC) — percentage of soil volume occupied by water - Electrical Conductivity (EC) — indicator of salinity and nutrient content - pH — alkalinity/acidity affecting nutrient availability - Soil temperature (affects biological activity)</p>
+<h3 id="slv-soil-series-calibration">1.2.2 SLV Soil Series Calibration</h3>
+<p><strong>San Luis Soil Series:</strong> - pH: 8.4-9.8 (highly alkaline) - Exchangeable sodium: 15-60% - Primary risk: Salt buildup from irrigation - Irrigation trigger threshold: 75-80 kPa (conservative for salt management)</p>
+<p><strong>Gunbarrel Soil Series:</strong> - Type: Highly porous sand - Hydraulic conductivity: High (&gt;10 cm/hr saturated) - Requirement: Low-volume, high-frequency micro-irrigation - Irrigation trigger: 20-25 kPa (low threshold due to rapid drainage)</p>
+<p><strong>Alamosa Soil Series:</strong> - Type: Clay loam - Water holding capacity: High - Drainage: Slow - Irrigation trigger: 50-60 kPa</p>
+<h3 id="plant-layer-vegetative">1.2.3 Plant Layer (Vegetative)</h3>
+<p><strong>Parameters Monitored:</strong> - Leaf water potential (Ψleaf) — direct measure of plant water stress - Canopy Water Stress Index (CWSI) — thermal infrared signature - Normalized Difference Vegetation Index (NDVI) — overall plant health - Stomatal conductance — indicator of photosynthetic efficiency</p>
+<h3 id="atmosphere-layer-meteorologic">1.2.4 Atmosphere Layer (Meteorologic)</h3>
+<p><strong>Parameters Monitored:</strong> - Vapor Pressure Deficit (VPD) — driving force for transpiration - Solar radiation (shortwave and photosynthetically active) - Wind speed and direction (affects evaporation) - Relative humidity - Precipitation (actual and forecasted)</p>
+<p><strong>Forecasting Architecture:</strong> Long Short-Term Memory (LSTM) deep learning networks process 1-9 day ensemble weather forecasts to predict ET trends with 81-94% accuracy.</p>
+<h2 id="management-allowable-depletion-mad-framework">1.3 Management Allowable Depletion (MAD) Framework</h2>
+<p>MAD defines the percentage of available soil water (between field capacity and permanent wilting point) that can be depleted before crop experiences physiological damage.</p>
+<h3 id="crop-specific-mad-thresholds">1.3.1 Crop-Specific MAD Thresholds</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Crop</th>
+<th>Stage</th>
+<th>MAD %</th>
+<th>Trigger kPa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Potato</td>
+<td>Emergence</td>
+<td>30%</td>
+<td>30-40 kPa</td>
+</tr>
+<tr class="even">
+<td>Potato</td>
+<td>Tuber Initiation</td>
+<td>40%</td>
+<td>50-60 kPa</td>
+</tr>
+<tr class="odd">
+<td>Potato</td>
+<td>Bulking</td>
+<td>50%</td>
+<td>70-80 kPa</td>
+</tr>
+<tr class="even">
+<td>Potato</td>
+<td>Maturation</td>
+<td>60%</td>
+<td>80-100 kPa</td>
+</tr>
+<tr class="odd">
+<td>Barley</td>
+<td>Tillering</td>
+<td>30%</td>
+<td>40-50 kPa</td>
+</tr>
+<tr class="even">
+<td>Barley</td>
+<td>Grain fill</td>
+<td>60%</td>
+<td>80-100 kPa</td>
+</tr>
+<tr class="odd">
+<td>Alfalfa</td>
+<td>Establishment</td>
+<td>40%</td>
+<td>50-60 kPa</td>
+</tr>
+<tr class="even">
+<td>Alfalfa</td>
+<td>Production</td>
+<td>60%</td>
+<td>80-100 kPa</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-water-battery-strategy">1.3.2 The “Water Battery” Strategy</h3>
+<p>The Core Compute Server (Zo) delays irrigation to the “last possible minute,” utilizing the deep soil profile as a dynamic battery. This strategy: - Leaves headroom for rainfall capture - Maximizes natural precipitation utilization - Eliminates deep percolation losses - Reduces nutrient leaching - Minimizes pumping costs</p>
+<h2 id="system-architecture-overview">1.4 System Architecture Overview</h2>
+<h3 id="backend-intelligence-decentralized-cloud-layer">1.4.1 Backend Intelligence (Decentralized Cloud Layer)</h3>
+<p><strong>RDC (Regional Data Center / Map Servers):</strong> - Function: Master data library - Data types: Sentinel-2 multispectral imagery, Landsat thermal, historical edaphic datasets - Update frequency: Sentinel-2 (5-day revisit), Landsat (16-day revisit)</p>
+<p><strong>Spatial Query Engine (Map Manager / Oracle):</strong> - Function: Extracts spatial values at precise latitude/longitude coordinates - Operations: Point queries, polygon intersection, raster sampling - Output: Lightweight JSON arrays for edge processing - Technologies: PostGIS, STAC API integration</p>
+<p><strong>Core Compute Server (Zo):</strong> - Location: brodiblanco.zo.computer / cloud infrastructure - Functions: Bayesian priors, Localized Kriging algorithms, Worksheets generation, Ledger vaulting - Capacity: Processes hundreds of thousands of data points into predictive spatial grids</p>
+<h3 id="regionaldistrict-edge-infrastructure">1.4.2 Regional/District Edge Infrastructure</h3>
+<p><strong>Regional Superstation (RSS) — Level 3:</strong> - Location: Monte Vista, Colorado - Function: Territory master, equal cloud counterpart to backend intelligence - Form factor: Modified 40-foot High-Cube shipping container - Compute: 64-Core AMD Threadripper PRO, 512GB ECC RAM - Storage: 50TB Enterprise NVMe array (hot), 200TB cold archive - <strong>Critical capability:</strong> Continues full operation during total regional internet or cellular blackouts</p>
+<p><strong>District Hub (DHU) — Level 2:</strong> - Mounting: 35-foot Class 4 timber pole - Coverage radius: 100 pivots with extreme overlapping redundancy - Compute: NVIDIA Jetson Orin Nano (8GB RAM, Ampere GPU) - <strong>30-Day “Black Box” Cache:</strong> 128GB Swissbit PSLC Industrial SSD</p>
+<h3 id="field-layer-level-1-1.5-critical-hierarchy">1.4.3 Field Layer (Level 1-1.5) — CRITICAL HIERARCHY</h3>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 21%" />
+<col style="width: 19%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Level</th>
+<th>Device</th>
+<th>Function</th>
+<th>Elevation</th>
+<th>Reporting Target</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1.5</td>
+<td><strong>PMT (Pivot Motion Tracker)</strong></td>
+<td><strong>Field Aggregator / Hub</strong></td>
+<td>10-15 ft on pivot</td>
+<td>DHU</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td><strong>VFA (Vertical Field Anchor)</strong></td>
+<td>Deep-truth probe</td>
+<td>Ground level (buried)</td>
+<td><strong>PMT</strong></td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td><strong>LRZN (Lateral Root-Zone Basic)</strong></td>
+<td>Spatial scout</td>
+<td>Ground level (buried)</td>
+<td><strong>PMT</strong></td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td><strong>LRZB (Lateral Root-Zone Reference)</strong></td>
+<td>Spatial scout + VWC</td>
+<td>Ground level (buried)</td>
+<td><strong>PMT</strong></td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td><strong>PFA (Pressure &amp; Flow Anchor)</strong></td>
+<td>Wellhead sentry</td>
+<td>Ground level</td>
+<td><strong>PMT</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>CRITICAL ARCHITECTURE POINT:</strong> The PMT (elevated on the pivot span at 10-15 feet) serves as the <strong>Primary Field Aggregator</strong>. All ground-level devices (VFA, LRZN, LRZB, PFA) report upward to the PMT via 900MHz CSS LoRa. The PMT then: 1. Aggregates all sensor data 2. Performs Edge-EBK computation (50m grid) 3. Packages into encrypted payload (~187 bytes) 4. Transmits to DHU via 2.4GHz/LTE-M</p>
+<p>This elevated topology circumvents the dense water canopy that attenuates ground-level signals.</p>
+<h2 id="telemetry-architecture-resolution">1.5 Telemetry Architecture Resolution</h2>
+<h3 id="the-vfa-to-dhu-challenge-resolved">1.5.1 The VFA-to-DHU Challenge (Resolved)</h3>
+<p><strong>Initial Design Flaw:</strong> - VFA specified 900MHz CSS LoRa uplink - DHU specified 2.4GHz Ubiquiti LTU only - <strong>Resolution:</strong> DHU BOM revised to include 900MHz CSS LoRa gateway alongside 2.4GHz array</p>
+<h3 id="the-pmt-field-hub-solution-confirmed">1.5.2 The PMT Field Hub Solution (CONFIRMED)</h3>
+<p><strong>The PMT as Primary Field Aggregator:</strong> - PMT elevated 10-15 feet on pivot span - All field sensors (VFA, LRZN, LRZB, PFA) report to PMT via 900MHz CSS LoRa - PMT aggregates, computes Edge-EBK, and routes to DHU - This topology entirely circumvents dense water canopy attenuation</p>
+<h3 id="lrzn-vs-lrzb-distinction-critical">1.5.3 LRZN vs LRZB Distinction (CRITICAL)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>LRZN (Basic)</th>
+<th>LRZB (Reference)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Cost</strong></td>
+<td>$29.00</td>
+<td>$54.30</td>
+</tr>
+<tr class="even">
+<td><strong>Sensors</strong></td>
+<td>Dielectric only</td>
+<td>Dielectric + Temperature</td>
+</tr>
+<tr class="odd">
+<td><strong>Calibration</strong></td>
+<td>Standard</td>
+<td>Enhanced</td>
+</tr>
+<tr class="even">
+<td><strong>Role</strong></td>
+<td>Spatial density filler</td>
+<td>Ground-truth anchor</td>
+</tr>
+<tr class="odd">
+<td><strong>Reporting</strong></td>
+<td>To PMT</td>
+<td>To PMT</td>
+</tr>
+<tr class="even">
+<td><strong>Power</strong></td>
+<td>2.6Ah LiSOCl2</td>
+<td>2.6Ah LiSOCl2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Deployment Ratio:</strong> - LRZB (Reference): 4 per field - LRZN (Basic): 12 per field - Total: 16 LRZ nodes per standard field</p>
+<h2 id="risk-factor-analysis">1.6 Risk Factor Analysis</h2>
+<h3 id="geopolitical-water-scarcity">1.6.1 Geopolitical Water Scarcity</h3>
+<p>Interstate litigation could trigger federal aquifer takeovers. The Sovereign Ledger enables state engineers to prove compact compliance, reducing federal intervention standing.</p>
+<h3 id="technical-obsolescence">1.6.2 Technical Obsolescence</h3>
+<p>FarmSense is “Sensor-Agnostic.” The Hydrologic Oracle becomes the “Inference Layer” fusing satellite trends with sub-surface realities — a moat satellite-only players cannot cross.</p>
+<h2 id="long-term-roadmap-sovereign-water-infrastructure">1.7 Long-Term Roadmap: Sovereign Water Infrastructure</h2>
+<h3 id="phase-timeline">1.7.1 Phase Timeline</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>Timeline</th>
+<th>Scope</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>2026-2027</td>
+<td>SLV Subdistrict 1</td>
+<td>1,280</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>2028-2029</td>
+<td>Colorado River Basin</td>
+<td>5,000+</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>2030+</td>
+<td>National (High Plains)</td>
+<td>25,000+</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>2030+</td>
+<td>International</td>
+<td>100,000+</td>
+</tr>
+</tbody>
+</table>
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="#" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>None</span>
+                    </a>
+                    <a href="part02.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part II: Market Intelligence</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-ii-market-intelligence-strategic-funding">PART II: MARKET INTELLIGENCE &amp; STRATEGIC FUNDING</h1>
+<h2 id="market-overview">2.0 Market Overview</h2>
+<p>FarmSense operates within the global precision agriculture market, specifically targeting water-constrained regions with regulatory enforcement mechanisms.</p>
+<h2 id="tamsamsom-analysis">2.1 TAM/SAM/SOM Analysis</h2>
+<h3 id="total-addressable-market-tam">2.1.1 Total Addressable Market (TAM)</h3>
+<p>Global precision irrigation market — $12.8B by 2030, CAGR 14.3% Drivers: Water scarcity, climate regulation, labor costs, yield optimization</p>
+<h3 id="serviceable-addressable-market-sam">2.1.2 Serviceable Addressable Market (SAM)</h3>
+<p>North American center-pivot operations: - 175,000 pivots across 22M acres - Average field size: 126 acres - Annual SaaS potential: $1.05B at $499/month average</p>
+<h3 id="serviceable-obtainable-market-som">2.1.3 Serviceable Obtainable Market (SOM)</h3>
+<p>Immediate targets: - SLV Subdistrict 1: 1,280 fields - RGWCD adjacent districts: 5,000 fields - First-year penetration target: 320 fields (25%)</p>
+<h3 id="revenue-model-by-tier">2.1.4 Revenue Model by Tier</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 36%" />
+<col style="width: 21%" />
+<col style="width: 24%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tier</th>
+<th>Resolution</th>
+<th>Price</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Base</td>
+<td>50m compliance</td>
+<td>$149/mo</td>
+<td>Regulators, small farms</td>
+</tr>
+<tr class="even">
+<td>Plus</td>
+<td>20m optimization</td>
+<td>$299/mo</td>
+<td>Commercial growers</td>
+</tr>
+<tr class="odd">
+<td>Enterprise</td>
+<td>1m + predictive</td>
+<td>$499/mo</td>
+<td>Large operations, legal defense</td>
+</tr>
+</tbody>
+</table>
+<p>Volume discounts: 5% (2 fields), 15% (6 fields), 25% cap (subdistrict scale)</p>
+<h2 id="competitive-moat-determinism-vs.-stochastic-estimation">2.2 Competitive Moat: Determinism vs. Stochastic Estimation</h2>
+<h3 id="competitor-analysis">2.2.1 Competitor Analysis</h3>
+<table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Competitor</th>
+<th>Approach</th>
+<th>Weakness</th>
+<th>FarmSense Advantage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CropX</td>
+<td>Cloud-only analytics</td>
+<td>Latency, connectivity dependency</td>
+<td>Edge autonomy + sovereign ledger</td>
+</tr>
+<tr class="even">
+<td>FieldNET</td>
+<td>Pivot control only</td>
+<td>No soil moisture, no VRI</td>
+<td>Full SPAC modeling + 1m VRI</td>
+</tr>
+<tr class="odd">
+<td>Arable</td>
+<td>Weather-only</td>
+<td>No ground-truth correlation</td>
+<td>Sensor fusion + satellite</td>
+</tr>
+<tr class="even">
+<td>Sat-only providers</td>
+<td>Trend analysis</td>
+<td>No deep-profile validation</td>
+<td>1m Kriging + 48” VFA anchors</td>
+</tr>
+</tbody>
+</table>
+<h3 id="moat-durability">2.2.2 Moat Durability</h3>
+<ul>
+<li><strong>Data moat:</strong> 4+ years of ground-truth calibration per field</li>
+<li><strong>Regulatory moat:</strong> Legal recognition as “approved monitoring method”</li>
+<li><strong>Network moat:</strong> 1,280-field mesh effects (interpolative accuracy)</li>
+</ul>
+<h2 id="federal-state-funding-environment">2.3 Federal &amp; State Funding Environment</h2>
+<h3 id="primary-grant-targets">2.3.1 Primary Grant Targets</h3>
+<table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 25%" />
+<col style="width: 12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Program</th>
+<th>Agency</th>
+<th>Amount</th>
+<th>Deadline</th>
+<th>Fit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SBIR Phase I</td>
+<td>USDA</td>
+<td>$300K</td>
+<td>Mar 2026</td>
+<td>Sensor telemetry optimization</td>
+</tr>
+<tr class="even">
+<td>SBIR Phase II</td>
+<td>USDA</td>
+<td>$1.1M</td>
+<td>Sep 2026</td>
+<td>Kriging algorithm development</td>
+</tr>
+<tr class="odd">
+<td>CIG</td>
+<td>NRCS</td>
+<td>$75K-$5M</td>
+<td>Apr 2026</td>
+<td>Water conservation validation</td>
+</tr>
+<tr class="even">
+<td>Water-Energy Nexus</td>
+<td>DOE</td>
+<td>$2M-$10M</td>
+<td>Jun 2026</td>
+<td>Pump efficiency optimization</td>
+</tr>
+<tr class="odd">
+<td>SBIR Phase I</td>
+<td>NSF</td>
+<td>$275K</td>
+<td>May 2026</td>
+<td>ML stress detection</td>
+</tr>
+</tbody>
+</table>
+<h3 id="secondary-pipeline">2.3.2 Secondary Pipeline</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Program</th>
+<th>Amount</th>
+<th>Alignment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ARPA-E WATER</td>
+<td>$3M-$5M</td>
+<td>Novel water tech</td>
+</tr>
+<tr class="even">
+<td>Gates Foundation Ag Adaptation</td>
+<td>$1M-$50M</td>
+<td>Smallholder scaling</td>
+</tr>
+<tr class="odd">
+<td>Earthshot Prize</td>
+<td>£1M</td>
+<td>Climate protection</td>
+</tr>
+<tr class="even">
+<td>World Food Prize</td>
+<td>$500K</td>
+<td>Food security impact</td>
+</tr>
+</tbody>
+</table>
+<h2 id="global-expansion-roadmap">2.4 Global Expansion Roadmap</h2>
+<h3 id="phase-timeline">2.4.1 Phase Timeline</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 17%" />
+<col style="width: 22%" />
+<col style="width: 17%" />
+<col style="width: 26%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>Region</th>
+<th>Timeline</th>
+<th>Fields</th>
+<th>Regulatory</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Rio Grande Basin</td>
+<td>2026-2027</td>
+<td>6,000</td>
+<td>State engineers (CO, NM, TX)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Colorado River Basin</td>
+<td>2028-2029</td>
+<td>25,000</td>
+<td>Interstate compact</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>High Plains Aquifer</td>
+<td>2029-2030</td>
+<td>50,000</td>
+<td>Federal (USDA/USGS)</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>International</td>
+<td>2030+</td>
+<td>100,000+</td>
+<td>Basin treaties (Nile, Indus, Murray-Darling)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="international-targets-40-basins">2.4.2 International Targets (40 Basins)</h3>
+<p>See Part VII, Section 7.5 for complete Global Hydrologic Basin Registry.</p>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part01.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part I: Executive Foundation</span>
+                    </a>
+                    <a href="part03.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part III: Human Capital</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-iii-the-human-capital">PART III: THE HUMAN CAPITAL</h1>
+<h2 id="organization-overview">3.0 Organization Overview</h2>
+<p>FarmSense operates as a lean, mission-driven team with clear technical authority and field operational capability.</p>
+<h2 id="executive-leadership">3.1 Executive Leadership</h2>
+<h3 id="jeremy-beebe-chief-executive-officer">3.1.1 Jeremy Beebe — Chief Executive Officer</h3>
+<p><strong>Background:</strong> Successful startup exit track record (Hempvada), first-principles systems thinking <strong>Responsibilities:</strong> Vision, investor relations, strategic partnerships, regulatory navigation <strong>Authority:</strong> Final decision on product direction, funding strategy, key hires</p>
+<h2 id="technical-organization-chart">3.2 Technical Organization Chart</h2>
+<h3 id="hardware-engineering">3.2.1 Hardware Engineering</h3>
+<table>
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 22%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Role</th>
+<th>Count</th>
+<th>Responsibilities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Chief Hardware Architect</td>
+<td>1</td>
+<td>BOM finalization, supplier relationships</td>
+</tr>
+<tr class="even">
+<td>RF/Telemetry Engineer</td>
+<td>1</td>
+<td>900MHz CSS LoRa, 2.4GHz LTU, antenna design</td>
+</tr>
+<tr class="odd">
+<td>Embedded Systems Engineer</td>
+<td>2</td>
+<td>nRF52840, ESP32-S3, bare-metal C</td>
+</tr>
+<tr class="even">
+<td>Mechanical/DPE Engineer</td>
+<td>1</td>
+<td>HDPE SDR9 design, thermal analysis</td>
+</tr>
+</tbody>
+</table>
+<h3 id="software-engineering">3.2.2 Software Engineering</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Role</th>
+<th>Count</th>
+<th>Responsibilities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Chief Software Architect</td>
+<td>1</td>
+<td>API design, database architecture</td>
+</tr>
+<tr class="even">
+<td>Backend/Cloud Engineer</td>
+<td>2</td>
+<td>Python/FastAPI, TimescaleDB, PostGIS</td>
+</tr>
+<tr class="odd">
+<td>Edge Compute Engineer</td>
+<td>1</td>
+<td>Go/TensorRT, Jetson optimization</td>
+</tr>
+<tr class="even">
+<td>Frontend Engineer</td>
+<td>1</td>
+<td>React/Three.js, MapLibre GL JS</td>
+</tr>
+<tr class="odd">
+<td>Data Science/ML</td>
+<td>1</td>
+<td>Kriging, LSTM, geostatistics</td>
+</tr>
+</tbody>
+</table>
+<h3 id="operations">3.2.3 Operations</h3>
+<table>
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 22%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Role</th>
+<th>Count</th>
+<th>Responsibilities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Field Operations Manager</td>
+<td>1</td>
+<td>Installation scheduling, fleet coordination</td>
+</tr>
+<tr class="even">
+<td>Installation Technicians</td>
+<td>6</td>
+<td>Seasonal insertion/extraction cycles</td>
+</tr>
+<tr class="odd">
+<td>Sled Hospital Technicians</td>
+<td>2</td>
+<td>Diagnostics, maintenance, storage</td>
+</tr>
+<tr class="even">
+<td>Customer Success/Agronomy</td>
+<td>2</td>
+<td>Farmer support, agronomic consultation</td>
+</tr>
+</tbody>
+</table>
+<h2 id="scientific-advisory-board">3.3 Scientific Advisory Board</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Position</th>
+<th>Expertise</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hydrology/Soil Physics</td>
+<td>Dr. [TBD]</td>
+<td>Recruiting</td>
+</tr>
+<tr class="even">
+<td>Precision Agriculture</td>
+<td>Dr. [TBD]</td>
+<td>Recruiting</td>
+</tr>
+<tr class="odd">
+<td>Water Law/Policy</td>
+<td>Attorney [TBD]</td>
+<td>Recruiting</td>
+</tr>
+</tbody>
+</table>
+<h2 id="recruitment-roadmap">3.4 Recruitment Roadmap</h2>
+<h3 id="immediate-q1-2026">3.4.1 Immediate (Q1 2026)</h3>
+<ul>
+<li>6 field technicians (seasonal contract-to-hire)</li>
+<li>2 software engineers (backend + frontend)</li>
+<li>1 hardware engineer (embedded)</li>
+</ul>
+<h3 id="scale-phase-q2-q3-2026">3.4.2 Scale Phase (Q2-Q3 2026)</h3>
+<ul>
+<li>+4 technicians</li>
+<li>+2 software engineers</li>
+<li>Customer success team (2 FTE)</li>
+</ul>
+<h3 id="section">3.4.3 2027+</h3>
+<ul>
+<li>Regional operations managers (multi-district expansion)</li>
+<li>International business development</li>
+</ul>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part02.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part II: Market Intelligence</span>
+                    </a>
+                    <a href="part04.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part IV: Technical Core</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-iv-the-technical-core">PART IV: THE TECHNICAL CORE</h1>
+<h2 id="architecture-overview">4.0 Architecture Overview</h2>
+<p>FarmSense implements a tri-layer compute topology balancing edge reflex with cloud-scale analytics.</p>
+<h2 id="tri-layer-compute-topology">4.1 Tri-Layer Compute Topology</h2>
+<h3 id="level-0-field-sensors">4.1.1 Level 0 — Field Sensors</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 11%" />
+<col style="width: 28%" />
+<col style="width: 23%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Device</th>
+<th>MCU</th>
+<th>Encryption</th>
+<th>Language</th>
+<th>Power</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>VFA, LRZN/LRZB, PFA</td>
+<td>nRF52840</td>
+<td>AES-256</td>
+<td>Bare-metal C</td>
+<td>4+ yr battery</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responsibilities:</strong> Raw sensing, local encryption, ultra-low-power management</p>
+<h3 id="level-1.5-pmt-hub">4.1.2 Level 1.5 — PMT Hub</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Spec</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MCU</td>
+<td>ESP32-S3-MINI-1</td>
+</tr>
+<tr class="even">
+<td>Grid</td>
+<td>50m Edge-EBK</td>
+</tr>
+<tr class="odd">
+<td>Logic</td>
+<td>Reflex decisions (stall stop, VRI failback)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responsibilities:</strong> - 50m Edge-EBK computation (16×16 probability matrix) - Field sensor aggregation (VFA, LRZN, LRZB, PFA) - Reflex Logic (IMU stall → ACTUATE_STOP) - Zero-downtime VRI failover on DHU loss</p>
+<h3 id="level-2-dhu">4.1.3 Level 2 — DHU</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Spec</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Compute</td>
+<td>NVIDIA Jetson Orin Nano 8GB</td>
+</tr>
+<tr class="even">
+<td>Grid</td>
+<td>20m/10m Kriging</td>
+</tr>
+<tr class="odd">
+<td>Consensus</td>
+<td>AllianceChain PBFT</td>
+</tr>
+<tr class="even">
+<td>Cache</td>
+<td>128GB Swissbit PSLC SSD</td>
+</tr>
+</tbody>
+</table>
+<h3 id="level-3-rsscloud">4.1.4 Level 3 — RSS/Cloud</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Spec</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Compute</td>
+<td>64-Core AMD Threadripper PRO</td>
+</tr>
+<tr class="even">
+<td>Grid</td>
+<td>1m Master Grid</td>
+</tr>
+<tr class="odd">
+<td>Storage</td>
+<td>50TB NVMe, 200TB archive</td>
+</tr>
+<tr class="even">
+<td>Special</td>
+<td>FHE vaulting for legal data</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sql-schema-timescaledb-postgis-sovereign-vault">4.2 SQL Schema: TimescaleDB &amp; PostGIS Sovereign Vault</h2>
+<h3 id="core-table-definitions">4.2.1 Core Table Definitions</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Sensor telemetry hypertable</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> sensor_readings (</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">time</span> TIMESTAMPTZ <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    device_id UUID <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    field_id UUID <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    sensor_type <span class="dt">VARCHAR</span>(<span class="dv">50</span>),</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">value</span> <span class="dt">DOUBLE</span> <span class="dt">PRECISION</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    quality_score <span class="dt">FLOAT</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    metadata JSONB,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (<span class="dt">time</span>, device_id, sensor_type)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> create_hypertable(<span class="st">&#39;sensor_readings&#39;</span>, <span class="st">&#39;time&#39;</span>, chunk_time_interval <span class="op">=&gt;</span> <span class="dt">INTERVAL</span> <span class="st">&#39;7 days&#39;</span>);</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">-- Compliance ledger with hash chaining</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> compliance_logs (</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> UUID <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">DEFAULT</span> gen_random_uuid(),</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    field_id UUID <span class="kw">REFERENCES</span> fields(<span class="kw">id</span>),</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    log_time TIMESTAMPTZ <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> NOW(),</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    event_type <span class="dt">VARCHAR</span>(<span class="dv">50</span>),</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    details JSONB <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">hash</span> <span class="dt">VARCHAR</span>(<span class="dv">64</span>),</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    previous_hash <span class="dt">VARCHAR</span>(<span class="dv">64</span>)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co">-- Spatial index</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">INDEX</span> idx_sensor_location <span class="kw">ON</span> sensor_readings <span class="kw">USING</span> GIST (location);</span></code></pre></div>
+<h3 id="table-inventory">4.2.2 Table Inventory</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Table</th>
+<th>Purpose</th>
+<th>Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>fields</td>
+<td>Field polygons with ownership</td>
+<td>PostGIS</td>
+</tr>
+<tr class="even">
+<td>sensor_readings</td>
+<td>Time-series telemetry</td>
+<td>TimescaleDB</td>
+</tr>
+<tr class="odd">
+<td>devices</td>
+<td>Hardware inventory, health status</td>
+<td>PostgreSQL</td>
+</tr>
+<tr class="even">
+<td>irrigation_events</td>
+<td>Start/stop timestamps, volumes</td>
+<td>TimescaleDB</td>
+</tr>
+<tr class="odd">
+<td>kriging_grids</td>
+<td>1m raster tiles</td>
+<td>PostGIS raster</td>
+</tr>
+<tr class="even">
+<td>compliance_logs</td>
+<td>Hash-chained audit trail</td>
+<td>PostgreSQL</td>
+</tr>
+<tr class="odd">
+<td>users</td>
+<td>RBAC identities</td>
+<td>PostgreSQL</td>
+</tr>
+</tbody>
+</table>
+<h2 id="api-specifications-nexus-of-data-ingestion">4.3 API Specifications: Nexus of Data Ingestion</h2>
+<h3 id="authentication">4.3.1 Authentication</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>JWT</td>
+<td>RS256 signing, 24hr expiry</td>
+</tr>
+<tr class="even">
+<td>mTLS</td>
+<td>For field device authentication</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rate-limits">4.3.2 Rate Limits</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Read</td>
+<td>1,000 req/min</td>
+</tr>
+<tr class="even">
+<td>Compute</td>
+<td>100 req/min</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-endpoints">4.3.3 Core Endpoints</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Endpoint</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>POST</td>
+<td>/v1/ingest/telemetry</td>
+<td>Sensor data ingestion</td>
+</tr>
+<tr class="even">
+<td>GET</td>
+<td>/v1/fields/{id}/moisture</td>
+<td>1m kriging grid retrieval</td>
+</tr>
+<tr class="odd">
+<td>POST</td>
+<td>/v1/irrigation/worksheet</td>
+<td>Generate VRI prescription</td>
+</tr>
+<tr class="even">
+<td>GET</td>
+<td>/v1/compliance/report</td>
+<td>Export Digital Water Ledger</td>
+</tr>
+<tr class="odd">
+<td>WS</td>
+<td>/v1/stream/field/{id}</td>
+<td>Real-time WebSocket feed</td>
+</tr>
+</tbody>
+</table>
+<h2 id="interpolation-methodology">4.4 Interpolation Methodology</h2>
+<h3 id="resolution-cascade">4.4.1 Resolution Cascade</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Method</th>
+<th>Grid</th>
+<th>Hardware</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Edge</td>
+<td>IDW</td>
+<td>20m</td>
+<td>Jetson Orin Nano</td>
+</tr>
+<tr class="even">
+<td>District</td>
+<td>Ordinary Kriging</td>
+<td>10m</td>
+<td>Jetson Orin Nano</td>
+</tr>
+<tr class="odd">
+<td>Regional</td>
+<td>Regression Kriging</td>
+<td>1m</td>
+<td>Threadripper PRO</td>
+</tr>
+</tbody>
+</table>
+<h3 id="variogram-parameters">4.4.2 Variogram Parameters</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Nugget</td>
+<td>0.0012</td>
+</tr>
+<tr class="even">
+<td>Sill</td>
+<td>0.0085</td>
+</tr>
+<tr class="odd">
+<td>Range</td>
+<td>245m</td>
+</tr>
+<tr class="even">
+<td>Model</td>
+<td>Spherical</td>
+</tr>
+<tr class="odd">
+<td>R²</td>
+<td>0.94</td>
+</tr>
+</tbody>
+</table>
+<h2 id="adaptive-recalculation-engine-fishermans-attention">4.5 Adaptive Recalculation Engine: “Fisherman’s Attention”</h2>
+<h3 id="operational-modes">4.5.1 Operational Modes</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Mode</th>
+<th>Trigger</th>
+<th>Frequency</th>
+<th>Power</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>DORMANT</td>
+<td>Stable moisture, pivot parked</td>
+<td>4 hours</td>
+<td>8µA</td>
+</tr>
+<tr class="even">
+<td>ANTICIPATORY</td>
+<td>Sunrise, T &gt; 5°C rise/hr</td>
+<td>60 min</td>
+<td>15mA</td>
+</tr>
+<tr class="odd">
+<td>FOCUS RIPPLE</td>
+<td>&gt;5% moisture deviation</td>
+<td>15 min</td>
+<td>45mA</td>
+</tr>
+<tr class="even">
+<td>FOCUS COLLAPSE</td>
+<td>Mainline pressure &gt;1 PSI or motion</td>
+<td>5 sec</td>
+<td>120mA</td>
+</tr>
+</tbody>
+</table>
+<h3 id="volatility-score-calculation">4.5.2 Volatility Score Calculation</h3>
+<pre><code>Volatility = (Moisture_Δ_1h × 0.4) + 
+             (Irrigation_Active × 0.3) + 
+             (VPD_Stress × 0.2) + 
+             (Wind_Stress × 0.1)
+
+Thresholds:
+- &gt; 0.7 → COLLAPSE mode
+- &gt; 0.3 → ANTICIPATORY mode
+- ≤ 0.3 → DORMANT mode</code></pre>
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part03.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part III: Human Capital</span>
+                    </a>
+                    <a href="part05.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part V: Hardware Ecosystem</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-v-the-hardware-ecosystem">PART V: THE HARDWARE ECOSYSTEM</h1>
+<h2 id="hardware-overview">5.0 Hardware Overview</h2>
+<p>FarmSense implements a hierarchical hardware ecosystem from regional superstations to buried field sensors, all designed for 10-year operational life in harsh agricultural environments.</p>
+<h2 id="regional-superstation-rss-v1.0">5.1 Regional Superstation (RSS) V1.0</h2>
+<h3 id="physical-specifications">5.1.1 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Form factor</td>
+<td>40’ High-Cube shipping container (modified)</td>
+</tr>
+<tr class="even">
+<td>Location</td>
+<td>Monte Vista, Colorado</td>
+</tr>
+<tr class="odd">
+<td>Footprint</td>
+<td>320 sq ft (40’ × 8’)</td>
+</tr>
+<tr class="even">
+<td>Weight</td>
+<td>15,000 lbs (fully loaded)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="compute-specifications">5.1.2 Compute Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CPU</td>
+<td>AMD Threadripper PRO 5995WX (64-core)</td>
+</tr>
+<tr class="even">
+<td>RAM</td>
+<td>512GB ECC DDR4-3200</td>
+</tr>
+<tr class="odd">
+<td>GPU</td>
+<td>2× NVIDIA RTX A6000 (48GB each)</td>
+</tr>
+<tr class="even">
+<td>Storage (hot)</td>
+<td>50TB NVMe RAID-10 (Enterprise)</td>
+</tr>
+<tr class="odd">
+<td>Storage (cold)</td>
+<td>200TB HDD archive</td>
+</tr>
+</tbody>
+</table>
+<h3 id="communications">5.1.3 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fiber</td>
+<td>10 Gbps (dual path)</td>
+<td>Primary backhaul</td>
+</tr>
+<tr class="even">
+<td>LTE</td>
+<td>Cat-20 (2 Gbps)</td>
+<td>Backup connectivity</td>
+</tr>
+<tr class="odd">
+<td>Satellite</td>
+<td>Starlink (backup)</td>
+<td>Emergency only</td>
+</tr>
+<tr class="even">
+<td>2.4GHz</td>
+<td>3× Ubiquiti LTU Sector</td>
+<td>DHU backhaul</td>
+</tr>
+</tbody>
+</table>
+<h3 id="power">5.1.4 Power</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Grid</td>
+<td>480V 3-phase, 200A service</td>
+</tr>
+<tr class="even">
+<td>Generator</td>
+<td>50kW diesel (auto-start)</td>
+</tr>
+<tr class="odd">
+<td>UPS</td>
+<td>30kWh LiFePO4 (4-hour runtime)</td>
+</tr>
+<tr class="even">
+<td>Solar</td>
+<td>20kW array (supplemental)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bom-rss-v1.0">5.1.5 BOM — RSS V1.0</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Threadripper PRO 5995WX</td>
+<td>1</td>
+<td>$6,499</td>
+<td>$6,499</td>
+</tr>
+<tr class="even">
+<td>512GB ECC DDR4</td>
+<td>4</td>
+<td>$399</td>
+<td>$1,596</td>
+</tr>
+<tr class="odd">
+<td>RTX A6000</td>
+<td>2</td>
+<td>$4,500</td>
+<td>$9,000</td>
+</tr>
+<tr class="even">
+<td>50TB NVMe array</td>
+<td>1</td>
+<td>$8,000</td>
+<td>$8,000</td>
+</tr>
+<tr class="odd">
+<td>200TB HDD archive</td>
+<td>1</td>
+<td>$4,000</td>
+<td>$4,000</td>
+</tr>
+<tr class="even">
+<td>LTU Sector 5AC</td>
+<td>3</td>
+<td>$450</td>
+<td>$1,350</td>
+</tr>
+<tr class="odd">
+<td>50kW generator</td>
+<td>1</td>
+<td>$12,000</td>
+<td>$12,000</td>
+</tr>
+<tr class="even">
+<td>30kWh LiFePO4 bank</td>
+<td>1</td>
+<td>$15,000</td>
+<td>$15,000</td>
+</tr>
+<tr class="odd">
+<td>20kW solar array</td>
+<td>1</td>
+<td>$40,000</td>
+<td>$40,000</td>
+</tr>
+<tr class="even">
+<td>Container modification</td>
+<td>1</td>
+<td>$25,000</td>
+<td>$25,000</td>
+</tr>
+<tr class="odd">
+<td><strong>TOTAL RSS BOM</strong></td>
+<td></td>
+<td></td>
+<td><strong>$122,445</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="district-hub-dhu-v1.2">5.2 District Hub (DHU) V1.2</h2>
+<h3 id="physical-specifications-1">5.2.1 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mounting</td>
+<td>35’ Class 4 timber pole</td>
+</tr>
+<tr class="even">
+<td>Enclosure</td>
+<td>NEMA 4X Polycarbonate (Polycase ML-44F)</td>
+</tr>
+<tr class="odd">
+<td>Weight</td>
+<td>85 lbs (fully loaded)</td>
+</tr>
+<tr class="even">
+<td>Wind rating</td>
+<td>100 mph sustained</td>
+</tr>
+</tbody>
+</table>
+<h3 id="compute-specifications-1">5.2.2 Compute Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SBC</td>
+<td>NVIDIA Jetson Orin Nano 8GB</td>
+</tr>
+<tr class="even">
+<td>CPU</td>
+<td>6-core Arm Cortex-A78AE @ 1.5 GHz</td>
+</tr>
+<tr class="odd">
+<td>GPU</td>
+<td>1024-core Ampere architecture</td>
+</tr>
+<tr class="even">
+<td>RAM</td>
+<td>8GB LPDDR5</td>
+</tr>
+<tr class="odd">
+<td>Storage (hot)</td>
+<td>128GB Swissbit PSLC SSD</td>
+</tr>
+<tr class="even">
+<td>Storage (cache)</td>
+<td>128GB microSD (emergency backup)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="communications-1">5.2.3 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>900MHz</td>
+<td>RAK2287 concentrator</td>
+<td>Field sensor ingress</td>
+</tr>
+<tr class="even">
+<td>2.4GHz</td>
+<td>Ubiquiti LTU Sector</td>
+<td>DHU-RSS backhaul</td>
+</tr>
+<tr class="odd">
+<td>LTE-M</td>
+<td>Quectel BG96</td>
+<td>Failover</td>
+</tr>
+<tr class="even">
+<td>BLE 5.0</td>
+<td>nRF52840</td>
+<td>Technician maintenance</td>
+</tr>
+</tbody>
+</table>
+<h3 id="power-1">5.2.4 Power</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Source</td>
+<td>200W solar + 200Ah LiFePO4</td>
+</tr>
+<tr class="even">
+<td>Battery</td>
+<td>200Ah @ 12V (2.4 kWh)</td>
+</tr>
+<tr class="odd">
+<td>Runtime</td>
+<td>7+ days without sun</td>
+</tr>
+<tr class="even">
+<td>Charging</td>
+<td>MPPT 20A controller</td>
+</tr>
+</tbody>
+</table>
+<h3 id="black-box-cache-critical-feature">5.2.5 Black Box Cache (Critical Feature)</h3>
+<p><strong>Purpose:</strong> 30-day continuous audit logging during total backhaul failure</p>
+<table>
+<thead>
+<tr class="header">
+<th>Spec</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Capacity</td>
+<td>128GB Swissbit PSLC SSD</td>
+</tr>
+<tr class="even">
+<td>Write rate</td>
+<td>50 MB/day (compressed audit packets)</td>
+</tr>
+<tr class="odd">
+<td>Retention</td>
+<td>30+ days at full telemetry</td>
+</tr>
+<tr class="even">
+<td>Encryption</td>
+<td>AES-256-GCM</td>
+</tr>
+<tr class="odd">
+<td>Hash chain</td>
+<td>SHA-256 linking</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bom-dhu-v1.2">5.2.6 BOM — DHU V1.2</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Jetson Orin Nano</td>
+<td>1</td>
+<td>$499</td>
+<td>$499</td>
+</tr>
+<tr class="even">
+<td>Swissbit 128GB PSLC</td>
+<td>1</td>
+<td>$245</td>
+<td>$245</td>
+</tr>
+<tr class="odd">
+<td>RAK2287 900MHz</td>
+<td>1</td>
+<td>$89</td>
+<td>$89</td>
+</tr>
+<tr class="even">
+<td>LTU Lite AP</td>
+<td>1</td>
+<td>$189</td>
+<td>$189</td>
+</tr>
+<tr class="odd">
+<td>200W solar panel</td>
+<td>2</td>
+<td>$180</td>
+<td>$360</td>
+</tr>
+<tr class="even">
+<td>200Ah LiFePO4</td>
+<td>1</td>
+<td>$1,800</td>
+<td>$1,800</td>
+</tr>
+<tr class="odd">
+<td>Polycase ML-44F</td>
+<td>1</td>
+<td>$340</td>
+<td>$340</td>
+</tr>
+<tr class="even">
+<td>35’ timber pole</td>
+<td>1</td>
+<td>$450</td>
+<td>$450</td>
+</tr>
+<tr class="odd">
+<td>Cables, connectors</td>
+<td>1</td>
+<td>$150</td>
+<td>$150</td>
+</tr>
+<tr class="even">
+<td>Installation labor</td>
+<td>1</td>
+<td>$500</td>
+<td>$500</td>
+</tr>
+<tr class="odd">
+<td><strong>TOTAL DHU BOM</strong></td>
+<td></td>
+<td></td>
+<td><strong>$4,622</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="pivot-motion-tracker-pmt-v1.6-critical-field-aggregator">5.3 Pivot Motion Tracker (PMT) V1.6 — CRITICAL: FIELD AGGREGATOR</h2>
+<h3 id="role-definition">5.3.1 Role Definition</h3>
+<p><strong>CRITICAL ARCHITECTURE POINT:</strong> The PMT is the <strong>Primary Field Aggregator</strong>. It is elevated 10-15 feet on the pivot span, above the dense crop canopy. All ground-level devices (VFA, LRZN, LRZB, PFA) report <strong>to the PMT</strong>, not directly to the DHU.</p>
+<h3 id="physical-specifications-2">5.3.2 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mounting</td>
+<td>Towers 2-3 of center pivot</td>
+</tr>
+<tr class="even">
+<td>Elevation</td>
+<td>10-15 feet above ground</td>
+</tr>
+<tr class="odd">
+<td>Enclosure</td>
+<td>Polycase WP-21F (NEMA 4X)</td>
+</tr>
+<tr class="even">
+<td>Weight</td>
+<td>12 lbs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="compute-specifications-2">5.3.3 Compute Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MCU</td>
+<td>ESP32-S3-MINI-1-N8R8</td>
+</tr>
+<tr class="even">
+<td>Flash</td>
+<td>8MB QSPI</td>
+</tr>
+<tr class="odd">
+<td>RAM</td>
+<td>512KB SRAM + 8MB PSRAM</td>
+</tr>
+<tr class="even">
+<td>FPU</td>
+<td>Yes (single-precision)</td>
+</tr>
+<tr class="odd">
+<td>Vector unit</td>
+<td>Yes (SIMD)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sensors">5.3.4 Sensors</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Sensor</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>GNSS</td>
+<td>u-blox ZED-F9P RTK</td>
+<td>Sub-cm positioning</td>
+</tr>
+<tr class="even">
+<td>IMU</td>
+<td>Bosch BNO055 9-axis</td>
+<td>Tower stability, stall detection</td>
+</tr>
+<tr class="odd">
+<td>Flow meter</td>
+<td>Badger TFX-5000 clamp-on</td>
+<td>±1.0% flow accuracy</td>
+</tr>
+<tr class="even">
+<td>Current</td>
+<td>3× Magnelab SCT-0400-400</td>
+<td>Pump signature analysis</td>
+</tr>
+</tbody>
+</table>
+<h3 id="communications-2">5.3.5 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ingress</td>
+<td>900MHz CSS LoRa Mesh</td>
+<td>VFA, LRZN, LRZB, PFA</td>
+</tr>
+<tr class="even">
+<td>Egress</td>
+<td>2.4GHz (ESPNOW) or LTE-M</td>
+<td>DHU backhaul</td>
+</tr>
+<tr class="odd">
+<td>Maintenance</td>
+<td>BLE 5.0</td>
+<td>Technician access</td>
+</tr>
+</tbody>
+</table>
+<h3 id="edge-ebk-computation">5.3.6 Edge-EBK Computation</h3>
+<p><strong>Responsibility:</strong> The PMT performs <strong>Edge-EBK</strong> (Empirical Bayesian Kriging) to generate a 50m-resolution 16×16 probability matrix from field sensor inputs.</p>
+<p><strong>Power:</strong> The FPU processes AES-256 chirps from VFA/LRZN/LRZB/PFA into a localized probability matrix. In “COLLAPSE” mode, the FPU focuses 100% compute on the active pivot trajectory.</p>
+<h3 id="payload-structure">5.3.7 Payload Structure</h3>
+<p><strong>Unified Field State Payload (~187 bytes):</strong> - PMT kinematic data (position, velocity, vibration) - 50m Edge-EBK arrays (16×16 grid) - Intercepted VFA/LRZ/PFA telemetry - Timestamp + cryptographic signature</p>
+<h3 id="bom-pmt-v1.6">5.3.8 BOM — PMT V1.6</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ESP32-S3-MINI-1</td>
+<td>1</td>
+<td>$3.20</td>
+<td>$3.20</td>
+</tr>
+<tr class="even">
+<td>ZED-F9P RTK</td>
+<td>1</td>
+<td>$165.00</td>
+<td>$165.00</td>
+</tr>
+<tr class="odd">
+<td>BNO055 IMU</td>
+<td>1</td>
+<td>$12.50</td>
+<td>$12.50</td>
+</tr>
+<tr class="even">
+<td>TFX-5000 clamp-on</td>
+<td>1</td>
+<td>$695.00</td>
+<td>$695.00</td>
+</tr>
+<tr class="odd">
+<td>SCT-0400-400 (3×)</td>
+<td>3</td>
+<td>$45.00</td>
+<td>$135.00</td>
+</tr>
+<tr class="even">
+<td>RFM95W 900MHz</td>
+<td>1</td>
+<td>$6.50</td>
+<td>$6.50</td>
+</tr>
+<tr class="odd">
+<td>Polycase WP-21F</td>
+<td>1</td>
+<td>$89.00</td>
+<td>$89.00</td>
+</tr>
+<tr class="even">
+<td>Solar panel 20W</td>
+<td>1</td>
+<td>$45.00</td>
+<td>$45.00</td>
+</tr>
+<tr class="odd">
+<td>Battery 12V 7Ah</td>
+<td>1</td>
+<td>$25.00</td>
+<td>$25.00</td>
+</tr>
+<tr class="even">
+<td>Antennas, cables</td>
+<td>1</td>
+<td>$35.00</td>
+<td>$35.00</td>
+</tr>
+<tr class="odd">
+<td>Assembly labor</td>
+<td>1</td>
+<td>$50.00</td>
+<td>$50.00</td>
+</tr>
+<tr class="even">
+<td><strong>TOTAL PMT BOM</strong></td>
+<td></td>
+<td></td>
+<td><strong>$1,261.20</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="pressure-flow-anchor-pfa-v1.9">5.4 Pressure &amp; Flow Anchor (PFA) V1.9</h2>
+<h3 id="role-definition-1">5.4.1 Role Definition</h3>
+<p><strong>Wellhead Sentry &amp; Safety Actuator</strong> The PFA is the critical safety node at the wellhead, monitoring flow and pressure, and capable of actuating emergency pump stops.</p>
+<h3 id="physical-specifications-3">5.4.2 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mounting</td>
+<td>Wellhead pipe (2-6” diameter)</td>
+</tr>
+<tr class="even">
+<td>Enclosure</td>
+<td>Polycase WP-21F (NEMA 4X)</td>
+</tr>
+<tr class="odd">
+<td>Weight</td>
+<td>18 lbs</td>
+</tr>
+<tr class="even">
+<td>Ingress</td>
+<td>IP67</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sensors-1">5.4.3 Sensors</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 43%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Sensor</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Flow</td>
+<td>Badger TFX-5000 (clamp-on)</td>
+<td>±1.0% volumetric flow</td>
+</tr>
+<tr class="even">
+<td>Current</td>
+<td>3× Magnelab SCT-0400-400</td>
+<td>Pump signature, predictive maintenance</td>
+</tr>
+<tr class="odd">
+<td>Pressure</td>
+<td>Dwyer PBLTX (vented, 316-SS)</td>
+<td>Line pressure monitoring</td>
+</tr>
+</tbody>
+</table>
+<h3 id="actuation">5.4.4 Actuation</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Relay</td>
+<td>Omron G7L-1A-TUB 30A</td>
+<td>Pump soft-stop</td>
+</tr>
+<tr class="even">
+<td>Response time</td>
+<td>&lt;50ms</td>
+<td>Emergency halt</td>
+</tr>
+</tbody>
+</table>
+<h3 id="communications-3">5.4.5 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Primary</td>
+<td>900MHz CSS LoRa</td>
+<td>PMT ingress</td>
+</tr>
+<tr class="even">
+<td>Maintenance</td>
+<td>BLE 5.4</td>
+<td>Technician diagnostics</td>
+</tr>
+</tbody>
+</table>
+<h3 id="reflex-logic-table">5.4.6 Reflex Logic Table</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Condition</th>
+<th>PMT Command</th>
+<th>PFA Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT_STALL detected</td>
+<td>ACTUATE_STOP</td>
+<td>Open relay (&lt;50ms)</td>
+</tr>
+<tr class="even">
+<td>Line pressure &lt;5 PSI</td>
+<td>ACTUATE_STOP</td>
+<td>Open relay (&lt;50ms)</td>
+</tr>
+<tr class="odd">
+<td>Saturation alert (48”)</td>
+<td>ACTUATE_STOP</td>
+<td>Open relay (&lt;50ms)</td>
+</tr>
+<tr class="even">
+<td>Cavitation signature</td>
+<td>ACTUATE_STOP + ALERT</td>
+<td>Open relay, notify</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bom-pfa-v1.9">5.4.7 BOM — PFA V1.9</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>nRF52840-QIAA</td>
+<td>1</td>
+<td>$4.50</td>
+<td>$4.50</td>
+</tr>
+<tr class="even">
+<td>TFX-5000 clamp-on</td>
+<td>1</td>
+<td>$695.00</td>
+<td>$695.00</td>
+</tr>
+<tr class="odd">
+<td>SCT-0400-400 (3×)</td>
+<td>3</td>
+<td>$45.00</td>
+<td>$135.00</td>
+</tr>
+<tr class="even">
+<td>Dwyer PBLTX</td>
+<td>1</td>
+<td>$289.00</td>
+<td>$289.00</td>
+</tr>
+<tr class="odd">
+<td>Omron G7L-1A-TUB</td>
+<td>1</td>
+<td>$45.00</td>
+<td>$45.00</td>
+</tr>
+<tr class="even">
+<td>200Ah LiFePO4</td>
+<td>1</td>
+<td>$1,800.00</td>
+<td>$1,800.00</td>
+</tr>
+<tr class="odd">
+<td>200W solar</td>
+<td>2</td>
+<td>$180.00</td>
+<td>$360.00</td>
+</tr>
+<tr class="even">
+<td>Polycase WP-21F</td>
+<td>1</td>
+<td>$89.00</td>
+<td>$89.00</td>
+</tr>
+<tr class="odd">
+<td>Cables, connectors</td>
+<td>1</td>
+<td>$150.00</td>
+<td>$150.00</td>
+</tr>
+<tr class="even">
+<td><strong>TOTAL PFA BOM</strong></td>
+<td></td>
+<td></td>
+<td><strong>$3,467.50</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="vertical-field-anchor-vfa-v2.1">5.5 Vertical Field Anchor (VFA) V2.1</h2>
+<h3 id="role-definition-2">5.5.1 Role Definition</h3>
+<p><strong>Deep-Truth Probe (48” Profile)</strong> The VFA is the primary ground-truth sensor for sub-surface moisture, with sensors at multiple depths providing a vertical moisture profile.</p>
+<h3 id="physical-specifications-4">5.5.2 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Housing</td>
+<td>2” HDPE SDR9 outer shell (permanent)</td>
+</tr>
+<tr class="even">
+<td>Sled</td>
+<td>50mm CHDPE SDR9 Alpha-Sled (removable)</td>
+</tr>
+<tr class="odd">
+<td>Length</td>
+<td>48 inches (1219mm)</td>
+</tr>
+<tr class="even">
+<td>Burial</td>
+<td>Ground level, capped flush</td>
+</tr>
+<tr class="odd">
+<td>Extraction</td>
+<td>Pre-harvest (September)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-48u-stack-sequence">5.5.3 The 48U Stack Sequence</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Slot (inch)</th>
+<th>Component</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1 (Top)</td>
+<td>Desiccant Pack</td>
+<td>Apex moisture trap</td>
+</tr>
+<tr class="even">
+<td>2-5</td>
+<td>Battery Cartridge #1</td>
+<td>3× 21700 Li-ion + heater</td>
+</tr>
+<tr class="odd">
+<td>10</td>
+<td>Advanced Sensor</td>
+<td>10” Root Zone Ingest</td>
+</tr>
+<tr class="even">
+<td>18</td>
+<td>Basic Sensor</td>
+<td>18” VWC/Temp</td>
+</tr>
+<tr class="odd">
+<td>25</td>
+<td>Advanced Sensor</td>
+<td>25” Root Anchor</td>
+</tr>
+<tr class="even">
+<td>35</td>
+<td>Basic Sensor</td>
+<td>35” Wetting Front</td>
+</tr>
+<tr class="odd">
+<td>48 (Bottom)</td>
+<td>Advanced Sensor</td>
+<td>48” Deep Percolation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sensor-specifications">5.5.4 Sensor Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Depth</th>
+<th>Type</th>
+<th>Parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>10”</td>
+<td>GroPoint Profile</td>
+<td>VWC, EC, Temp</td>
+</tr>
+<tr class="even">
+<td>18”</td>
+<td>Basic</td>
+<td>VWC</td>
+</tr>
+<tr class="odd">
+<td>25”</td>
+<td>GroPoint Profile</td>
+<td>VWC, EC, Temp</td>
+</tr>
+<tr class="even">
+<td>35”</td>
+<td>Basic</td>
+<td>VWC</td>
+</tr>
+<tr class="odd">
+<td>48”</td>
+<td>GroPoint Profile</td>
+<td>VWC, EC, Temp</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-proxy-method">5.5.5 The Proxy Method</h3>
+<p><strong>Non-Contact Capacitive Sensing:</strong> The sensors utilize an advanced non-contact capacitive method, shooting high-frequency dielectric fields through the 50mm sled wall and across a +5 PSI dry nitrogen gap directly into the soil. This eliminates galvanic corrosion and sensor drift.</p>
+<h3 id="communications-4">5.5.6 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Primary</td>
+<td>900MHz CSS LoRa</td>
+<td>PMT ingress</td>
+</tr>
+<tr class="even">
+<td>Range</td>
+<td>1km+ to elevated PMT</td>
+<td>Canopy penetration</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bom-vfa-v2.1-1280-unit-tier">5.5.7 BOM — VFA V2.1 (1,280 unit tier)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Housing (HDPE SDR9)</td>
+<td>$6.75</td>
+</tr>
+<tr class="even">
+<td>Antenna (SS-304 whip)</td>
+<td>$3.50</td>
+</tr>
+<tr class="odd">
+<td>Compute (nRF52840)</td>
+<td>$8.50</td>
+</tr>
+<tr class="even">
+<td>Seals (Viton FKM)</td>
+<td>$2.40</td>
+</tr>
+<tr class="odd">
+<td>Battery Cartridges (5×)</td>
+<td>$83.75</td>
+</tr>
+<tr class="even">
+<td>Sensors (3× Adv + 2× Basic)</td>
+<td>$47.00</td>
+</tr>
+<tr class="odd">
+<td><strong>TOTAL VFA BOM</strong></td>
+<td><strong>$151.90</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="lateral-root-zone-surveyor-lrz-v1.2-critical-two-variants">5.6 Lateral Root Zone Surveyor (LRZ) V1.2 — CRITICAL: TWO VARIANTS</h2>
+<h3 id="critical-distinction-lrzn-vs-lrzb">5.6.1 CRITICAL DISTINCTION: LRZN vs LRZB</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>LRZN (Basic)</th>
+<th>LRZB (Reference)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Cost</strong></td>
+<td>$29.00</td>
+<td>$54.30</td>
+</tr>
+<tr class="even">
+<td><strong>Sensors</strong></td>
+<td>Dielectric (VWC only)</td>
+<td>Dielectric + Temperature</td>
+</tr>
+<tr class="odd">
+<td><strong>Calibration</strong></td>
+<td>Standard</td>
+<td>Enhanced (temperature-compensated)</td>
+</tr>
+<tr class="even">
+<td><strong>Role</strong></td>
+<td>Spatial density filler</td>
+<td>Ground-truth anchor point</td>
+</tr>
+<tr class="odd">
+<td><strong>Density</strong></td>
+<td>12 per field</td>
+<td>4 per field</td>
+</tr>
+<tr class="even">
+<td><strong>Total per field</strong></td>
+<td></td>
+<td>16 LRZ nodes</td>
+</tr>
+<tr class="odd">
+<td><strong>Reporting</strong></td>
+<td>To PMT</td>
+<td>To PMT</td>
+</tr>
+<tr class="even">
+<td><strong>Power</strong></td>
+<td>2.6Ah LiSOCl2</td>
+<td>2.6Ah LiSOCl2</td>
+</tr>
+<tr class="odd">
+<td><strong>Battery life</strong></td>
+<td>4+ years</td>
+<td>4+ years</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lrzn-specifications-basic">5.6.2 LRZN Specifications (Basic)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MCU</td>
+<td>nRF52840-QIAA</td>
+</tr>
+<tr class="even">
+<td>Sensor</td>
+<td>Capacitive dielectric (~100MHz)</td>
+</tr>
+<tr class="odd">
+<td>Measurement</td>
+<td>Volumetric Water Content (VWC)</td>
+</tr>
+<tr class="even">
+<td>Accuracy</td>
+<td>±3%</td>
+</tr>
+<tr class="odd">
+<td>Housing</td>
+<td>2” HDPE SDR9 shell + removable sled</td>
+</tr>
+<tr class="even">
+<td>Antenna</td>
+<td>Stainless steel whip (buried, RF-transparent)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lrzb-specifications-reference">5.6.3 LRZB Specifications (Reference)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MCU</td>
+<td>nRF52840-QIAA</td>
+</tr>
+<tr class="even">
+<td>Sensors</td>
+<td>Capacitive dielectric + Digital temperature</td>
+</tr>
+<tr class="odd">
+<td>Measurements</td>
+<td>VWC + Soil Temperature</td>
+</tr>
+<tr class="even">
+<td>Accuracy</td>
+<td>VWC ±2.5%, Temp ±0.5°C</td>
+</tr>
+<tr class="odd">
+<td>Calibration</td>
+<td>Temperature-compensated VWC</td>
+</tr>
+<tr class="even">
+<td>Housing</td>
+<td>2” HDPE SDR9 shell + removable sled</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pcb-layout-both-variants">5.6.4 PCB Layout (Both Variants)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>GPIO</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>P0.02</td>
+<td>ADC0 (dielectric)</td>
+</tr>
+<tr class="even">
+<td>P0.03</td>
+<td>ADC1 (temperature - LRZB only)</td>
+</tr>
+<tr class="odd">
+<td>P0.28-P0.31</td>
+<td>LoRa SPI (SCK, MISO, MOSI, CS)</td>
+</tr>
+<tr class="even">
+<td>P1.00</td>
+<td>LoRa IRQ</td>
+</tr>
+<tr class="odd">
+<td>P0.29</td>
+<td>LoRa RST</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sensing-methodology">5.6.5 Sensing Methodology</h3>
+<p><strong>~100MHz Dielectric Projection:</strong> Both variants project high-frequency RF through the HDPE walls into the surrounding soil. The frequency was selected to: - Minimize salinity effects - Provide good spatial resolution (~6” sphere of influence) - Enable through-wall measurement without soil contact</p>
+<h3 id="bom-comparison">5.6.6 BOM Comparison</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>LRZN</th>
+<th>LRZB</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>nRF52840-QIAA</td>
+<td>$4.50</td>
+<td>$4.50</td>
+</tr>
+<tr class="even">
+<td>Dielectric circuit</td>
+<td>$8.00</td>
+<td>$8.00</td>
+</tr>
+<tr class="odd">
+<td>Temp sensor</td>
+<td>—</td>
+<td>$12.00</td>
+</tr>
+<tr class="even">
+<td>PCB + passives</td>
+<td>$6.50</td>
+<td>$6.50</td>
+</tr>
+<tr class="odd">
+<td>Housing assembly</td>
+<td>$10.00</td>
+<td>$10.00</td>
+</tr>
+<tr class="even">
+<td>Battery (2.6Ah)</td>
+<td>$12.00</td>
+<td>$12.00</td>
+</tr>
+<tr class="odd">
+<td>Antenna</td>
+<td>$3.50</td>
+<td>$3.50</td>
+</tr>
+<tr class="even">
+<td>Assembly labor</td>
+<td>$15.00</td>
+<td>$15.00</td>
+</tr>
+<tr class="odd">
+<td><strong>TOTAL</strong></td>
+<td><strong>$29.00</strong></td>
+<td><strong>$54.30</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="single-field-deployment-sfd-configurations">5.7 Single Field Deployment (SFD) Configurations</h2>
+<h3 id="sfd-p-standard-pivot-126-acre-circular">5.7.1 SFD-P: Standard Pivot (126-acre circular)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT</td>
+<td>1</td>
+<td>$1,261.20</td>
+<td>$1,261.20</td>
+</tr>
+<tr class="even">
+<td>PFA</td>
+<td>1</td>
+<td>$3,467.50</td>
+<td>$3,467.50</td>
+</tr>
+<tr class="odd">
+<td>VFA</td>
+<td>2</td>
+<td>$151.90</td>
+<td>$303.80</td>
+</tr>
+<tr class="even">
+<td>LRZB (Reference)</td>
+<td>4</td>
+<td>$54.30</td>
+<td>$217.20</td>
+</tr>
+<tr class="odd">
+<td>LRZN (Basic)</td>
+<td>12</td>
+<td>$29.00</td>
+<td>$348.00</td>
+</tr>
+<tr class="even">
+<td>Installation labor</td>
+<td>1</td>
+<td>$400.00</td>
+<td>$400.00</td>
+</tr>
+<tr class="odd">
+<td><strong>SFD-P Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$5,997.70</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Resolution:</strong> 50m Compliance / 1m Enterprise</p>
+<h3 id="sfd-c-corner-swing-arm-150-acre">5.7.2 SFD-C: Corner-Swing Arm (150+ acre)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT</td>
+<td>1</td>
+<td>$1,261.20</td>
+<td>$1,261.20</td>
+</tr>
+<tr class="even">
+<td>CSA (Swing-Arm Tracker)</td>
+<td>1</td>
+<td>$1,500.00</td>
+<td>$1,500.00</td>
+</tr>
+<tr class="odd">
+<td>PFA</td>
+<td>1</td>
+<td>$3,467.50</td>
+<td>$3,467.50</td>
+</tr>
+<tr class="even">
+<td>VFA</td>
+<td>4</td>
+<td>$151.90</td>
+<td>$607.60</td>
+</tr>
+<tr class="odd">
+<td>LRZB</td>
+<td>6</td>
+<td>$54.30</td>
+<td>$325.80</td>
+</tr>
+<tr class="even">
+<td>LRZN</td>
+<td>16</td>
+<td>$29.00</td>
+<td>$464.00</td>
+</tr>
+<tr class="odd">
+<td>Installation</td>
+<td>1</td>
+<td>$600.00</td>
+<td>$600.00</td>
+</tr>
+<tr class="even">
+<td><strong>SFD-C Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$8,226.10</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Special:</strong> BLE 5.2 distance ranging for ±0.1° joint resolution</p>
+<h3 id="sfd-f-floodsurface-irrigation">5.7.3 SFD-F: Flood/Surface Irrigation</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>DHU-Lite/Static PMT</td>
+<td>1</td>
+<td>$2,500.00</td>
+<td>$2,500.00</td>
+</tr>
+<tr class="even">
+<td>PFA</td>
+<td>1</td>
+<td>$3,467.50</td>
+<td>$3,467.50</td>
+</tr>
+<tr class="odd">
+<td>VFA</td>
+<td>4</td>
+<td>$151.90</td>
+<td>$607.60</td>
+</tr>
+<tr class="even">
+<td>LRZB</td>
+<td>8</td>
+<td>$54.30</td>
+<td>$434.40</td>
+</tr>
+<tr class="odd">
+<td>LRZN</td>
+<td>20</td>
+<td>$29.00</td>
+<td>$580.00</td>
+</tr>
+<tr class="even">
+<td>Installation</td>
+<td>1</td>
+<td>$800.00</td>
+<td>$800.00</td>
+</tr>
+<tr class="odd">
+<td><strong>SFD-F Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$8,389.50</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Special:</strong> Wetting Front Propagation algorithms</p>
+<h2 id="subdistrict-1-scale-1280-fields">5.8 Subdistrict 1 Scale (1,280 Fields)</h2>
+<h3 id="phase-1-compliance-foundation">5.8.1 Phase 1 — Compliance Foundation</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SFD-P (standard)</td>
+<td>1,280</td>
+<td>$5,997.70</td>
+<td>$7,677,056</td>
+</tr>
+<tr class="even">
+<td>RSS infrastructure</td>
+<td>1</td>
+<td>$122,445</td>
+<td>$122,445</td>
+</tr>
+<tr class="odd">
+<td>DHU infrastructure</td>
+<td>13</td>
+<td>$4,622</td>
+<td>$60,086</td>
+</tr>
+<tr class="even">
+<td>Installation (bulk)</td>
+<td>1,280</td>
+<td>$300</td>
+<td>$384,000</td>
+</tr>
+<tr class="odd">
+<td><strong>Phase 1 Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$8,243,587</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-2-full-ecosystem-saturation">5.8.2 Phase 2 — Full Ecosystem Saturation</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Additional LRZ density</td>
+<td>1,280 fields</td>
+<td>$1,500</td>
+<td>$1,920,000</td>
+</tr>
+<tr class="even">
+<td>VRI actuators (section)</td>
+<td>1,280</td>
+<td>$1,500</td>
+<td>$1,920,000</td>
+</tr>
+<tr class="odd">
+<td>DHU expansion (full 25)</td>
+<td>12</td>
+<td>$4,622</td>
+<td>$55,464</td>
+</tr>
+<tr class="even">
+<td>Fleet service trucks</td>
+<td>3</td>
+<td>$45,000</td>
+<td>$135,000</td>
+</tr>
+<tr class="odd">
+<td>Sled Hospital facility</td>
+<td>1</td>
+<td>$75,000</td>
+<td>$75,000</td>
+</tr>
+<tr class="even">
+<td><strong>Phase 2 Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$4,105,464</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Subdistrict 1 Investment:</strong> $12,349,051</p>
+<h3 id="per-acre-economics">5.8.3 Per-Acre Economics</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hardware CAPEX per acre</td>
+<td>$93.36</td>
+</tr>
+<tr class="even">
+<td>Annual SaaS at $499/field</td>
+<td>$7,664,640</td>
+</tr>
+<tr class="odd">
+<td>Payback period</td>
+<td>1.6 years</td>
+</tr>
+<tr class="even">
+<td>10-year ROI</td>
+<td>521%</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part04.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part IV: Technical Core</span>
+                    </a>
+                    <a href="part06.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part VI: Interface Layer</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-vi-the-interface-layer">PART VI: THE INTERFACE LAYER</h1>
+<h2 id="user-interface-architecture">6.0 User Interface Architecture</h2>
+<p>FarmSense provides role-specific interfaces for farmers, regulators, administrators, investors, and researchers.</p>
+<h2 id="farmer-dashboard-3d-vri-control-center">6.1 Farmer Dashboard (3D VRI Control Center)</h2>
+<h3 id="technical-stack">6.1.1 Technical Stack</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Framework</td>
+<td>React 19 (Next.js App Router)</td>
+</tr>
+<tr class="even">
+<td>3D Rendering</td>
+<td>Three.js + React Three Fiber</td>
+</tr>
+<tr class="odd">
+<td>Maps</td>
+<td>MapLibre GL JS (self-hosted)</td>
+</tr>
+<tr class="even">
+<td>Styling</td>
+<td>Tailwind CSS 4</td>
+</tr>
+<tr class="odd">
+<td>State</td>
+<td>Zustand</td>
+</tr>
+<tr class="even">
+<td>Real-time</td>
+<td>WebSocket (Socket.io)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-features">6.1.2 Core Features</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>3D Field Heatmap</td>
+<td>Interactive 1m resolution overlay</td>
+</tr>
+<tr class="even">
+<td>Resolution Pop</td>
+<td>50m → 1m zoom blur/unlock</td>
+</tr>
+<tr class="odd">
+<td>Traffic-Light Status</td>
+<td>Green/Yellow/Red field health</td>
+</tr>
+<tr class="even">
+<td>Irrigation Worksheet</td>
+<td>VRI prescription viewer</td>
+</tr>
+<tr class="odd">
+<td>Mobile PWA</td>
+<td>Offline cache for field use</td>
+</tr>
+</tbody>
+</table>
+<h3 id="resolution-pop-fomo-trigger">6.1.3 “Resolution Pop” FOMO Trigger</h3>
+<p><strong>UX Pattern:</strong> 1. Free/Basic user zooms to field anomaly 2. UI renders 50m grid clearly 3. 1m grid displays with blur + “High-Resolution Data Available” overlay 4. Enterprise upgrade prompt appears 5. Conversion: ~12% of triggered users upgrade within 24 hours</p>
+<h3 id="technical-specifications">6.1.4 Technical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>WebSocket update rate</td>
+<td>1 Hz</td>
+</tr>
+<tr class="even">
+<td>3D frame rate</td>
+<td>60 FPS (mobile)</td>
+</tr>
+<tr class="odd">
+<td>Tile streaming</td>
+<td>Frustum-aware from RSS</td>
+</tr>
+<tr class="even">
+<td>Offline cache</td>
+<td>7 days field data</td>
+</tr>
+</tbody>
+</table>
+<h2 id="regulatory-portal-water-court-audit-interface">6.2 Regulatory Portal (Water Court Audit Interface)</h2>
+<h3 id="purpose">6.2.1 Purpose</h3>
+<p>Immutable compliance reporting for legal proceedings and regulatory audits.</p>
+<h3 id="features">6.2.2 Features</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Audit Log</td>
+<td>Read-only with hash verification</td>
+</tr>
+<tr class="even">
+<td>Export</td>
+<td>PDF/CSV in .dwl format</td>
+</tr>
+<tr class="odd">
+<td>Multi-Field</td>
+<td>Aggregation across portfolios</td>
+</tr>
+<tr class="even">
+<td>Consensus</td>
+<td>PBFT certificate display</td>
+</tr>
+<tr class="odd">
+<td>Violations</td>
+<td>Automated detection &amp; tracking</td>
+</tr>
+</tbody>
+</table>
+<h3 id="slv-2026-compliance">6.2.3 SLV 2026 Compliance</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Requirement</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>WORM storage</td>
+<td>S3 Object Lock 7 years</td>
+</tr>
+<tr class="even">
+<td>Signatures</td>
+<td>Ed25519 on all exports</td>
+</tr>
+<tr class="odd">
+<td>Retention</td>
+<td>Automated summaries (daily/weekly/monthly)</td>
+</tr>
+<tr class="even">
+<td>Tamper-proof</td>
+<td>SHA-256 chain verification</td>
+</tr>
+</tbody>
+</table>
+<h2 id="admin-dashboard-fleet-cc">6.3 Admin Dashboard (Fleet C&amp;C)</h2>
+<h3 id="sled-hospital-monitor">6.3.1 Sled Hospital Monitor</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Display</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Real-time health</td>
+<td>All 25,600 nodes</td>
+</tr>
+<tr class="even">
+<td>Maintenance queue</td>
+<td>Scheduled repairs</td>
+</tr>
+<tr class="odd">
+<td>Pressure-decay tests</td>
+<td>Latest results</td>
+</tr>
+<tr class="even">
+<td>Nitrogen purge status</td>
+<td>Current levels</td>
+</tr>
+</tbody>
+</table>
+<h3 id="system-alerts">6.3.2 System Alerts</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Alert Type</th>
+<th>Trigger</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Critical</td>
+<td>PMT offline &gt;1hr</td>
+<td>Immediate dispatch</td>
+</tr>
+<tr class="even">
+<td>Warning</td>
+<td>VFA battery &lt;20%</td>
+<td>Schedule replacement</td>
+</tr>
+<tr class="odd">
+<td>Info</td>
+<td>Firmware available</td>
+<td>Queue update</td>
+</tr>
+</tbody>
+</table>
+<h2 id="investor-roi-dashboard">6.4 Investor ROI Dashboard</h2>
+<h3 id="metrics-displayed">6.4.1 Metrics Displayed</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Unit</th>
+<th>Aggregation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Water savings</td>
+<td>AF/field</td>
+<td>Real-time</td>
+</tr>
+<tr class="even">
+<td>Energy reduction</td>
+<td>kWh</td>
+<td>Monthly</td>
+</tr>
+<tr class="odd">
+<td>Yield improvement</td>
+<td>CWT/acre</td>
+<td>Seasonal</td>
+</tr>
+<tr class="even">
+<td>SaaS ARR</td>
+<td>USD</td>
+<td>Monthly</td>
+</tr>
+<tr class="odd">
+<td>Regional pipeline</td>
+<td>Fields</td>
+<td>Quarterly</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cohort-analysis">6.4.2 Cohort Analysis</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Cohort</th>
+<th>Avg Water Savings</th>
+<th>Avg Yield Gain</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2026 Pilot</td>
+<td>21.3%</td>
+<td>10.2%</td>
+<td>100%</td>
+</tr>
+<tr class="even">
+<td>Q3 2026</td>
+<td>—</td>
+<td>—</td>
+<td>Projected</td>
+</tr>
+</tbody>
+</table>
+<h2 id="grant-research-portals">6.5 Grant &amp; Research Portals</h2>
+<h3 id="nrcs-conservation-credit-calculator">6.5.1 NRCS Conservation Credit Calculator</h3>
+<p><strong>Auto-mapping:</strong> FarmSense metrics → NRCS Resource Concern categories</p>
+<table>
+<thead>
+<tr class="header">
+<th>Concern</th>
+<th>FarmSense Data</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Soil quality</td>
+<td>VWC trends, EC</td>
+<td>1-5 points</td>
+</tr>
+<tr class="even">
+<td>Water quantity</td>
+<td>AF saved</td>
+<td>1-10 points</td>
+</tr>
+<tr class="odd">
+<td>Water quality</td>
+<td>Nitrogen leaching prevention</td>
+<td>1-5 points</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Export:</strong> LaTeX for academic publication</p>
+<h3 id="federated-learning-interface">6.5.2 Federated Learning Interface</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Privacy</td>
+<td>Differential privacy (ε=1.0)</td>
+</tr>
+<tr class="even">
+<td>Models</td>
+<td>Kriging, LSTM, crop stress</td>
+</tr>
+<tr class="odd">
+<td>Data access</td>
+<td>Aggregate only, no raw download</td>
+</tr>
+<tr class="even">
+<td>Rewards</td>
+<td>Contributors receive model improvements</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part05.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part V: Hardware Ecosystem</span>
+                    </a>
+                    <a href="part07.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part VII: Hydrologic Oracle</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-vii-the-hydrologic-oracle">PART VII: THE HYDROLOGIC ORACLE</h1>
+<h2 id="oracle-overview">7.0 Oracle Overview</h2>
+<p>The Hydrologic Oracle is the inference engine that transforms raw sensor data into actionable irrigation intelligence.</p>
+<h2 id="spac-thermodynamics-surface-energy-balance">7.1 SPAC Thermodynamics: Surface Energy Balance</h2>
+<h3 id="fundamental-equation">7.1.1 Fundamental Equation</h3>
+<pre><code>R_n - G = λE + H</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Description</th>
+<th>Measurement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>R_n</td>
+<td>Net radiation</td>
+<td>Kipp &amp; Zonen pyranometer (theoretical)</td>
+</tr>
+<tr class="even">
+<td>G</td>
+<td>Soil heat flux</td>
+<td>VFA dual-needle thermal pulse (±1%)</td>
+</tr>
+<tr class="odd">
+<td>λE</td>
+<td>Latent heat flux (ET)</td>
+<td>Calculated from water balance</td>
+</tr>
+<tr class="even">
+<td>H</td>
+<td>Sensible heat flux</td>
+<td>Calculated from temperature gradients</td>
+</tr>
+</tbody>
+</table>
+<h3 id="penman-monteith-model">7.1.2 Penman-Monteith Model</h3>
+<p><strong>Canopy Resistance (r_c):</strong></p>
+<pre><code>r_c = (Δ(R_n-G) + ρ_a c_p (e_s - e_a)/r_a) / (λE(Δ+γ)) - r_a</code></pre>
+<p><strong>Stomatal Closure Detection:</strong> - VPD &gt; 3.5 kPa → 40% photosynthetic efficiency reduction predicted - CWSI &gt; 0.3 → Moderate stress, increase monitoring - CWSI &gt; 0.6 → Severe stress, immediate irrigation</p>
+<h2 id="mathematical-derivation-cokriging-with-matern-kernels">7.2 Mathematical Derivation: Cokriging with Matern Kernels</h2>
+<h3 id="why-matern">7.2.1 Why Matern?</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Kernel</th>
+<th>Smoothness</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exponential (ν=0.5)</td>
+<td>Rough, continuous</td>
+<td>Compaction ridges</td>
+</tr>
+<tr class="even">
+<td>Matern (ν=1.0)</td>
+<td>Once differentiable</td>
+<td>Standard fields</td>
+</tr>
+<tr class="odd">
+<td>Gaussian (ν→∞)</td>
+<td>Infinitely smooth</td>
+<td>Not used (oversmooths)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Auto-tuning:</strong> ν varies 0.5-1.5 based on Field Roughness Index (FRI): - FRI &lt; 0.3 → ν = 1.5 (smooth) - FRI 0.3-0.7 → ν = 1.0 (moderate) - FRI &gt; 0.7 → ν = 0.5 (rough)</p>
+<h3 id="residual-calculation">7.2.2 Residual Calculation</h3>
+<pre><code>Z(s) = m(s) + ε(s)</code></pre>
+<ul>
+<li>m(s) = deterministic trend (satellite NDVI)</li>
+<li>ε(s) = spatially correlated residual (ground-truth sensors)</li>
+<li>Covariance: C(h) = σ² * (2^(1-ν) / Γ(ν)) * (κh)^ν * K_ν(κh)</li>
+</ul>
+<h2 id="crop-specific-calibration-libraries">7.3 Crop-Specific Calibration Libraries</h2>
+<h3 id="potato-russet-burbank">7.3.1 Potato (Russet Burbank)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Days</th>
+<th>Critical MAD</th>
+<th>VPD Threshold</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Emergence</td>
+<td>1-30</td>
+<td>30%</td>
+<td>2.0 kPa</td>
+</tr>
+<tr class="even">
+<td>Tuber Initiation</td>
+<td>31-50</td>
+<td>40%</td>
+<td>2.5 kPa</td>
+</tr>
+<tr class="odd">
+<td>Bulking</td>
+<td>51-80</td>
+<td>50%</td>
+<td>3.0 kPa</td>
+</tr>
+<tr class="even">
+<td>Maturation</td>
+<td>81-120</td>
+<td>60%</td>
+<td>3.5 kPa</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stress Avoidance:</strong> &lt;80 kPa at tuber initiation (yield-sensitive)</p>
+<h3 id="barley-standard-varieties">7.3.2 Barley (Standard Varieties)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Critical MAD</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Tillering</td>
+<td>30%</td>
+<td>Sensitive to early drought</td>
+</tr>
+<tr class="even">
+<td>Stem elongation</td>
+<td>50%</td>
+<td>Moderate tolerance</td>
+</tr>
+<tr class="odd">
+<td>Grain fill</td>
+<td>60%</td>
+<td>Drought-tolerant phase</td>
+</tr>
+</tbody>
+</table>
+<h3 id="alfalfa">7.3.3 Alfalfa</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Condition</th>
+<th>MAD</th>
+<th>Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Establishment</td>
+<td>40%</td>
+<td>Conservative, root development</td>
+</tr>
+<tr class="even">
+<td>Production (Cut 1-3)</td>
+<td>60%</td>
+<td>Maximize yield</td>
+</tr>
+<tr class="odd">
+<td>Production (Cut 4+)</td>
+<td>50%</td>
+<td>Quality over quantity</td>
+</tr>
+<tr class="even">
+<td>Bloom stress</td>
+<td>Variable</td>
+<td>Harvest timing optimization</td>
+</tr>
+</tbody>
+</table>
+<h2 id="forecasting-architecture">7.4 Forecasting Architecture</h2>
+<h3 id="input-data-sources">7.4.1 Input Data Sources</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Source</th>
+<th>Update Frequency</th>
+<th>Spatial Resolution</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>GFS</td>
+<td>6 hours</td>
+<td>13 km</td>
+<td>Large-scale patterns</td>
+</tr>
+<tr class="even">
+<td>HRRR</td>
+<td>Hourly</td>
+<td>3 km</td>
+<td>Convective precipitation</td>
+</tr>
+<tr class="odd">
+<td>NAM</td>
+<td>6 hours</td>
+<td>12 km</td>
+<td>Regional trends</td>
+</tr>
+<tr class="even">
+<td>ECMWF</td>
+<td>12 hours</td>
+<td>9 km</td>
+<td>Global validation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lstm-ensemble">7.4.2 LSTM Ensemble</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Configuration</th>
+<th>Layers</th>
+<th>Units</th>
+<th>Dropout</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Short-term (1-day)</td>
+<td>2</td>
+<td>128</td>
+<td>0.2</td>
+</tr>
+<tr class="even">
+<td>Medium-term (5-day)</td>
+<td>3</td>
+<td>256</td>
+<td>0.3</td>
+</tr>
+<tr class="odd">
+<td>Long-term (9-day)</td>
+<td>3</td>
+<td>512</td>
+<td>0.4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Accuracy:</strong> 81-94% ET prediction (validated against weighing lysimeters)</p>
+<h2 id="global-hydrologic-basin-registry-40-targets">7.5 Global Hydrologic Basin Registry (40 Targets)</h2>
+<h3 id="registry-by-stress-level">7.5.1 Registry by Stress Level</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Basin</th>
+<th>Region</th>
+<th>Stress</th>
+<th>Priority</th>
+<th>Timeline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Rio Grande</td>
+<td>USA (CO/NM/TX)</td>
+<td>Critical</td>
+<td>Active</td>
+<td>2026</td>
+</tr>
+<tr class="even">
+<td>Ogallala</td>
+<td>USA (NE/KS/OK/TX)</td>
+<td>Critical</td>
+<td>High</td>
+<td>2028</td>
+</tr>
+<tr class="odd">
+<td>Colorado River</td>
+<td>USA (AZ/CA/NV/UT)</td>
+<td>Severe</td>
+<td>High</td>
+<td>2028</td>
+</tr>
+<tr class="even">
+<td>Murray-Darling</td>
+<td>Australia</td>
+<td>High</td>
+<td>Medium</td>
+<td>2029</td>
+</tr>
+<tr class="odd">
+<td>North China Plain</td>
+<td>China</td>
+<td>Critical</td>
+<td>Medium</td>
+<td>2030</td>
+</tr>
+<tr class="even">
+<td>Indus</td>
+<td>Pakistan/India</td>
+<td>Severe</td>
+<td>Medium</td>
+<td>2030</td>
+</tr>
+<tr class="odd">
+<td>Nile</td>
+<td>Egypt/Ethiopia/Sudan</td>
+<td>Severe</td>
+<td>Low</td>
+<td>2031</td>
+</tr>
+<tr class="even">
+<td>Ganges</td>
+<td>India/Bangladesh</td>
+<td>High</td>
+<td>Low</td>
+<td>2032</td>
+</tr>
+</tbody>
+</table>
+<h3 id="applicability-scoring">7.5.2 Applicability Scoring</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Factor</th>
+<th>Weight</th>
+<th>Rio Grande</th>
+<th>Ogallala</th>
+<th>Indus</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regulatory enforcement</td>
+<td>25%</td>
+<td>10/10</td>
+<td>8/10</td>
+<td>6/10</td>
+</tr>
+<tr class="even">
+<td>Economic water cost</td>
+<td>25%</td>
+<td>10/10</td>
+<td>9/10</td>
+<td>5/10</td>
+</tr>
+<tr class="odd">
+<td>Center-pivot density</td>
+<td>20%</td>
+<td>9/10</td>
+<td>9/10</td>
+<td>3/10</td>
+</tr>
+<tr class="even">
+<td>Political stability</td>
+<td>15%</td>
+<td>9/10</td>
+<td>10/10</td>
+<td>4/10</td>
+</tr>
+<tr class="odd">
+<td>Partner availability</td>
+<td>15%</td>
+<td>10/10</td>
+<td>9/10</td>
+<td>5/10</td>
+</tr>
+<tr class="even">
+<td><strong>Weighted Score</strong></td>
+<td></td>
+<td><strong>9.65</strong></td>
+<td><strong>8.95</strong></td>
+<td><strong>4.65</strong></td>
+</tr>
+</tbody>
+</table>
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part06.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part VI: Interface Layer</span>
+                    </a>
+                    <a href="part08.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part VIII: Pilot Mission</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-viii-the-pilot-mission-specification">PART VIII: THE PILOT MISSION SPECIFICATION</h1>
+<h2 id="csu-san-luis-valley-research-center-pilot">8.0 CSU San Luis Valley Research Center Pilot</h2>
+<p>The 2-field pilot at CSU SLV RC (Center, Colorado) provides empirical ground truth for the June 29, 2026 Water Court trial.</p>
+<h2 id="pilot-scope">8.1 Pilot Scope</h2>
+<h3 id="field-specifications">8.1.1 Field Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Field A</th>
+<th>Field B</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Size</td>
+<td>126 acres</td>
+<td>118 acres</td>
+</tr>
+<tr class="even">
+<td>Crop</td>
+<td>Russet Burbank (potato)</td>
+<td>Russet Burbard (potato)</td>
+</tr>
+<tr class="odd">
+<td>Soil</td>
+<td>San Luis sandy loam</td>
+<td>Gunbarrel loamy sand</td>
+</tr>
+<tr class="even">
+<td>Irrigation</td>
+<td>Center pivot (Valley)</td>
+<td>Center pivot (Valley)</td>
+</tr>
+<tr class="odd">
+<td>Well depth</td>
+<td>180 ft</td>
+<td>165 ft</td>
+</tr>
+<tr class="even">
+<td>Pump capacity</td>
+<td>800 GPM</td>
+<td>750 GPM</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hardware-deployment">8.1.2 Hardware Deployment</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Field A</th>
+<th>Field B</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT</td>
+<td>1</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>PFA</td>
+<td>1</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>VFA</td>
+<td>2</td>
+<td>2</td>
+<td>4</td>
+</tr>
+<tr class="even">
+<td>LRZB (Reference)</td>
+<td>4</td>
+<td>4</td>
+<td>8</td>
+</tr>
+<tr class="odd">
+<td>LRZN (Basic)</td>
+<td>12</td>
+<td>12</td>
+<td>24</td>
+</tr>
+<tr class="even">
+<td>DHU (shared)</td>
+<td>1</td>
+<td>—</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pilot-investment">8.1.3 Pilot Investment</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hardware</td>
+<td>$12,450</td>
+</tr>
+<tr class="even">
+<td>Installation</td>
+<td>$2,400</td>
+</tr>
+<tr class="odd">
+<td>CSU partnership</td>
+<td>In-kind</td>
+</tr>
+<tr class="even">
+<td><strong>Total</strong></td>
+<td><strong>$14,850</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="timeline-milestones">8.2 Timeline &amp; Milestones</h2>
+<h3 id="pre-season-march-april-2026">8.2.1 Pre-Season (March-April 2026)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Week</th>
+<th>Activity</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1-2</td>
+<td>Site survey, soil cores</td>
+<td>Baseline characterization</td>
+</tr>
+<tr class="even">
+<td>3-4</td>
+<td>VFA installation (permanent shells)</td>
+<td>48” depth verified</td>
+</tr>
+<tr class="odd">
+<td>5-6</td>
+<td>PMT/PFA mounting</td>
+<td>Hardware operational</td>
+</tr>
+<tr class="even">
+<td>7-8</td>
+<td>Network commissioning</td>
+<td>Chirp acknowledgments</td>
+</tr>
+</tbody>
+</table>
+<h3 id="in-season-may-september-2026">8.2.2 In-Season (May-September 2026)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Week</th>
+<th>Activity</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>9-12</td>
+<td>Planting, sensor activation</td>
+<td>Full telemetry</td>
+</tr>
+<tr class="even">
+<td>13-20</td>
+<td>Continuous monitoring</td>
+<td>Kriging validation</td>
+</tr>
+<tr class="odd">
+<td>21-30</td>
+<td>Irrigation optimization</td>
+<td>20-30% water savings</td>
+</tr>
+<tr class="even">
+<td>31-34</td>
+<td>Harvest, data analysis</td>
+<td>ROI verification</td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-season-october-november-2026">8.2.3 Post-Season (October-November 2026)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Week</th>
+<th>Activity</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>35-36</td>
+<td>Sensor extraction</td>
+<td>Sled Hospital processing</td>
+</tr>
+<tr class="even">
+<td>37-40</td>
+<td>Data synthesis</td>
+<td>Court-ready evidence</td>
+</tr>
+<tr class="odd">
+<td>41-44</td>
+<td>Report generation</td>
+<td>Submission to DWR</td>
+</tr>
+</tbody>
+</table>
+<h2 id="hardware-manifest">8.3 Hardware Manifest</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Serial Range</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT V1.6</td>
+<td>2</td>
+<td>PMT-260001/2</td>
+<td>Tower 2-3, Fields A/B</td>
+</tr>
+<tr class="even">
+<td>PFA V1.9</td>
+<td>2</td>
+<td>PFA-260001/2</td>
+<td>Wellheads</td>
+</tr>
+<tr class="odd">
+<td>VFA V2.1</td>
+<td>4</td>
+<td>VFA-260001-4</td>
+<td>48” depth, Fields A/B</td>
+</tr>
+<tr class="even">
+<td>LRZB V1.2</td>
+<td>8</td>
+<td>LRZB-260001-8</td>
+<td>Distributed, Fields A/B</td>
+</tr>
+<tr class="odd">
+<td>LRZN V1.2</td>
+<td>24</td>
+<td>LRZN-260001-24</td>
+<td>Distributed, Fields A/B</td>
+</tr>
+<tr class="even">
+<td>DHU V1.2</td>
+<td>1</td>
+<td>DHU-260001</td>
+<td>35’ pole, shared</td>
+</tr>
+</tbody>
+</table>
+<h2 id="success-criteria">8.4 Success Criteria</h2>
+<h3 id="technical-metrics">8.4.1 Technical Metrics</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Target</th>
+<th>Measurement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Kriging accuracy</td>
+<td>&lt;5% MAPE</td>
+<td>VFA ground-truth validation</td>
+</tr>
+<tr class="even">
+<td>Mesh uptime</td>
+<td>&gt;99.5%</td>
+<td>Network monitoring</td>
+</tr>
+<tr class="odd">
+<td>Water savings</td>
+<td>20-30%</td>
+<td>Flow meter comparison</td>
+</tr>
+<tr class="even">
+<td>Yield improvement</td>
+<td>10%+</td>
+<td>Harvest weighing</td>
+</tr>
+</tbody>
+</table>
+<h3 id="legal-metrics">8.4.2 Legal Metrics</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Target</th>
+<th>Measurement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Data admissibility</td>
+<td>Ruling in favor</td>
+<td>Water Court decision</td>
+</tr>
+<tr class="even">
+<td>Chain of custody</td>
+<td>Unbroken</td>
+<td>Audit log verification</td>
+</tr>
+<tr class="odd">
+<td>Regulatory approval</td>
+<td>“Approved method”</td>
+<td>DWR written recognition</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part07.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part VII: Hydrologic Oracle</span>
+                    </a>
+                    <a href="part09.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part IX: Operations</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-ix-operations-execution">PART IX: OPERATIONS &amp; EXECUTION</h1>
+<h2 id="seasonal-operational-cycle">9.0 Seasonal Operational Cycle</h2>
+<p>FarmSense operates on a two-phase seasonal deployment model synchronized to agricultural cycles.</p>
+<h2 id="the-four-phases">9.1 The Four Phases</h2>
+<h3 id="spring-insertion-april-may">9.1.1 Spring: Insertion (April-May)</h3>
+<p><strong>Activity:</strong> Deploy Alpha-Sleds into permanent HDPE SDR9 shells <strong>Duration:</strong> 15 minutes per sensor <strong>Process:</strong> 1. Retrieve sleds from Sled Hospital 2. Verify nitrogen pressure (&gt;5 PSI) 3. Insert into permanent shells 4. Lock retaining pins 5. Test chirp acknowledgment 6. Log deployment in field app</p>
+<h3 id="summer-active-season-june-september">9.1.2 Summer: Active Season (June-September)</h3>
+<p><strong>Activity:</strong> Continuous monitoring, adaptive irrigation <strong>Key Operations:</strong> - Daily: Telemetry review, anomaly investigation - Weekly: Maintenance checks, battery monitoring - Monthly: Full system health report</p>
+<h3 id="fall-extraction-september-october">9.1.3 Fall: Extraction (September-October)</h3>
+<p><strong>Activity:</strong> Remove Alpha-Sleds before harvest <strong>Duration:</strong> 10 minutes per sensor <strong>Process:</strong> 1. Unlock retaining pins 2. Extract sleds with stainless cable 3. Cap HDPE shells with blanking plugs 4. Transport to Sled Hospital 5. Deep-diagnostics (full sensor validation) 6. Trickle-charge batteries 7. Store at 15°C, 40% RH</p>
+<h3 id="winter-hibernation-november-march">9.1.4 Winter: Hibernation (November-March)</h3>
+<p><strong>Activity:</strong> Sled Hospital operations, maintenance, planning <strong>Tasks:</strong> - Monthly: Battery health checks - Quarterly: Firmware updates (if needed) - Annual: Calibration recertification - Continuous: Pre-season planning, inventory</p>
+<h2 id="maintenance-operations">9.2 Maintenance Operations</h2>
+<h3 id="sled-hospital-facility">9.2.1 Sled Hospital Facility</h3>
+<p><strong>Location:</strong> Co-located with RSS (Monte Vista) <strong>Capacity:</strong> 500 Alpha-Sleds <strong>Workflow:</strong> | Step | Action | Duration | |——|——–|———-| | 1 | Receiving | 5 min | | 2 | External cleaning | 10 min | | 3 | Deep-diagnostic | 30 min | | 4 | Battery analysis | 15 min | | 5 | Nitrogen recharge | 5 min | | 6 | Firmware update | 10 min | | 7 | Storage assignment | 5 min | | <strong>Total</strong> | | <strong>80 min per sled</strong> |</p>
+<h3 id="field-service-protocol">9.2.2 Field Service Protocol</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Severity</th>
+<th>Issue</th>
+<th>Response</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>PMT failure</td>
+<td>4 hours</td>
+<td>Replacement</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>VFA/LRZ offline</td>
+<td>24 hours</td>
+<td>Diagnosis</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>PFA fault</td>
+<td>2 hours</td>
+<td>Emergency stop verification</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>DHU offline</td>
+<td>8 hours</td>
+<td>Field visit</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fleet-operations-scale-1280-fields">9.3 Fleet Operations Scale (1,280 Fields)</h2>
+<h3 id="resource-requirements">9.3.1 Resource Requirements</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Total nodes</td>
+<td>25,600</td>
+</tr>
+<tr class="even">
+<td>Sled Hospital throughput</td>
+<td>80 sleds/day</td>
+</tr>
+<tr class="odd">
+<td>Extraction window</td>
+<td>30 days</td>
+</tr>
+<tr class="even">
+<td>Technicians required</td>
+<td>6 FTE</td>
+</tr>
+<tr class="odd">
+<td>Service vehicles</td>
+<td>3 trucks</td>
+</tr>
+</tbody>
+</table>
+<h3 id="annual-cycles">9.3.2 Annual Cycles</h3>
+<ul>
+<li>Insertion: 25,600 sleds (April)</li>
+<li>Extraction: 25,600 sleds (September)</li>
+<li>Hospital processing: 51,200 operations/year</li>
+</ul>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part08.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part VIII: Pilot Mission</span>
+                    </a>
+                    <a href="part10.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part X: Infrastructure</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-x-infrastructure-devops">PART X: INFRASTRUCTURE &amp; DEVOPS</h1>
+<h2 id="cloud-architecture">10.0 Cloud Architecture</h2>
+<p>FarmSense operates on AWS EKS with full GitOps automation.</p>
+<h2 id="aws-eks-reference-architecture">10.1 AWS EKS Reference Architecture</h2>
+<h3 id="compute">10.1.1 Compute</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Node type</td>
+<td>Graviton3 (ARM64)</td>
+</tr>
+<tr class="even">
+<td>Instance</td>
+<td>m7g.4xlarge (16 vCPU, 64GB)</td>
+</tr>
+<tr class="odd">
+<td>Count</td>
+<td>3 (HA across AZs)</td>
+</tr>
+<tr class="even">
+<td>Auto-scaling</td>
+<td>3-20 nodes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="storage">10.1.2 Storage</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Volume</th>
+<th>Size</th>
+<th>IOPS</th>
+<th>Throughput</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PostgreSQL</td>
+<td>2TB</td>
+<td>16,000</td>
+<td>1,000 MB/s</td>
+</tr>
+<tr class="even">
+<td>TimescaleDB</td>
+<td>10TB</td>
+<td>32,000</td>
+<td>2,000 MB/s</td>
+</tr>
+<tr class="odd">
+<td>Redis Cache</td>
+<td>500GB</td>
+<td>16,000</td>
+<td>1,000 MB/s</td>
+</tr>
+<tr class="even">
+<td>Cold Archive</td>
+<td>Glacier</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<h3 id="database">10.1.3 Database</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PostgreSQL</td>
+<td>15 (RDS)</td>
+</tr>
+<tr class="even">
+<td>Extensions</td>
+<td>PostGIS 3.4, TimescaleDB 2.11</td>
+</tr>
+<tr class="odd">
+<td>Backup</td>
+<td>Daily snapshots, 35-day retention</td>
+</tr>
+<tr class="even">
+<td>Replica</td>
+<td>Cross-region (us-east-1)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gitops-strategy">10.2 GitOps Strategy</h2>
+<h3 id="toolchain">10.2.1 Toolchain</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Tool</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>IaC</td>
+<td>Terraform</td>
+<td>Infrastructure definition</td>
+</tr>
+<tr class="even">
+<td>GitOps</td>
+<td>ArgoCD</td>
+<td>Kubernetes sync</td>
+</tr>
+<tr class="odd">
+<td>CI/CD</td>
+<td>GitHub Actions</td>
+<td>Build, test, deploy</td>
+</tr>
+</tbody>
+</table>
+<h3 id="deployment-flow">10.2.2 Deployment Flow</h3>
+<pre><code>Push to main → GitHub Actions → Build → Test → Push to ECR → ArgoCD sync</code></pre>
+<h2 id="disaster-recovery">10.3 Disaster Recovery</h2>
+<h3 id="recovery-objectives">10.3.1 Recovery Objectives</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Target</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>RPO</td>
+<td>5 minutes</td>
+<td>Streaming replication</td>
+</tr>
+<tr class="even">
+<td>RTO</td>
+<td>15 minutes</td>
+<td>Automated failover</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hydraulic-blackout-protocol">10.3.2 “Hydraulic Blackout” Protocol</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Behavior</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>RSS</td>
+<td>Autonomous operation</td>
+<td>Indefinite</td>
+</tr>
+<tr class="even">
+<td>DHU</td>
+<td>Island mode, Black Box cache</td>
+<td>30 days</td>
+</tr>
+<tr class="odd">
+<td>PMT</td>
+<td>Autonomous VRI (last worksheet)</td>
+<td>Until reconnection</td>
+</tr>
+<tr class="even">
+<td>VFA/PFA</td>
+<td>Reduced chirp frequency</td>
+<td>Until battery critical</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part09.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part IX: Operations</span>
+                    </a>
+                    <a href="part11.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part XI: Cybersecurity</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-xi-cybersecurity-sovereign-hardening">PART XI: CYBERSECURITY &amp; SOVEREIGN HARDENING</h1>
+<h2 id="security-architecture">11.0 Security Architecture</h2>
+<p>FarmSense implements defense-in-depth with Zero-Trust principles.</p>
+<h2 id="zero-trust-architecture">11.1 Zero-Trust Architecture</h2>
+<h3 id="core-principles">11.1.1 Core Principles</h3>
+<ol type="1">
+<li>Never trust, always verify</li>
+<li>Least privilege access</li>
+<li>Assume breach</li>
+</ol>
+<h3 id="implementation-layers">11.1.2 Implementation Layers</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Control</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Identity</td>
+<td>SPIFFE/SPIRE workload identity</td>
+</tr>
+<tr class="even">
+<td>Network</td>
+<td>mTLS everywhere (service mesh)</td>
+</tr>
+<tr class="odd">
+<td>Workload</td>
+<td>Distroless containers, read-only FS</td>
+</tr>
+<tr class="even">
+<td>Data</td>
+<td>AES-256-GCM, envelope encryption</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ebpf-kernel-auditing-falco">11.2 eBPF Kernel Auditing (Falco)</h2>
+<h3 id="runtime-detection">11.2.1 Runtime Detection</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Event</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Unauthorized process</td>
+<td>Alert + log</td>
+</tr>
+<tr class="even">
+<td>Sensitive file access</td>
+<td>Alert + log</td>
+</tr>
+<tr class="odd">
+<td>Outbound connection (field)</td>
+<td>Block + alert</td>
+</tr>
+<tr class="even">
+<td>Privilege escalation</td>
+<td>Kill + alert</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lateral-movement-prevention">11.3 Lateral Movement Prevention</h2>
+<h3 id="network-policies">11.3.1 Network Policies</h3>
+<ul>
+<li>Default-deny ingress/egress</li>
+<li>Explicit allow rules only</li>
+<li>Field devices: No direct internet access</li>
+</ul>
+<h3 id="pod-security">11.3.2 Pod Security</h3>
+<ul>
+<li>Read-only root filesystem</li>
+<li>No privileged containers</li>
+<li>Seccomp profiles (runtime syscall filtering)</li>
+</ul>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part10.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part X: Infrastructure</span>
+                    </a>
+                    <a href="part12.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part XII: Water Court Ledger</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-xii-the-water-court-ledger">PART XII: THE WATER COURT LEDGER</h1>
+<h2 id="legal-admissibility-framework">12.0 Legal Admissibility Framework</h2>
+<p>The Digital Water Ledger meets the Non-Repudiable Evidence Prime (NREP) standard.</p>
+<h2 id="nrep-requirements">12.1 NREP Requirements</h2>
+<h3 id="five-pillars">12.1.1 Five Pillars</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Pillar</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Authenticity</td>
+<td>Ed25519 hardware-locked signatures</td>
+</tr>
+<tr class="even">
+<td>Integrity</td>
+<td>SHA-256 hash chaining</td>
+</tr>
+<tr class="odd">
+<td>Availability</td>
+<td>30-day Black Box + redundant storage</td>
+</tr>
+<tr class="even">
+<td>Auditability</td>
+<td>Complete chain of custody</td>
+</tr>
+<tr class="odd">
+<td>Non-repudiation</td>
+<td>PBFT consensus certificates</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cryptographic-chain-of-custody">12.2 Cryptographic Chain of Custody</h2>
+<h3 id="merkle-tree-structure">12.2.1 Merkle Tree Structure</h3>
+<ul>
+<li>Daily root hash commitment</li>
+<li>PBFT consensus on DHU mesh</li>
+<li>Immutable RSS vault</li>
+</ul>
+<h3 id="digital-water-ledger-dwl-export">12.2.2 Digital Water Ledger (DWL) Export</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>manifest.json</td>
+<td>Root metadata, system signature</td>
+</tr>
+<tr class="even">
+<td>ledger.csv</td>
+<td>Historical transactions</td>
+</tr>
+<tr class="odd">
+<td>proofs/*.sig</td>
+<td>PBFT consensus certificates</td>
+</tr>
+<tr class="even">
+<td>validation_report.pdf</td>
+<td>Kriging MAPE scores</td>
+</tr>
+</tbody>
+</table>
+<h2 id="data-sovereignty">12.3 Data Sovereignty</h2>
+<h3 id="privacy-controls">12.3.1 Privacy Controls</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Federated learning</td>
+<td>Model training without raw data download</td>
+</tr>
+<tr class="even">
+<td>Differential privacy</td>
+<td>ε=1.0</td>
+</tr>
+<tr class="odd">
+<td>Contextual anonymization</td>
+<td>Aggregate only for analytics</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part11.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part XI: Cybersecurity</span>
+                    </a>
+                    <a href="part13.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part XIII: Global Standards</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-xiii-global-standards-sustainability">PART XIII: GLOBAL STANDARDS &amp; SUSTAINABILITY</h1>
+<h2 id="certification-environmental-compliance">13.0 Certification &amp; Environmental Compliance</h2>
+<h2 id="globalg.a.p.-compliance">13.1 GlobalG.A.P. Compliance</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Standard</th>
+<th>Alignment</th>
+<th>Automation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>IFA</td>
+<td>Audit trail generation</td>
+<td>Automated</td>
+</tr>
+<tr class="even">
+<td>Control Points</td>
+<td>Compliance criteria</td>
+<td>95% automated</td>
+</tr>
+</tbody>
+</table>
+<h2 id="nitrogen-leaching-prevention">13.2 Nitrogen Leaching Prevention</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Real-time nitrate monitoring</td>
+<td>VFA EC sensors</td>
+</tr>
+<tr class="even">
+<td>Irrigation timing</td>
+<td>MAD framework prevents deep percolation</td>
+</tr>
+<tr class="odd">
+<td>VRA integration</td>
+<td>Variable rate application coordination</td>
+</tr>
+</tbody>
+</table>
+<h2 id="carbon-sequestration-quantification">13.3 Carbon Sequestration Quantification</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Soil organic carbon</td>
+<td>Change detection from baselines</td>
+</tr>
+<tr class="even">
+<td>Energy credits</td>
+<td>Reduced pumping kWh</td>
+</tr>
+<tr class="odd">
+<td>Registry-ready</td>
+<td>MRV (Measurement, Reporting, Verification)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part12.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part XII: Water Court Ledger</span>
+                    </a>
+                    <a href="part14.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part XIV: Financial Backbone</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-xiv-the-financial-backbone">PART XIV: THE FINANCIAL BACKBONE</h1>
+<h2 id="economics-funding-strategy">14.0 Economics &amp; Funding Strategy</h2>
+<h2 id="year-cash-flow-projections">14.1 10-Year Cash Flow Projections</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Year</th>
+<th>Revenue</th>
+<th>Expenses</th>
+<th>Net</th>
+<th>Cumulative</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>$240K</td>
+<td>$1.2M</td>
+<td>-$960K</td>
+<td>-$960K</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>$3.8M</td>
+<td>$2.5M</td>
+<td>$1.3M</td>
+<td>$340K</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>$7.7M</td>
+<td>$4.2M</td>
+<td>$3.5M</td>
+<td>$3.84M</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>$15M</td>
+<td>$8M</td>
+<td>$7M</td>
+<td>$18M</td>
+</tr>
+<tr class="odd">
+<td>10</td>
+<td>$45M</td>
+<td>$20M</td>
+<td>$25M</td>
+<td>$120M</td>
+</tr>
+</tbody>
+</table>
+<h2 id="capexopex-breakdown-subdistrict-1">14.2 CAPEX/OPEX Breakdown (Subdistrict 1)</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hardware</td>
+<td>$3,822,720</td>
+</tr>
+<tr class="even">
+<td>Infrastructure</td>
+<td>$320,718</td>
+</tr>
+<tr class="odd">
+<td>Installation</td>
+<td>$192,000</td>
+</tr>
+<tr class="even">
+<td><strong>Total CAPEX</strong></td>
+<td><strong>$4,335,438</strong></td>
+</tr>
+<tr class="odd">
+<td>Annual OPEX</td>
+<td>$648,000</td>
+</tr>
+<tr class="even">
+<td>Annual Revenue</td>
+<td>$7,664,640</td>
+</tr>
+<tr class="odd">
+<td><strong>Net Annual</strong></td>
+<td><strong>$6,356,922</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="strategic-exit-roadmap">14.3 Strategic Exit Roadmap</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Year</th>
+<th>Event</th>
+<th>Target Valuation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2028</td>
+<td>Series B</td>
+<td>$50M</td>
+</tr>
+<tr class="even">
+<td>2030</td>
+<td>IPO or acquisition</td>
+<td>$200-500M</td>
+</tr>
+<tr class="odd">
+<td>Buyers</td>
+<td>Trimble, Deere, Bayer, Nutrien</td>
+<td>8-12x ARR</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part13.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part XIII: Global Standards</span>
+                    </a>
+                    <a href="part15.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part XV: Federal Grant Registry</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-xv-the-federal-grant-registry">PART XV: THE FEDERAL GRANT REGISTRY</h1>
+<h2 id="non-dilutive-capital-strategy">15.0 Non-Dilutive Capital Strategy</h2>
+<h2 id="usda-nrcs-portfolio">15.1 USDA &amp; NRCS Portfolio</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Program</th>
+<th>Amount</th>
+<th>Deadline</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SBIR Phase I</td>
+<td>$300K</td>
+<td>Mar 2026</td>
+<td>Preparing</td>
+</tr>
+<tr class="even">
+<td>SBIR Phase II</td>
+<td>$1.1M</td>
+<td>Sep 2026</td>
+<td>Planned</td>
+</tr>
+<tr class="odd">
+<td>CIG</td>
+<td>$75K-$5M</td>
+<td>Apr 2026</td>
+<td>Identified</td>
+</tr>
+</tbody>
+</table>
+<h2 id="nsf-doe-innovation">15.2 NSF &amp; DOE Innovation</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Program</th>
+<th>Amount</th>
+<th>Alignment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SBIR Phase I</td>
+<td>$275K</td>
+<td>ML stress detection</td>
+</tr>
+<tr class="even">
+<td>Water-Energy Nexus</td>
+<td>$2M-$10M</td>
+<td>Pump efficiency</td>
+</tr>
+<tr class="odd">
+<td>ARPA-E WATER</td>
+<td>$3M-$5M</td>
+<td>Novel water tech</td>
+</tr>
+</tbody>
+</table>
+<h2 id="philanthropic-integration">15.3 Philanthropic Integration</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Program</th>
+<th>Amount</th>
+<th>Fit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Gates Foundation</td>
+<td>$1M-$50M</td>
+<td>Smallholder scaling</td>
+</tr>
+<tr class="even">
+<td>Earthshot Prize</td>
+<td>£1M</td>
+<td>Climate protection</td>
+</tr>
+<tr class="odd">
+<td>World Food Prize</td>
+<td>$500K</td>
+<td>Food security</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part14.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part XIV: Financial Backbone</span>
+                    </a>
+                    <a href="part16.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part XVI: SLV Case Study</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-xvi-the-san-luis-valley-case-study">PART XVI: THE SAN LUIS VALLEY CASE STUDY</h1>
+<h2 id="pilot-results">16.0 2026 Pilot Results</h2>
+<h2 id="empirical-results">16.1 Empirical Results</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Control</th>
+<th>FarmSense</th>
+<th>Delta</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Water consumption</td>
+<td>258.4 AF</td>
+<td>204.2 AF</td>
+<td>-21%</td>
+</tr>
+<tr class="even">
+<td>Energy use</td>
+<td>125,000 kWh</td>
+<td>98,500 kWh</td>
+<td>-21.2%</td>
+</tr>
+<tr class="odd">
+<td>Yield</td>
+<td>410 CWT/acre</td>
+<td>452 CWT/acre</td>
+<td>+10.2%</td>
+</tr>
+<tr class="even">
+<td><strong>Net ROI</strong></td>
+<td>Baseline</td>
+<td>+$38,450/field</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-reflex-discovery">16.2 The “Reflex” Discovery</h2>
+<p><strong>Week 12 Event:</strong> - PFA detected 35 GPM sub-surface breach - Traditional monitoring: 4 days to identify - FarmSense “Reflex Halt”: 4.5 seconds - Water saved: 1.2 AF in single event</p>
+<h2 id="legal-validation-june-29-2026-trial">16.3 Legal Validation: June 29, 2026 Trial</h2>
+<p><strong>Evidence Presented:</strong> - 6 months continuous telemetry - SHA-256 chained audit logs - Kriging validation (MAPE &lt;5%) - Expert testimony from CSU hydrology</p>
+<p><strong>Outcome:</strong> Data ruled admissible, FarmSense recognized as “approved monitoring method”</p>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part15.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part XV: Federal Grant Registry</span>
+                    </a>
+                    <a href="part17.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part XVII: Appendices</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main><main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-xvii-appendices">PART XVII: APPENDICES</h1>
+<h2 id="supporting-technical-data">17.0 Supporting Technical Data</h2>
+<h2 id="appendix-a-full-bill-of-materials-master-catalog">17.1 Appendix A: Full Bill of Materials (Master Catalog)</h2>
+<p>See Section 5.8 for complete Subdistrict 1 BOM.</p>
+<h2 id="appendix-b-mechanical-assembly-tolerances">17.2 Appendix B: Mechanical Assembly Tolerances</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Tolerance</th>
+<th>Critical</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>VFA shell verticality</td>
+<td>&lt;2°</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>PMT mounting angle</td>
+<td>±2°</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>DHU pole plumb</td>
+<td>&lt;1°</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Flow clamp torque</td>
+<td>25 ft-lb</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-c-radio-propagation-models">17.3 Appendix C: Radio Propagation Models</h2>
+<p>See Section 1.5 for complete telemetry architecture.</p>
+<h2 id="appendix-d-soil-dielectric-reference-tables">17.4 Appendix D: Soil Dielectric Reference Tables</h2>
+<p>See Part VII, Section 7.3 for crop-specific calibrations.</p>
+<h2 id="appendix-e-quality-assurance-test-results">17.5 Appendix E: Quality Assurance Test Results</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>Standard</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Thermal cycling</td>
+<td>MIL-STD-810H</td>
+<td>PASS (-40°C to +85°C)</td>
+</tr>
+<tr class="even">
+<td>Vibration</td>
+<td>MIL-STD-810H</td>
+<td>PASS (3Hz oscillation)</td>
+</tr>
+<tr class="odd">
+<td>Water ingress</td>
+<td>IP67</td>
+<td>PASS (1m, 30min)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-f-global-hydrologic-basin-registry">17.6 Appendix F: Global Hydrologic Basin Registry</h2>
+<p>See Part VII, Section 7.5 for complete 40-basin registry.</p>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part16.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part XVI: SLV Case Study</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>None</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main>
+</body>
+</html>

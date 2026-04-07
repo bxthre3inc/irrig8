@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part V: Hardware Ecosystem | FarmSense Master Manual V2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .prose h1 { @apply text-4xl font-black text-slate-900 mb-8 tracking-tight; }
+        .prose h2 { @apply text-2xl font-bold text-slate-800 mt-12 mb-6 pb-2 border-b-2 border-emerald-500; }
+        .prose h3 { @apply text-xl font-bold text-emerald-700 mt-8 mb-4; }
+        .prose h4 { @apply text-lg font-semibold text-slate-700 mt-6 mb-3; }
+        .prose p { @apply text-slate-600 leading-relaxed mb-4; }
+        .prose ul { @apply list-disc list-inside text-slate-600 mb-4 space-y-1; }
+        .prose ol { @apply list-decimal list-inside text-slate-600 mb-4 space-y-1; }
+        .prose table { @apply w-full text-left border-collapse mb-6 text-sm; }
+        .prose th { @apply bg-slate-100 text-slate-800 font-bold p-3 border border-slate-300; }
+        .prose td { @apply p-3 border border-slate-300 text-slate-600; }
+        .prose tr:nth-child(even) { @apply bg-slate-50; }
+        .prose code { @apply bg-slate-100 text-emerald-700 px-2 py-1 rounded text-sm; }
+        .prose pre { @apply bg-slate-900 text-slate-200 p-4 rounded-lg overflow-x-auto mb-6; }
+        .prose blockquote { @apply border-l-4 border-emerald-500 pl-4 italic text-slate-500 my-6; }
+        .nav-link { @apply block px-4 py-2 text-sm text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-all; }
+        .nav-link.active { @apply text-emerald-700 bg-emerald-50 font-medium; }
+        .part-number { @apply inline-flex items-center justify-center w-8 h-8 bg-emerald-500 text-white rounded-lg text-sm font-bold mr-3; }
+        @media print {
+            .no-print { display: none !important; }
+            .prose h1 { page-break-before: always; }
+            .prose h1:first-of-type { page-break-before: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800">FarmSense</h1>
+                    <p class="text-xs text-slate-500">Master Manual V2.1</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-sm text-slate-600 hover:text-emerald-600">Index</a>
+                <a href="part04.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">← Prev</a>
+                <span class="text-sm text-slate-400">5 of 17</span>
+                <a href="part06.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">Next →</a>
+                <a href="FarmSense_Master_Manual_Comprehensive_V2.1.pdf" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm font-medium">Download PDF</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="max-w-7xl mx-auto pt-20 pb-12 px-4">
+        <div class="flex gap-8">
+            <!-- Sidebar Navigation -->
+            <nav class="w-64 flex-shrink-0 no-print">
+                <div class="sticky top-24 bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 class="font-bold text-slate-800 mb-4 px-4">Parts</h2>
+                    <div class="space-y-1">
+                        <a href="part01.html" class="nav-link {}"><span class="part-number">I</span>Executive</a>
+                        <a href="part02.html" class="nav-link {}"><span class="part-number">II</span>Market</a>
+                        <a href="part03.html" class="nav-link {}"><span class="part-number">III</span>Human</a>
+                        <a href="part04.html" class="nav-link {}"><span class="part-number">IV</span>Technical</a>
+                        <a href="part05.html" class="nav-link {active}"><span class="part-number">V</span>Hardware</a>
+                        <a href="part06.html" class="nav-link {}"><span class="part-number">VI</span>Interface</a>
+                        <a href="part07.html" class="nav-link {}"><span class="part-number">VII</span>Oracle</a>
+                        <a href="part08.html" class="nav-link {}"><span class="part-number">VIII</span>Pilot</a>
+                        <a href="part09.html" class="nav-link {}"><span class="part-number">IX</span>Operations</a>
+                        <a href="part10.html" class="nav-link {}"><span class="part-number">X</span>Infrastructure</a>
+                        <a href="part11.html" class="nav-link {}"><span class="part-number">XI</span>Security</a>
+                        <a href="part12.html" class="nav-link {}"><span class="part-number">XII</span>Legal</a>
+                        <a href="part13.html" class="nav-link {}"><span class="part-number">XIII</span>Standards</a>
+                        <a href="part14.html" class="nav-link {}"><span class="part-number">XIV</span>Financial</a>
+                        <a href="part15.html" class="nav-link {}"><span class="part-number">XV</span>Grants</a>
+                        <a href="part16.html" class="nav-link {}"><span class="part-number">XVI</span>Case Study</a>
+                        <a href="part17.html" class="nav-link {}"><span class="part-number">XVII</span>Appendices</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-v-the-hardware-ecosystem">PART V: THE HARDWARE ECOSYSTEM</h1>
+<h2 id="hardware-overview">5.0 Hardware Overview</h2>
+<p>FarmSense implements a hierarchical hardware ecosystem from regional superstations to buried field sensors, all designed for 10-year operational life in harsh agricultural environments.</p>
+<h2 id="regional-superstation-rss-v1.0">5.1 Regional Superstation (RSS) V1.0</h2>
+<h3 id="physical-specifications">5.1.1 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Form factor</td>
+<td>40’ High-Cube shipping container (modified)</td>
+</tr>
+<tr class="even">
+<td>Location</td>
+<td>Monte Vista, Colorado</td>
+</tr>
+<tr class="odd">
+<td>Footprint</td>
+<td>320 sq ft (40’ × 8’)</td>
+</tr>
+<tr class="even">
+<td>Weight</td>
+<td>15,000 lbs (fully loaded)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="compute-specifications">5.1.2 Compute Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CPU</td>
+<td>AMD Threadripper PRO 5995WX (64-core)</td>
+</tr>
+<tr class="even">
+<td>RAM</td>
+<td>512GB ECC DDR4-3200</td>
+</tr>
+<tr class="odd">
+<td>GPU</td>
+<td>2× NVIDIA RTX A6000 (48GB each)</td>
+</tr>
+<tr class="even">
+<td>Storage (hot)</td>
+<td>50TB NVMe RAID-10 (Enterprise)</td>
+</tr>
+<tr class="odd">
+<td>Storage (cold)</td>
+<td>200TB HDD archive</td>
+</tr>
+</tbody>
+</table>
+<h3 id="communications">5.1.3 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fiber</td>
+<td>10 Gbps (dual path)</td>
+<td>Primary backhaul</td>
+</tr>
+<tr class="even">
+<td>LTE</td>
+<td>Cat-20 (2 Gbps)</td>
+<td>Backup connectivity</td>
+</tr>
+<tr class="odd">
+<td>Satellite</td>
+<td>Starlink (backup)</td>
+<td>Emergency only</td>
+</tr>
+<tr class="even">
+<td>2.4GHz</td>
+<td>3× Ubiquiti LTU Sector</td>
+<td>DHU backhaul</td>
+</tr>
+</tbody>
+</table>
+<h3 id="power">5.1.4 Power</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Grid</td>
+<td>480V 3-phase, 200A service</td>
+</tr>
+<tr class="even">
+<td>Generator</td>
+<td>50kW diesel (auto-start)</td>
+</tr>
+<tr class="odd">
+<td>UPS</td>
+<td>30kWh LiFePO4 (4-hour runtime)</td>
+</tr>
+<tr class="even">
+<td>Solar</td>
+<td>20kW array (supplemental)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bom-rss-v1.0">5.1.5 BOM — RSS V1.0</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Threadripper PRO 5995WX</td>
+<td>1</td>
+<td>$6,499</td>
+<td>$6,499</td>
+</tr>
+<tr class="even">
+<td>512GB ECC DDR4</td>
+<td>4</td>
+<td>$399</td>
+<td>$1,596</td>
+</tr>
+<tr class="odd">
+<td>RTX A6000</td>
+<td>2</td>
+<td>$4,500</td>
+<td>$9,000</td>
+</tr>
+<tr class="even">
+<td>50TB NVMe array</td>
+<td>1</td>
+<td>$8,000</td>
+<td>$8,000</td>
+</tr>
+<tr class="odd">
+<td>200TB HDD archive</td>
+<td>1</td>
+<td>$4,000</td>
+<td>$4,000</td>
+</tr>
+<tr class="even">
+<td>LTU Sector 5AC</td>
+<td>3</td>
+<td>$450</td>
+<td>$1,350</td>
+</tr>
+<tr class="odd">
+<td>50kW generator</td>
+<td>1</td>
+<td>$12,000</td>
+<td>$12,000</td>
+</tr>
+<tr class="even">
+<td>30kWh LiFePO4 bank</td>
+<td>1</td>
+<td>$15,000</td>
+<td>$15,000</td>
+</tr>
+<tr class="odd">
+<td>20kW solar array</td>
+<td>1</td>
+<td>$40,000</td>
+<td>$40,000</td>
+</tr>
+<tr class="even">
+<td>Container modification</td>
+<td>1</td>
+<td>$25,000</td>
+<td>$25,000</td>
+</tr>
+<tr class="odd">
+<td><strong>TOTAL RSS BOM</strong></td>
+<td></td>
+<td></td>
+<td><strong>$122,445</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="district-hub-dhu-v1.2">5.2 District Hub (DHU) V1.2</h2>
+<h3 id="physical-specifications-1">5.2.1 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mounting</td>
+<td>35’ Class 4 timber pole</td>
+</tr>
+<tr class="even">
+<td>Enclosure</td>
+<td>NEMA 4X Polycarbonate (Polycase ML-44F)</td>
+</tr>
+<tr class="odd">
+<td>Weight</td>
+<td>85 lbs (fully loaded)</td>
+</tr>
+<tr class="even">
+<td>Wind rating</td>
+<td>100 mph sustained</td>
+</tr>
+</tbody>
+</table>
+<h3 id="compute-specifications-1">5.2.2 Compute Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SBC</td>
+<td>NVIDIA Jetson Orin Nano 8GB</td>
+</tr>
+<tr class="even">
+<td>CPU</td>
+<td>6-core Arm Cortex-A78AE @ 1.5 GHz</td>
+</tr>
+<tr class="odd">
+<td>GPU</td>
+<td>1024-core Ampere architecture</td>
+</tr>
+<tr class="even">
+<td>RAM</td>
+<td>8GB LPDDR5</td>
+</tr>
+<tr class="odd">
+<td>Storage (hot)</td>
+<td>128GB Swissbit PSLC SSD</td>
+</tr>
+<tr class="even">
+<td>Storage (cache)</td>
+<td>128GB microSD (emergency backup)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="communications-1">5.2.3 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>900MHz</td>
+<td>RAK2287 concentrator</td>
+<td>Field sensor ingress</td>
+</tr>
+<tr class="even">
+<td>2.4GHz</td>
+<td>Ubiquiti LTU Sector</td>
+<td>DHU-RSS backhaul</td>
+</tr>
+<tr class="odd">
+<td>LTE-M</td>
+<td>Quectel BG96</td>
+<td>Failover</td>
+</tr>
+<tr class="even">
+<td>BLE 5.0</td>
+<td>nRF52840</td>
+<td>Technician maintenance</td>
+</tr>
+</tbody>
+</table>
+<h3 id="power-1">5.2.4 Power</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Source</td>
+<td>200W solar + 200Ah LiFePO4</td>
+</tr>
+<tr class="even">
+<td>Battery</td>
+<td>200Ah @ 12V (2.4 kWh)</td>
+</tr>
+<tr class="odd">
+<td>Runtime</td>
+<td>7+ days without sun</td>
+</tr>
+<tr class="even">
+<td>Charging</td>
+<td>MPPT 20A controller</td>
+</tr>
+</tbody>
+</table>
+<h3 id="black-box-cache-critical-feature">5.2.5 Black Box Cache (Critical Feature)</h3>
+<p><strong>Purpose:</strong> 30-day continuous audit logging during total backhaul failure</p>
+<table>
+<thead>
+<tr class="header">
+<th>Spec</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Capacity</td>
+<td>128GB Swissbit PSLC SSD</td>
+</tr>
+<tr class="even">
+<td>Write rate</td>
+<td>50 MB/day (compressed audit packets)</td>
+</tr>
+<tr class="odd">
+<td>Retention</td>
+<td>30+ days at full telemetry</td>
+</tr>
+<tr class="even">
+<td>Encryption</td>
+<td>AES-256-GCM</td>
+</tr>
+<tr class="odd">
+<td>Hash chain</td>
+<td>SHA-256 linking</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bom-dhu-v1.2">5.2.6 BOM — DHU V1.2</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Jetson Orin Nano</td>
+<td>1</td>
+<td>$499</td>
+<td>$499</td>
+</tr>
+<tr class="even">
+<td>Swissbit 128GB PSLC</td>
+<td>1</td>
+<td>$245</td>
+<td>$245</td>
+</tr>
+<tr class="odd">
+<td>RAK2287 900MHz</td>
+<td>1</td>
+<td>$89</td>
+<td>$89</td>
+</tr>
+<tr class="even">
+<td>LTU Lite AP</td>
+<td>1</td>
+<td>$189</td>
+<td>$189</td>
+</tr>
+<tr class="odd">
+<td>200W solar panel</td>
+<td>2</td>
+<td>$180</td>
+<td>$360</td>
+</tr>
+<tr class="even">
+<td>200Ah LiFePO4</td>
+<td>1</td>
+<td>$1,800</td>
+<td>$1,800</td>
+</tr>
+<tr class="odd">
+<td>Polycase ML-44F</td>
+<td>1</td>
+<td>$340</td>
+<td>$340</td>
+</tr>
+<tr class="even">
+<td>35’ timber pole</td>
+<td>1</td>
+<td>$450</td>
+<td>$450</td>
+</tr>
+<tr class="odd">
+<td>Cables, connectors</td>
+<td>1</td>
+<td>$150</td>
+<td>$150</td>
+</tr>
+<tr class="even">
+<td>Installation labor</td>
+<td>1</td>
+<td>$500</td>
+<td>$500</td>
+</tr>
+<tr class="odd">
+<td><strong>TOTAL DHU BOM</strong></td>
+<td></td>
+<td></td>
+<td><strong>$4,622</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="pivot-motion-tracker-pmt-v1.6-critical-field-aggregator">5.3 Pivot Motion Tracker (PMT) V1.6 — CRITICAL: FIELD AGGREGATOR</h2>
+<h3 id="role-definition">5.3.1 Role Definition</h3>
+<p><strong>CRITICAL ARCHITECTURE POINT:</strong> The PMT is the <strong>Primary Field Aggregator</strong>. It is elevated 10-15 feet on the pivot span, above the dense crop canopy. All ground-level devices (VFA, LRZN, LRZB, PFA) report <strong>to the PMT</strong>, not directly to the DHU.</p>
+<h3 id="physical-specifications-2">5.3.2 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mounting</td>
+<td>Towers 2-3 of center pivot</td>
+</tr>
+<tr class="even">
+<td>Elevation</td>
+<td>10-15 feet above ground</td>
+</tr>
+<tr class="odd">
+<td>Enclosure</td>
+<td>Polycase WP-21F (NEMA 4X)</td>
+</tr>
+<tr class="even">
+<td>Weight</td>
+<td>12 lbs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="compute-specifications-2">5.3.3 Compute Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MCU</td>
+<td>ESP32-S3-MINI-1-N8R8</td>
+</tr>
+<tr class="even">
+<td>Flash</td>
+<td>8MB QSPI</td>
+</tr>
+<tr class="odd">
+<td>RAM</td>
+<td>512KB SRAM + 8MB PSRAM</td>
+</tr>
+<tr class="even">
+<td>FPU</td>
+<td>Yes (single-precision)</td>
+</tr>
+<tr class="odd">
+<td>Vector unit</td>
+<td>Yes (SIMD)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sensors">5.3.4 Sensors</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Sensor</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>GNSS</td>
+<td>u-blox ZED-F9P RTK</td>
+<td>Sub-cm positioning</td>
+</tr>
+<tr class="even">
+<td>IMU</td>
+<td>Bosch BNO055 9-axis</td>
+<td>Tower stability, stall detection</td>
+</tr>
+<tr class="odd">
+<td>Flow meter</td>
+<td>Badger TFX-5000 clamp-on</td>
+<td>±1.0% flow accuracy</td>
+</tr>
+<tr class="even">
+<td>Current</td>
+<td>3× Magnelab SCT-0400-400</td>
+<td>Pump signature analysis</td>
+</tr>
+</tbody>
+</table>
+<h3 id="communications-2">5.3.5 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ingress</td>
+<td>900MHz CSS LoRa Mesh</td>
+<td>VFA, LRZN, LRZB, PFA</td>
+</tr>
+<tr class="even">
+<td>Egress</td>
+<td>2.4GHz (ESPNOW) or LTE-M</td>
+<td>DHU backhaul</td>
+</tr>
+<tr class="odd">
+<td>Maintenance</td>
+<td>BLE 5.0</td>
+<td>Technician access</td>
+</tr>
+</tbody>
+</table>
+<h3 id="edge-ebk-computation">5.3.6 Edge-EBK Computation</h3>
+<p><strong>Responsibility:</strong> The PMT performs <strong>Edge-EBK</strong> (Empirical Bayesian Kriging) to generate a 50m-resolution 16×16 probability matrix from field sensor inputs.</p>
+<p><strong>Power:</strong> The FPU processes AES-256 chirps from VFA/LRZN/LRZB/PFA into a localized probability matrix. In “COLLAPSE” mode, the FPU focuses 100% compute on the active pivot trajectory.</p>
+<h3 id="payload-structure">5.3.7 Payload Structure</h3>
+<p><strong>Unified Field State Payload (~187 bytes):</strong> - PMT kinematic data (position, velocity, vibration) - 50m Edge-EBK arrays (16×16 grid) - Intercepted VFA/LRZ/PFA telemetry - Timestamp + cryptographic signature</p>
+<h3 id="bom-pmt-v1.6">5.3.8 BOM — PMT V1.6</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ESP32-S3-MINI-1</td>
+<td>1</td>
+<td>$3.20</td>
+<td>$3.20</td>
+</tr>
+<tr class="even">
+<td>ZED-F9P RTK</td>
+<td>1</td>
+<td>$165.00</td>
+<td>$165.00</td>
+</tr>
+<tr class="odd">
+<td>BNO055 IMU</td>
+<td>1</td>
+<td>$12.50</td>
+<td>$12.50</td>
+</tr>
+<tr class="even">
+<td>TFX-5000 clamp-on</td>
+<td>1</td>
+<td>$695.00</td>
+<td>$695.00</td>
+</tr>
+<tr class="odd">
+<td>SCT-0400-400 (3×)</td>
+<td>3</td>
+<td>$45.00</td>
+<td>$135.00</td>
+</tr>
+<tr class="even">
+<td>RFM95W 900MHz</td>
+<td>1</td>
+<td>$6.50</td>
+<td>$6.50</td>
+</tr>
+<tr class="odd">
+<td>Polycase WP-21F</td>
+<td>1</td>
+<td>$89.00</td>
+<td>$89.00</td>
+</tr>
+<tr class="even">
+<td>Solar panel 20W</td>
+<td>1</td>
+<td>$45.00</td>
+<td>$45.00</td>
+</tr>
+<tr class="odd">
+<td>Battery 12V 7Ah</td>
+<td>1</td>
+<td>$25.00</td>
+<td>$25.00</td>
+</tr>
+<tr class="even">
+<td>Antennas, cables</td>
+<td>1</td>
+<td>$35.00</td>
+<td>$35.00</td>
+</tr>
+<tr class="odd">
+<td>Assembly labor</td>
+<td>1</td>
+<td>$50.00</td>
+<td>$50.00</td>
+</tr>
+<tr class="even">
+<td><strong>TOTAL PMT BOM</strong></td>
+<td></td>
+<td></td>
+<td><strong>$1,261.20</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="pressure-flow-anchor-pfa-v1.9">5.4 Pressure &amp; Flow Anchor (PFA) V1.9</h2>
+<h3 id="role-definition-1">5.4.1 Role Definition</h3>
+<p><strong>Wellhead Sentry &amp; Safety Actuator</strong> The PFA is the critical safety node at the wellhead, monitoring flow and pressure, and capable of actuating emergency pump stops.</p>
+<h3 id="physical-specifications-3">5.4.2 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mounting</td>
+<td>Wellhead pipe (2-6” diameter)</td>
+</tr>
+<tr class="even">
+<td>Enclosure</td>
+<td>Polycase WP-21F (NEMA 4X)</td>
+</tr>
+<tr class="odd">
+<td>Weight</td>
+<td>18 lbs</td>
+</tr>
+<tr class="even">
+<td>Ingress</td>
+<td>IP67</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sensors-1">5.4.3 Sensors</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 43%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Sensor</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Flow</td>
+<td>Badger TFX-5000 (clamp-on)</td>
+<td>±1.0% volumetric flow</td>
+</tr>
+<tr class="even">
+<td>Current</td>
+<td>3× Magnelab SCT-0400-400</td>
+<td>Pump signature, predictive maintenance</td>
+</tr>
+<tr class="odd">
+<td>Pressure</td>
+<td>Dwyer PBLTX (vented, 316-SS)</td>
+<td>Line pressure monitoring</td>
+</tr>
+</tbody>
+</table>
+<h3 id="actuation">5.4.4 Actuation</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Relay</td>
+<td>Omron G7L-1A-TUB 30A</td>
+<td>Pump soft-stop</td>
+</tr>
+<tr class="even">
+<td>Response time</td>
+<td>&lt;50ms</td>
+<td>Emergency halt</td>
+</tr>
+</tbody>
+</table>
+<h3 id="communications-3">5.4.5 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Primary</td>
+<td>900MHz CSS LoRa</td>
+<td>PMT ingress</td>
+</tr>
+<tr class="even">
+<td>Maintenance</td>
+<td>BLE 5.4</td>
+<td>Technician diagnostics</td>
+</tr>
+</tbody>
+</table>
+<h3 id="reflex-logic-table">5.4.6 Reflex Logic Table</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Condition</th>
+<th>PMT Command</th>
+<th>PFA Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT_STALL detected</td>
+<td>ACTUATE_STOP</td>
+<td>Open relay (&lt;50ms)</td>
+</tr>
+<tr class="even">
+<td>Line pressure &lt;5 PSI</td>
+<td>ACTUATE_STOP</td>
+<td>Open relay (&lt;50ms)</td>
+</tr>
+<tr class="odd">
+<td>Saturation alert (48”)</td>
+<td>ACTUATE_STOP</td>
+<td>Open relay (&lt;50ms)</td>
+</tr>
+<tr class="even">
+<td>Cavitation signature</td>
+<td>ACTUATE_STOP + ALERT</td>
+<td>Open relay, notify</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bom-pfa-v1.9">5.4.7 BOM — PFA V1.9</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>nRF52840-QIAA</td>
+<td>1</td>
+<td>$4.50</td>
+<td>$4.50</td>
+</tr>
+<tr class="even">
+<td>TFX-5000 clamp-on</td>
+<td>1</td>
+<td>$695.00</td>
+<td>$695.00</td>
+</tr>
+<tr class="odd">
+<td>SCT-0400-400 (3×)</td>
+<td>3</td>
+<td>$45.00</td>
+<td>$135.00</td>
+</tr>
+<tr class="even">
+<td>Dwyer PBLTX</td>
+<td>1</td>
+<td>$289.00</td>
+<td>$289.00</td>
+</tr>
+<tr class="odd">
+<td>Omron G7L-1A-TUB</td>
+<td>1</td>
+<td>$45.00</td>
+<td>$45.00</td>
+</tr>
+<tr class="even">
+<td>200Ah LiFePO4</td>
+<td>1</td>
+<td>$1,800.00</td>
+<td>$1,800.00</td>
+</tr>
+<tr class="odd">
+<td>200W solar</td>
+<td>2</td>
+<td>$180.00</td>
+<td>$360.00</td>
+</tr>
+<tr class="even">
+<td>Polycase WP-21F</td>
+<td>1</td>
+<td>$89.00</td>
+<td>$89.00</td>
+</tr>
+<tr class="odd">
+<td>Cables, connectors</td>
+<td>1</td>
+<td>$150.00</td>
+<td>$150.00</td>
+</tr>
+<tr class="even">
+<td><strong>TOTAL PFA BOM</strong></td>
+<td></td>
+<td></td>
+<td><strong>$3,467.50</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="vertical-field-anchor-vfa-v2.1">5.5 Vertical Field Anchor (VFA) V2.1</h2>
+<h3 id="role-definition-2">5.5.1 Role Definition</h3>
+<p><strong>Deep-Truth Probe (48” Profile)</strong> The VFA is the primary ground-truth sensor for sub-surface moisture, with sensors at multiple depths providing a vertical moisture profile.</p>
+<h3 id="physical-specifications-4">5.5.2 Physical Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Housing</td>
+<td>2” HDPE SDR9 outer shell (permanent)</td>
+</tr>
+<tr class="even">
+<td>Sled</td>
+<td>50mm CHDPE SDR9 Alpha-Sled (removable)</td>
+</tr>
+<tr class="odd">
+<td>Length</td>
+<td>48 inches (1219mm)</td>
+</tr>
+<tr class="even">
+<td>Burial</td>
+<td>Ground level, capped flush</td>
+</tr>
+<tr class="odd">
+<td>Extraction</td>
+<td>Pre-harvest (September)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-48u-stack-sequence">5.5.3 The 48U Stack Sequence</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Slot (inch)</th>
+<th>Component</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1 (Top)</td>
+<td>Desiccant Pack</td>
+<td>Apex moisture trap</td>
+</tr>
+<tr class="even">
+<td>2-5</td>
+<td>Battery Cartridge #1</td>
+<td>3× 21700 Li-ion + heater</td>
+</tr>
+<tr class="odd">
+<td>10</td>
+<td>Advanced Sensor</td>
+<td>10” Root Zone Ingest</td>
+</tr>
+<tr class="even">
+<td>18</td>
+<td>Basic Sensor</td>
+<td>18” VWC/Temp</td>
+</tr>
+<tr class="odd">
+<td>25</td>
+<td>Advanced Sensor</td>
+<td>25” Root Anchor</td>
+</tr>
+<tr class="even">
+<td>35</td>
+<td>Basic Sensor</td>
+<td>35” Wetting Front</td>
+</tr>
+<tr class="odd">
+<td>48 (Bottom)</td>
+<td>Advanced Sensor</td>
+<td>48” Deep Percolation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sensor-specifications">5.5.4 Sensor Specifications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Depth</th>
+<th>Type</th>
+<th>Parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>10”</td>
+<td>GroPoint Profile</td>
+<td>VWC, EC, Temp</td>
+</tr>
+<tr class="even">
+<td>18”</td>
+<td>Basic</td>
+<td>VWC</td>
+</tr>
+<tr class="odd">
+<td>25”</td>
+<td>GroPoint Profile</td>
+<td>VWC, EC, Temp</td>
+</tr>
+<tr class="even">
+<td>35”</td>
+<td>Basic</td>
+<td>VWC</td>
+</tr>
+<tr class="odd">
+<td>48”</td>
+<td>GroPoint Profile</td>
+<td>VWC, EC, Temp</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-proxy-method">5.5.5 The Proxy Method</h3>
+<p><strong>Non-Contact Capacitive Sensing:</strong> The sensors utilize an advanced non-contact capacitive method, shooting high-frequency dielectric fields through the 50mm sled wall and across a +5 PSI dry nitrogen gap directly into the soil. This eliminates galvanic corrosion and sensor drift.</p>
+<h3 id="communications-4">5.5.6 Communications</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Interface</th>
+<th>Specification</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Primary</td>
+<td>900MHz CSS LoRa</td>
+<td>PMT ingress</td>
+</tr>
+<tr class="even">
+<td>Range</td>
+<td>1km+ to elevated PMT</td>
+<td>Canopy penetration</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bom-vfa-v2.1-1280-unit-tier">5.5.7 BOM — VFA V2.1 (1,280 unit tier)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Housing (HDPE SDR9)</td>
+<td>$6.75</td>
+</tr>
+<tr class="even">
+<td>Antenna (SS-304 whip)</td>
+<td>$3.50</td>
+</tr>
+<tr class="odd">
+<td>Compute (nRF52840)</td>
+<td>$8.50</td>
+</tr>
+<tr class="even">
+<td>Seals (Viton FKM)</td>
+<td>$2.40</td>
+</tr>
+<tr class="odd">
+<td>Battery Cartridges (5×)</td>
+<td>$83.75</td>
+</tr>
+<tr class="even">
+<td>Sensors (3× Adv + 2× Basic)</td>
+<td>$47.00</td>
+</tr>
+<tr class="odd">
+<td><strong>TOTAL VFA BOM</strong></td>
+<td><strong>$151.90</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="lateral-root-zone-surveyor-lrz-v1.2-critical-two-variants">5.6 Lateral Root Zone Surveyor (LRZ) V1.2 — CRITICAL: TWO VARIANTS</h2>
+<h3 id="critical-distinction-lrzn-vs-lrzb">5.6.1 CRITICAL DISTINCTION: LRZN vs LRZB</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>LRZN (Basic)</th>
+<th>LRZB (Reference)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Cost</strong></td>
+<td>$29.00</td>
+<td>$54.30</td>
+</tr>
+<tr class="even">
+<td><strong>Sensors</strong></td>
+<td>Dielectric (VWC only)</td>
+<td>Dielectric + Temperature</td>
+</tr>
+<tr class="odd">
+<td><strong>Calibration</strong></td>
+<td>Standard</td>
+<td>Enhanced (temperature-compensated)</td>
+</tr>
+<tr class="even">
+<td><strong>Role</strong></td>
+<td>Spatial density filler</td>
+<td>Ground-truth anchor point</td>
+</tr>
+<tr class="odd">
+<td><strong>Density</strong></td>
+<td>12 per field</td>
+<td>4 per field</td>
+</tr>
+<tr class="even">
+<td><strong>Total per field</strong></td>
+<td></td>
+<td>16 LRZ nodes</td>
+</tr>
+<tr class="odd">
+<td><strong>Reporting</strong></td>
+<td>To PMT</td>
+<td>To PMT</td>
+</tr>
+<tr class="even">
+<td><strong>Power</strong></td>
+<td>2.6Ah LiSOCl2</td>
+<td>2.6Ah LiSOCl2</td>
+</tr>
+<tr class="odd">
+<td><strong>Battery life</strong></td>
+<td>4+ years</td>
+<td>4+ years</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lrzn-specifications-basic">5.6.2 LRZN Specifications (Basic)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MCU</td>
+<td>nRF52840-QIAA</td>
+</tr>
+<tr class="even">
+<td>Sensor</td>
+<td>Capacitive dielectric (~100MHz)</td>
+</tr>
+<tr class="odd">
+<td>Measurement</td>
+<td>Volumetric Water Content (VWC)</td>
+</tr>
+<tr class="even">
+<td>Accuracy</td>
+<td>±3%</td>
+</tr>
+<tr class="odd">
+<td>Housing</td>
+<td>2” HDPE SDR9 shell + removable sled</td>
+</tr>
+<tr class="even">
+<td>Antenna</td>
+<td>Stainless steel whip (buried, RF-transparent)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lrzb-specifications-reference">5.6.3 LRZB Specifications (Reference)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MCU</td>
+<td>nRF52840-QIAA</td>
+</tr>
+<tr class="even">
+<td>Sensors</td>
+<td>Capacitive dielectric + Digital temperature</td>
+</tr>
+<tr class="odd">
+<td>Measurements</td>
+<td>VWC + Soil Temperature</td>
+</tr>
+<tr class="even">
+<td>Accuracy</td>
+<td>VWC ±2.5%, Temp ±0.5°C</td>
+</tr>
+<tr class="odd">
+<td>Calibration</td>
+<td>Temperature-compensated VWC</td>
+</tr>
+<tr class="even">
+<td>Housing</td>
+<td>2” HDPE SDR9 shell + removable sled</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pcb-layout-both-variants">5.6.4 PCB Layout (Both Variants)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>GPIO</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>P0.02</td>
+<td>ADC0 (dielectric)</td>
+</tr>
+<tr class="even">
+<td>P0.03</td>
+<td>ADC1 (temperature - LRZB only)</td>
+</tr>
+<tr class="odd">
+<td>P0.28-P0.31</td>
+<td>LoRa SPI (SCK, MISO, MOSI, CS)</td>
+</tr>
+<tr class="even">
+<td>P1.00</td>
+<td>LoRa IRQ</td>
+</tr>
+<tr class="odd">
+<td>P0.29</td>
+<td>LoRa RST</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sensing-methodology">5.6.5 Sensing Methodology</h3>
+<p><strong>~100MHz Dielectric Projection:</strong> Both variants project high-frequency RF through the HDPE walls into the surrounding soil. The frequency was selected to: - Minimize salinity effects - Provide good spatial resolution (~6” sphere of influence) - Enable through-wall measurement without soil contact</p>
+<h3 id="bom-comparison">5.6.6 BOM Comparison</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>LRZN</th>
+<th>LRZB</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>nRF52840-QIAA</td>
+<td>$4.50</td>
+<td>$4.50</td>
+</tr>
+<tr class="even">
+<td>Dielectric circuit</td>
+<td>$8.00</td>
+<td>$8.00</td>
+</tr>
+<tr class="odd">
+<td>Temp sensor</td>
+<td>—</td>
+<td>$12.00</td>
+</tr>
+<tr class="even">
+<td>PCB + passives</td>
+<td>$6.50</td>
+<td>$6.50</td>
+</tr>
+<tr class="odd">
+<td>Housing assembly</td>
+<td>$10.00</td>
+<td>$10.00</td>
+</tr>
+<tr class="even">
+<td>Battery (2.6Ah)</td>
+<td>$12.00</td>
+<td>$12.00</td>
+</tr>
+<tr class="odd">
+<td>Antenna</td>
+<td>$3.50</td>
+<td>$3.50</td>
+</tr>
+<tr class="even">
+<td>Assembly labor</td>
+<td>$15.00</td>
+<td>$15.00</td>
+</tr>
+<tr class="odd">
+<td><strong>TOTAL</strong></td>
+<td><strong>$29.00</strong></td>
+<td><strong>$54.30</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="single-field-deployment-sfd-configurations">5.7 Single Field Deployment (SFD) Configurations</h2>
+<h3 id="sfd-p-standard-pivot-126-acre-circular">5.7.1 SFD-P: Standard Pivot (126-acre circular)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT</td>
+<td>1</td>
+<td>$1,261.20</td>
+<td>$1,261.20</td>
+</tr>
+<tr class="even">
+<td>PFA</td>
+<td>1</td>
+<td>$3,467.50</td>
+<td>$3,467.50</td>
+</tr>
+<tr class="odd">
+<td>VFA</td>
+<td>2</td>
+<td>$151.90</td>
+<td>$303.80</td>
+</tr>
+<tr class="even">
+<td>LRZB (Reference)</td>
+<td>4</td>
+<td>$54.30</td>
+<td>$217.20</td>
+</tr>
+<tr class="odd">
+<td>LRZN (Basic)</td>
+<td>12</td>
+<td>$29.00</td>
+<td>$348.00</td>
+</tr>
+<tr class="even">
+<td>Installation labor</td>
+<td>1</td>
+<td>$400.00</td>
+<td>$400.00</td>
+</tr>
+<tr class="odd">
+<td><strong>SFD-P Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$5,997.70</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Resolution:</strong> 50m Compliance / 1m Enterprise</p>
+<h3 id="sfd-c-corner-swing-arm-150-acre">5.7.2 SFD-C: Corner-Swing Arm (150+ acre)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PMT</td>
+<td>1</td>
+<td>$1,261.20</td>
+<td>$1,261.20</td>
+</tr>
+<tr class="even">
+<td>CSA (Swing-Arm Tracker)</td>
+<td>1</td>
+<td>$1,500.00</td>
+<td>$1,500.00</td>
+</tr>
+<tr class="odd">
+<td>PFA</td>
+<td>1</td>
+<td>$3,467.50</td>
+<td>$3,467.50</td>
+</tr>
+<tr class="even">
+<td>VFA</td>
+<td>4</td>
+<td>$151.90</td>
+<td>$607.60</td>
+</tr>
+<tr class="odd">
+<td>LRZB</td>
+<td>6</td>
+<td>$54.30</td>
+<td>$325.80</td>
+</tr>
+<tr class="even">
+<td>LRZN</td>
+<td>16</td>
+<td>$29.00</td>
+<td>$464.00</td>
+</tr>
+<tr class="odd">
+<td>Installation</td>
+<td>1</td>
+<td>$600.00</td>
+<td>$600.00</td>
+</tr>
+<tr class="even">
+<td><strong>SFD-C Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$8,226.10</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Special:</strong> BLE 5.2 distance ranging for ±0.1° joint resolution</p>
+<h3 id="sfd-f-floodsurface-irrigation">5.7.3 SFD-F: Flood/Surface Irrigation</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>DHU-Lite/Static PMT</td>
+<td>1</td>
+<td>$2,500.00</td>
+<td>$2,500.00</td>
+</tr>
+<tr class="even">
+<td>PFA</td>
+<td>1</td>
+<td>$3,467.50</td>
+<td>$3,467.50</td>
+</tr>
+<tr class="odd">
+<td>VFA</td>
+<td>4</td>
+<td>$151.90</td>
+<td>$607.60</td>
+</tr>
+<tr class="even">
+<td>LRZB</td>
+<td>8</td>
+<td>$54.30</td>
+<td>$434.40</td>
+</tr>
+<tr class="odd">
+<td>LRZN</td>
+<td>20</td>
+<td>$29.00</td>
+<td>$580.00</td>
+</tr>
+<tr class="even">
+<td>Installation</td>
+<td>1</td>
+<td>$800.00</td>
+<td>$800.00</td>
+</tr>
+<tr class="odd">
+<td><strong>SFD-F Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$8,389.50</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Special:</strong> Wetting Front Propagation algorithms</p>
+<h2 id="subdistrict-1-scale-1280-fields">5.8 Subdistrict 1 Scale (1,280 Fields)</h2>
+<h3 id="phase-1-compliance-foundation">5.8.1 Phase 1 — Compliance Foundation</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SFD-P (standard)</td>
+<td>1,280</td>
+<td>$5,997.70</td>
+<td>$7,677,056</td>
+</tr>
+<tr class="even">
+<td>RSS infrastructure</td>
+<td>1</td>
+<td>$122,445</td>
+<td>$122,445</td>
+</tr>
+<tr class="odd">
+<td>DHU infrastructure</td>
+<td>13</td>
+<td>$4,622</td>
+<td>$60,086</td>
+</tr>
+<tr class="even">
+<td>Installation (bulk)</td>
+<td>1,280</td>
+<td>$300</td>
+<td>$384,000</td>
+</tr>
+<tr class="odd">
+<td><strong>Phase 1 Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$8,243,587</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-2-full-ecosystem-saturation">5.8.2 Phase 2 — Full Ecosystem Saturation</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Qty</th>
+<th>Unit Cost</th>
+<th>Extended</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Additional LRZ density</td>
+<td>1,280 fields</td>
+<td>$1,500</td>
+<td>$1,920,000</td>
+</tr>
+<tr class="even">
+<td>VRI actuators (section)</td>
+<td>1,280</td>
+<td>$1,500</td>
+<td>$1,920,000</td>
+</tr>
+<tr class="odd">
+<td>DHU expansion (full 25)</td>
+<td>12</td>
+<td>$4,622</td>
+<td>$55,464</td>
+</tr>
+<tr class="even">
+<td>Fleet service trucks</td>
+<td>3</td>
+<td>$45,000</td>
+<td>$135,000</td>
+</tr>
+<tr class="odd">
+<td>Sled Hospital facility</td>
+<td>1</td>
+<td>$75,000</td>
+<td>$75,000</td>
+</tr>
+<tr class="even">
+<td><strong>Phase 2 Total</strong></td>
+<td></td>
+<td></td>
+<td><strong>$4,105,464</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Subdistrict 1 Investment:</strong> $12,349,051</p>
+<h3 id="per-acre-economics">5.8.3 Per-Acre Economics</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hardware CAPEX per acre</td>
+<td>$93.36</td>
+</tr>
+<tr class="even">
+<td>Annual SaaS at $499/field</td>
+<td>$7,664,640</td>
+</tr>
+<tr class="odd">
+<td>Payback period</td>
+<td>1.6 years</td>
+</tr>
+<tr class="even">
+<td>10-year ROI</td>
+<td>521%</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part04.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part IV: Technical Core</span>
+                    </a>
+                    <a href="part06.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part VI: Interface Layer</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
+            <p>FarmSense Master Manual V2.1 | © 2026 Bxthre3 Inc. | CONFIDENTIAL</p>
+            <p class="mt-2">For questions, contact: <a href="mailto:contact@bxthre3.com" class="text-emerald-600 hover:underline">contact@bxthre3.com</a></p>
+        </div>
+    </footer>
+</body>
+</html>

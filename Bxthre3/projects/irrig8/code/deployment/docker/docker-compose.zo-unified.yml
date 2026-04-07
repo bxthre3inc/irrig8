@@ -1,0 +1,225 @@
+version: '3.8'
+
+services:
+  # === Map Data Layer ===
+  postgis-map:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_USER: ${MAP_DB_USER:-map_user}
+      POSTGRES_PASSWORD: ${MAP_DB_PASSWORD:-changeme}
+      POSTGRES_DB: farmsense_map
+    volumes:
+      - postgres_map_data:/var/lib/postgresql/data
+    networks:
+      - farmsense-net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${MAP_DB_USER:-map_user} -d farmsense_map" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === Core Data Layer ===
+  postgres-core:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-farmsense_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: farmsense_core
+    volumes:
+      - postgres_core_data:/var/lib/postgresql/data
+    networks:
+      - farmsense-net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-farmsense_user} -d farmsense_core" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    environment:
+      POSTGRES_USER: ${TIMESCALE_USER:-timescale_user}
+      POSTGRES_PASSWORD: ${TIMESCALE_PASSWORD:-changeme}
+      POSTGRES_DB: farmsense_timeseries
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+    networks:
+      - farmsense-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - farmsense-net
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    networks:
+      - farmsense-net
+    restart: unless-stopped
+
+  # === Processing Layer ===
+  backend:
+    build: ../../backend
+    image: farmsense-backend:latest
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-farmsense_user}:${POSTGRES_PASSWORD:-changeme}@postgres-core:5432/farmsense_core
+      TIMESCALE_URL: postgresql://${TIMESCALE_USER:-timescale_user}:${TIMESCALE_PASSWORD:-changeme}@timescaledb:5432/farmsense_timeseries
+      MAP_DATABASE_URL: postgresql://${MAP_DB_USER:-map_user}:${MAP_DB_PASSWORD:-changeme}@postgis-map:5432/farmsense_map
+    ports:
+      - "8000:8000"
+    networks:
+      - farmsense-net
+    depends_on:
+      postgres-core:
+        condition: service_healthy
+      timescaledb:
+        condition: service_started
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  cloud-processor:
+    image: farmsense-backend:latest
+    command: celery -A app.core.celery_app worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-farmsense_user}:${POSTGRES_PASSWORD:-changeme}@postgres-core:5432/farmsense_core
+      TIMESCALE_URL: postgresql://${TIMESCALE_USER:-timescale_user}:${TIMESCALE_PASSWORD:-changeme}@timescaledb:5432/farmsense_timeseries
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    networks:
+      - farmsense-net
+    depends_on:
+      - rabbitmq
+      - redis
+    restart: unless-stopped
+
+  map-service:
+    image: farmsense-backend:latest
+    build: ../../backend
+    environment:
+      DATABASE_URL: postgresql://${MAP_DB_USER:-map_user}:${MAP_DB_PASSWORD:-changeme}@postgis-map:5432/farmsense_map
+      MAP_DATABASE_URL: postgresql://${MAP_DB_USER:-map_user}:${MAP_DB_PASSWORD:-changeme}@postgis-map:5432/farmsense_map
+    ports:
+      - "8001:8000"
+    networks:
+      - farmsense-net
+    depends_on:
+      postgis-map:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # === Simulation Layer ===
+  environment-simulator:
+    build: ../../environment-simulator
+    image: farmsense-env-sim:latest
+    environment:
+      FARMSENSE_BACKEND_URL: http://backend:8000
+    ports:
+      - "8002:8002"
+    networks:
+      - farmsense-net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  sensor-emulator:
+    build:
+      context: ../../
+      dockerfile: sensor-emulator/Dockerfile
+    image: farmsense-sensor-emu:latest
+    environment:
+      FARMSENSE_BACKEND_URL: http://backend:8000
+      TIME_MULTIPLIER: 1.0
+    ports:
+      - "8003:8003"
+    networks:
+      - farmsense-net
+    depends_on:
+      - backend
+      - environment-simulator
+    restart: unless-stopped
+
+  # === Presentation & Proxy Layer ===
+  farmer-dashboard:
+    build:
+      context: ../../frontend/farmer-dashboard
+    networks:
+      - farmsense-net
+
+  admin-dashboard:
+    build:
+      context: ../../frontend/admin-dashboard
+    networks:
+      - farmsense-net
+
+  regulatory-portal:
+    build:
+      context: ../../frontend/regulatory-portal
+    networks:
+      - farmsense-net
+
+  research-portal:
+    build:
+      context: ../../frontend/research-portal
+    networks:
+      - farmsense-net
+
+  investor-dashboard:
+    build:
+      context: ../../frontend/investor-dashboard
+    networks:
+      - farmsense-net
+
+  grant-portal:
+    build:
+      context: ../../frontend/grant-portal
+    networks:
+      - farmsense-net
+
+  marketing-site:
+    build:
+      context: ../../frontend/marketing-site
+    networks:
+      - farmsense-net
+
+  docs-portal:
+    build:
+      context: ../../frontend/docs-portal
+    networks:
+      - farmsense-net
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ../../nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - farmsense-net
+    depends_on:
+      - backend
+      - farmer-dashboard
+      - admin-dashboard
+      - regulatory-portal
+      - research-portal
+      - investor-dashboard
+      - grant-portal
+      - marketing-site
+      - docs-portal
+
+volumes:
+  postgres_map_data:
+  postgres_core_data:
+  timescale_data:
+
+
+networks:
+  farmsense-net:
+    driver: bridge

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part II: Market Intelligence | FarmSense Master Manual V2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .prose h1 { @apply text-4xl font-black text-slate-900 mb-8 tracking-tight; }
+        .prose h2 { @apply text-2xl font-bold text-slate-800 mt-12 mb-6 pb-2 border-b-2 border-emerald-500; }
+        .prose h3 { @apply text-xl font-bold text-emerald-700 mt-8 mb-4; }
+        .prose h4 { @apply text-lg font-semibold text-slate-700 mt-6 mb-3; }
+        .prose p { @apply text-slate-600 leading-relaxed mb-4; }
+        .prose ul { @apply list-disc list-inside text-slate-600 mb-4 space-y-1; }
+        .prose ol { @apply list-decimal list-inside text-slate-600 mb-4 space-y-1; }
+        .prose table { @apply w-full text-left border-collapse mb-6 text-sm; }
+        .prose th { @apply bg-slate-100 text-slate-800 font-bold p-3 border border-slate-300; }
+        .prose td { @apply p-3 border border-slate-300 text-slate-600; }
+        .prose tr:nth-child(even) { @apply bg-slate-50; }
+        .prose code { @apply bg-slate-100 text-emerald-700 px-2 py-1 rounded text-sm; }
+        .prose pre { @apply bg-slate-900 text-slate-200 p-4 rounded-lg overflow-x-auto mb-6; }
+        .prose blockquote { @apply border-l-4 border-emerald-500 pl-4 italic text-slate-500 my-6; }
+        .nav-link { @apply block px-4 py-2 text-sm text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-all; }
+        .nav-link.active { @apply text-emerald-700 bg-emerald-50 font-medium; }
+        .part-number { @apply inline-flex items-center justify-center w-8 h-8 bg-emerald-500 text-white rounded-lg text-sm font-bold mr-3; }
+        @media print {
+            .no-print { display: none !important; }
+            .prose h1 { page-break-before: always; }
+            .prose h1:first-of-type { page-break-before: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800">FarmSense</h1>
+                    <p class="text-xs text-slate-500">Master Manual V2.1</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-sm text-slate-600 hover:text-emerald-600">Index</a>
+                <a href="part01.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">← Prev</a>
+                <span class="text-sm text-slate-400">2 of 17</span>
+                <a href="part03.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">Next →</a>
+                <a href="FarmSense_Master_Manual_Comprehensive_V2.1.pdf" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm font-medium">Download PDF</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="max-w-7xl mx-auto pt-20 pb-12 px-4">
+        <div class="flex gap-8">
+            <!-- Sidebar Navigation -->
+            <nav class="w-64 flex-shrink-0 no-print">
+                <div class="sticky top-24 bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 class="font-bold text-slate-800 mb-4 px-4">Parts</h2>
+                    <div class="space-y-1">
+                        <a href="part01.html" class="nav-link {}"><span class="part-number">I</span>Executive</a>
+                        <a href="part02.html" class="nav-link {active}"><span class="part-number">II</span>Market</a>
+                        <a href="part03.html" class="nav-link {}"><span class="part-number">III</span>Human</a>
+                        <a href="part04.html" class="nav-link {}"><span class="part-number">IV</span>Technical</a>
+                        <a href="part05.html" class="nav-link {}"><span class="part-number">V</span>Hardware</a>
+                        <a href="part06.html" class="nav-link {}"><span class="part-number">VI</span>Interface</a>
+                        <a href="part07.html" class="nav-link {}"><span class="part-number">VII</span>Oracle</a>
+                        <a href="part08.html" class="nav-link {}"><span class="part-number">VIII</span>Pilot</a>
+                        <a href="part09.html" class="nav-link {}"><span class="part-number">IX</span>Operations</a>
+                        <a href="part10.html" class="nav-link {}"><span class="part-number">X</span>Infrastructure</a>
+                        <a href="part11.html" class="nav-link {}"><span class="part-number">XI</span>Security</a>
+                        <a href="part12.html" class="nav-link {}"><span class="part-number">XII</span>Legal</a>
+                        <a href="part13.html" class="nav-link {}"><span class="part-number">XIII</span>Standards</a>
+                        <a href="part14.html" class="nav-link {}"><span class="part-number">XIV</span>Financial</a>
+                        <a href="part15.html" class="nav-link {}"><span class="part-number">XV</span>Grants</a>
+                        <a href="part16.html" class="nav-link {}"><span class="part-number">XVI</span>Case Study</a>
+                        <a href="part17.html" class="nav-link {}"><span class="part-number">XVII</span>Appendices</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-ii-market-intelligence-strategic-funding">PART II: MARKET INTELLIGENCE &amp; STRATEGIC FUNDING</h1>
+<h2 id="market-overview">2.0 Market Overview</h2>
+<p>FarmSense operates within the global precision agriculture market, specifically targeting water-constrained regions with regulatory enforcement mechanisms.</p>
+<h2 id="tamsamsom-analysis">2.1 TAM/SAM/SOM Analysis</h2>
+<h3 id="total-addressable-market-tam">2.1.1 Total Addressable Market (TAM)</h3>
+<p>Global precision irrigation market — $12.8B by 2030, CAGR 14.3% Drivers: Water scarcity, climate regulation, labor costs, yield optimization</p>
+<h3 id="serviceable-addressable-market-sam">2.1.2 Serviceable Addressable Market (SAM)</h3>
+<p>North American center-pivot operations: - 175,000 pivots across 22M acres - Average field size: 126 acres - Annual SaaS potential: $1.05B at $499/month average</p>
+<h3 id="serviceable-obtainable-market-som">2.1.3 Serviceable Obtainable Market (SOM)</h3>
+<p>Immediate targets: - SLV Subdistrict 1: 1,280 fields - RGWCD adjacent districts: 5,000 fields - First-year penetration target: 320 fields (25%)</p>
+<h3 id="revenue-model-by-tier">2.1.4 Revenue Model by Tier</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 36%" />
+<col style="width: 21%" />
+<col style="width: 24%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tier</th>
+<th>Resolution</th>
+<th>Price</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Base</td>
+<td>50m compliance</td>
+<td>$149/mo</td>
+<td>Regulators, small farms</td>
+</tr>
+<tr class="even">
+<td>Plus</td>
+<td>20m optimization</td>
+<td>$299/mo</td>
+<td>Commercial growers</td>
+</tr>
+<tr class="odd">
+<td>Enterprise</td>
+<td>1m + predictive</td>
+<td>$499/mo</td>
+<td>Large operations, legal defense</td>
+</tr>
+</tbody>
+</table>
+<p>Volume discounts: 5% (2 fields), 15% (6 fields), 25% cap (subdistrict scale)</p>
+<h2 id="competitive-moat-determinism-vs.-stochastic-estimation">2.2 Competitive Moat: Determinism vs. Stochastic Estimation</h2>
+<h3 id="competitor-analysis">2.2.1 Competitor Analysis</h3>
+<table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Competitor</th>
+<th>Approach</th>
+<th>Weakness</th>
+<th>FarmSense Advantage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CropX</td>
+<td>Cloud-only analytics</td>
+<td>Latency, connectivity dependency</td>
+<td>Edge autonomy + sovereign ledger</td>
+</tr>
+<tr class="even">
+<td>FieldNET</td>
+<td>Pivot control only</td>
+<td>No soil moisture, no VRI</td>
+<td>Full SPAC modeling + 1m VRI</td>
+</tr>
+<tr class="odd">
+<td>Arable</td>
+<td>Weather-only</td>
+<td>No ground-truth correlation</td>
+<td>Sensor fusion + satellite</td>
+</tr>
+<tr class="even">
+<td>Sat-only providers</td>
+<td>Trend analysis</td>
+<td>No deep-profile validation</td>
+<td>1m Kriging + 48” VFA anchors</td>
+</tr>
+</tbody>
+</table>
+<h3 id="moat-durability">2.2.2 Moat Durability</h3>
+<ul>
+<li><strong>Data moat:</strong> 4+ years of ground-truth calibration per field</li>
+<li><strong>Regulatory moat:</strong> Legal recognition as “approved monitoring method”</li>
+<li><strong>Network moat:</strong> 1,280-field mesh effects (interpolative accuracy)</li>
+</ul>
+<h2 id="federal-state-funding-environment">2.3 Federal &amp; State Funding Environment</h2>
+<h3 id="primary-grant-targets">2.3.1 Primary Grant Targets</h3>
+<table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 25%" />
+<col style="width: 12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Program</th>
+<th>Agency</th>
+<th>Amount</th>
+<th>Deadline</th>
+<th>Fit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SBIR Phase I</td>
+<td>USDA</td>
+<td>$300K</td>
+<td>Mar 2026</td>
+<td>Sensor telemetry optimization</td>
+</tr>
+<tr class="even">
+<td>SBIR Phase II</td>
+<td>USDA</td>
+<td>$1.1M</td>
+<td>Sep 2026</td>
+<td>Kriging algorithm development</td>
+</tr>
+<tr class="odd">
+<td>CIG</td>
+<td>NRCS</td>
+<td>$75K-$5M</td>
+<td>Apr 2026</td>
+<td>Water conservation validation</td>
+</tr>
+<tr class="even">
+<td>Water-Energy Nexus</td>
+<td>DOE</td>
+<td>$2M-$10M</td>
+<td>Jun 2026</td>
+<td>Pump efficiency optimization</td>
+</tr>
+<tr class="odd">
+<td>SBIR Phase I</td>
+<td>NSF</td>
+<td>$275K</td>
+<td>May 2026</td>
+<td>ML stress detection</td>
+</tr>
+</tbody>
+</table>
+<h3 id="secondary-pipeline">2.3.2 Secondary Pipeline</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Program</th>
+<th>Amount</th>
+<th>Alignment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ARPA-E WATER</td>
+<td>$3M-$5M</td>
+<td>Novel water tech</td>
+</tr>
+<tr class="even">
+<td>Gates Foundation Ag Adaptation</td>
+<td>$1M-$50M</td>
+<td>Smallholder scaling</td>
+</tr>
+<tr class="odd">
+<td>Earthshot Prize</td>
+<td>£1M</td>
+<td>Climate protection</td>
+</tr>
+<tr class="even">
+<td>World Food Prize</td>
+<td>$500K</td>
+<td>Food security impact</td>
+</tr>
+</tbody>
+</table>
+<h2 id="global-expansion-roadmap">2.4 Global Expansion Roadmap</h2>
+<h3 id="phase-timeline">2.4.1 Phase Timeline</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 17%" />
+<col style="width: 22%" />
+<col style="width: 17%" />
+<col style="width: 26%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>Region</th>
+<th>Timeline</th>
+<th>Fields</th>
+<th>Regulatory</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Rio Grande Basin</td>
+<td>2026-2027</td>
+<td>6,000</td>
+<td>State engineers (CO, NM, TX)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Colorado River Basin</td>
+<td>2028-2029</td>
+<td>25,000</td>
+<td>Interstate compact</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>High Plains Aquifer</td>
+<td>2029-2030</td>
+<td>50,000</td>
+<td>Federal (USDA/USGS)</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>International</td>
+<td>2030+</td>
+<td>100,000+</td>
+<td>Basin treaties (Nile, Indus, Murray-Darling)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="international-targets-40-basins">2.4.2 International Targets (40 Basins)</h3>
+<p>See Part VII, Section 7.5 for complete Global Hydrologic Basin Registry.</p>
+<hr />
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part01.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part I: Executive Foundation</span>
+                    </a>
+                    <a href="part03.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part III: Human Capital</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
+            <p>FarmSense Master Manual V2.1 | © 2026 Bxthre3 Inc. | CONFIDENTIAL</p>
+            <p class="mt-2">For questions, contact: <a href="mailto:contact@bxthre3.com" class="text-emerald-600 hover:underline">contact@bxthre3.com</a></p>
+        </div>
+    </footer>
+</body>
+</html>

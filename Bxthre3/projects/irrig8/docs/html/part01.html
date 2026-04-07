@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part I: Executive Foundation | FarmSense Master Manual V2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .prose h1 { @apply text-4xl font-black text-slate-900 mb-8 tracking-tight; }
+        .prose h2 { @apply text-2xl font-bold text-slate-800 mt-12 mb-6 pb-2 border-b-2 border-emerald-500; }
+        .prose h3 { @apply text-xl font-bold text-emerald-700 mt-8 mb-4; }
+        .prose h4 { @apply text-lg font-semibold text-slate-700 mt-6 mb-3; }
+        .prose p { @apply text-slate-600 leading-relaxed mb-4; }
+        .prose ul { @apply list-disc list-inside text-slate-600 mb-4 space-y-1; }
+        .prose ol { @apply list-decimal list-inside text-slate-600 mb-4 space-y-1; }
+        .prose table { @apply w-full text-left border-collapse mb-6 text-sm; }
+        .prose th { @apply bg-slate-100 text-slate-800 font-bold p-3 border border-slate-300; }
+        .prose td { @apply p-3 border border-slate-300 text-slate-600; }
+        .prose tr:nth-child(even) { @apply bg-slate-50; }
+        .prose code { @apply bg-slate-100 text-emerald-700 px-2 py-1 rounded text-sm; }
+        .prose pre { @apply bg-slate-900 text-slate-200 p-4 rounded-lg overflow-x-auto mb-6; }
+        .prose blockquote { @apply border-l-4 border-emerald-500 pl-4 italic text-slate-500 my-6; }
+        .nav-link { @apply block px-4 py-2 text-sm text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-all; }
+        .nav-link.active { @apply text-emerald-700 bg-emerald-50 font-medium; }
+        .part-number { @apply inline-flex items-center justify-center w-8 h-8 bg-emerald-500 text-white rounded-lg text-sm font-bold mr-3; }
+        @media print {
+            .no-print { display: none !important; }
+            .prose h1 { page-break-before: always; }
+            .prose h1:first-of-type { page-break-before: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800">FarmSense</h1>
+                    <p class="text-xs text-slate-500">Master Manual V2.1</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-sm text-slate-600 hover:text-emerald-600">Index</a>
+                <a href="#" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 opacity-50 pointer-events-none">← Prev</a>
+                <span class="text-sm text-slate-400">1 of 17</span>
+                <a href="part02.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">Next →</a>
+                <a href="FarmSense_Master_Manual_Comprehensive_V2.1.pdf" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm font-medium">Download PDF</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="max-w-7xl mx-auto pt-20 pb-12 px-4">
+        <div class="flex gap-8">
+            <!-- Sidebar Navigation -->
+            <nav class="w-64 flex-shrink-0 no-print">
+                <div class="sticky top-24 bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 class="font-bold text-slate-800 mb-4 px-4">Parts</h2>
+                    <div class="space-y-1">
+                        <a href="part01.html" class="nav-link {active}"><span class="part-number">I</span>Executive</a>
+                        <a href="part02.html" class="nav-link {}"><span class="part-number">II</span>Market</a>
+                        <a href="part03.html" class="nav-link {}"><span class="part-number">III</span>Human</a>
+                        <a href="part04.html" class="nav-link {}"><span class="part-number">IV</span>Technical</a>
+                        <a href="part05.html" class="nav-link {}"><span class="part-number">V</span>Hardware</a>
+                        <a href="part06.html" class="nav-link {}"><span class="part-number">VI</span>Interface</a>
+                        <a href="part07.html" class="nav-link {}"><span class="part-number">VII</span>Oracle</a>
+                        <a href="part08.html" class="nav-link {}"><span class="part-number">VIII</span>Pilot</a>
+                        <a href="part09.html" class="nav-link {}"><span class="part-number">IX</span>Operations</a>
+                        <a href="part10.html" class="nav-link {}"><span class="part-number">X</span>Infrastructure</a>
+                        <a href="part11.html" class="nav-link {}"><span class="part-number">XI</span>Security</a>
+                        <a href="part12.html" class="nav-link {}"><span class="part-number">XII</span>Legal</a>
+                        <a href="part13.html" class="nav-link {}"><span class="part-number">XIII</span>Standards</a>
+                        <a href="part14.html" class="nav-link {}"><span class="part-number">XIV</span>Financial</a>
+                        <a href="part15.html" class="nav-link {}"><span class="part-number">XV</span>Grants</a>
+                        <a href="part16.html" class="nav-link {}"><span class="part-number">XVI</span>Case Study</a>
+                        <a href="part17.html" class="nav-link {}"><span class="part-number">XVII</span>Appendices</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-i-executive-foundation">PART I: EXECUTIVE FOUNDATION</h1>
+<h2 id="executive-summary">1.0 Executive Summary</h2>
+<p>FarmSense constitutes the definitive technical, operational, and financial deployment blueprint of a Deterministic Farming Operating System (DFOS), integrating across Subdistrict 1 of the San Luis Valley (SLV), Colorado.</p>
+<h3 id="primary-objectives">1.0.1 Primary Objectives</h3>
+<ul>
+<li>20–30% reduction in irrigation water consumption</li>
+<li>18–22% increase in crop return on investment (ROI)</li>
+<li>Legally defensible Digital Water Ledger for Water Court admissibility</li>
+</ul>
+<h3 id="core-innovation">1.0.2 Core Innovation</h3>
+<p>Replace stochastic, intuition-based agricultural practices with a high-fidelity, rule-based computational engine optimizing the Soil-Plant-Atmosphere Continuum (SPAC) using a multi-layered sensor network.</p>
+<h3 id="economic-catalyst">1.0.3 Economic Catalyst</h3>
+<p>The Rio Grande Basin faces severe hydro-economic crisis. With 89,000 acre-foot annual aquifer depletion and $500/AF groundwater pumping fees (quadrupled from $75-150/AF), FarmSense shifts from agronomic optimization tool to legal necessity.</p>
+<h3 id="leadership">1.0.4 Leadership</h3>
+<p>Jeremy Beebe serves as Chief Executive Officer of bxthre3 inc., with successful startup exit track record (Hempvada).</p>
+<h2 id="hydro-economic-logic-and-the-deterministic-paradigm">1.1 Hydro-Economic Logic and The Deterministic Paradigm</h2>
+<h3 id="the-san-luis-valley-crisis-as-economic-multiplier">1.1.1 The San Luis Valley Crisis as Economic Multiplier</h3>
+<p><strong>Geographic Context:</strong> - Elevation: 7,500-8,000 feet above sea level - Precipitation: 7-10 inches annually - Irrigated agriculture: 300,000 acres dependent on snowmelt and aquifers - Reservoir storage: 26% of historical capacity - Annual aquifer depletion: 89,000 acre-feet</p>
+<h3 id="the-500af-fee-structure">1.1.2 The $500/AF Fee Structure</h3>
+<p>The Rio Grande Water Conservation District (RGWCD) implemented a punitive $500 per acre-foot groundwater pumping fee to combat over-consumption. This represents a quadrupling of previous costs ($75-150/AF).</p>
+<p>For a 126-acre center pivot consuming 252 AF/season: - 20% water reduction = 50.4 AF saved per season - 50.4 AF × $500/AF = $25,200 direct savings per pivot annually - FarmSense Enterprise Tier subscription: $499/month ($5,988/year) - First-year ROI: 421% return on subscription cost</p>
+<h3 id="the-deterministic-shift">1.1.3 The Deterministic Shift</h3>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 50%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Dimension</th>
+<th>Current Industry Standard</th>
+<th>FarmSense DFOS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Observation</td>
+<td>Visual scouting / manual soil probe</td>
+<td>1m centimetric Kriging with ground-truth validation</td>
+</tr>
+<tr class="even">
+<td>Calculation</td>
+<td>Crop-coefficient (static, FAO-56)</td>
+<td>SPAC thermodynamics (dynamic, real-time)</td>
+</tr>
+<tr class="odd">
+<td>Decision</td>
+<td>Intuition-based pumping schedules</td>
+<td>Edge-calculated VRI prescription</td>
+</tr>
+<tr class="even">
+<td>Evidence</td>
+<td>Paper logs, human memory</td>
+<td>SHA-256 sovereign ledger, cryptographic proofs</td>
+</tr>
+<tr class="odd">
+<td>Resolution</td>
+<td>Field-scale (variable)</td>
+<td>1m grid, legally admissible</td>
+</tr>
+</tbody>
+</table>
+<h2 id="spac-modeling-and-edaphic-variability">1.2 SPAC Modeling and Edaphic Variability</h2>
+<p>FarmSense utilizes 11 domain-specific, explainable engines. All irrigation and trading decisions are deterministic and judgment-based — a non-negotiable requirement for Water Court admissibility.</p>
+<h3 id="soil-layer-edaphic">1.2.1 Soil Layer (Edaphic)</h3>
+<p><strong>Parameters Monitored:</strong> - Soil Matric Potential (SMP) — measure of energy required to extract water - Volumetric Water Content (VWC) — percentage of soil volume occupied by water - Electrical Conductivity (EC) — indicator of salinity and nutrient content - pH — alkalinity/acidity affecting nutrient availability - Soil temperature (affects biological activity)</p>
+<h3 id="slv-soil-series-calibration">1.2.2 SLV Soil Series Calibration</h3>
+<p><strong>San Luis Soil Series:</strong> - pH: 8.4-9.8 (highly alkaline) - Exchangeable sodium: 15-60% - Primary risk: Salt buildup from irrigation - Irrigation trigger threshold: 75-80 kPa (conservative for salt management)</p>
+<p><strong>Gunbarrel Soil Series:</strong> - Type: Highly porous sand - Hydraulic conductivity: High (&gt;10 cm/hr saturated) - Requirement: Low-volume, high-frequency micro-irrigation - Irrigation trigger: 20-25 kPa (low threshold due to rapid drainage)</p>
+<p><strong>Alamosa Soil Series:</strong> - Type: Clay loam - Water holding capacity: High - Drainage: Slow - Irrigation trigger: 50-60 kPa</p>
+<h3 id="plant-layer-vegetative">1.2.3 Plant Layer (Vegetative)</h3>
+<p><strong>Parameters Monitored:</strong> - Leaf water potential (Ψleaf) — direct measure of plant water stress - Canopy Water Stress Index (CWSI) — thermal infrared signature - Normalized Difference Vegetation Index (NDVI) — overall plant health - Stomatal conductance — indicator of photosynthetic efficiency</p>
+<h3 id="atmosphere-layer-meteorologic">1.2.4 Atmosphere Layer (Meteorologic)</h3>
+<p><strong>Parameters Monitored:</strong> - Vapor Pressure Deficit (VPD) — driving force for transpiration - Solar radiation (shortwave and photosynthetically active) - Wind speed and direction (affects evaporation) - Relative humidity - Precipitation (actual and forecasted)</p>
+<p><strong>Forecasting Architecture:</strong> Long Short-Term Memory (LSTM) deep learning networks process 1-9 day ensemble weather forecasts to predict ET trends with 81-94% accuracy.</p>
+<h2 id="management-allowable-depletion-mad-framework">1.3 Management Allowable Depletion (MAD) Framework</h2>
+<p>MAD defines the percentage of available soil water (between field capacity and permanent wilting point) that can be depleted before crop experiences physiological damage.</p>
+<h3 id="crop-specific-mad-thresholds">1.3.1 Crop-Specific MAD Thresholds</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Crop</th>
+<th>Stage</th>
+<th>MAD %</th>
+<th>Trigger kPa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Potato</td>
+<td>Emergence</td>
+<td>30%</td>
+<td>30-40 kPa</td>
+</tr>
+<tr class="even">
+<td>Potato</td>
+<td>Tuber Initiation</td>
+<td>40%</td>
+<td>50-60 kPa</td>
+</tr>
+<tr class="odd">
+<td>Potato</td>
+<td>Bulking</td>
+<td>50%</td>
+<td>70-80 kPa</td>
+</tr>
+<tr class="even">
+<td>Potato</td>
+<td>Maturation</td>
+<td>60%</td>
+<td>80-100 kPa</td>
+</tr>
+<tr class="odd">
+<td>Barley</td>
+<td>Tillering</td>
+<td>30%</td>
+<td>40-50 kPa</td>
+</tr>
+<tr class="even">
+<td>Barley</td>
+<td>Grain fill</td>
+<td>60%</td>
+<td>80-100 kPa</td>
+</tr>
+<tr class="odd">
+<td>Alfalfa</td>
+<td>Establishment</td>
+<td>40%</td>
+<td>50-60 kPa</td>
+</tr>
+<tr class="even">
+<td>Alfalfa</td>
+<td>Production</td>
+<td>60%</td>
+<td>80-100 kPa</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-water-battery-strategy">1.3.2 The “Water Battery” Strategy</h3>
+<p>The Core Compute Server (Zo) delays irrigation to the “last possible minute,” utilizing the deep soil profile as a dynamic battery. This strategy: - Leaves headroom for rainfall capture - Maximizes natural precipitation utilization - Eliminates deep percolation losses - Reduces nutrient leaching - Minimizes pumping costs</p>
+<h2 id="system-architecture-overview">1.4 System Architecture Overview</h2>
+<h3 id="backend-intelligence-decentralized-cloud-layer">1.4.1 Backend Intelligence (Decentralized Cloud Layer)</h3>
+<p><strong>RDC (Regional Data Center / Map Servers):</strong> - Function: Master data library - Data types: Sentinel-2 multispectral imagery, Landsat thermal, historical edaphic datasets - Update frequency: Sentinel-2 (5-day revisit), Landsat (16-day revisit)</p>
+<p><strong>Spatial Query Engine (Map Manager / Oracle):</strong> - Function: Extracts spatial values at precise latitude/longitude coordinates - Operations: Point queries, polygon intersection, raster sampling - Output: Lightweight JSON arrays for edge processing - Technologies: PostGIS, STAC API integration</p>
+<p><strong>Core Compute Server (Zo):</strong> - Location: brodiblanco.zo.computer / cloud infrastructure - Functions: Bayesian priors, Localized Kriging algorithms, Worksheets generation, Ledger vaulting - Capacity: Processes hundreds of thousands of data points into predictive spatial grids</p>
+<h3 id="regionaldistrict-edge-infrastructure">1.4.2 Regional/District Edge Infrastructure</h3>
+<p><strong>Regional Superstation (RSS) — Level 3:</strong> - Location: Monte Vista, Colorado - Function: Territory master, equal cloud counterpart to backend intelligence - Form factor: Modified 40-foot High-Cube shipping container - Compute: 64-Core AMD Threadripper PRO, 512GB ECC RAM - Storage: 50TB Enterprise NVMe array (hot), 200TB cold archive - <strong>Critical capability:</strong> Continues full operation during total regional internet or cellular blackouts</p>
+<p><strong>District Hub (DHU) — Level 2:</strong> - Mounting: 35-foot Class 4 timber pole - Coverage radius: 100 pivots with extreme overlapping redundancy - Compute: NVIDIA Jetson Orin Nano (8GB RAM, Ampere GPU) - <strong>30-Day “Black Box” Cache:</strong> 128GB Swissbit PSLC Industrial SSD</p>
+<h3 id="field-layer-level-1-1.5-critical-hierarchy">1.4.3 Field Layer (Level 1-1.5) — CRITICAL HIERARCHY</h3>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 21%" />
+<col style="width: 19%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Level</th>
+<th>Device</th>
+<th>Function</th>
+<th>Elevation</th>
+<th>Reporting Target</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1.5</td>
+<td><strong>PMT (Pivot Motion Tracker)</strong></td>
+<td><strong>Field Aggregator / Hub</strong></td>
+<td>10-15 ft on pivot</td>
+<td>DHU</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td><strong>VFA (Vertical Field Anchor)</strong></td>
+<td>Deep-truth probe</td>
+<td>Ground level (buried)</td>
+<td><strong>PMT</strong></td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td><strong>LRZN (Lateral Root-Zone Basic)</strong></td>
+<td>Spatial scout</td>
+<td>Ground level (buried)</td>
+<td><strong>PMT</strong></td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td><strong>LRZB (Lateral Root-Zone Reference)</strong></td>
+<td>Spatial scout + VWC</td>
+<td>Ground level (buried)</td>
+<td><strong>PMT</strong></td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td><strong>PFA (Pressure &amp; Flow Anchor)</strong></td>
+<td>Wellhead sentry</td>
+<td>Ground level</td>
+<td><strong>PMT</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>CRITICAL ARCHITECTURE POINT:</strong> The PMT (elevated on the pivot span at 10-15 feet) serves as the <strong>Primary Field Aggregator</strong>. All ground-level devices (VFA, LRZN, LRZB, PFA) report upward to the PMT via 900MHz CSS LoRa. The PMT then: 1. Aggregates all sensor data 2. Performs Edge-EBK computation (50m grid) 3. Packages into encrypted payload (~187 bytes) 4. Transmits to DHU via 2.4GHz/LTE-M</p>
+<p>This elevated topology circumvents the dense water canopy that attenuates ground-level signals.</p>
+<h2 id="telemetry-architecture-resolution">1.5 Telemetry Architecture Resolution</h2>
+<h3 id="the-vfa-to-dhu-challenge-resolved">1.5.1 The VFA-to-DHU Challenge (Resolved)</h3>
+<p><strong>Initial Design Flaw:</strong> - VFA specified 900MHz CSS LoRa uplink - DHU specified 2.4GHz Ubiquiti LTU only - <strong>Resolution:</strong> DHU BOM revised to include 900MHz CSS LoRa gateway alongside 2.4GHz array</p>
+<h3 id="the-pmt-field-hub-solution-confirmed">1.5.2 The PMT Field Hub Solution (CONFIRMED)</h3>
+<p><strong>The PMT as Primary Field Aggregator:</strong> - PMT elevated 10-15 feet on pivot span - All field sensors (VFA, LRZN, LRZB, PFA) report to PMT via 900MHz CSS LoRa - PMT aggregates, computes Edge-EBK, and routes to DHU - This topology entirely circumvents dense water canopy attenuation</p>
+<h3 id="lrzn-vs-lrzb-distinction-critical">1.5.3 LRZN vs LRZB Distinction (CRITICAL)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>LRZN (Basic)</th>
+<th>LRZB (Reference)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Cost</strong></td>
+<td>$29.00</td>
+<td>$54.30</td>
+</tr>
+<tr class="even">
+<td><strong>Sensors</strong></td>
+<td>Dielectric only</td>
+<td>Dielectric + Temperature</td>
+</tr>
+<tr class="odd">
+<td><strong>Calibration</strong></td>
+<td>Standard</td>
+<td>Enhanced</td>
+</tr>
+<tr class="even">
+<td><strong>Role</strong></td>
+<td>Spatial density filler</td>
+<td>Ground-truth anchor</td>
+</tr>
+<tr class="odd">
+<td><strong>Reporting</strong></td>
+<td>To PMT</td>
+<td>To PMT</td>
+</tr>
+<tr class="even">
+<td><strong>Power</strong></td>
+<td>2.6Ah LiSOCl2</td>
+<td>2.6Ah LiSOCl2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Deployment Ratio:</strong> - LRZB (Reference): 4 per field - LRZN (Basic): 12 per field - Total: 16 LRZ nodes per standard field</p>
+<h2 id="risk-factor-analysis">1.6 Risk Factor Analysis</h2>
+<h3 id="geopolitical-water-scarcity">1.6.1 Geopolitical Water Scarcity</h3>
+<p>Interstate litigation could trigger federal aquifer takeovers. The Sovereign Ledger enables state engineers to prove compact compliance, reducing federal intervention standing.</p>
+<h3 id="technical-obsolescence">1.6.2 Technical Obsolescence</h3>
+<p>FarmSense is “Sensor-Agnostic.” The Hydrologic Oracle becomes the “Inference Layer” fusing satellite trends with sub-surface realities — a moat satellite-only players cannot cross.</p>
+<h2 id="long-term-roadmap-sovereign-water-infrastructure">1.7 Long-Term Roadmap: Sovereign Water Infrastructure</h2>
+<h3 id="phase-timeline">1.7.1 Phase Timeline</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>Timeline</th>
+<th>Scope</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>2026-2027</td>
+<td>SLV Subdistrict 1</td>
+<td>1,280</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>2028-2029</td>
+<td>Colorado River Basin</td>
+<td>5,000+</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>2030+</td>
+<td>National (High Plains)</td>
+<td>25,000+</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>2030+</td>
+<td>International</td>
+<td>100,000+</td>
+</tr>
+</tbody>
+</table>
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="#" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 opacity-50 pointer-events-none">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>None</span>
+                    </a>
+                    <a href="part02.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part II: Market Intelligence</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
+            <p>FarmSense Master Manual V2.1 | © 2026 Bxthre3 Inc. | CONFIDENTIAL</p>
+            <p class="mt-2">For questions, contact: <a href="mailto:contact@bxthre3.com" class="text-emerald-600 hover:underline">contact@bxthre3.com</a></p>
+        </div>
+    </footer>
+</body>
+</html>

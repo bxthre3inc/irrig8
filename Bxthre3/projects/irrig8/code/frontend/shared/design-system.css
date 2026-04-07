@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;800&display=swap');
+
+:root {
+  --primary: #10b981;
+  --primary-glow: rgba(16, 185, 129, 0.4);
+  --secondary: #f97316;
+  --secondary-glow: rgba(249, 115, 22, 0.4);
+  --bg-dark: #0b1120;
+  --bg-darker: #070b14;
+  --surface-glass: rgba(255, 255, 255, 0.05);
+  --surface-glass-border: rgba(255, 255, 255, 0.1);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+}
+
+/* Base Styles */
+.farmsense-base {
+  @apply bg-[#0b1120] text-slate-200 antialiased;
+  font-family: 'Inter', sans-serif;
+}
+
+.farmsense-headings {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Glassmorphism Components */
+.glass-card {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-nav {
+  @apply bg-[#0b1120]/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-50;
+}
+
+.glass-button-primary {
+  @apply bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50 px-6 py-3 rounded-xl transition-all duration-300 font-bold flex items-center justify-center gap-2;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.glass-button-secondary {
+  @apply bg-white/5 hover:bg-white/10 text-white border border-white/20 px-6 py-3 rounded-xl transition-all duration-300 font-bold flex items-center justify-center gap-2;
+}
+
+.glass-badge {
+  @apply px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+}
+
+.glass-input {
+  @apply bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all;
+}
+
+/* Typography Utilities */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400;
+}
+
+.text-gradient-orange {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-rose-400;
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.glow-active {
+  animation: pulse-glow 2s infinite;
+}

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part VII: Hydrologic Oracle | FarmSense Master Manual V2.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .prose h1 { @apply text-4xl font-black text-slate-900 mb-8 tracking-tight; }
+        .prose h2 { @apply text-2xl font-bold text-slate-800 mt-12 mb-6 pb-2 border-b-2 border-emerald-500; }
+        .prose h3 { @apply text-xl font-bold text-emerald-700 mt-8 mb-4; }
+        .prose h4 { @apply text-lg font-semibold text-slate-700 mt-6 mb-3; }
+        .prose p { @apply text-slate-600 leading-relaxed mb-4; }
+        .prose ul { @apply list-disc list-inside text-slate-600 mb-4 space-y-1; }
+        .prose ol { @apply list-decimal list-inside text-slate-600 mb-4 space-y-1; }
+        .prose table { @apply w-full text-left border-collapse mb-6 text-sm; }
+        .prose th { @apply bg-slate-100 text-slate-800 font-bold p-3 border border-slate-300; }
+        .prose td { @apply p-3 border border-slate-300 text-slate-600; }
+        .prose tr:nth-child(even) { @apply bg-slate-50; }
+        .prose code { @apply bg-slate-100 text-emerald-700 px-2 py-1 rounded text-sm; }
+        .prose pre { @apply bg-slate-900 text-slate-200 p-4 rounded-lg overflow-x-auto mb-6; }
+        .prose blockquote { @apply border-l-4 border-emerald-500 pl-4 italic text-slate-500 my-6; }
+        .nav-link { @apply block px-4 py-2 text-sm text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-all; }
+        .nav-link.active { @apply text-emerald-700 bg-emerald-50 font-medium; }
+        .part-number { @apply inline-flex items-center justify-center w-8 h-8 bg-emerald-500 text-white rounded-lg text-sm font-bold mr-3; }
+        @media print {
+            .no-print { display: none !important; }
+            .prose h1 { page-break-before: always; }
+            .prose h1:first-of-type { page-break-before: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800">FarmSense</h1>
+                    <p class="text-xs text-slate-500">Master Manual V2.1</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-sm text-slate-600 hover:text-emerald-600">Index</a>
+                <a href="part06.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">← Prev</a>
+                <span class="text-sm text-slate-400">7 of 17</span>
+                <a href="part08.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-sm text-slate-600 ">Next →</a>
+                <a href="FarmSense_Master_Manual_Comprehensive_V2.1.pdf" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm font-medium">Download PDF</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="max-w-7xl mx-auto pt-20 pb-12 px-4">
+        <div class="flex gap-8">
+            <!-- Sidebar Navigation -->
+            <nav class="w-64 flex-shrink-0 no-print">
+                <div class="sticky top-24 bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 class="font-bold text-slate-800 mb-4 px-4">Parts</h2>
+                    <div class="space-y-1">
+                        <a href="part01.html" class="nav-link {}"><span class="part-number">I</span>Executive</a>
+                        <a href="part02.html" class="nav-link {}"><span class="part-number">II</span>Market</a>
+                        <a href="part03.html" class="nav-link {}"><span class="part-number">III</span>Human</a>
+                        <a href="part04.html" class="nav-link {}"><span class="part-number">IV</span>Technical</a>
+                        <a href="part05.html" class="nav-link {}"><span class="part-number">V</span>Hardware</a>
+                        <a href="part06.html" class="nav-link {}"><span class="part-number">VI</span>Interface</a>
+                        <a href="part07.html" class="nav-link {active}"><span class="part-number">VII</span>Oracle</a>
+                        <a href="part08.html" class="nav-link {}"><span class="part-number">VIII</span>Pilot</a>
+                        <a href="part09.html" class="nav-link {}"><span class="part-number">IX</span>Operations</a>
+                        <a href="part10.html" class="nav-link {}"><span class="part-number">X</span>Infrastructure</a>
+                        <a href="part11.html" class="nav-link {}"><span class="part-number">XI</span>Security</a>
+                        <a href="part12.html" class="nav-link {}"><span class="part-number">XII</span>Legal</a>
+                        <a href="part13.html" class="nav-link {}"><span class="part-number">XIII</span>Standards</a>
+                        <a href="part14.html" class="nav-link {}"><span class="part-number">XIV</span>Financial</a>
+                        <a href="part15.html" class="nav-link {}"><span class="part-number">XV</span>Grants</a>
+                        <a href="part16.html" class="nav-link {}"><span class="part-number">XVI</span>Case Study</a>
+                        <a href="part17.html" class="nav-link {}"><span class="part-number">XVII</span>Appendices</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="flex-1 bg-white rounded-xl border border-slate-200 p-8 md:p-12 shadow-sm">
+                <div class="prose max-w-none">
+                    <h1 id="part-vii-the-hydrologic-oracle">PART VII: THE HYDROLOGIC ORACLE</h1>
+<h2 id="oracle-overview">7.0 Oracle Overview</h2>
+<p>The Hydrologic Oracle is the inference engine that transforms raw sensor data into actionable irrigation intelligence.</p>
+<h2 id="spac-thermodynamics-surface-energy-balance">7.1 SPAC Thermodynamics: Surface Energy Balance</h2>
+<h3 id="fundamental-equation">7.1.1 Fundamental Equation</h3>
+<pre><code>R_n - G = λE + H</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Description</th>
+<th>Measurement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>R_n</td>
+<td>Net radiation</td>
+<td>Kipp &amp; Zonen pyranometer (theoretical)</td>
+</tr>
+<tr class="even">
+<td>G</td>
+<td>Soil heat flux</td>
+<td>VFA dual-needle thermal pulse (±1%)</td>
+</tr>
+<tr class="odd">
+<td>λE</td>
+<td>Latent heat flux (ET)</td>
+<td>Calculated from water balance</td>
+</tr>
+<tr class="even">
+<td>H</td>
+<td>Sensible heat flux</td>
+<td>Calculated from temperature gradients</td>
+</tr>
+</tbody>
+</table>
+<h3 id="penman-monteith-model">7.1.2 Penman-Monteith Model</h3>
+<p><strong>Canopy Resistance (r_c):</strong></p>
+<pre><code>r_c = (Δ(R_n-G) + ρ_a c_p (e_s - e_a)/r_a) / (λE(Δ+γ)) - r_a</code></pre>
+<p><strong>Stomatal Closure Detection:</strong> - VPD &gt; 3.5 kPa → 40% photosynthetic efficiency reduction predicted - CWSI &gt; 0.3 → Moderate stress, increase monitoring - CWSI &gt; 0.6 → Severe stress, immediate irrigation</p>
+<h2 id="mathematical-derivation-cokriging-with-matern-kernels">7.2 Mathematical Derivation: Cokriging with Matern Kernels</h2>
+<h3 id="why-matern">7.2.1 Why Matern?</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Kernel</th>
+<th>Smoothness</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exponential (ν=0.5)</td>
+<td>Rough, continuous</td>
+<td>Compaction ridges</td>
+</tr>
+<tr class="even">
+<td>Matern (ν=1.0)</td>
+<td>Once differentiable</td>
+<td>Standard fields</td>
+</tr>
+<tr class="odd">
+<td>Gaussian (ν→∞)</td>
+<td>Infinitely smooth</td>
+<td>Not used (oversmooths)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Auto-tuning:</strong> ν varies 0.5-1.5 based on Field Roughness Index (FRI): - FRI &lt; 0.3 → ν = 1.5 (smooth) - FRI 0.3-0.7 → ν = 1.0 (moderate) - FRI &gt; 0.7 → ν = 0.5 (rough)</p>
+<h3 id="residual-calculation">7.2.2 Residual Calculation</h3>
+<pre><code>Z(s) = m(s) + ε(s)</code></pre>
+<ul>
+<li>m(s) = deterministic trend (satellite NDVI)</li>
+<li>ε(s) = spatially correlated residual (ground-truth sensors)</li>
+<li>Covariance: C(h) = σ² * (2^(1-ν) / Γ(ν)) * (κh)^ν * K_ν(κh)</li>
+</ul>
+<h2 id="crop-specific-calibration-libraries">7.3 Crop-Specific Calibration Libraries</h2>
+<h3 id="potato-russet-burbank">7.3.1 Potato (Russet Burbank)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Days</th>
+<th>Critical MAD</th>
+<th>VPD Threshold</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Emergence</td>
+<td>1-30</td>
+<td>30%</td>
+<td>2.0 kPa</td>
+</tr>
+<tr class="even">
+<td>Tuber Initiation</td>
+<td>31-50</td>
+<td>40%</td>
+<td>2.5 kPa</td>
+</tr>
+<tr class="odd">
+<td>Bulking</td>
+<td>51-80</td>
+<td>50%</td>
+<td>3.0 kPa</td>
+</tr>
+<tr class="even">
+<td>Maturation</td>
+<td>81-120</td>
+<td>60%</td>
+<td>3.5 kPa</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stress Avoidance:</strong> &lt;80 kPa at tuber initiation (yield-sensitive)</p>
+<h3 id="barley-standard-varieties">7.3.2 Barley (Standard Varieties)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Critical MAD</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Tillering</td>
+<td>30%</td>
+<td>Sensitive to early drought</td>
+</tr>
+<tr class="even">
+<td>Stem elongation</td>
+<td>50%</td>
+<td>Moderate tolerance</td>
+</tr>
+<tr class="odd">
+<td>Grain fill</td>
+<td>60%</td>
+<td>Drought-tolerant phase</td>
+</tr>
+</tbody>
+</table>
+<h3 id="alfalfa">7.3.3 Alfalfa</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Condition</th>
+<th>MAD</th>
+<th>Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Establishment</td>
+<td>40%</td>
+<td>Conservative, root development</td>
+</tr>
+<tr class="even">
+<td>Production (Cut 1-3)</td>
+<td>60%</td>
+<td>Maximize yield</td>
+</tr>
+<tr class="odd">
+<td>Production (Cut 4+)</td>
+<td>50%</td>
+<td>Quality over quantity</td>
+</tr>
+<tr class="even">
+<td>Bloom stress</td>
+<td>Variable</td>
+<td>Harvest timing optimization</td>
+</tr>
+</tbody>
+</table>
+<h2 id="forecasting-architecture">7.4 Forecasting Architecture</h2>
+<h3 id="input-data-sources">7.4.1 Input Data Sources</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Source</th>
+<th>Update Frequency</th>
+<th>Spatial Resolution</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>GFS</td>
+<td>6 hours</td>
+<td>13 km</td>
+<td>Large-scale patterns</td>
+</tr>
+<tr class="even">
+<td>HRRR</td>
+<td>Hourly</td>
+<td>3 km</td>
+<td>Convective precipitation</td>
+</tr>
+<tr class="odd">
+<td>NAM</td>
+<td>6 hours</td>
+<td>12 km</td>
+<td>Regional trends</td>
+</tr>
+<tr class="even">
+<td>ECMWF</td>
+<td>12 hours</td>
+<td>9 km</td>
+<td>Global validation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lstm-ensemble">7.4.2 LSTM Ensemble</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Configuration</th>
+<th>Layers</th>
+<th>Units</th>
+<th>Dropout</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Short-term (1-day)</td>
+<td>2</td>
+<td>128</td>
+<td>0.2</td>
+</tr>
+<tr class="even">
+<td>Medium-term (5-day)</td>
+<td>3</td>
+<td>256</td>
+<td>0.3</td>
+</tr>
+<tr class="odd">
+<td>Long-term (9-day)</td>
+<td>3</td>
+<td>512</td>
+<td>0.4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Accuracy:</strong> 81-94% ET prediction (validated against weighing lysimeters)</p>
+<h2 id="global-hydrologic-basin-registry-40-targets">7.5 Global Hydrologic Basin Registry (40 Targets)</h2>
+<h3 id="registry-by-stress-level">7.5.1 Registry by Stress Level</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Basin</th>
+<th>Region</th>
+<th>Stress</th>
+<th>Priority</th>
+<th>Timeline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Rio Grande</td>
+<td>USA (CO/NM/TX)</td>
+<td>Critical</td>
+<td>Active</td>
+<td>2026</td>
+</tr>
+<tr class="even">
+<td>Ogallala</td>
+<td>USA (NE/KS/OK/TX)</td>
+<td>Critical</td>
+<td>High</td>
+<td>2028</td>
+</tr>
+<tr class="odd">
+<td>Colorado River</td>
+<td>USA (AZ/CA/NV/UT)</td>
+<td>Severe</td>
+<td>High</td>
+<td>2028</td>
+</tr>
+<tr class="even">
+<td>Murray-Darling</td>
+<td>Australia</td>
+<td>High</td>
+<td>Medium</td>
+<td>2029</td>
+</tr>
+<tr class="odd">
+<td>North China Plain</td>
+<td>China</td>
+<td>Critical</td>
+<td>Medium</td>
+<td>2030</td>
+</tr>
+<tr class="even">
+<td>Indus</td>
+<td>Pakistan/India</td>
+<td>Severe</td>
+<td>Medium</td>
+<td>2030</td>
+</tr>
+<tr class="odd">
+<td>Nile</td>
+<td>Egypt/Ethiopia/Sudan</td>
+<td>Severe</td>
+<td>Low</td>
+<td>2031</td>
+</tr>
+<tr class="even">
+<td>Ganges</td>
+<td>India/Bangladesh</td>
+<td>High</td>
+<td>Low</td>
+<td>2032</td>
+</tr>
+</tbody>
+</table>
+<h3 id="applicability-scoring">7.5.2 Applicability Scoring</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Factor</th>
+<th>Weight</th>
+<th>Rio Grande</th>
+<th>Ogallala</th>
+<th>Indus</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regulatory enforcement</td>
+<td>25%</td>
+<td>10/10</td>
+<td>8/10</td>
+<td>6/10</td>
+</tr>
+<tr class="even">
+<td>Economic water cost</td>
+<td>25%</td>
+<td>10/10</td>
+<td>9/10</td>
+<td>5/10</td>
+</tr>
+<tr class="odd">
+<td>Center-pivot density</td>
+<td>20%</td>
+<td>9/10</td>
+<td>9/10</td>
+<td>3/10</td>
+</tr>
+<tr class="even">
+<td>Political stability</td>
+<td>15%</td>
+<td>9/10</td>
+<td>10/10</td>
+<td>4/10</td>
+</tr>
+<tr class="odd">
+<td>Partner availability</td>
+<td>15%</td>
+<td>10/10</td>
+<td>9/10</td>
+<td>5/10</td>
+</tr>
+<tr class="even">
+<td><strong>Weighted Score</strong></td>
+<td></td>
+<td><strong>9.65</strong></td>
+<td><strong>8.95</strong></td>
+<td><strong>4.65</strong></td>
+</tr>
+</tbody>
+</table>
+
+                </div>
+                
+                <!-- Footer navigation -->
+                <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between no-print">
+                    <a href="part06.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        <span>Part VI: Interface Layer</span>
+                    </a>
+                    <a href="part08.html" class="flex items-center gap-2 text-slate-600 hover:text-emerald-600 ">
+                        <span>Part VIII: Pilot Mission</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500">
+            <p>FarmSense Master Manual V2.1 | © 2026 Bxthre3 Inc. | CONFIDENTIAL</p>
+            <p class="mt-2">For questions, contact: <a href="mailto:contact@bxthre3.com" class="text-emerald-600 hover:underline">contact@bxthre3.com</a></p>
+        </div>
+    </footer>
+</body>
+</html>
