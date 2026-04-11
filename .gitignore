@@ -1,81 +1,178 @@
-# === Build Artifacts ===
+# ===== AGENTIC EXPLICIT INCLUDES — DO NOT IGNORE =====
+# These are always tracked
+!/Bxthre3/agentic/
+!/zo-computer-android/
+!/Bxthre3/INBOX/
+!/Bxthre3/VAULT/
+!/Bxthre3/projects/
+!/Bxthre3/shared/
+!/Bxthre3/AGENTS.md
+!/Bxthre3/SOUL.md
+!/Bxthre3/DOCUMENT_STANDARDS.md
+
+# ===== ZO COMPUTER SYSTEM =====
+__pycache__/
+*.pyc
+node_modules/
+.z/
+tmp/
+logs/
+*.log
+
+# ===== ARCHIVED / STALE PROJECTS =====
+Bxthre3/ALTS-TBD/
+Bxthre3/RESEARCH/
+Bxthre3/Backups/
+Bxthre3/ux/
+Bxthre3/www/
+
+# ===== GENERATED BUILD ARTIFACTS =====
 *.apk
 *.aab
-*.ipa
 *.zip
 *.tar.gz
-*.tar
-*.rar
-
-# === Credentials & Keys ===
-*.pem
-*.key
-*.p12
-*.pfx
-*.crt
-*.cer
-*.ovpn
-.env
-.env.*
-!.env.example
-
-# === Sensitive Business Data ===
-Bxthre3/INBOX/investor-portal-db.json
-Bxthre3/INBOX/investor-portal-db-*.json
-Bxthre3/INBOX/**/**/secrets/
-Bxthre3/INBOX/**/**/credentials/
-Bxthre3/INBOX/**/**/*.key
-
-# === Node / Package Artifacts ===
-node_modules/
-.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# === Python ===
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-
-# === Java / Android ===
-.gradle/
+*.dex
 build/
-!gradle/wrapper/gradle-wrapper.jar
-*.class
-*.jar
+dist/
+out/
 
-# === Capacitor ===
-android/app/build/
-android/.gradle/
-android/build/
-ios/App/build/
-ios/App/Pods/
-
-# === Logs ===
-*.log
-logs/
-
-# === macOS ===
+# ===== EDITOR / OS JUNK =====
 .DS_Store
-
-# === Zo / Service Artifacts ===
-*.zo.log
-zo-site-*.log
-dev_shm_*
-
-# === Editor / IDE ===
+Thumbs.db
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
+\#*\#
+.emacs.desktop
+.emacs.desktop.lock
 
-# === Database (orphan at root) ===
-postgres-data/
-*.sqlite
-*.sqlite3
-*.db
+# ===== GENERATED LOGS =====
+*LOG*.md
+*LOG*.md.ghost
+AmbientCapture*
+*-LOG-*.md
+*-LOG-*.md.ghost
 
-# === HTML Deck Build Artifacts ===
-*_DECK.html
-*_DECK.tsx
+# ===== DOCX / OFFICE (converted to md already) =====
+*.docx
+*.xlsx
+*.pptx
+~$*.docx
+
+# ===== PYTHON / SCRIPTS JUNK =====
+*.pyc
+__pycache__/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# ===== NODE =====
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# ===== PHP / LARAVEL (legacy) =====
+vendor/
+storage/*.key
+.env
+.env.backup
+
+# ===== RUST =====
+target/
+**/*.rs.bk
+Cargo.lock
+
+# ===== GO =====
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# ===== JAVA =====
+*.class
+*.jar
+*.war
+*.ear
+
+# ===== ANDROID =====
+gen/
+.gradle/
+local.properties
+*.iml
+.idea/
+*.ap_
+proguard/
+
+# ===== CREDENTIALS / SECRETS =====
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+credentials/
+.env
+.env.*
+
+# ===== COMPRESSED =====
+*.7z
+*.rar
+*.tar
+*.tgz
+*.gz
+*.bz2
+*.xz
+
+# ===== IMAGES / MEDIA (not project assets) =====
+*.psd
+*.ai
+*.sketch
+*.fig
+*.png
+*.jpg
+*.jpeg
+!.Bxthre3/projects/**/assets/*.png
+!.Bxthre3/projects/**/assets/*.jpg
+
+# ===== CAD / HARDWARE =====
+*.dwg
+*.dxf
+*.step
+*.stl
+*.iges
+
+# ===== NOTES / DRAFTS (move to VAULT if important) =====
+*draft*
+*_draft*
+*_DRAFT*
+*note*
+*_note*
+*pending*
+*_old
+*_backup
+*_bak
+
+# ===== DEM / OLD PROJECTS (archived, not tracked) =====
+Bxthre3/projects/the-dem-project/
+Bxthre3/projects/the-foundry-project/
+Bxthre3/projects/the-helm-project/
+Bxthre3/projects/helm/
+Bxthre3/projects/helm-the-business-automation-platform/
+Bxthre3/projects/SymphonyOS/
+
+# ===== CLOUDFORMATIONS / TERRAFORM =====
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# ===== MISC =====
+*.tmp
+*.temp
+*.cache
+*.bak
+*_backup*
+*_backup
