@@ -1,8 +1,0 @@
-{
-  "name": "time_keeper",
-  "description": "Tell the current time and date, set reminders",
-  "code": "def execute(input_text):\n    \"\"\"Handle time and date queries.\"\"\"\n    from datetime import datetime\n    \n    input_lower = input_text.lower()\n    \n    if \"time\" in input_lower:\n        now = datetime.now()\n        return f\"The current time is {now.strftime('%H:%M')}.\"\n    elif \"date\" in input_lower:\n        now = datetime.now()\n        return f\"Today is {now.strftime('%A, %B %d, %Y')}.\"\n    elif \"day\" in input_lower:\n        now = datetime.now()\n        return f\"Today is {now.strftime('%A')}.\"\n    else:\n        now = datetime.now()\n        return f\"Current time: {now.strftime('%H:%M')}, Date: {now.strftime('%Y-%m-%d')}\"",
-  "created": 1700000000.0,
-  "usage_count": 0,
-  "success_rate": 1.0
-}

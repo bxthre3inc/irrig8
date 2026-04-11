@@ -1,8 +1,0 @@
-{
-  "name": "math_helper",
-  "description": "Perform mathematical calculations and help with math problems",
-  "code": "def execute(input_text):\n    \"\"\"Perform mathematical calculations.\"\"\"\n    import re\n    \n    # Extract mathematical expression\n    # Try to evaluate safe expressions\n    try:\n        # Only allow basic math operations\n        allowed = set('0123456789+-*/().^ ')\n        expr = ''.join(c for c in input_text if c in allowed)\n        expr = expr.replace('^', '**')\n        \n        if expr and len(expr) > 0:\n            result = eval(expr)\n            return f\"Result: {result}\"\n        else:\n            return \"Please provide a mathematical expression to calculate.\"\n    except Exception as e:\n        return f\"I couldn't calculate that. Error: {str(e)}\"",
-  "created": 1700000000.0,
-  "usage_count": 0,
-  "success_rate": 1.0
-}
