@@ -226,67 +226,29 @@ Logs are SHA-256 sealed per event. Cannot be altered retroactively.
 
 ---
 
-## 4. Product Architecture
+## 4. Competitive Landscape
 
-### 4.1 AgentOS Stack
+The following table is grounded in documented GitHub issue discussions, PRs, and architectural releases from each framework as of April 2026. Claims without a source note are inference from documented behavior.
 
-```
-┌────────────────────────────────────────────────────────────┐
-│  PURPOSE LAYER (Owner Dashboard / Web + Mobile App)       │
-│  • Goal setting    • Authorization boundaries             │
-│  • Ledger review   • Exception review & directives        │
-└────────────────────────────┬───────────────────────────────┘
-                             │  Proposals / Approvals / Directives
-┌────────────────────────────▼───────────────────────────────┐
-│  BOUNDS ENGINE (Zo Reasoning Layer)                       │
-│  • Task decomposition    • Risk modeling                   │
-│  • Sandbox simulation   • Proposal generation              │
-│  • Learning from feedback (within immutable core)         │
-└────────────────────────────┬───────────────────────────────┘
-                             │  Approved actions / Blocked events
-┌────────────────────────────▼───────────────────────────────┐
-│  FACT LAYER (AgentOS Executor)                            │
-│  • Authorization gate    • Constraint validation           │
-│  • Execution engine     • SHA-256 Ledger sealing          │
-│  • Bailout trigger      • Tiered data access              │
-└────────────────────────────┬───────────────────────────────┘
-                             │  External systems / Physical world
-┌────────────────────────────▼───────────────────────────────┐
-│  EXTERNAL SYSTEMS                                         │
-│  • Email    • Calendar    • CRM (Linear, Notion, Airtable)│
-│  • Database • APIs        • File systems                   │
-│  • IoT devices (Irrig8)                                    │
-└───────────────────────────────────────────────────────────┘
-```
+| Capability | AgentOS (BX3) | CrewAI | AutoGen (Microsoft) | n8n |
+|---|---|---|---|---|
+| **Governance architecture** | Three-layer BX3 Loop (Purpose/Bounds/Fact) as architectural primitive | AMP Suite control plane + proposal-level guardrails plugin (`crewai-guardrails`, Issue #4502) | No native governance layer; proposal for cryptographic Agent Passport System (Issue #7372) | Workflow-level execution nodes; no governance layer above the workflow graph |
+| **Hard execution firewall** | ✅ Fact Layer blocks at architectural level — not RBAC | ❌ No architectural firewall; event hooks (`before_task_execute`) are软软的软 — bypassable | ❌ No deterministic enforcement; human-in-the-loop advisory only | ❌ Nodes execute within workflow context; no hardened external gate |
+| **Bounded proposer** | ✅ Bounds Engine is limbless — proposes, cannot execute | ⚠️ Agents have tool permissions but can execute autonomously within those permissions | ⚠️ Agents can invoke tools; no architectural separation between reasoning and execution | ⚠️ Agent nodes can call external services directly |
+| **Upstream accountability (Bailout Protocol)** | ✅ Exception flows upward bypassing all machine actors until Human Root | ❌ Governance event hooks exist but no cascade-to-human escalation path documented | ❌ No documented escalation path; maintenance mode (no new features) | ❌ No documented exception escalation beyond workflow error handling |
+| **Deterministic Ledger** | ✅ SHA-256 forensic sealing across Purpose/Bounds/Fact planes | ⚠️ Merkle audit chains proposed (Issue #4559, Agent Passport) but not shipped | ❌ Self-reported logs only; no cryptographic event sealing | ❌ Execution logs are database records; no cryptographic integrity |
+| **Spatial data tiers** | ✅ 4-tier resolution gate as architectural constraint | ❌ Not applicable | ❌ Not applicable | ❌ Not applicable |
+| **Human-in-the-loop (root tunneling)** | ✅ Root-Pipe Protocol for non-collapsing authority projection | ⚠️ AMP has monitoring and approval flows; not architecturally isolated from agent execution | ⚠️ Human feedback supported as part of conversation; no dedicated pipe mechanism | ⚠️ HITL node (`sendAndWait`) exists but is one node in a workflow, not an architectural layer |
+| **Recursive spawning / child agents** | ✅ Worksheet mechanism for OTA child agent provisioning | ⚠️ Hierarchical delegation (`allowed_agents` per PR #2068) but no containerized child agent spawning | ❌ No spawning mechanism; flat agent topology | ⚠️ Sub-agent as separate workflow (`Call n8n Workflow`) but no native child agent model |
+| **Local survivability** | ✅ Hub executes last-known-good Worksheet when cloud disconnected | ❌ No edge/offline execution model documented | ❌ No edge execution model | ❌ Requires cloud connection; no edge autonomy |
+| **9-plane accountability** | ✅ P1–P9 planes documented in Section 5 | ❌ Not documented | ❌ Not documented | ❌ Not documented |
+| **Formal verification path** | ✅ ILT enables formal proof of decision routing | ⚠️ Capability-Based Agent Hierarchy proposed (Issue #3491) — closed stale, not implemented | ❌ No formal verification architecture | ❌ No formal verification path |
+| **Deterministic loop breaking** | ✅ Topological state machine in Fact Layer | ❌ LLM-driven polarity; can enter infinite loops | ⚠️ Topological State Machine proposal (Issue #7409) — open, not implemented | ❌ Retry logic on errors; no topological loop detection |
 
-### 4.2 Agent Hierarchy
-
-```
-Human Owner (Root Accountability)
-    │
-    ├── Agent A (Tier 3: Operator)
-    │       ├── Task Loop A1 (isolated)
-    │       ├── Task Loop A2 (isolated)
-    │       └── Child Agent A1 (Spawned) → Task Loop A1a
-    │
-    └── Agent B (Tier 2: Analyst)
-            ├── Task Loop B1
-            └── Task Loop B2
-```
-
-### 4.3 9-Plane Data Model (AgentOS)
-
-| Plane | Name | AgentOS Data |
-|-------|------|-------------|
-| P1 | Physical Actuator | Device state, sensor reads, webhook triggers |
-| P2 | Local Gateway | Task queue state, agent heartbeat |
-| P3 | Communication | Email drafts, calendar events, messages |
-| P4 | Contextual Intel | Customer records, account data, CRM state |
-| P5 | Reasoning | Proposals, simulations, confidence scores |
-| P6 | Sandbox | What-if models, scenario outputs |
-| P7 | Authorization | Owner directives, capability tiers, boundaries |
-| P8 | Financial Ledger | Costs, credits, ROI per agent/task |
-| P9 | IP Core | Agent prompts, Worksheets, proprietary logic |
+**Sources:**
+- CrewAI: Issues #4502 (guardrails plugin), #3491 (responsibility tracking), #4559 (Agent Passport System), PR #2068 (hierarchical delegation), v1.7.0 release notes, unified Memory system PR #4420
+- AutoGen: Issues #7372 (cryptographic governance), #7528 (capability-scoped authorization), #7409 (deterministic loop-breaking TSM), PR #3600 (0.4 architecture preview), Discussion #7066 (AutoGen → MAF merger)
+- n8n: PR #17423 (AI Workflow Builder multi-agent), PR #25692 (unified multi-agent chat), PR #20030 (Agent V3 tooling), Issue #26373 (MCP tools in sub-agents), multi-agent handoff templates, travel planner example
 
 ---
 
@@ -307,28 +269,66 @@ Human Owner (Root Accountability)
 
 ---
 
-## 6. Feature Roadmap
+## 6. Roadmap — All Features Pre-v1
 
-### v1.0 (Current / Near-term)
-- [ ] Agent roster with Purpose/Bounds/Fact layer per agent
-- [ ] Owner Dashboard with goal-setting and boundary configuration
-- [ ] Task Isolation Mode (Pillar 1)
-- [ ] Tiered data access (Pillar 3 — Tier 1-2 initially)
-- [ ] Basic Ledger view (Pillar 5)
-- [ ] Bailout Trigger alerts (Pillar 5)
+All features below are in-scope for the initial AgentOS release. No phase gates. The complete BX3 Universal Architecture is the baseline.
 
-### v1.5 (Mid-term)
-- [ ] Child Agent Spawning (Pillar 2)
-- [ ] Sandbox Gate simulation previews (Pillar 4)
-- [ ] Owner Root-Pipe override (Pillar 4)
-- [ ] Full 9-Plane data model
-- [ ] Tier 3-4 data access
+### Pre-v1: Full BX3 Feature Set
 
-### v2.0 (Full BX3)
-- [ ] SHA-256 forensic sealing on Ledger entries
-- [ ] Full Bailout Protocol with escalation chain
-- [ ] BX3 Interchangeability Framework (Human ↔ Machine role swap)
-- [ ] Third-party licensing of BX3 AgentOS
+**Purpose Layer (Owner Interface)**
+- [ ] Owner Dashboard (goal-setting, authorization boundaries, Ledger review)
+- [ ] Human Accountability Anchor — required per agent, cannot be delegated to an agent
+- [ ] Authorization boundary configuration (what each agent can and cannot do)
+- [ ] Escalation threshold configuration (when Bailout fires)
+
+**Bounds Engine (Agent Reasoning)**
+- [ ] Sandbox simulation previews before any proposal is executed
+- [ ] Confidence scoring on all proposals
+- [ ] Bounds display — what the agent is NOT permitted to propose
+- [ ] Limbless enforcement — cannot execute directly, must pass through Fact Layer
+
+**Fact Layer (Execution Firewall)**
+- [ ] Architectural execution gate — not RBAC, not configurable bypass
+- [ ] SHA-256 forensic sealing on every event
+- [ ] Hard block on proposals that violate safety, regulatory, or authorization constraints
+- [ ] Tier gate enforcement (Tiers 1–4)
+
+**Pillar 1 — Loop Isolation**
+- [ ] Task Isolation Mode — every task is a self-contained BX3 sub-loop
+- [ ] No agent-to-agent direct execution — must route through Fact Layer
+- [ ] Task state isolation — compromised Bounds Engine cannot bleed across tasks
+
+**Pillar 2 — Recursive Spawning**
+- [ ] Worksheet mechanism — parent agents can birth containerized child agents
+- [ ] Child agent inherits parent's Purpose boundaries
+- [ ] Child agent has independent Bounds Engine + Fact Layer
+- [ ] Child agent revocation — parent or owner can revoke at any time
+- [ ] Local Survivability — child executes last-known-good Worksheet during cloud disconnection
+
+**Pillar 3 — Spatial Firewall**
+- [ ] 4-tier data access gates (Observer / Analyst / Operator / Admin)
+- [ ] Resolution-gated data access — Tier 1 agent cannot retrieve Tier 3 data
+- [ ] Tier upgrade requires owner approval via Purpose Layer
+- [ ] 9-plane data model (P1–P9)
+
+**Pillar 4 — Root Tunneling**
+- [ ] Owner Root-Pipe override — project into any agent without collapsing hierarchy
+- [ ] Non-collapsing authority projection
+- [ ] Sandbox Gate pre-execution simulation
+- [ ] HITL approval for high-stakes actions (configurable thresholds)
+- [ ] Full telemetry redirect to owner during Root-Pipe
+
+**Pillar 5 — Bailout Protocol**
+- [ ] Exception escalation chain — bypasses all machine actors to Human Root
+- [ ] Three trigger conditions (Capability Boundary / Safety Envelope / Authorization Gap)
+- [ ] Full escalation chain visibility to owner
+- [ ] Ledger — SHA-256 sealed forensic record across Purpose/Bounds/Fact planes
+- [ ] Deterministic loop breaking via topological state machine
+
+**Governance & Interoperability**
+- [ ] BX3 Interchangeability Framework — Human/Machine role swap without loss of deterministic integrity
+- [ ] Agent-to-agent coordination via Fact Layer only
+- [ ] Ledger exportable for regulatory audit
 
 ---
 
