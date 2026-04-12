@@ -1,6 +1,2 @@
-// Grant Lifecycle Manager
-export const grantManager = {
-  getCriticalBriefing: () => 'No critical grants',
-  getActive: () => [],
-  track: (grant: any) => ({ id: 'grant-1', status: 'tracking' })
-};
+// Grant Lifecycle Manager — delegates to lifecycle.ts
+export { GrantLifecycleManager, grantManager } from './lifecycle.js';

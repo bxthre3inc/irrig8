@@ -497,8 +497,27 @@ class Organization {
     this.save();
   }
 
-  getEmployee(id: string): Employee | Manager | Executive | undefined {
+  get(id: string): Employee | Manager | Executive | undefined {
     return this.chart.employees.get(id);
+  }
+
+  getManager(employeeId: string): Manager | undefined {
+    const emp = this.chart.employees.get(employeeId);
+    if (!emp) return undefined;
+    if (emp.managerId) return this.chart.employees.get(emp.managerId) as Manager | undefined;
+    return undefined;
+  }
+
+  getExecutive(): Executive | undefined {
+    return this.chart.employees.get(this.chart.root) as Executive | undefined;
+  }
+
+  getAll(): (Employee | Manager | Executive)[] {
+    return Array.from(this.chart.employees.values());
+  }
+
+  listAll(): (Employee | Manager | Executive)[] {
+    return Array.from(this.chart.employees.values());
   }
 
   getDirectReports(managerId: string): Employee[] {
@@ -506,10 +525,6 @@ class Organization {
     if (!manager || manager.role !== 'manager') return [];
     return Array.from(this.chart.employees.values())
       .filter(e => e.managerId === managerId);
-  }
-
-  listAll(): (Employee | Manager | Executive)[] {
-    return Array.from(this.chart.employees.values());
   }
 
   getTeammates(empId: string): string[] {
