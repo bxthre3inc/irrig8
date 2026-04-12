@@ -3,7 +3,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Spec ID** | AGENTOS-BX3-2026-V1.2 |
+| **Spec ID** | AGENTOS-BX3-2026-V1.3 |
 | **Framework** | BX3 Universal Architecture v6.1 |
 | **Date** | April 12, 2026 |
 | **Author** | Jeremy Beebe, Bxthre3 Inc. |
