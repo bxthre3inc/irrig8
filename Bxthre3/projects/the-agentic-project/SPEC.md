@@ -25,6 +25,20 @@
 
 ---
 
+## 1b. The Chairman Paradigm
+
+AgentOS operates as a **recursive intelligence mesh** with a single Root Authority.
+
+- **The Chairman** (brodiblanco) sits at the apex — the single decision authority
+- **Orchestrators** (Zoe, Atlas, Vance) decompose intent and route tasks
+- **Workers** execute atomic tasks and return verifiable outputs
+
+**The Trust Invariant:** Every summary provided to the Chairman must be trace-linked back to the raw Leaf-Node data that generated it. This is not a guideline — it is architecturally enforced by the FTE.
+
+**Abstraction Leakage** is the core problem the Chairman Paradigm solves: when a human "logs in" to a sub-node (conventional systems), they lose global context and the audit trail fractures. AgentOS solves this via **Root Tunneling** (Pillar 4) — the Chairman projects authority into any node without collapsing the hierarchy. The node structure is tunneled, not flattened.
+
+---
+
 ## 2. The BX3 Loop as Runtime Architecture
 
 ```
