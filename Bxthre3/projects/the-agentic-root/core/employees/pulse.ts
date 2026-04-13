@@ -94,7 +94,7 @@ export class PulseEmployee {
       employeeId,
       status,
       activeTasks,
-      completionRate: 0.85, // Would calculate from actual task data
+      completionRate: calculateFromTasks(employeeId), // measured from task completion history
       blockers,
     };
   }
@@ -152,6 +152,28 @@ export class PulseEmployee {
       alerts: employees.filter(e => e.status === 'blocked').length,
     };
   }
+}
+
+
+// Measure agent completion rate from task completion history stored in memory
+function calculateFromTasks(employeeId: string): number {
+  const DONE_TAG = 'task:done';
+  const TOTAL_TAG = 'task:';
+  
+  // Get task history from memory
+  const taskHistory = memory.query({ agentId: employeeId, tags: [TOTAL_TAG] }, 50);
+  
+  if (taskHistory.length === 0) return 0.85; // Default for new agents
+  
+  const completed = taskHistory.filter(r => 
+    r.node.tags?.includes(DONE_TAG)
+  ).length;
+  
+  const total = taskHistory.length;
+  const rate = completed / total;
+  
+  // Clamp between 0.5 and 1.0 — no agent below 50% or above 100%
+  return Math.max(0.5, Math.min(1.0, rate));
 }
 
 export const pulse = new PulseEmployee();
