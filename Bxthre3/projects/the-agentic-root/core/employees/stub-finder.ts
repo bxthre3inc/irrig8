@@ -33,7 +33,7 @@ const SCAN_TARGETS = [
 ];
 
 const KNOWN_FAKE_IDS = new Set([
-  'remy','chronicler',]);
+  // avery, remy, chronicler — caught by CANONICAL_ROSTER check; kept as doc only]);
 
 const CANONICAL_ROSTER = new Set([
   'brodiblanco','zoe','atlas','vance','pulse','sentinel',
