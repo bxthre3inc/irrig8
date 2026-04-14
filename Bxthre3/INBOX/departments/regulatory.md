@@ -2,46 +2,51 @@
 **Bxthre3 Inc | Gavel — Regulatory Affairs Lead**
 **Reports to:** Counsel (Legal), Anchor (CRO)
 **Meeting Cadence:** Daily standup 8:15 AM
-**Last Updated:** 2026-03-31 09:05 UTC
+**Last Updated:** 2026-04-14 15:05 UTC
 
 ---
 
-## 🚨 EMERGENCY REGULATORY UPDATE — March 31, 2026
+## 🚨 REGULATORY UPDATE — April 14, 2026
 
-**Source:** Multi-state legislative tracking, March 2026[^1][^2][^3]
+**Source:** News monitoring, state legislative tracking [^1][^2]
 
-### Critical: Sweepstakes Casino Ban Wave Accelerating
+### Critical: VPC Addressable Market Revised — Now ~38 States
 
-VPC's 47-state operational assumption is **NO LONGER VALID**. Multiple states have moved from proposal to law/enforcement in the past 30 days:
+The sweepstakes ban wave has accelerated. VPC's 47-state operational assumption is **NO LONGER VALID**.
 
-| State | Bill | Status | Effective Date | Penalty |
-|-------|------|--------|----------------|---------|
-| **Indiana** | HB 1052 | ✅ **SIGNED INTO LAW** | July 1, 2026 | $100,000 civil/operator |
-| **Minnesota** | SF 4474 | ⚠️ Advanced March 25, 2026 | TBD | TBD |
-| **Virginia** | HB 161 | ⚠️ Subcommittee passed | TBD (regulations by Sept 2026) | $250,000 civil |
-| **Maryland** | SB112/HB295 | ⚠️ Committee hearings | TBD | $100K + **3 years prison** |
-| **Mississippi** | SB 2104 | ⚠️ Senate unanimous | TBD | TBD |
-| **Maine, Arkansas, Florida, Illinois, Ohio, Massachusetts** | Various | 🔍 Under consideration | 2026 session | TBD |
+| State | Bill | Status | Effective Date | VPC Action |
+|-------|------|--------|----------------|------------|
+| **Indiana** | HB 1052 | ✅ **SIGNED LAW** | July 1, 2026 | Geo-block by July 1 |
+| **Virginia** | HB 161 | ⚠️ Session ended; ban unresolved | TBD (regulations pending) | Monitor |
+| **Minnesota** | SF 4474 | ⚠️ **Advancing** — bipartisan | TBD | Add to prohibited list |
+| **Maryland** | HB 1226/HB 295 | ⚠️ **Moving forward** | TBD | Add to prohibited list |
+| **Massachusetts** | HB 4431 | ⚠️ Filed — iGaming + ban | TBD | Monitor |
+| **California** | — | ✅ **Banned 2025** | Already blocked | Confirmed |
+| **Florida** | — | ✅ **Redemption blocked** | Already in effect | Confirmed |
+| **New York** | — | ✅ **Redemption blocked** | Already in effect | Confirmed |
 
-### VPC Operational Impact
+**Permanently prohibited:** WA, ID, Guam, PR, USVI, CA, FL, NY, **IN** (by July 1)
+**Newly at risk (pending law):** MN, MD, VA, MA
 
-**Current geo-block list:** WA, ID, Guam, PR, USVI
-**Required additions IMMEDIATELY:**
-- **Indiana** — Law effective July 1, 2026. Indiana players permissible pre-July 1; must geo-block by July 1.
-- **Virginia** — Ban in force once regulations published (est. September 2026). Monitor closely.
-- **Minnesota** — If bill passes as written, add to prohibited list.
-- **Maryland** — Criminal penalties. Add to prohibited list if bill passes.
+**Revised VPC addressable market estimate: ~38 states at launch** (down from 47)
 
-### Additional Federal Risk
+### AI Regulation Update
 
-**Prediction Markets Are Gambling Act** (Schiff/Curtis) — Bipartisan Senate bill introduced March 2026. Would prohibit CFTC-registered entities from listing sports/casino-style contracts. Does NOT directly target sweepstakes (different legal theory) but adds federal scrutiny to the gaming space.[^4]
+**Colorado AI Law (HB 23-1057):**
+- Under active rewrite — Gov. Polis endorsed framework removing audit requirements, focusing on **transparency notices** [^3][^4]
+- Original law faced tech/VC opposition; xAI filed lawsuit challenging constitutionality (April 2026) [^5]
+- Effective date: Original June 2026 target may shift with rewrite
+- **Impact on Starting 5:** If rewrite passes, disclosure requirements soften — transparency notices replace annual bias audits
 
-### Required Actions
+**California AI Laws (effective Jan 1, 2026):**
+- AB 853 (AI Transparency Act): Labeling, provenance, disclosure requirements
+- SB 53 (Transparency in Frontier AI Act): Risk governance requirements
+- **Impact on Starting 5:** These apply regardless of company location if CA users are served
 
-1. **Add Indiana to prohibited jurisdictions** — geo-block by July 1 at latest; ideally at launch
-2. **Monitor Virginia, Minnesota, Maryland** — add to prohibited list as bills become law
-3. **Flag for Sage Legal** — Update counsel on accelerating state bans; this affects legal opinion scope
-4. **Reassess 47-state assumption** — With IN, MN, MD, VA moving: VPC's addressable market at launch may be **< 40 states**
+**Federal Preemption Push:**
+- White House March 2026: Called on Congress to preempt state AI laws [^6]
+- Would override CO, CA, UT, TX state AI laws if enacted
+- Unlikely to pass in current form; state laws remain operative for now
 
 ---
 
@@ -57,7 +62,7 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 |---------|-------------------|---------------|
 | **Irrig8** | FDA FSMA, USDA, water rights, environmental, pesticide/fertilizer rules | Federal + Colorado |
 | **Starting 5** | AI disclosure (EU AI Act, state AI laws), GDPR, CCPA, data privacy | Federal + EU + US states |
-| **Valley Players Club** | iGaming, KYC/AML, sweepstakes law, Bank Secrecy Act | 47 states; WA/ID/GUAM/PR/USVI prohibited; IN signed law July 1, 2026; VA/MN/MD under ban progress; FL/NY blocked for redemption |
+| **Valley Players Club** | iGaming, KYC/AML, sweepstakes law, Bank Secrecy Act | ~38 states at launch; prohibited: WA, ID, GUAM, PR, USVI, CA, FL, NY, IN (July 1); MN/MD/VA/MA pending |
 | **Zoe / The Zoe Project** | AI regulation, open source licensing (AGPL/GPL), API compliance | Federal + open source community |
 | **Agentic** | AI agent regulation, employment law for AI workers | Federal |
 
@@ -72,8 +77,10 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 **Key facts:**
 - Sweepstakes gaming platform (Gold Coins + $C dual currency)
 - Cash partner network with collateral-backed risk management
-- 47-state geo-block operational; prohibited: WA, ID, Guam, PR, USVI
-- FL/NY redemption blocked (not prohibited from play, redemption denied)
+- **~38-state addressable market** (revised down from 47)
+- Permanently prohibited: WA, ID, Guam, PR, USVI, CA, FL, NY
+- Indiana: geo-block required by **July 1, 2026**
+- MN/MD pending: add to prohibited list as bills become law
 - Unit economics: $20 deposit → $13.75 net profit (69% margin)
 - Platform live at brodiblanco.zo.space/valleyplayersclub
 
@@ -82,6 +89,7 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 2. Wyoming LLC formation
 3. Sweepstakes bonds for FL and NY (where play is permitted but redemption requires bond)
 4. Attorney sign-off on 4 draft documents (ToS, Privacy Policy, AML/KYC, Cash Partner Agreement)
+5. **Indiana geo-block added to prohibited jurisdiction list**
 
 **Sweepstakes legal basis:** Chumba Casino / LuckyLand Gaming precedent — AMOE (Alternative Method of Entry) model. No purchase necessary to enter or win.
 
@@ -98,23 +106,25 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 2. Privacy Policy: GDPR/CCPA/BIPA compliance
 3. AML/KYC: FinCEN SAR thresholds, suspicious activity reporting
 4. Cash Partner Agreement: UCC-1 secured interest, Wyoming enforceability
-5. Sweepstakes compliance: 47-state geo-block sufficiency, prohibited jurisdiction list
+5. Sweepstakes compliance: ~38-state geo-block sufficiency, prohibited jurisdiction list (updated)
 
 **Timeline:**
-| Milestone | Target |
-|-----------|--------|
-| Documents delivered to Sage | March 24, 2026 (DELAYED — awaiting approval) |
-| Initial review complete | March 27, 2026 |
-| Revisions received | March 30, 2026 |
-| Final approval | March 31, 2026 |
+| Milestone | Target | Status |
+|-----------|--------|--------|
+| Sage Legal engagement approved | March 25, 2026 | ❌ DELAYED |
+| Documents delivered to Sage | March 24, 2026 | ❌ DELAYED |
+| Initial review complete | March 27, 2026 | ❌ DELAYED |
+| Revisions received | March 30, 2026 | ❌ DELAYED |
+| Indiana geo-block deployed | Before July 1, 2026 | 🔲 Pending |
+| Final approval | March 31, 2026 | ❌ DELAYED |
 
-**Recommendation:** Approve Sage Legal engagement immediately. Every day of delay pushes launch past March 31.
+**Recommendation:** Approve Sage Legal engagement immediately. Indiana geo-block is the immediate technical priority.
 
 ---
 
 ### 🟡 P2 — Irrig8: Water Court (June 29, 2026)
 
-**Hearing:** June 29, 2026 — Water Court Division 3, Alamosa, CO (98 days remaining)
+**Hearing:** June 29, 2026 — Water Court Division 3, Alamosa, CO (76 days remaining)
 
 **Critical gaps (from water-court agent):**
 1. **No deployed field data** — No actual SLV sensor telemetry exists. Must deploy NOW.
@@ -131,31 +141,18 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 
 ---
 
-
-**Grant:** ER26-FS-01 — Zero-Trust Spatial Water Management
-**Amount:** $830,000 ($450K Y1 + $380K Y2)
-**Deadline:** March 26, 2026 (1 day away)
-
-**Status:** All agent signatures obtained. Package ready. **brodiblanco signature required.**
-
-
-**FSMA relevance:** This grant funds Irrig8's spatial water management validation — directly supports FDA/USDA compliance infrastructure for food safety.
-
----
-
 ### 🟡 P2 — Starting 5: AI Disclosure Requirements
 
 **Scope:** EU AI Act, state AI laws (CO, UT, CA, IL), GDPR, CCPA
 
-**Key obligations to track:**
-- EU AI Act: High-risk AI system disclosures, transparency, human oversight
-- Colorado AI Act (HB 23-1057): Algorithmic discrimination disclosures, annual bias audits
-- Utah AI Policy: Consumer protections, disclosure requirements
-- California AI regulations: CCPA + emerging AI-specific rules
-
-**Data privacy:**
-- GDPR: Applies if EU users; lawful basis required for processing, data minimization
-- CCPA/CPRA: Consumer rights (access, deletion, opt-out); note biometric data (facial recognition for KYC)
+**Key obligations — updated status:**
+- **Colorado AI Act (HB 23-1057):** Under legislative rewrite. If passed, audit requirements removed → transparency notice framework. Monitor closely. [VERIFY: effective date post-rewrite]
+- **California AI Transparency Act (AB 853):** Effective January 1, 2026. Labeling, provenance, disclosure requirements. [VERIFY]
+- **California SB 53:** Effective January 1, 2026. Risk governance for frontier AI developers. [VERIFY]
+- **Utah AI Policy:** Consumer protections, disclosure requirements. [VERIFY]
+- **EU AI Act:** High-risk AI system disclosures, transparency, human oversight. [VERIFY]
+- **GDPR:** Applies if EU users; lawful basis required for processing, data minimization
+- **CCPA/CPRA:** Consumer rights (access, deletion, opt-out); biometric data (facial recognition for KYC)
 
 **BIPA note (Illinois):** Biometric data retention — 3-year retention in AML/KYC draft conflicts with 5-year BSA requirement. Must resolve which framework controls.
 
@@ -180,25 +177,30 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 |------|---------|----------|--------|
 | VPC launch blocked without Sage Legal | VPC | 🔴 Critical | PENDING APPROVAL |
 | FL/NY sweepstakes bonds not obtained | VPC | 🔴 Critical | Cannot launch in those states |
-| No water court expert witness | Irrig8 | 🔴 Critical | 98 days to hearing |
+| VPC addressable market reduced to ~38 states | VPC | 🔴 Critical | Ban wave accelerating |
+| Indiana geo-block not deployed | VPC | 🔴 Critical | July 1, 2026 deadline |
+| No water court expert witness | Irrig8 | 🔴 Critical | 76 days to hearing |
 | No deployed field data for water court | Irrig8 | 🔴 Critical | Must deploy NOW |
 | MSB determination unresolved | VPC | 🟡 High | Needs FinCEN counsel |
 | Biometric data retention conflict | VPC | 🟡 Medium | BIPA vs BSA conflict |
+| Colorado AI law rewrite | Starting 5 | 🟡 Medium | Monitor rewrite progress |
 | AI disclosure gaps | Starting 5 | 🟡 Medium | Gap analysis needed |
 | Open source licensing | Zoe | 🟢 Low | License review needed |
-| Indiana ban | VPC | 🟡 Medium | Law effective July 1, 2026 |
+| Minnesota/Maryland ban imminent | VPC | 🟡 High | Pending legislation |
 
 ---
 
 ## Pending Decisions (Escalating to Counsel / Anchor)
 
-| Decision | Requested By | Urgency |
-|----------|-------------|---------|
-| Sage Legal engagement approval | Legal | 🔴 IMMEDIATE |
-| VPC attorney engagement ($1,500–$3,000) | Legal | March 25 |
-| Water rights counsel engagement (CO) | Legal | This week |
-| MSB determination (FinCEN counsel) | Legal | This week |
-| Expert witness retainer (hydrology) | Legal | This week |
+| Decision | Requested By | Urgency | Deadline |
+|----------|-------------|---------|----------|
+| Sage Legal engagement approval | Legal | 🔴 IMMEDIATE | March 25 (OVERDUE) |
+| Indiana geo-block implementation | Engineering | 🔴 IMMEDIATE | July 1, 2026 |
+| VPC attorney engagement ($1,500–$3,000) | Legal | March 25 | OVERDUE |
+| Water rights counsel engagement (CO) | Legal | This week | — |
+| MSB determination (FinCEN counsel) | Legal | This week | — |
+| Expert witness retainer (hydrology) | Legal | This week | — |
+| MN/MD geo-block additions | Engineering | As bills pass | TBD |
 
 ---
 
@@ -210,4 +212,15 @@ Own regulatory compliance across all Bxthre3 ventures. Navigate the complex regu
 
 ---
 
-*Standing up regulatory department. More to follow as scope is defined.*
+## References
+
+[^1]: Indiana HB 1052 signed into law — Sweepstakes Gaming Banned in Indiana, National Law Review, 2026. https://natlawreview.com/article/sweepstakes-gaming-banned-indiana
+[^2]: State sweepstakes ban tracking — Deadspin, April 2026. https://deadspin.com/legal-betting/indiana-sweepstakes-casino-ban-sparks-igaming-debate/
+[^3]: Colorado AI Law Rewrite — Axios Denver, March 18, 2026. https://www.axios.com/local/denver/2026/03/18/colorado-artificial-intelligence-ai-law-rewrite
+[^4]: Colorado AI Law to Target Transparency — Bloomberg Law, March 2026. https://news.bloomberglaw.com/daily-labor-report/colorado-ai-law-to-target-transparency-under-gov-polis-rewrite
+[^5]: xAI sues Colorado over AI law — The Guardian, April 9, 2026. https://www.theguardian.com/technology/2026/apr/09/elon-musk-xai-colorado-lawsuit
+[^6]: White House moves to strip California, other states of AI regulation power — Los Angeles Times, March 20, 2026. https://www.latimes.com/business/story/2026-03-20/white-house-moves-to-strip-california-other-states-of-ai-regulation-power
+
+## 🟡 P2 | gavel | 2026-04-14 15:10 UTC
+
+Daily standup report: VPC addressable market revised to ~38 states (Indiana signed, MN/MD advancing). Sage Legal still pending. Irrig8 water court gaps unchanged.

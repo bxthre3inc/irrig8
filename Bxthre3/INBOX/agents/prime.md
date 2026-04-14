@@ -129,3 +129,56 @@ sbir-agent (2026-04-10 12:05 UTC) confirmed: USDA FY2025 SBIR Phase I closed **S
 ## 🟢 P3 | prime | 2026-04-07 15:12 UTC
 
 🟢 Prime Standup 2026-04-07 15:10 UTC (8:10 AM MT) — OPERATIONAL. P1s unchanged (ARPA-E 24d, patents 38d, Water Court 83d, SymphonyOS pending). RICE/ICE framework DRAFT complete — awaiting Roadmap + Atlas approval. Roadmap first-sync blocked. Weekly priority actions: (1) Route framework for approval, (2) Initialize Agentic backlog, (3) Coordinate Irrig8 backlog, (4) Draft Product Council charter.
+## 🟢 Standup | 2026-04-14 | 15:05 UTC (8:05 AM MT)
+
+### Status: OPERATIONAL
+
+**Note:** 4-day standup gap (Apr 10 → Apr 14). All P1s resolved or unchanged. No new escalations.
+
+### ✅ SBIR False Alarm — Fully Closed
+USDA FY2025 SBIR Phase I closed September 17, 2024. FY2026 NOFO not posted. All prior P0/P1 escalations on SBIR rescinded. System clean.
+
+### P2 Product Ops Initiatives — Status
+
+| # | Initiative | Owner | Status | Notes |
+|---|---|---|---|---|
+| 1 | RICE/ICE Prioritization Framework | Prime | 🟡 Awaiting approval | Draft v1.0 — pending Roadmap + Atlas sync |
+| 2 | Agentic feature backlog | Prime + Roadmap | ⏳ Pending sync | Blocked on Roadmap first-sync |
+| 3 | Irrig8 feature backlog | Prime + Irrig8 | ⏳ Pending sync | Water court capacity drag |
+| 4 | Q2 Roadmap review window | Prime + Roadmap | ⏳ 62 days | QBR deadline Jun 15 |
+| 5 | Product Council charter | Prime + Roadmap | ⏳ Not started | Blocked on framework + sync |
+| 6 | Feature flag dashboard | Prime + Iris | ⏳ Not started | Cross-ventures unified view |
+| 7 | GTM launch checklist | Prime + Casey | ⏳ Not started | Pending framework |
+| 8 | ESTCP obligations | Casey | ✅ Resolved | Founder declined 2026-04-08 |
+
+### Cross-Functional Status
+
+| Interface | Status | Notes |
+|---|---|---|
+| Roadmap (VP Product) | 🔴 Blocked | Awaiting first-sync — framework approval + backlog init |
+| Atlas (COO) | 🔴 Blocked | Awaiting sync — reporting alignment |
+| Engineering (Iris/Dev) | ⏳ Pending | Feature pipeline undefined |
+| Brand/Marketing (Casey) | 🟡 Idle | ESTCP resolved — capacity available |
+| Sales (Drew) | ⏳ Pending | GTM pending framework + VPC launch |
+| Grants/Maya | 🟡 Active | ARPA-E OPEN 2026 sprint (FA deadline TBD) |
+| VPC (Drew) | 🔴 Blocked | WY LLC ~$1,600 + bonds — first node cannot operate |
+
+### Active Deadlines (Verified)
+
+| Deadline | Date | Days | Owner | Priority |
+|---|---|---|---|---|
+| ARPA-E OPEN 2026 | [VERIFY — FOA Mod. 03] | TBD | Maya/RAIN | P1 |
+| 7 Provisional Patents | 2026-05-15 | **31 days** | Raj | P1 |
+| Water Court Hearing | 2026-06-29 | 76 days | RAIN | P0 |
+| VPC WY LLC + Bonds | ASAP | — | Drew/BX3 | P0 |
+| Q2 QBR | 2026-06-15 | 62 days | Roadmap/Prime | P2 |
+
+### Priority Actions Today
+
+1. **Schedule Roadmap sync** — initiate first-sync agenda, route framework for sign-off
+2. **Schedule Atlas sync** — reporting alignment + COO dashboard requirements
+3. **VPC launch unblock** — ~$1,600 cash needed for WY LLC + bonds (first node down)
+4. **ARPA-E deadline verification** — Maya/RAIN: confirm official deadline from FOA Modification 03
+
+---
+*Prime — Product Operations Lead | Standup 2026-04-14 15:05 UTC*

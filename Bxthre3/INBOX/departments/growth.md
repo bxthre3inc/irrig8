@@ -1,5 +1,5 @@
 # Growth Department INBOX — Optimize, CRO & Growth Lead
-**Last Updated:** 2026-04-08 09:15 AM MT
+**Last Updated:** 2026-04-14 08:15 AM MT
 **Reporting to:** Brand (VP Marketing), Roadmap (VP Product)
 
 ---
@@ -26,98 +26,109 @@
 
 ---
 
-## Daily Standup — 2026-04-08
+## Daily Standup: 2026-04-14
 
-### Pre-Flight Audit Complete
+### VPC — CRITICAL BLOCKERS
 
-| Venture | Health | Key Finding |
-|---------|--------|-------------|
-| VPC | 🟡 Stale | Compliance flag from Rain (2026-04-03) clears entity/ops concerns. Affiliate outreach can reopen. |
-| Irrig8 | 🟢 Ready | Sensor correlation R² ≥ 0.85 — product confidence HIGH. Grants running in parallel. |
-| Starting 5 | 🔴 Unknown | Zero funnel data in workspace. Need Casey alignment. |
-| Zoe | 🟡 Partial | API live but no SDK. 15-signup target plausible. |
-| Investor portal | 🟢 Building | Iris building `/investor` dashboard today. |
+| Item | Status | Notes |
+|------|--------|-------|
+| WY LLC formation | 🔴 P0 | ~$5,600 cash needed. Pre-launch blocker. Brodiblanco alerted. |
+| Affiliate compliance (Tier 1/2) | 🔴 13+ days overdue | VPC Agent missed 2026-03-31 deadline. |
+| Tier 3 outreach | 🟡 NOT INITIATED | Approved 2026-04-06 — 8 days, zero output from Harvest. |
+| Deposit conversion | 🔴 NO FUNNEL | Cannot instrument or test until WY LLC clears. |
 
-### Priority Actions Today
+### Irrig8 — SENSOR-READY, NO ACQUISITION FLOW
 
-1. **Reopen VPC affiliate outreach** — Rain cleared compliance
-2. **Instrument VPC deposit funnel** — primary revenue lever
-3. **Align with Casey** on Starting 5 funnel targets
-4. **Draft ICE scoring** for A/B test backlog
+| Item | Status | Notes |
+|------|--------|-------|
+| Sensor correlation | 🟢 HIGH CONFIDENCE | R² ≥ 0.85 Tier 1 confirmed. Production-ready. |
+| Farmer leads | 🟡 NO ACQUISITION TRACKING | SLV prospects: CPAC, Maverick Potato, Skyline Potato, Proximity Malt. |
+| Trial-to-paid | 🔴 NO DATA | No field trial data collected yet. |
+| Irrigation district | 🟡 NO PROGRESS | DWRD outreach not logged. |
+
+### Starting 5 — PRODUCT DATA MISSED
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Product data from Casey | 🔴 4 DAYS OVERDUE | Target was 2026-04-10. Zero context in workspace. |
+| Onboarding flow | 🔴 UNDEFINED | No AI matching wizard defined. |
+| Upgrade conversions | 🔴 UNDEFINED | No pricing tiers documented. |
+
+### Zoe — SDK GAP BLOCKING ADOPTION
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Developer signups | 🟡 PLAUSIBLE | 20/mo target possible with live API. |
+| SDK | 🔴 BLOCKING | No SDK = lower API adoption (40% target). |
+| Team expansions | 🔴 NOT STARTED | No enterprise motion. |
+
+### Investor Portal
+
+| Item | Status | Notes |
+|------|--------|-------|
+| `/investor` dashboard | 🟡 [VERIFY] | Iris ETA was 2026-04-08 — [VERIFY] if completed. |
 
 ---
 
 ## Growth Experiment Pipeline
 
-### Active Experiments
-| ID | Venture | Hypothesis | Status | Priority |
-|----|---------|------------|--------|----------|
-| — | — | None yet | — | — |
+### Active Experiments: ZERO
 
-### A/B Test Backlog (Draft ICE)
-| ID | Venture | Test | I | C | E | ICE | Priority |
-|----|---------|------|---|---|---|-----|----------|
-| ABT-001 | VPC | Cash bonus vs. free spins for first deposit | 7 | 8 | 9 | 24 | P1 |
-| ABT-002 | VPC | VIP tier entrance threshold ($500 vs $1K) | 6 | 7 | 8 | 22 | P2 |
-| ABT-003 | Irrig8 | Free trial vs. discounted first season | 8 | 6 | 7 | 21 | P2 |
-| ABT-004 | Starting 5 | AI matching wizard vs. static form | 7 | 7 | 6 | 20 | P2 |
-| ABT-005 | Zoe | API sandbox vs. documentation-first | 6 | 6 | 8 | 19 | P3 |
+### A/B Test Backlog (ICE Scores)
 
----
+| ID | Venture | Test | I | C | E | ICE | Priority | Status |
+|----|---------|------|---|---|---|-----|----------|--------|
+| ABT-001 | VPC | Cash bonus vs. free spins for first deposit | 7 | 8 | 9 | 24 | P1 | Blocked — no live players |
+| ABT-002 | VPC | VIP tier entrance threshold ($500 vs $1K) | 6 | 7 | 8 | 22 | P2 | Blocked — no live players |
+| ABT-003 | Irrig8 | Free trial vs. discounted first season | 8 | 5 | 7 | 18 | P2 | Instrument first |
+| ABT-004 | Starting 5 | AI matching wizard vs. static form | 7 | 4 | 6 | 16 | P2 | No product data |
+| ABT-005 | Zoe | API sandbox vs. documentation-first | 6 | 6 | 8 | 19 | P3 | Run when SDK ships |
 
-## Conversion Funnel Analysis
-
-### Weekly Snapshot: 2026-04-08
-
-#### VPC Funnel
-| Stage | Metric | Target | Status |
-|-------|--------|--------|--------|
-| Player acquisition | [VERIFY] | 50/mo | Pre-launch |
-| Deposit conversion | [VERIFY] | 60% | Pre-launch |
-| VIP retention | [VERIFY] | 40% 90d | Pre-launch |
-
-#### Irrig8 Funnel
-| Stage | Metric | Target | Status |
-|-------|--------|--------|--------|
-| Farmer leads | [VERIFY] | 10 pilots | Sensor-ready |
-| Trial-to-paid | [VERIFY] | 70% | Pending field data |
-| Irrigation district sales | [VERIFY] | 1 DWRD | SLV focus |
-
-#### Starting 5 Funnel
-| Stage | Metric | Target | Status |
-|-------|--------|--------|--------|
-| Founder signup | [VERIFY] | 50/mo | Launch pad |
-| AI co-founder matching | [VERIFY] | 80% | No data |
-| Upgrade conversions | [VERIFY] | 15% | No data |
-
-#### Zoe Funnel
-| Stage | Metric | Target | Status |
-|-------|--------|--------|--------|
-| Developer signups | [VERIFY] | 20/mo | API live |
-| API adoption | [VERIFY] | 40% | No SDK |
-| Team expansions | [VERIFY] | 10% | No enterprise |
+**Scoring:** ICE = Impact × Confidence × Ease (1-10 each)
+**ICE ≥ 20:** Run immediately. **ICE 15-19:** Run within 2 weeks. **ICE < 15:** Research first.
 
 ---
 
-## Growth Model — Key Metrics
+## Weekly Funnel Analysis: 2026-04-14
+
+### VPC Funnel
+| Stage | Metric | Target | Status |
+|-------|--------|--------|--------|
+| Player acquisition | [VERIFY] | 50/mo | Pre-launch — blocked |
+| Deposit conversion | [VERIFY] | 60% | Cannot test until live |
+| VIP retention | [VERIFY] | 40% 90d | Cannot test until live |
+
+### Irrig8 Funnel
+| Stage | Metric | Target | Status |
+|-------|--------|--------|--------|
+| Farmer leads | [VERIFY] | 10 pilots | No acquisition tracking |
+| Trial-to-paid | [VERIFY] | 70% | No field trial data |
+| Irrigation district | [VERIFY] | 1 DWRD | SLV focus, no outreach logged |
+
+### Starting 5 Funnel
+| Stage | Metric | Target | Status |
+|-------|--------|--------|--------|
+| Founder signup | [VERIFY] | 50/mo | No product data |
+| AI co-founder matching | [VERIFY] | 80% | Undefined |
+| Upgrade conversions | [VERIFY] | 15% | Undefined |
+
+### Zoe Funnel
+| Stage | Metric | Target | Status |
+|-------|--------|--------|--------|
+| Developer signups | [VERIFY] | 20/mo | API live, no SDK |
+| API adoption | [VERIFY] | 40% | No tracking |
+| Team expansions | [VERIFY] | 10% | Not started |
+
+---
+
+## Growth Model — Updated
 
 | Venture | Current | 30-Day Target | 90-Day Target | Revenue Target |
 |---------|---------|---------------|---------------|----------------|
-| VPC | Pre-launch | 50 players, 30 deposits | 150 players, $15K rev | $2K/mo by Q3 |
+| VPC | Pre-launch (blocked) | 50 players, 30 deposits | 150 players, $15K rev | $2K/mo by Q3 |
 | Irrig8 | Sensor-ready | 3 pilot commitments | 10 paid farms | $50K ARR by EOY |
-| Starting 5 | Launch pad | 25 signups | 75 signups, 10 paid | $5K MRR by Q4 |
+| Starting 5 | No product | 25 signups | 75 signups, 10 paid | $5K MRR by Q4 |
 | Zoe | API live | 15 API signups | 50 API clients | Platform fees TBD |
-
----
-
-## Marketing Attribution
-
-| Channel | Venture | Attribution Model | Status |
-|---------|---------|-------------------|--------|
-| Affiliate | VPC | Last-touch | Blocked — compliance stale |
-| Direct | Irrig8 | First-touch | Not instrumented |
-| Content | Starting 5 | Linear | Not instrumented |
-| API docs | Zoe | First-touch | Not instrumented |
 
 ---
 
@@ -125,28 +136,22 @@
 
 | Blocker | Owner | Due | Status |
 |---------|-------|-----|--------|
-| VPC affiliate clearance | Rain/Harvest | ASAP | Stale flag — re-escalate |
+| VPC WY LLC formation | brodiblanco | ASAP | **P0 — $5,600 cash needed** |
+| VPC affiliate compliance (Tier 1/2) | VPC Agent | ASAP | **13+ days overdue** |
+| VPC Tier 3 outreach | Harvest | Today | **8 days since approval** |
+| Starting 5 product data | Casey | 2026-04-10 | **4 days overdue** |
+| Investor portal | Iris | 2026-04-08 | **[VERIFY]** |
 | Funnel instrumentation | All ventures | 2026-04-15 | Not started |
 | A/B test infrastructure | Optimize | 2026-04-15 | Not started |
-| Starting 5 product data | Casey | 2026-04-10 | Not started |
 
 ---
 
-## ICE Scoring Framework
-
-**Formula:** ICE = Impact (1-10) × Confidence (1-10) × Ease (1-10)
-
-**Prioritization rules:**
-- ICE ≥ 20: Run immediately
-- ICE 15-19: Run within 2 weeks
-- ICE < 15: Research before running
-
-**Scoring anchors:**
-- Impact: Revenue or conversion lift potential
-- Confidence: Evidence quality (customer data > intuition)
-- Ease: Implementation difficulty (time/cost)
+## Next Standup: 2026-04-15 8:15 AM MT
 
 ---
 
 *Optimize — CRO & Growth Lead*
 *Agentic Growth Department*
+## 🟡 P2 | optimize | 2026-04-14 15:11 UTC
+
+Growth daily standup complete. VPC P0 flagged — WY LLC ~,600 cash blocker prevents ALL VPC growth experiments. Tier 3 outreach stalling (8 days, zero output). Starting 5 product data 4 days overdue. All ventures have zero funnel instrumentation. 0 active experiments.

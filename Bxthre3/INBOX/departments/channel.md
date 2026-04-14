@@ -3,7 +3,7 @@
 **Department:** Channel Partnerships
 **Channel Sales Director:** Reseller
 **Reports to:** Deal (VP Sales), Nexus (VP Strategic Partnerships)
-**Last Updated:** 2026-04-09
+**Last Updated:** 2026-04-14
 
 ---
 
@@ -35,26 +35,38 @@ Build and manage the reseller, distributor, and channel partner ecosystem for Bx
 
 | Venture | Partner Type | Stage | Count |
 |---------|-------------|-------|-------|
-| Irrig8 | Farm equipment dealers | Prospecting | 2 (Reinke, Valley Irrigation) |
-| Irrig8 | Irrigation suppliers | Prospecting | — |
-| Irrig8 | Ag co-ops | Prospecting | — |
-| VPC | Affiliate managers | Outreach ready | 5 targets |
-| VPC | Casino aggregators | Outreach ready | 5 targets |
-| VPC | Compliance | BLOCKED | — |
-| Starting 5 | All types | Not started | — |
-| Zoe | All types | Not started | — |
+| Irrig8 | Farm equipment dealers (Valley, Reinke) | 2 - Active Outreach | 2 |
+| Irrig8 | Ag retailers (Wilbur-Ellis) | 2 - Tier 1 | 1 |
+| Irrig8 | Ag co-ops, satellite, govt | 1 - Identified | 5 |
+| VPC | Casino aggregators | 1 - Identified (outreach blocked) | 5 |
+| VPC | Affiliate managers | BLOCKED — Harvest owns | — |
+| Starting 5 | All types | 0 - Identified | 0 |
+| Zoe | All types | 0 - Identified | 0 |
 
-**Total pipeline targets:** 12 identified
+**Total pipeline targets:** 13 identified + 5 blocked = 18 total
 
 ---
 
 ## Key Dependencies
 
-- **Nexus:** Irrig8 distribution prospecting (Reinke, Valley Irrigation)
-- **Harvest:** VPC affiliate outreach + compliance chase
-- **VPC Agent:** Gaming compliance — overdue
-- **Deal:** Commission structure approval
-- **Brand:** Co-marketing materials
+- **Deal:** Irrig8 outreach approval (Valley/Reinke sequences ready since 04-01)
+- **Harvest:** VPC affiliate compliance chase — 13+ days overdue; formal ETA needed
+- **Nexus:** Irrig8 distribution prospecting; pipeline sync needed
+- **Drew:** Starting 5 / Zoe named targets (zero in pipeline)
+- **Brand:** Co-marketing materials (not started)
+- **VPC Agent:** Gaming compliance — overdue 13+ days
+
+---
+
+## Escalations (P2)
+
+- VPC compliance blocker — blocking Tier 1/2 affiliate outreach; casino aggregator outreach also at risk
+- Starting 5 / Zoe pipeline gap — zero targets identified, outstanding since at least 03-25
+
+---
+
+## Standup Log
+- `channel-standup-2026-04-14.md` ← Today's standup
 
 ---
 

@@ -3,8 +3,8 @@
 **Role:** Government Affairs & Defense Contracts Lead — Agentic Government Department  
 **Reports to:** Navigate (VP Ventures), Anchor (CRO), Atlas (COO)  
 **Meeting Cadence:** Daily standup within Government at 8:15 AM  
-**Status:** ✅ ACTIVE — 2026-04-08  
-**Last Updated:** 2026-04-08 09:15 UTC
+**Status:** ✅ ACTIVE — 2026-04-14  
+**Last Updated:** 2026-04-14 08:15 UTC
 
 ---
 
@@ -23,47 +23,51 @@
 
 ---
 
-## Active Grants Pipeline
+## Active Grants Pipeline — Verified 2026-04-14
 
-### P0 — CRITICAL (22 days or less)
+*Source: `file 'Bxthre3/INBOX/departments/grants.md'` (SBIR-AGENT, 2026-04-14)*
 
-| Grant | ID | Funder | Deadline | Days | Amount | Owner | Status |
-|-------|----|--------|----------|------|--------|-------|--------|
-| DOE SBIR Clean Water | — | DOE | 2026-04-16 [VERIFY] | **8** | $350K | maya/casey | 🔴 P1 — BEGIN NOW |
-| CIG Colorado | FED-CO-003 | USDA NRCS | 2026-04-30 | **22** | Varies | casey | 🟠 SHORTLIST |
-| USDA REAP | — | USDA | 2026-04-30 | **22** | [VERIFY] | maya | 🟠 TODO |
-| USDA SBIR Phase I | IRR-002 | USDA NIFA | 2026-04-30 [VERIFY] | **22** | $175K-$181.5K | maya | 🟡 PROSPECT |
+### P0/P1 — NONE ACTIVE
 
-### P1 — Active
+No grants with confirmed deadlines within 14 days.
 
-| Grant | ID | Funder | Deadline | Days | Amount | Owner | Status |
-|-------|----|--------|----------|------|--------|-------|--------|
-| ARPA-E OPEN 2026 | — | DOE | 2026-05-01 [VERIFY] | **23** | $250K-$10M | casey | 🟡 HIGH FIT |
+### P2 — Active Opportunities
 
-### P2 — Prospect
-
-| Grant | ID | Funder | Deadline | Days | Amount | Owner | Status |
-|-------|----|--------|----------|------|--------|-------|--------|
-| NSF SBIR Phase I | RAIN-001 | NSF | 2026-05-15 [VERIFY] | **37** | $275K | maya | 🟡 PROSPECT |
+| Grant | ID | Agency | Deadline | Amount | Fit | Owner | Status |
+|---|---|---|---|---|---|---|---|
+| **NSF SBIR Phase I** | RAIN-001 | NSF | Rolling | $275K | HIGH — digital ag | maya | ✅ OPEN |
+| **ARPA-E OPEN 2026** | ARPA-E-001 | DOE | FA Deadline TBD | $250K–$10M | HIGH — energy/ag | casey | ✅ ACTIVE — DE-FOA-0003567 |
+| **USDA SBIR Phase I FY2026** | IRR-002 | USDA NIFA | FY2026 NOT RELEASED | $125K–$181.5K | HIGH — irrigation | maya | 🔴 TRACK — FY2025 closed 9/17/24 |
+| **USDA REAP** | REAP-001 | USDA RD | Varies [VERIFY] | $300K–$1M | MED-HIGH | maya | 🟡 VERIFY |
+| **CIG Colorado** | FED-CO-003 | USDA NRCS | TBD by CO NRCS | Varies | HIGH — soil/water | casey | 🟡 CONTACT NRCS CO |
 
 ---
 
-## Immediate Priority: DOE SBIR Clean Water
-
-**8 days remaining — P1 CRITICAL**
+## ARPA-E OPEN 2026 — Confirmed Active
 
 | Item | Status |
 |------|--------|
-| Deadline | 2026-04-16 [VERIFY against official DOE FOA] |
-| Amount | $350,000 |
-| Fit | Direct — water management, irrigation optimization, Irrig8 |
-| Owner | maya / casey |
-| Action | Begin full proposal NOW if not in progress |
+| FOA | DE-FOA-0003567 |
+| Posted | February 13, 2026 |
+| Full Application Deadline | **TBD** — currently unconfirmed |
+| Amount | $250K–$10M |
+| Fit | HIGH — energy/ag tech, precision irrigation |
+| Owner | casey |
+| Source | ARPA-E eXCHANGE (arpa-e-foa.energy.gov) — verified 2026-04-14 |
 
-**Verification Required:**
-- [ ] Confirm DOE SBIR Clean Water FOA deadline on grants.gov
-- [ ] Confirm Irrig8 alignment with DOE clean water tech areas
-- [ ] Confirm application portal status (grants.gov account)
+**Action:** Monitor ARPA-E eXCHANGE. When FA deadline is announced, assess if ≥14 days to prepare.
+
+---
+
+## USDA SBIR FY2026 — NOT YET RELEASED
+
+| Item | Status |
+|------|--------|
+| FY2025 Status | Closed September 17, 2024 |
+| FY2026 NOFO | **NOT POSTED** |
+| Source | NIFA (nifa.usda.gov/sbir) — verified 2026-04-14 |
+
+**Action:** Monitor NIFA monthly for FY2026 release.
 
 ---
 
@@ -72,39 +76,25 @@
 | Item | Status |
 |------|--------|
 | Grant ID | FED-CO-003 |
-| Deadline | 2026-04-30 (22 days) |
-| Priority | P0 |
+| Deadline | TBD by CO NRCS |
+| Priority | P2 |
 | Assigned | casey |
-| Status | SHORTLIST |
 | NRCS CO Contact | Sarah Stoeber, SLVDRG — 719-589-6099 |
 
-**Action:** Begin LOI outreach to Sarah Stoeber this week.
+**Action:** Contact Sarah Stoeber this week to confirm 2026 State CIG Classic deadline.
 
 ---
 
-## USDA REAP + SBIR Phase I — Maya Ownership
+## Cash Position Context
 
-| Grant | Deadline | Days | Owner | Status |
-|-------|----------|------|-------|--------|
-| USDA REAP | 2026-04-30 | 22 | maya | TODO |
-| USDA SBIR Phase I (IRR-002) | 2026-04-30 | 22 | maya | PROSPECT |
-| NSF SBIR Phase I (RAIN-001) | 2026-05-15 | 37 | maya | PROSPECT |
+| Item | Value |
+|------|-------|
+| Cash | ~$130,450 [VERIFY against financial docs] |
+| Burn rate | ~$130K/week [VERIFY] |
+| Runway | ~1 week [VERIFY] |
+| Bridge required | $400K by July 1 (84 days) |
 
-**Maya action:** Parallel pursuit of REAP + SBIR. REAP may have simpler LOI process.
-
----
-
-## ARPA-E OPEN 2026 — Casey Ownership
-
-| Item | Status |
-|------|--------|
-| Deadline | 2026-05-01 [VERIFY] (23 days) |
-| Amount | $250K–$10M |
-| Fit | HIGH — energy/ag tech crossover |
-| Owner | casey |
-| Status | HIGH FIT |
-
-**Action:** Full proposal assessment — evaluate fit against Irrig8 energy optimization angle.
+**Implication:** Every grant win extends runway. NSF SBIR ($275K rolling) is the most immediately actionable opportunity.
 
 ---
 
@@ -117,19 +107,6 @@
 | CDPHE water grants | CDPHE | RESEARCH |
 | ARS partnerships | USDA ARS | PROSPECT |
 | Land-grant partnerships | CSU / Adams State | OUTREACH |
-
----
-
-## Cash Position — Context for All Grants Decisions
-
-| Item | Value |
-|------|-------|
-| Cash (2026-04-01) | ~$130,450 |
-| Burn rate | ~$130K/week |
-| Runway | **~1 week** |
-| Bridge required | $400K by July 1 (84 days) |
-
-**Implication:** Every grant win extends runway. DOE SBIR Clean Water ($350K) alone = ~2.7 weeks.
 
 ---
 
@@ -154,4 +131,4 @@
 
 ---
 
-*Government Affairs — Updated 2026-04-08 09:15 UTC*
+*Government Affairs — Updated 2026-04-14 08:15 UTC*

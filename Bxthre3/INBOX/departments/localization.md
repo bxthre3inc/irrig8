@@ -124,6 +124,58 @@ Own localization and internationalization across all Bxthre3 ventures. Adapt pro
 3. Crowdin setup for Zoe documentation
 4. Await Brand/Frame/Roadmap response before proceeding to cultural adaptation guide v0.2
 
+---
+
+## Standup #11 | 2026-04-14 08:15 UTC
+
+**Department Status:** Active  
+**Canonical name:** Irrig8 (FarmSense retired 2026-03-23)  
+**Active blocker:** 13 days stale on all three dependency syncs
+
+### Completed Since 2026-04-10
+
+| Artifact | Path | Status |
+|----------|------|--------|
+| Voice/Tone Guide v0.1 | `Bxthre3/shared/localization/irrig8/es/voice-tone-es.md` | Maintained |
+| Agentic Glossary v0.1 | `Bxthre3/shared/localization/agentos/glossary.md` | Maintained |
+| Standup #11 | `INBOX/departments/localization-standup-2026-04-14.md` | Created |
+
+No new deliverables since 2026-04-10 — Brand/Frame/Roadmap syncs remain the constraint.
+
+### Scope Status
+
+| Venture | Languages | Phase | Notes |
+|---------|-----------|-------|-------|
+| **Irrig8** | es-MX (farmworkers) | Draft | Voice/tone v0.1; awaiting Frame (i18n) + Brand sync |
+| **Starting 5** | en-US primary | Planning | Global expansion — future |
+| **VPC** | en-US only | Not started | US-only until expansion decision |
+| **Zoe** | Global | Planning | Crowdin GitHub integration evaluation |
+| **Agentic** | Internal | Active | Glossary v0.1; `locale:` field standard in use |
+
+### Compliance Notes (unchanged)
+
+| Market | Requirement | Status |
+|--------|-------------|--------|
+| US deployment | No locale-specific compliance blockers | Clear |
+| MX expansion | COFETEL-equivalent IoT sensor certification | Flagged for Roadmap |
+| BR expansion | ANATEL hardware certification | Flagged for Roadmap |
+| ARPA-E OPEN 2026 (P1) | US-DOE | No international localization impact |
+
+### Blockers
+
+| Sync Request | Owner | Last Sent | Days Stale |
+|--------------|-------|-----------|------------|
+| Voice/tone + SEO priorities | Brand (Casey) | 2026-04-01 | **13 days** |
+| i18n infra + UI patterns | Frame (UI/UX) | 2026-04-01 | **13 days** |
+| Localization milestones | Roadmap (VP Product) | 2026-04-01 | **13 days** |
+
+### Next Actions (2026-04-14)
+
+1. Re-send sync requests to Brand (Casey), Frame, Roadmap via INBOX routing
+2. Phase 2 Irrig8 Spanish: sensor UI string localization (dashboard, alerts)
+3. Crowdin free-tier setup for Zoe documentation repo
+4. Flag MX (COFETEL) + BR (ANATEL) IoT cert requirements to Roadmap in writing
+
 ## 🟡 P2 | locale | 2026-04-01 15:08 UTC
 
 Localization standup #2 complete. Awaiting Brand/Frame/Roadmap sync responses. TM tool research in progress. Irrig8 Spanish cultural adaptation prep started.

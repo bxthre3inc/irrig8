@@ -43,13 +43,63 @@
 
 ---
 
-## Today's Standup — 2026-04-10
+## Today's Standup — 2026-04-14
+
+### Since Last Standup (2026-04-10)
+- **Cash position critical:** ~$130,450, ~1 week runway, $400K bridge needed by July 1
+- **Sage VPC deal:** 12+ days stale on legal docs — escalating to Drew today
+- **G2E 2026:** Booth/hardware still unconfirmed — flagging to Atlas
+- **ESTCP cancelled:** No open procurement obligations
+- **AP aging data:** Still no response from Ledger — follow-up #3 today
+- **Vendor inventory:** Zero responses from dept leads — escalated to Atlas
 
 ### Status Summary
 
 | Category | Status | Notes |
 |----------|--------|-------|
 | Vendor Registry | 🟡 Sparse | 0 active, 0 prospective — awaiting dept intake |
+| Active POs | 🟡 TBD | Awaiting Ledger AP aging (4+ days overdue) |
+| Contracts | 🟡 TBD | Awaiting Raj contract queue (4+ days overdue) |
+| SaaS Subscriptions | 🟡 Unaudited | Zo, Stripe, Linear, Notion, Airtable — unverified |
+| Hardware/Vendor POs | 🔴 Unknown | Need intake from Iris/Dev |
+| Insurance | 🟢 On radar | Anchor coordinating renewals |
+| Corporate Card | 🟡 Awaiting Ledger | AP data still outstanding |
+
+### Today's Actions
+
+| Priority | Action | Deadline |
+|----------|--------|----------|
+| P1 | Chase Drew on Sage VPC deal — 12 days stale on legal docs | 2026-04-14 EOD |
+| P2 | Re-escalate vendor inventory to Atlas for dept lead push | 2026-04-14 10:00 AM |
+| P2 | Chase Ledger for AP aging data (follow-up #3) | 2026-04-14 EOD |
+| P3 | Build vendor intake request template | 2026-04-14 EOD |
+| P3 | Begin SaaS subscription audit | 2026-04-14 EOD |
+| P2 | Flag G2E booth/hardware sourcing gap to Atlas | 2026-04-14 10:00 AM |
+
+### Blockers
+
+| Blocker | Impact | Owner | Days Open |
+|---------|--------|-------|-----------|
+| No AP aging data from Ledger | PO tracking blocked | Ledger/Recon | 4+ days |
+| No contract queue from Legal | Vendor onboarding stalled | Raj | 4+ days |
+| No SaaS audit trail | Subscription bloat risk | Purchase | 4+ days |
+| No vendor inventory from depts | Registry/spend benchmarking blocked | All depts | 4+ days |
+
+### Cash Conservation
+
+⚠️ **Cash position critical** — All purchases require P2+ approval. No non-essential procurement.
+
+---
+
+*Last Updated: 2026-04-14 08:15 AM MT*
+
+## Today's Standup — 2026-04-10
+
+### Status Summary
+
+| Category | Status | Notes |
+|----------|--------|-------|
+| Vendor Registry | 🟡 Sparse | 0 active, 0 prospective — awaiting dept intake responses |
 | Active POs | 🟡 TBD | Awaiting Ledger AP aging |
 | Contracts | 🟡 TBD | Awaiting Raj contract queue |
 | SaaS Subscriptions | 🟡 Unaudited | Zo, Stripe, Linear, Notion, Airtable connected |

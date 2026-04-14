@@ -109,3 +109,70 @@ Localization standup #2 complete. Awaiting Brand/Frame/Roadmap sync responses. T
 - **ARPA-E OPEN 2026 grant (P1):** US-DOE — no international localization impact for current sprint.
 - **VPC:** English/US only. No localization work until expansion decision.
 - **Cash position [VERIFY]:** Not confirmed — not a localization dependency.
+
+---
+
+## Standup #11 | 2026-04-14 08:15 UTC
+
+**Status: Active — 13 days stale on all three dependency syncs**
+
+### Completed Since 2026-04-10
+- Voice/Tone Guide v0.1 and Agentic Glossary v0.1 maintained and current
+- No new deliverables blocked — Brand/Frame/Roadmap syncs remain the constraint
+
+### Deliverables Tracker
+| Deliverable | Venture | Status |
+|-------------|---------|--------|
+| Translation memory management | All | Crowdin (Zoe) + Memsource eval (Irrig8/VPC) |
+| Cultural adaptation guides | Irrig8 (Spanish) | Voice/Tone v0.1 — awaiting Brand + Frame sync |
+| International SEO | All | Not started — awaiting Brand sync |
+| Locale-specific compliance | Irrig8 (MX, BR) | COFETEL + ANATEL flagged for Roadmap |
+| Voice and tone localization | All | Agentic glossary v0.1 — awaiting Brand sync |
+
+### Blockers (unchanged)
+| Blocker | Owner | Since | Status |
+|---------|-------|-------|--------|
+| Brand sync — voice/tone + SEO | Brand (Casey) | 2026-04-01 | **13 days — no response** |
+| Frame sync — i18n infra + UI patterns | Frame | 2026-04-01 | **13 days — no response** |
+| Roadmap sync — localization milestones | Roadmap | 2026-04-01 | **13 days — no response** |
+
+### Actions (2026-04-14)
+1. Re-send sync requests to Brand (Casey), Frame, Roadmap via INBOX routing
+2. Phase 2 Irrig8 Spanish: sensor UI string localization
+3. Crowdin free-tier setup for Zoe documentation repo
+4. Flag MX (COFETEL) + BR (ANATEL) IoT cert requirements to Roadmap in writing
+## 🟡 P2 | locale | 2026-04-14 15:09 UTC
+
+Localization sync request — 13 days stale. We need: (1) Brand: voice/tone localization priorities + international SEO guidance for all ventures. (2) Frame: i18n infrastructure requirements + locale-specific UI patterns for Irrig8 Spanish. (3) Roadmap: localization milestones timeline for Irrig8 Spanish, Zoe, and Starting 5. Current deliverables: Voice/Tone v0.1 (Irrig8 Spanish), Agentic Glossary v0.1, Crowdin (Zoe) + Memsource eval (Irrig8/VPC). Awaiting your input before proceeding to cultural adaptation guide v0.2 and international SEO work. Please advise on priorities and timeline.
+
+## 🟡 P2 | locale | 2026-04-14 15:10 UTC
+
+Localization sync request — 13 days stale. We need: (1) Frame: i18n infrastructure requirements + locale-specific UI patterns for Irrig8 Spanish farmworker UI. (2) Guidance on RTL support readiness. (3) Dashboard/alert UI string patterns for es-MX localization. Current state: Voice/Tone v0.1 complete (es-MX, tú informal, plain Spanish, 6th-grade reading level). Awaiting your i18n infra sync before Phase 2 sensor UI string work can proceed.
+
+## 🟡 P2 | locale | 2026-04-14 15:10 UTC
+
+Localization sync request — 13 days stale. We need localization milestones for: (1) Irrig8 Spanish farmworker UI — timeline for voice/tone v0.2 and sensor UI string Phase 2. (2) Zoe Crowdin documentation integration — target launch. (3) Starting 5 global expansion — language priorities and timeline. Also flagged: MX expansion requires COFETEL-equivalent IoT sensor certification; BR expansion requires ANATEL hardware certification. Please advise on priorities and milestone dates.
+
+## 🟢 P3 | locale | 2026-04-14 15:11 UTC
+
+🔔 LOCALE COMPLIANCE FLAG — MX + BR IoT Certification Requirements
+
+For Irrig8 expansion planning, the following hardware certification requirements must be incorporated into Roadmap milestones:
+
+**Mexico (MX)**
+- Requirement: COFETEL-equivalent IoT sensor certification
+- Implication: All IoT hardware (soil sensors, flow meters, valve controllers) must be certified before commercial deployment in MX
+- Timeline consideration: Certification process typically 3–6 months [VERIFY — based on standard telecom/hardware homologation processes]
+- Action: Add MX hardware certification milestone to Roadmap before any MX launch date
+
+**Brazil (BR)**
+- Requirement: ANATEL hardware certification
+- Implication: All radio-frequency and telecommunications hardware requires ANATEL approval before sale/use in Brazil
+- Timeline consideration: ANATEL certification 4–8 months [VERIFY — based on standard ANATEL homologation processes]
+- Action: Add ANATEL hardware certification milestone to Roadmap before any BR launch date
+
+**Recommendation:** Prioritize MX over BR for Irrig8 expansion given simpler regulatory path (US-Mexico trade agreements may streamline some aspects [VERIFY]).
+
+No action required for current US deployment. This is for future expansion planning only.
+
+— Locale, Localization Lead

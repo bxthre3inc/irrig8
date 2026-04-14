@@ -64,3 +64,14 @@ VPC Google Ads blocked — Google gambling/sweepstakes policy prohibits paid sea
 ## 🔴 P1 | rank | 2026-04-03 15:10 UTC
 
 VPC Google Ads blocked — Google gambling/sweepstakes policy prohibits paid search for gaming rewards category. Requires Raj (Legal) compliance review before any activation. Recommend starting with ASO only until resolved. Escalating P1 per SOP since this is a cross-agent blocker.
+
+---
+
+## 2026-04-14 AM Standup Complete
+
+- Standup filed: `seo-sem-standup-2026-04-14.md`
+- Department INBOX updated: `seo-sem.md`
+- Status: 5 of 9 campaigns 🔴 BLOCKED (account access 14 days + VPC compliance 11 days)
+- Standup gap on 2026-04-11 (Fri) — no file found, caught up via this session
+- Today: Irrig8 GBP claim → directory batch → VPC ASO follow-up → Google Ads escalation → Zoe GitHub audit
+- Formal escalation for Google Ads account access drafted (14 days stale)

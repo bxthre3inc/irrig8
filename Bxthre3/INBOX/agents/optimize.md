@@ -1,95 +1,66 @@
 # OPTIMIZE INBOX — CRO & Growth Lead
-**Last Updated:** 2026-04-08 09:15 AM MT  
-**Reports to:** Brand (VP Marketing), Roadmap (VP Product)  
-**Status:** ACTIVE — First Run
+**Last Updated:** 2026-04-14 08:15 AM MT
+**Reports to:** Brand (VP Marketing), Roadmap (VP Product)
+**Status:** ACTIVE
 
 ---
 
-## Daily Standup — 2026-04-08
+## Daily Standup — 2026-04-14
 
-### 🟡 P2 | optimize | 2026-04-08 09:15 UTC
+### 🔴 CRITICAL | VPC P0 — WY LLC Formation
 
-**Optimize initialized.** Running first growth audit across all ventures.
+VPC has escalated to P0. ~$5,600 cash needed for WY bonds + filing. This is the single blocker preventing ALL VPC growth experiments from running. Brodiblanco has been alerted.
 
-**Pre-flight findings:**
-- VPC compliance: Rain cleared entity/operations status (2026-04-03). FL/NY bonds DEFERRED — not blocking until post-Series A ops commence.
-- VPC affiliate outreach: Previously blocked by Harvest — compliance flag now stale per Rain's update. Recommend reopening.
-- Irrigation8: Sensor correlation batch complete (R² ≥ 0.85 Tier 1, 100 runs, 500 tests) — product confidence HIGH.
-- Grants pipeline: Casey + Drew running hard on CIG Colorado (22 days), ARPA-E (23 days), USDA SBIR (22 days). $400K bridge still critical path.
-- Investor portal: Iris building `/investor` dashboard with mock data — ETA today.
+**VPC dependency chain:**
+WY LLC → Tier 3 affiliates activate → First players → Deposit conversion testing
 
-**BLOCKERS IDENTIFIED:**
-1. VPC affiliate outreach — stale compliance flag needs clearance
-2. Funnel data instrumentation — no venture has tracking in place
-3. A/B test infrastructure — no tooling defined
-4. Starting 5 funnel — zero context in workspace
+### 🟡 STALLING | VPC Tier 3 Outreach (Harvest)
 
-**Today's Actions:**
-- [ ] Open VPC affiliate outreach (Rain cleared compliance)
-- [ ] Define ICE scoring for A/B test backlog
-- [ ] Instrument VPC deposit funnel (primary revenue lever)
-- [ ] Align with Casey on Starting 5 funnel targets
+Tier 3 affiliate outreach APPROVED on 2026-04-06. 8 days elapsed. Zero outreach initiated. Harvest has clear targets: xlWin Media, Affpapa, CPAGrip/Adscend, casino streamers, content affiliates (SweepsKings, PlayUSA). This must begin today.
+
+### 🔴 OVERDUE | Starting 5 Product Data (Casey)
+
+Casey target was 2026-04-10. 4 days overdue. Cannot build Starting 5 growth experiments without product data (onboarding flow, pricing tiers, AI matching logic).
+
+### 🟢 READY | Irrig8
+
+Sensor correlation R² ≥ 0.85 confirmed. Farmer acquisition flow needs instrumentation — no tracking in place. DWRD irrigation district sales cycle not yet started.
+
+### 🟡 PARTIAL | Zoe
+
+API live. 20-signup/mo target plausible. SDK gap acknowledged — blocking ABT-005.
+
+### 🟡 VERIFY | Investor Portal
+
+Iris was building `/investor` dashboard with ETA 2026-04-08. [VERIFY] completion status.
 
 ---
 
 ## Growth Experiment Pipeline
 
-### Active Experiments
-| ID | Venture | Hypothesis | Status | Priority |
-|----|---------|------------|--------|----------|
-| — | — | None yet | — | — |
+### Active Experiments: ZERO
 
-### A/B Test Backlog (Draft ICE)
-| ID | Venture | Test | I | C | E | ICE | Priority |
-|----|---------|------|---|---|---|-----|----------|
-| ABT-001 | VPC | Cash bonus vs. free spins for first deposit | 7 | 8 | 9 | 24 | P1 |
-| ABT-002 | VPC | VIP tier entrance threshold ($500 vs $1K) | 6 | 7 | 8 | 22 | P2 |
-| ABT-003 | Irrigation8 | Free trial vs. discounted first season | 8 | 6 | 7 | 21 | P2 |
-| ABT-004 | Starting 5 | AI matching wizard vs. static form | 7 | 7 | 6 | 20 | P2 |
-| ABT-005 | Zoe | API sandbox vs. documentation-first | 6 | 6 | 8 | 19 | P3 |
+All 5 backlogged A/B tests are blocked by upstream dependencies. No venture has live traffic.
 
----
+### A/B Test Backlog (Updated ICE)
 
-## Conversion Funnel — Baseline Assessment
+| ID | Venture | Test | I | C | E | ICE | Priority | Blocker |
+|----|---------|------|---|---|---|-----|----------|---------|
+| ABT-001 | VPC | Cash bonus vs. free spins | 7 | 8 | 9 | 24 | P1 | No live players |
+| ABT-002 | VPC | VIP threshold $500 vs $1K | 6 | 7 | 8 | 22 | P2 | No live players |
+| ABT-003 | Irrig8 | Free trial vs. discounted season | 8 | 5 | 7 | 18 | P2 | No acquisition tracking |
+| ABT-004 | Starting 5 | AI wizard vs. static form | 7 | 4 | 6 | 16 | P2 | No product data |
+| ABT-005 | Zoe | Sandbox vs. docs-first | 6 | 6 | 8 | 19 | P3 | SDK not shipped |
 
-### VPC (Valley Players Club)
-| Stage | Baseline | Target | Gap | Status |
-|-------|----------|--------|-----|--------|
-| Player acquisition | [VERIFY] | 50/mo | — | Pre-launch |
-| Deposit conversion | [VERIFY] | 60% | — | Pre-launch |
-| VIP retention | [VERIFY] | 40% 90d | — | Pre-launch |
-
-### Irrigation8
-| Stage | Baseline | Target | Gap | Status |
-|-------|----------|--------|-----|--------|
-| Farmer leads | [VERIFY] | 10 pilots | — | Sensor-ready |
-| Trial-to-paid | [VERIFY] | 70% | — | Pending field data |
-| Irrigation district | [VERIFY] | 1 DWRD | — | SLV focus |
-
-### Starting 5
-| Stage | Baseline | Target | Gap | Status |
-|-------|----------|--------|-----|--------|
-| Founder signups | [VERIFY] | 50/mo | — | Launch pad |
-| AI matching rate | [VERIFY] | 80% | — | No data |
-| Upgrade conversions | [VERIFY] | 15% | — | No data |
-
-### Zoe / Agentic
-| Stage | Baseline | Target | Gap | Status |
-|-------|----------|--------|-----|--------|
-| Developer signups | [VERIFY] | 20/mo | — | API live |
-| API adoption | [VERIFY] | 40% | — | No SDK |
-| Team expansions | [VERIFY] | 10% | — | No enterprise |
+**Note:** Confidence scores for VPC lowered (no live traffic). Starting 5 confidence at 4 (zero product definition).
 
 ---
 
-## Growth Model Targets — DRAFT
+## Conversion Funnel — All Ventures: [VERIFY]
 
-| Venture | 30-Day | 90-Day | Revenue Target |
-|---------|--------|--------|----------------|
-| VPC | 50 players, 30 deposits | 150 players, $15K rev | $2K/mo by Q3 |
-| Irrigation8 | 3 pilot commitments | 10 paid farms | $50K ARR by EOY |
-| Starting 5 | 25 signups | 75 signups, 10 paid | $5K MRR by Q4 |
-| Zoe | 15 API signups | 50 API clients | Platform fees TBD |
+Every venture has [VERIFY] across all funnel stages. No tracking instrumentation exists. This is the foundational gap.
+
+**Path to first data:** All ventures must instrument event tracking before any A/B test can run.
 
 ---
 
@@ -97,12 +68,28 @@
 
 | Blocker | Owner | Due | Status |
 |---------|-------|-----|--------|
-| VPC affiliate clearance | Rain/Harvest | ASAP | Stale — re-escalate |
+| VPC WY LLC formation | brodiblanco | ASAP | **P0 — $5,600 cash** |
+| VPC affiliate compliance | VPC Agent | ASAP | **13+ days overdue** |
+| VPC Tier 3 outreach | Harvest | Today | **8 days, zero output** |
+| Starting 5 product data | Casey | 2026-04-10 | **4 days overdue** |
+| Investor portal | Iris | 2026-04-08 | **[VERIFY]** |
 | Funnel instrumentation | All ventures | 2026-04-15 | Not started |
 | A/B test infrastructure | Optimize | 2026-04-15 | Not started |
-| Starting 5 product data | Casey | 2026-04-10 | Not started |
 
 ---
 
-*Optimize — CRO & Growth Lead*  
+## Today's Actions
+
+- [ ] Escalate VPC Tier 3 stall to Harvest — 8 days of zero output
+- [ ] Verify VPC P0 (WY LLC) status — $5,600 blocker
+- [ ] Re-ping Casey on Starting 5 product data — 4 days overdue
+- [ ] Verify investor portal completion with Iris
+- [ ] Draft funnel instrumentation schema for Irrig8 (highest readiness)
+
+---
+
+*Optimize — CRO & Growth Lead*
 *Agentic Growth Department*
+## 🟡 P2 | optimize | 2026-04-14 15:11 UTC
+
+Growth daily standup complete. VPC P0 flagged — WY LLC ~,600 cash blocker prevents ALL VPC growth experiments. Tier 3 outreach stalling (8 days, zero output). Starting 5 product data 4 days overdue. All ventures have zero funnel instrumentation. 0 active experiments.

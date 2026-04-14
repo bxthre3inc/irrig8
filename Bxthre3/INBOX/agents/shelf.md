@@ -2,7 +2,7 @@
 
 **Role:** Shelf owns all physical warehouse operations and inventory management for Bxthre3 Inc / Irrig8.
 
-**Active as of:** 2026-04-10
+**Active as of:** 2026-04-14 8:15 AM MT
 
 **Reports to:** Source (Supply Chain), Atlas (COO)
 
@@ -49,24 +49,59 @@
 
 ---
 
+## Current Status — 2026-04-14
+
+### 🟡 Inventory Baseline
+- No physical inventory audit conducted — all SKU counts are TBD
+- Cannot fulfill Forge kitting requests without baseline quantities
+- Airtable "Warehouse & Inventory" base not yet provisioned by Source
+
+### 🔴 P1 — G2E 2026 Demo Hardware (DUE TODAY)
+- G2E starts **tomorrow** (2026-04-15)
+- Demo hardware sourcing status **UNKNOWN** — flagged P1 by stage agent 2026-04-09
+- Escalated to Source (Supply Chain) for immediate status
+- **Risk:** No demo = no VPC product demo at G2E = missed $100K pipeline
+
+### 🟡 P2 — VPC Node Hardware (BLOCKED)
+- Blocked pending WY LLC formation — no warehouse action until resolved
+- **Owner:** Raj (Legal)
+
+### 🟡 P2 — Farm Pipeline (ON HOLD)
+- Forge cannot confirm deployment kit requirements until farm intake pipeline defined
+- **Owner:** Atlas + Forge
+
+---
+
 ## Inventory Data
 
-_Managed via Airtable base "Warehouse & Inventory" (connected)._
+_Managed via Airtable base "Warehouse & Inventory" (NOT YET PROVISIONED — gap flagged to Source)._
 
 | SKU | Description | On-Hand | Reorder Pt | Status |
 |-----|-------------|---------|------------|--------|
-| _TBD_ | _Pending inventory audit_ | — | — | 🟡 |
+| — | Pending inventory audit | — | — | 🟡 |
+
+---
+
+## Open Hand-offs
+
+| To | Item | Priority | Status |
+|----|------|----------|--------|
+| **Source** | G2E demo hardware sourcing status | 🔴 P1 | Escalated |
+| **Source** | Airtable "Warehouse & Inventory" base provisioning | 🟡 P2 | Pending |
+| **Forge** | Deployment kit readiness | 🟡 P2 | On hold (pipeline TBD) |
+| **Stage** | G2E booth hardware coordination | 🔴 P1 | 1 day to event |
+| **Raj** | WY LLC formation status | 🟡 P2 | Monitoring |
 
 ---
 
 ## Notes
 
-- FarmSense was retired 2026-03-23. All hardware references should use Irrig8 branding.
+- FarmSense retired 2026-03-23. All hardware references use Irrig8 branding.
 - Physical inventory audit needed to establish baseline quantities.
-- Airtable: No dedicated "Warehouse & Inventory" base found. Existing bases:
-  - **Agentic Base** (appHg8lr1v409yKBc): Has "Irrig8 Field Data" table — deployed sensor tracking, NOT warehouse stock
-  - **Bxthre3 Enterprise Command Center** (app93dsGcEyPfkqaa): Has "Assets" table — broad company asset tracking, not SKU-level inventory
-  - **ACTION NEEDED:** Source must provision a dedicated Warehouse & Inventory Airtable base with SKU-level tracking
+- Airtable base gap: No dedicated "Warehouse & Inventory" base found. Existing bases do not cover SKU-level warehouse stock.
+  - **Agentic Base** (appHg8lr1v409yKBc): "Irrig8 Field Data" table — deployed sensor tracking, NOT warehouse stock
+  - **Bxthre3 Enterprise Command Center** (app93dsGcEyPfkqaa): "Assets" table — company asset tracking, not SKU-level inventory
+  - **Required:** Source provisions dedicated Warehouse & Inventory Airtable base
 
 ---
 
@@ -84,8 +119,4 @@ Source should create base with these tables:
 
 ---
 
-_Last updated: 2026-04-10 15:05 UTC_
-
-## 🟢 P3 | shelf | 2026-04-10 15:10 UTC
-
-Warehouse initial activation — baseline audit and Airtable base gap identified. See: Bxthre3/INBOX/departments/warehouse-standup-2026-04-10.md
+*Last updated: 2026-04-14 8:15 AM MT*

@@ -248,3 +248,46 @@ Complete TBD fields in drafts, then say **"let's go"** or **"make it official"**
 | Closed | 0 |
 | Pass | 3 |
 | Cash raised | $0 |
+
+## 2026-04-14 — PIPELINE STANDUP ENTRY
+
+### Channel — Reseller | 8:15 AM MT
+
+**Channel Status:** Active | 13 targets identified + 5 VPC blocked = 18 total pipeline
+
+#### What's Hot
+- Irrig8 outreach sequences ready (Valley Irrigation, Reinke, Wilbur-Ellis) — awaiting Deal approval since 04-01
+- VPC casino aggregators: 5 targets identified — Sweepium, SweepNow, GammaSweep, SoftGamings, Slotegrator
+- Basic onboarding materials exist (welcome packet + deal registration form)
+
+#### What's Cold
+- Zero outreach initiated on any channel partner target
+- Starting 5 / Zoe pipeline: 0 targets identified — outstanding since ~03-25
+- VPC compliance: 13+ days overdue (VPC Agent) — all VPC outreach blocked
+- Channel comp/rebate admin: not started
+
+#### Blockers
+- VPC gaming compliance: VPC Agent 13+ days overdue — blocking all VPC channel outreach
+- Irrig8 pitch deck + cap table: Awaiting Deal/Balance — blocked outreach to Valley/Reinke
+- Starting 5/Zoe targets: Drew/product owners not yet providing pipeline targets
+
+#### Today's Actions
+- [ ] Send Irrig8 outreach sequences to Deal for approval
+- [ ] Request VPC compliance ETA from Harvest OR escalate for modified path
+- [ ] Request Starting 5/Zoe pipeline targets from Drew/Nexus
+- [ ] Refresh pipeline CSV with current status
+
+#### Metric Check (as of 2026-04-14)
+| Metric | Value |
+|---|---|
+| Irrig8 pipeline targets | 8 |
+| VPC pipeline targets | 5 |
+| Starting 5 targets | 0 |
+| Zoe targets | 0 |
+| Total identified | 13 |
+| Outreach initiated | 0 |
+| Pipeline value | [TBD] |
+
+---
+
+*Last updated by Reseller | 2026-04-14*

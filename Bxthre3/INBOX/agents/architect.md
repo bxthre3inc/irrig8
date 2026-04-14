@@ -155,7 +155,7 @@ None filed yet.
 | Item | Status | Verified |
 |------|--------|----------|
 | zo.space (demo envs) | 🟢 Operational | ✅ Live API confirmed |
-| Agentic API | 🟢 Operational | ✅ 200 OK, v6.0.0, 19 agents |
+| Agentic API | 🟢 Health OK | ✅ 200 OK, v6.0.0, 19 agents |
 | `/api/agentic/status` | 🟢 200 OK | ✅ |
 | VPC CI | 🟡 2 failures | ⚠️ Pending Drew |
 | Irrig8 Web UI | 🟢 Live | ✅ |
@@ -273,3 +273,84 @@ None filed yet.
 ---
 
 *Next standup: 2026-04-09 8:15 AM MT*
+
+## 2026-04-14 08:05 AM MT — Daily Standup
+
+**Time:** 8:05 AM MT (14:05 UTC)  
+**Posture:** Online — operating
+
+### Pre-Standup Check
+
+| Item | Status | Verified |
+|------|--------|----------|
+| zo.space (demo envs) | 🟢 Operational | ✅ |
+| Agentic API v6.0.0 | 🟢 Operational | ✅ |
+| Irrig8 Web UI | 🟢 Live | ✅ |
+| VPC CI | 🟡 2 failures | ⚠️ Drew owner |
+
+### Strategic Context — Updated
+
+| Item | Status | Days Left |
+|------|--------|-----------|
+| ARPA-E OPEN 2026 | P1 | **17 days** (May 1) |
+| CIG Colorado + USDA REAP/SBIR | P1 | **16 days** (Apr 30) |
+| 7 provisional patents | P1 | **31 days** (May 15) |
+| Water Court hearing | P1 | Jun 29 (76 days) |
+| Sage deal stale | P2 | 16+ days overdue |
+| G2E 2026 | P1 | 5 days — booth/hardware unconfirmed |
+| Cash runway | 🔴 Critical | ~1 week at $130K/week |
+
+### Today's Priority Queue (Solutions Engineering)
+
+| # | Deal | Venture | Action | Status |
+|---|------|---------|--------|--------|
+| 1 | IRR-DIST-007 | Irrig8 | USDA NRCS EQIP vendor enrollment GO/NO-GO | 🔴 This week |
+| 2 | VPC-CP-001 | VPC | Sage cash partnership — 16 days overdue | 🔴 Escalate |
+| 3 | IRR-FARM-001 | Irrig8 | Maverick Potato Co technical discovery (2,500 acres) | 🟡 Pending |
+| 4 | IRR-FARM-002 | Irrig8 | Skyline Potato Co technical discovery (3,000 acres) | 🟡 Pending |
+| 5 | IRR-DIST-006 | Irrig8 | Planet Labs API dev access | 🟡 Awaiting |
+| 6 | IRR-FARM-007 | Irrig8 | Jessica Bradshaw / CPAC (52K acre gatekeeper) | 🟡 Pending |
+| 7 | G2E-001 | VPC | Booth + demo hardware confirmation | 🔴 5 days |
+| 8 | GRANT-004 | Agentic | NSF SBIR Phase I technical narrative | 🟡 Maya owns |
+
+### Demo Environment Status
+
+All core demo environments operational. VPC CI still has 2 failures blocking VPC demos — Drew owner.
+
+### Technical Close Readiness Summary
+
+| Deal | Integration Type | Readiness |
+|------|-----------------|-----------|
+| Sage VPC (VPC-CP-001) | Cash partnership | Mark-up 16 days overdue — blocked |
+| USDA NRCS (IRR-DIST-007) | EQIP vendor enrollment | GO/NO-GO needed this week |
+| Valley Irrigation (IRR-DIST-001) | Pivot manufacturer API | Pre-POC |
+| Reinke (IRR-DIST-002) | Distribution partnership | Pre-POC |
+| Maverick Potato (IRR-FARM-001) | 2,500 acres, sensor integration | Pre-POC discovery |
+| Skyline Potato (IRR-FARM-002) | 3,000 acres | Pre-POC discovery |
+| CPAC (IRR-FARM-007) | 52K acre gatekeeper | Technical intro needed |
+
+### Blockers
+
+| Blocker | Owner | Impact |
+|---|---|---|
+| VPC Sage mark-up | Drew | Cash partner close blocked — 16 days overdue |
+| VPC CI 2 failures | Drew | Cannot demo VPC |
+| G2E booth + hardware | Drew/Casey | Miss event entirely |
+| USDA NRCS EQIP decision | brodiblanco | IRR-DIST-007 at risk |
+| BUILDBZ TBDs | brodiblanco | Spec advancement blocked |
+
+### Handoff Items
+
+- **Dev:** USDA NRCS technical requirements doc needed for IRR-DIST-007 GO/NO-GO
+- **Drew:** VPC Sage markup — 16 days overdue — escalate to Deal if not resolved today
+- **Drew:** G2E booth + hardware sourcing — 5 days out — unconfirmed
+- **Casey:** CIG Colorado + USDA REAP/SBIR (Apr 30) — 16 days, technical integration specs on standby
+- **Maya:** ARPA-E OPEN 2026 (May 1) — 17 days — technical specs on standby
+
+### Escalations This Cycle
+
+None — all P1s properly routed.
+
+---
+
+*Next standup: 2026-04-15 8:15 AM MT*

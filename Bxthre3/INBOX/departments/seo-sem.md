@@ -118,3 +118,36 @@
 - Report: Directory listing progress
 - Report: VPC compliance resolution status
 - Planning: Irrig8 SEO content audit
+
+## 2026-04-14 Morning Standup Summary
+
+**Lead:** Rank | **Time:** 8:15 AM MT | **Status:** ✅ Filed — `seo-sem-standup-2026-04-14.md`
+
+### Campaign Status
+
+| Campaign | Status | Blockers |
+|---------|--------|----------|
+| Irrig8 Google Ads | 🔴 BLOCKED | No account access (14 days) |
+| Irrig8 SEO + Directories | 🟡 Planning | GBP unclaimed, directory batch pending |
+| Starting 5 Google Ads | 🔴 BLOCKED | No account access |
+| Starting 5 SEO | 🟡 Keyword mapping | Copy alignment needed with Casey |
+| VPC Google Ads | 🔴 BLOCKED | Raj compliance review (11 days) |
+| VPC ASO | 🟡 Ready | Metadata ready — awaiting app update window |
+| Zoe Google Ads | 🔴 BLOCKED | No account access |
+| Zoe SEO | 🟡 Building | GitHub seeding + dev content |
+| Bxthre3 Corporate SEO | 🟡 Planning | Investor content + founder brand |
+
+### Standup Gap
+- 2026-04-11 (Fri) — no standup filed. Catching up.
+
+### Today's Priorities
+1. Irrig8 GBP claim
+2. Irrig8 directory batch
+3. VPC ASO follow-up (app update window)
+4. Google Ads account formal escalation (14 days)
+5. Zoe GitHub repo audit
+
+### Blockers
+- **Google Ads account** — Brand/Optimize (14 days overdue)
+- **VPC compliance** — Raj gambling policy (11 days)
+- **Conversion tracking** — Optimize ownership

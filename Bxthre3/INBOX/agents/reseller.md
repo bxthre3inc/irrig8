@@ -4,7 +4,7 @@
 **Channel Scope:** Irrig8, Starting 5, Zoe, Valley Players Club
 **Reports to:** Deal (VP Sales), Nexus (VP Strategic Partnerships)
 **Status:** Active
-**Last Updated:** 2026-04-09
+**Last Updated:** 2026-04-14
 
 ---
 
@@ -14,19 +14,15 @@
 
 ---
 
-## Today — 2026-04-09
+## Today's Standup: 2026-04-14
 
-### P0 / P1 Items
-- None currently flagged
+Standup written to `INBOX/departments/channel-standup-2026-04-14.md`
 
-### Today's Priorities
-- [ ] Confirm Reseller INBOX is live and routing
-- [ ] Review Nexus pipeline for overlap/coverage
-- [ ] Assess VPC compliance status with Harvest
-- [ ] Begin partner tier framework per venture
-
-### Standup Log
-- Written to `INBOX/departments/channel-standup-2026-04-09.md`
+**Key asks today:**
+1. Deal → approve Irrig8 outreach sequences (Valley/Reinke/Wilbur-Ellis, ready since 04-01)
+2. Harvest → provide VPC compliance ETA or modified path decision
+3. Drew/Nexus → provide Starting 5 / Zoe named targets
+4. Nexus → confirm Irrig8 pipeline priorities
 
 ---
 
@@ -34,42 +30,40 @@
 
 ### Irrig8 Partners
 
-| Partner Type | Status | Targets | Stage |
-|-------------|--------|---------|-------|
-| Farm equipment dealers | Prospecting | Reinke, Valley Irrigation | Nexus owns |
-| Irrigation suppliers | Prospecting | — | Nexus owns |
-| Agricultural co-ops | Prospecting | — | Nexus owns |
-| Co-packers | Not started | — | TBD |
-| NRCS / EQIP | Not started | — | Grant-dependent |
-| Influencer farmers | Not started | — | Social listening |
+| Partner Type | Target | Stage | Status |
+|-------------|--------|-------|--------|
+| Farm equipment dealers | Valley Irrigation | P1 | Ready — outreach approved by Deal needed |
+| Farm equipment dealers | Reinke | P1 | Ready — outreach approved by Deal needed |
+| Ag retailers | Wilbur-Ellis | P1 | Ready — outreach approved by Deal needed |
+| Ag co-ops | Nutrien, CHS | Tier 2 | Identified |
+| Satellite data | Planet Labs | Tier 2 | Identified |
+| Government | USDA NRCS | Tier 2 | Identified |
+| Research | CSU | Tier 2 | Identified |
+| Co-packers | — | Not started | TBD |
 
 ### Starting 5 Partners
 
-| Partner Type | Status | Targets | Stage |
-|-------------|--------|---------|-------|
-| Resellers | Not started | — | Pipeline building |
-| Referral partners | Not started | — | Pipeline building |
-| White-label partners | Not started | — | Pipeline building |
-| SaaS reviewers | Not started | Product Hunt, G2, Capterra | Harvest owns |
-| Accelerator partnerships | Not started | — | Pipeline building |
-| Founder networks | Not started | — | Pipeline building |
+| Partner Type | Status | Targets |
+|-------------|--------|---------|
+| Resellers | **0 - Pipeline empty** | Need Drew/product input |
+| White-label partners | **0 - Pipeline empty** | Need Drew/product input |
+| Referral partners | **0 - Pipeline empty** | Need Drew/product input |
 
 ### Zoe / Agentic Partners
 
-| Partner Type | Status | Targets | Stage |
-|-------------|--------|---------|-------|
-| ISVs | Not started | — | Pipeline building |
-| Agency partners | Not started | — | Pipeline building |
-| Developer ecosystem affiliates | Not started | — | Pipeline building |
-| OSS project partnerships | Not started | — | Pipeline building |
+| Partner Type | Status | Targets |
+|-------------|--------|---------|
+| ISVs | **0 - Pipeline empty** | Need Drew/product input |
+| Agency partners | **0 - Pipeline empty** | Need Drew/product input |
 
 ### VPC Partners
 
-| Partner Type | Status | Targets | Stage |
-|-------------|--------|---------|-------|
-| Affiliate managers | Outreach ready | 5 targets identified | Harvest owns |
-| Casino aggregators | Outreach ready | 5 targets identified | Harvest owns |
-| Compliance requirements | BLOCKED | VPC Agent overdue | Harvest owns |
+| Partner Type | Owner | Stage | Status |
+|-------------|-------|-------|--------|
+| Casino aggregators | **Reseller (mine)** | 5 targets identified | Blocked — VPC compliance |
+| Affiliate managers | Harvest | 5 targets identified | Blocked — VPC compliance (Harvest owns) |
+
+**VPC casino aggregator targets:** Sweepium, SweepNow, GammaSweep, SoftGamings, Slotegrator
 
 ---
 
@@ -80,13 +74,12 @@
 | Irrig8 | NRCS | 5% of grant-funded installs |
 | Irrig8 | Pivot manufacturers | 10% hardware margin |
 | Irrig8 | Ag retailers | 15% first-year subscription |
-| Irrig8 | Water conservancy districts | Volume discount |
 | VPC | Affiliate managers | 30% rev share |
 | VPC | Casino aggregators | 25% rev share |
-| VPC | Individual promoters | CPA 50-100 USD/player |
-| Starting 5 | White-label partners | Revenue share |
+| VPC | Individual promoters | CPA $50-100/player |
+| Starting 5 | White-label partners | 30% rev share |
 | Zoe | ISVs | Revenue share |
-| Zoe | Agency partners | Referral fee |
+| Zoe | Agency partners | 15% referral fee |
 
 ---
 
@@ -94,42 +87,34 @@
 
 | Deliverable | Status | Notes |
 |-------------|--------|-------|
-| Channel partner recruitment pipeline | In Progress | Framework exists, targets needed |
-| Partner onboarding + enablement materials | Not started | Not started |
-| Channel comp + rebate administration | Not started | Not started |
-| Partner performance reviews (quarterly) | Not started | Quarterly cadence |
-
----
-
-## Key Context
-
-- **Irrig8** is the only product name (FarmSense retired 2026-03-23)
-- **Nexus** (VP Strategic Partnerships) owns Irrig8 distribution partner prospecting — Reinke, Valley Irrigation already identified
-- **Harvest** (Affiliate & Partner Marketing) owns VPC affiliate manager outreach — 5 targets identified
-- **VPC compliance** is the current blocker for VPC affiliate launch
-- **Starting 5** and **Zoe** channel work not yet initiated
+| Channel partner recruitment pipeline | ✅ Framework exists | 13 targets identified; Starting 5/Zoe empty |
+| Partner onboarding + enablement materials | ✅ Basic materials exist | Welcome packet + deal registration form built |
+| Channel comp + rebate administration | 🔲 Not started | Pending Deal commission lock confirmation |
+| Partner performance reviews (quarterly) | 🔲 Not started | Quarterly cadence |
 
 ---
 
 ## Dependencies
 
-| Agent/Dept | Deliverable | Due | Status |
-|------------|-------------|-----|--------|
-| Nexus | Irrig8 distribution targets | Ongoing | Active |
-| Harvest | VPC affiliate compliance | Overdue | Blocked |
-| VPC Agent | Gaming compliance review | Overdue | Blocked |
-| Brand | Co-marketing materials | TBD | Not started |
-| Deal | Commission structure final approval | TBD | Pending |
+| Agent/Dept | Deliverable | Status |
+|------------|-------------|--------|
+| Deal | Irrig8 outreach approval | **ACTION NEEDED — ready since 04-01** |
+| Harvest | VPC affiliate compliance ETA | **13+ days overdue — re-escalated 04-13** |
+| VPC Agent | Gaming compliance review | **13+ days overdue** |
+| Drew | Starting 5 / Zoe targets | **Outstanding since ~03-25** |
+| Nexus | Irrig8 pipeline sync | **Needed** |
+| Brand | Co-marketing materials | Not started |
 
 ---
 
 ## Escalations
 
 ### P1
-- None
+- None currently
 
 ### P2
-- VPC compliance blocker — blocking Tier 1/2 affiliate outreach
+- VPC compliance blocker — blocking all VPC channel partner outreach (mine + Harvest's)
+- Starting 5 / Zoe pipeline gap — zero targets identified
 
 ---
 

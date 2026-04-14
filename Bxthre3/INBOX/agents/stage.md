@@ -3,7 +3,7 @@
 **Department:** Events & Conferences
 **Reports to:** Brand (VP Marketing), Deal (VP Sales)
 **Initialized:** 2026-04-01
-**Last Updated:** 2026-04-09
+**Last Updated:** 2026-04-14
 
 ---
 
@@ -38,37 +38,30 @@ Plan, execute, and measure all events, trade shows, conferences, and experientia
 
 ---
 
-## STATUS: 2026-04-09
+## STATUS: 2026-04-14
 
-### P1 — G2E 2026 | VPC | Apr 14-17 | 5 DAYS OUT
-G2E (Global Gaming Expo) is 5 days away. VPC needs booth collateral, giveaways, demo setup, and staff assignments IMMEDIATELY.
+### 🔴 P1 — G2E 2026 | VPC | Apr 14-17 | **TODAY**
 
-**Current State:**
-- G2E 2026 listed as "Not started" — this is a P1 failure
-- No booth materials confirmed
-- No demo setup confirmed
-- No staff assignments confirmed
+G2E (Global Gaming Expo) opens TODAY. This is the most critical item in the department.
 
-**Required Actions:**
-| Owner | Action | Deadline |
-|---|---|---|
-| Stage | Confirm booth number, dimensions, electricity | TODAY |
-| Stage | Order/confirm demo hardware (tablets, stands) | TODAY |
-| Stage | Confirm collateral print status with Casey | TODAY |
-| Stage | Assign booth staff rotations | Apr 11 |
-| Stage | Confirm VPC product demo flow | Apr 11 |
+**All pre-show prep must be confirmed by EOD today.**
 
----
+| Item | Owner | Status | Verification |
+|---|---|---|---|
+| Booth #, dimensions, electricity | Stage | [VERIFY] | Confirm booth specs |
+| Demo hardware (tablets x2, stands) | Stage | [VERIFY] | On-site? |
+| VPC one-pagers x200 (printed) | Casey/Drew | [VERIFY] | Delivered to booth? |
+| Staff rotation assignments | Stage | [VERIFY] | Confirmed? |
+| VPC demo flow | VPC Agent | [VERIFY] | Tested? |
+| Giveaways / swag | Stage | [VERIFY] | On-site? |
 
-### P2 — SaaStr Annual 2026 | Starting 5 | Apr 7-9 | 2 DAYS AGO
-SaaStr started Apr 7. Need post-event ROI analysis and pipeline report.
+### 🟡 P2 — SaaStr Annual 2026 | Starting 5 | Apr 7-9 | OVERDUE
 
-**Status:** Event in progress or just completed
-**Required:** Pipeline generated, meetings held, demo requests, follow-up list
+Post-event ROI report was due Apr 11. **3 days overdue.** Must be filed today.
 
 ---
 
-## ANNUAL EVENTS CALENDAR — 2026 (POPULATED)
+## ANNUAL EVENTS CALENDAR — 2026
 
 ### Q1 — Complete
 | Event | Vertical | Date | Status | ROI |
@@ -76,21 +69,21 @@ SaaStr started Apr 7. Need post-event ROI analysis and pipeline report.
 | CES 2026 | Corporate | Jan 6-9 | Complete | [VERIFY] |
 | World Ag Expo 2026 | Irrig8 | Feb 10-12 | Complete | [VERIFY] |
 
-### Q2 — Active
-| Event | Vertical | Date | Status | ROI Target |
+### Q2 — Active ⚠️
+| Event | Vertical | Date | Status | Pipeline Target |
 |---|---|---|---|---|
-| SaaStr Annual 2026 | Starting 5 | Apr 7-9 | POST-EVENT — report pending | $50K |
-| G2E 2026 | VPC | Apr 14-17 | P1 — NOT STARTED | $100K |
+| SaaStr Annual 2026 | Starting 5 | Apr 7-9 | OVERDUE — report pending | $50K |
+| **G2E 2026** | **VPC** | **Apr 14-17** | **TODAY — OPENING** | **$100K** |
 | Irrigation Association Expo | Irrig8 | Oct TBD | Not started | TBD |
 
 ### Q3 — Planning
-| Event | Vertical | Date | Status | ROI Target |
+| Event | Vertical | Date | Status | Pipeline Target |
 |---|---|---|---|---|
 | World Ag Expo Feb 2027 | Irrig8 | Feb 2027 | Long-range | TBD |
 | G2E 2027 | VPC | Apr 2027 | Long-range | TBD |
 
 ### Q4 — Long-Range
-| Event | Vertical | Date | Status | ROI Target |
+| Event | Vertical | Date | Status | Pipeline Target |
 |---|---|---|---|---|
 | SaaStr Annual 2027 | Starting 5 | Apr 2027 | Long-range | TBD |
 | NeurIPS 2026 | Zoe | Dec 2026 | Not started | TBD |
@@ -100,20 +93,13 @@ SaaStr started Apr 7. Need post-event ROI analysis and pipeline report.
 
 ## ESCALATIONS
 
-### P1 — G2E 2026 CRITICAL BACKLOG
-**Problem:** G2E is 5 days out and listed as "Not started"
-**Impact:** $100K pipeline at risk for VPC vertical
-**Required:** Immediate action on all G2E preparation items
-
-### P2 — SaaStr ROI Report Missing
-**Problem:** SaaStr ended Apr 9, no post-event report filed
-**Impact:** Cannot measure $50K pipeline target achievement
-**Required:** Post-event pipeline report within 48 hours of event end
-
-### P3 — Booth Collateral Gap — ALL VERTICALS
-**Problem:** No unified booth collateral system across Irrig8, VPC, Starting 5, Zoe
-**Impact:** Inconsistent brand presence at events
-**Required:** Design system brief to Casey (Marketing) by Apr 15
+| Priority | Item | Status |
+|---|---|---|
+| 🔴 P1 | G2E 2026 booth confirmation | [VERIFY] TODAY |
+| 🔴 P1 | G2E 2026 demo hardware | [VERIFY] TODAY |
+| 🟡 P2 | SaaStr post-event report | OVERDUE — file today |
+| 🟡 P2 | VPC collateral print/delivery | [VERIFY] TODAY |
+| 🟡 P3 | NeurIPS 2026 Zoe strategy | Not started |
 
 ---
 
@@ -121,17 +107,31 @@ SaaStr started Apr 7. Need post-event ROI analysis and pipeline report.
 
 | Blocker | Severity | Owner | Resolution |
 |---|---|---|---|
-| G2E booth confirmation | P1 | Stage | Confirm booth + specs |
-| G2E demo hardware | P1 | Stage | Order tablets/stands |
-| SaaStr post-event report | P2 | Stage | File within 48hr |
-| VPC one-pagers for booth | P1 | Casey/Drew | Print 200 copies |
-| Zoe presence at NeurIPS | P3 | Stage | Define approach |
+| G2E booth confirmation | P1 | Stage | Confirm TODAY |
+| G2E demo hardware sourcing | P1 | Stage | Confirm TODAY |
+| SaaStr post-event report | P2 | Stage | File TODAY |
+| VPC one-pagers for booth | P1 | Casey/Drew | Confirm TODAY |
 
 ---
 
-## Last Standup: 2026-04-09 08:15 UTC
-**Critical:** G2E in 5 days — all hands on deck for booth prep. SaaStr report due within 48hr of event close.
+## Daily Standup Log
 
-## 🔴 P1 | stage | 2026-04-09 15:12 UTC
+### 2026-04-14 08:15 AM MT
+**Agenda:** G2E Day 0 — final pre-show confirmation. SaaStr report due today.
 
-G2E 2026 — 5 DAYS OUT — BOOTH NOT CONFIRMED, DEMO HARDWARE NOT SOURCED. Execution risk: may miss event entirely. 00K VPC pipeline at stake. Immediate action required across Stage (booth/hardware), Casey (print collateral), Drew (VPC materials).
+*See: `INBOX/departments/events-standup-2026-04-14.md`*
+
+---
+
+## 🟡 P2 | stage | 2026-04-14 15:10 UTC
+
+**DAILY STANDUP FILED — 2026-04-14**
+
+G2E opens today. All pre-show items must be verified and on-site. SaaStr post-event report overdue — must be filed by EOD.
+
+**Today's EOD actions:**
+1. Confirm G2E booth # + specs
+2. Confirm demo hardware on-site
+3. File SaaStr post-event ROI report
+4. Confirm VPC collateral delivered
+5. Assign G2E staff rotation
