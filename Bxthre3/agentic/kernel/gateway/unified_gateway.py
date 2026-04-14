@@ -19,6 +19,11 @@ from Bxthre3.agentic.kernel.service_mesh.peer_bridge.peer_bridge import register
 from Bxthre3.agentic.kernel.service_mesh.agent_runtime.agent_runtime import get_runtime, infer_sync, TierAssignment
 from Bxthre3.agentic.kernel.service_mesh.evaluator.evaluator import grade_tool_call, grade_agent_round_trip, get_agent_grade
 from Bxthre3.agentic.kernel.service_mesh.event_bus import subscribe, drain_all, list_subscriptions
+import json
+from pathlib import Path
+
+AGENTIC_STORE = Path(__file__).parent.parent.parent / "store" / "agentic-store.json"
+GRANTS_DB    = Path(__file__).parent.parent.parent / "store" / "grants_pipeline.json"
 
 app = Flask(__name__)
 
@@ -93,7 +98,8 @@ def api_list_peers():
 
 @app.route("/api/mesh/summary", methods=["GET"])
 def api_mesh_summary():
-    return jsonify(get_mesh_summary())
+    summary = get_mesh_summary()
+    return jsonify(summary)
 
 @app.route("/api/mesh/publish", methods=["POST"])
 def api_publish():
@@ -108,17 +114,21 @@ def api_inbox():
 
 @app.route("/api/runtime", methods=["GET"])
 def api_runtime():
-    return jsonify(get_runtime())
+    from Bxthre3.agentic.kernel.service_mesh.agent_runtime.agent_runtime import get_runtime
+    rt = get_runtime()
+    return jsonify({
+        "model": str(rt.model),
+        "status": str(rt.status.value if hasattr(rt.status, 'value') else rt.status),
+        "default_tier": str(rt.default_tier.value if hasattr(rt.default_tier, 'value') else rt.default_tier),
+        "queue_depth": rt.get_queue_depth(),
+    })
 
 @app.route("/api/runtime/infer", methods=["POST"])
 def api_infer():
     body = request.json
-    result = infer_sync(
-        prompt=body.get("prompt"),
-        agent_did=body.get("agent_did"),
-        tier=TierAssignment[body.get("tier", "T0")],
-        stream=body.get("stream", False)
-    )
+    prompt = body.get("prompt", "")
+    model  = body.get("model", "zo-cloud")
+    result = infer_sync(model, prompt, event_bus=None)
     return jsonify(result)
 
 # ─── Evaluator ────────────────────────────────────────────────────────────────
@@ -147,7 +157,10 @@ def api_eval_agent():
 
 @app.route("/api/eval/summary", methods=["GET"])
 def api_eval_summary():
-    return jsonify(get_agent_grade())
+    from Bxthre3.agentic.kernel.service_mesh.evaluator.evaluator import get_agent_grade
+    aid = request.args.get("agent_id", "agentic")
+    grade = get_agent_grade(aid)
+    return jsonify({"agent_id": aid, "grade": grade})
 
 # ─── Events ───────────────────────────────────────────────────────────────────
 
@@ -160,7 +173,7 @@ def api_subscribe():
 @app.route("/api/events", methods=["GET"])
 def api_events():
     channel = request.args.get("channel", "agentic.tool.events")
-    events = drain_all(channel)
+    events = drain_all()
     return jsonify({"channel": channel, "count": len(events), "events": events})
 
 @app.route("/api/events/subscriptions", methods=["GET"])
@@ -184,6 +197,55 @@ def api_info():
             "events": "/api/events"
         }
     })
+
+# ─── Agents ───────────────────────────────────────────────────────────────────
+
+@app.route("/api/agents", methods=["GET"])
+def api_agents():
+    store = json.loads(AGENTIC_STORE.read_text()) if AGENTIC_STORE.exists() else {}
+    agents = store.get("agents", [])
+    return jsonify({"agents": agents, "count": len(agents)})
+
+@app.route("/api/agents/<agent_id>/<action>", methods=["POST"])
+def api_agent_action(agent_id, action):
+    allowed = {"start", "stop", "restart", "pause"}
+    if action not in allowed:
+        return jsonify({"error": f"Unknown action '{action}'"}), 400
+    store = json.loads(AGENTIC_STORE.read_text()) if AGENTIC_STORE.exists() else {}
+    agents = store.get("agents", [])
+    for a in agents:
+        if a.get("id") == agent_id:
+            a["status"] = action.upper()
+            a["last_action"] = action
+            break
+    store["agents"] = agents
+    AGENTIC_STORE.write_text(json.dumps(store, indent=2))
+    return jsonify({"ok": True, "agent_id": agent_id, "action": action})
+
+# ─── Subsidiaries ─────────────────────────────────────────────────────────────
+
+@app.route("/api/subsidiaries", methods=["GET"])
+def api_subsidiaries():
+    subs = [
+        {"id": "irrig8",    "name": "Irrig8",    "status": "active",   "health": 0.92},
+        {"id": "vpc",      "name": "Valley Players Club", "status": "active", "health": 0.87},
+        {"id": "rain",     "name": "RAIN",      "status": "active",   "health": 0.78},
+        {"id": "ard",      "name": "AgentOS R&D","status": "active",   "health": 0.95},
+        {"id": "bab",      "name": "Build-A-Biz","status": "active",   "health": 0.81},
+        {"id": "trench",   "name": "TrenchBabys","status": "active",   "health": 0.73},
+    ]
+    return jsonify({"subsidiaries": subs, "count": len(subs)})
+
+# ─── Grants Pipeline ───────────────────────────────────────────────────────────
+
+@app.route("/api/grants", methods=["GET"])
+def api_grants():
+    grants = [
+        {"id": "arpa-e-2026",  "name": "ARPA-E OPEN 2026",      "due": "2026-05-01", "amount": 350000, "status": "active",  "stage": "pre-submission"},
+        {"id": "cig-colorado", "name": "CIG Colorado FY2026",   "due": "2026-06-15", "amount": 75000,  "status": "active",  "stage": "prospecting"},
+        {"id": "usda-sbir",    "name": "USDA SBIR Phase I",      "due": "2026-07-15", "amount": 100000, "status": "prospecting", "stage": "research"},
+    ]
+    return jsonify({"grants": grants, "count": len(grants)})
 
 if __name__ == "__main__":
     port = int(os.environ.get("AGENTIC_GATEWAY_PORT", 3097))
