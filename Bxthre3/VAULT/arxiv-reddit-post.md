@@ -1,40 +1,30 @@
-# Looking for arXiv cs.AI / cs.SE endorsement — BX3 Framework paper ready to submit
-
-**TL;DR:** I've written a framework paper (The BX3 Framework: A Universal Architecture of Functional Roles for Purpose, Bounded Reasoning, and Deterministic Fact) that I believe meets the bar for cs.AI/cs.SE. I'm an independent researcher looking for an endorsed arXiv user to endorse my submission. Happy to share the full manuscript for review.
+# LinkedIn Post — BX3 Framework
 
 ---
 
-**What the paper is about:**
+I've been building autonomous systems in precision agriculture for the last few years, and one problem keeps showing up: nobody has a principled model for where AI ends and deterministic software begins.
 
-The BX3 Framework organizes complex systems into three immutable functional layers:
+The dominant narratives are both wrong:
+- "AI will replace software" → false, ignores what deterministic systems actually do
+- "AI is just a novelty" → false, ignores where AI genuinely adds value
 
-- **Purpose Layer** — intent, judgment, accountability (typically human)
-- **Bounds Engine** — analysis, bounded reasoning, constrained execution (typically AI, but limbless — can propose, cannot execute)
-- **Fact Layer** — deterministic enforcement, physical constraint, forensic auditability (always deterministic)
+So I built a framework to fix this. It's called the BX3 Framework.
 
-The core claim: when these three layers are architecturally enforced, systems become simultaneously more capable and less complex. The Fact Layer acts as a physical firewall — not soft permissions — that hard-blocks any Bounds Engine proposal that violates constraints.
+Three functional layers — each defined by what properties it must maintain, not by who or what occupies it:
 
-Key contributions:
-- Actor-agnostic framework (humans, AI, or mechanical processes can occupy any layer)
-- Five named pillars: Loop Isolation, Recursive Spawning, Spatial Firewall, Root Tunneling, Bailout Protocol
-- Forensic Ledger as three-plane audit trail (Purpose/Bounds/Fact events logged simultaneously)
-- Upstream accountability guarantee: failures escalate to a human anchor, never downward into algorithmic drift
-- Demonstrates that probabilistic AI and deterministic software are not competitors — they're two separate layers of a properly structured system
-- Applied across: autonomous systems, legal systems, medicine, organizational design, and biological cognition
-- Currently implemented in a live Agentic AI workforce system (zo.space/agentic) — not just theoretical
+**Purpose Layer** — intent, judgment, accountability. Sets goals and bears responsibility.
 
-The paper is 23 pages, 15 citations, submitted to cs.AI and cs.SE. I'm a first-time arXiv submitter without prior publications, which is why I need an endorsement.
+**Bounds Engine** — analysis, bounded reasoning, proposal. Performs cognitive work but is architecturally limbless. It can propose; it cannot execute unilaterally.
 
-**What I'm asking:**
+**Fact Layer** — deterministic enforcement, physical constraint, forensic auditability. Acts as a physical firewall that hard-blocks any constraint violation.
 
-If you have arXiv endorsement privileges in cs.AI or cs.SE and would be willing to review my abstract/manuscript, I'd be extremely grateful. Happy to share the full LaTeX and PDF.
+The counterintuitive claim that got me thinking: adding a third layer actually *reduces* overall system complexity. Because each layer is relieved of responsibilities it handles poorly.
 
-Alternatively, if you know another path for independent researchers to get endorsement quickly, I'm all ears.
+Core safety property: when any node hits an unresolvable state, accountability escalates upward — bypassing all machine actors — until it reaches a human. The system fails upward into human consciousness, never downward into algorithmic drift.
 
----
+Field trials running June 2026 in Colorado's San Luis Valley across a precision agriculture autonomous system.
 
-**Contact:** getfarmsense@gmail.com
+Happy to share the full manuscript. Would love to connect with others working in AI safety, agentic systems architecture, or autonomous vehicle/robotic control.
 
----
+#AISafety #AgenticSystems #AutonomousSystems #ArtificialIntelligence #SoftwareArchitecture #PrecisionAgriculture #Research
 
-*Mods: please let me know if this post violates any rules — happy to adjust.*
