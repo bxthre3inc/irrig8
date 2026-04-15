@@ -1,0 +1,214 @@
+"""
+Notification Service — AgentOS
+Bxthre3/agentic/kernel/notification_service.py
+
+Routes alerts to SMS (brodiblanco), email, and Telegram.
+Only brodiblanco gets P1 SMS — everything else routes to agent INBOX.
+"""
+import os, sqlite3
+from pathlib import Path
+from dataclasses import dataclass, asdict
+from datetime import datetime, timezone
+from typing import Optional
+from enum import Enum
+
+DB = Path(__file__).parent.parent / "store" / "notifications.db"
+
+class Priority(Enum):
+    P0 = "P0"  # System down — SMS + Email immediately
+    P1 = "P1"  # Needs human action — SMS + logged
+    P2 = "P2"  # Queued for review — agent INBOX only
+    P3 = "P3"  # FYI — logged only
+
+class NotifChannel(Enum):
+    SMS = "sms"
+    EMAIL = "email"
+    INBOX = "inbox"
+    TELEGRAM = "telegram"
+
+@dataclass
+class Notification:
+    notif_id: str
+    priority: Priority
+    channel: NotifChannel
+    subject: str
+    body: str
+    agent_did: Optional[str]
+    related_id: Optional[str]   # e.g. chairman queue item, training run
+    sent_at: Optional[str]
+    delivered: bool
+    created_at: str
+
+def _db():
+    DB.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(DB))
+    conn.execute("""CREATE TABLE IF NOT EXISTS notifications (
+        notif_id TEXT PRIMARY KEY,
+        priority TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        body TEXT NOT NULL,
+        agent_did TEXT,
+        related_id TEXT,
+        sent_at TEXT,
+        delivered INTEGER DEFAULT 0,
+        created_at TEXT
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS subscriptions (
+        sub_id TEXT PRIMARY KEY,
+        event_type TEXT NOT NULL,
+        priority_threshold TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        agent_did TEXT,
+        active INTEGER DEFAULT 1
+    )""")
+    conn.commit()
+    return conn
+
+# ─── Dispatch ─────────────────────────────────────────────────────────────────
+
+def dispatch(
+    priority: Priority,
+    subject: str,
+    body: str,
+    channel: NotifChannel = NotifChannel.INBOX,
+    agent_did: str = None,
+    related_id: str = None
+) -> Notification:
+    import uuid
+    nid = f"notif-{uuid.uuid4().hex[:16]}"
+    conn = _db()
+    conn.execute("""INSERT INTO notifications
+        (notif_id, priority, channel, subject, body, agent_did, related_id, delivered, created_at)
+        VALUES (?,?,?,?,?,?,?,0,?)""",
+        (nid, priority.value, channel.value, subject, body, agent_did, related_id,
+         datetime.now(timezone.utc).isoformat()))
+    conn.commit(); conn.close()
+    notif = Notification(
+        notif_id=nid, priority=priority, channel=channel, subject=subject, body=body,
+        agent_did=agent_did, related_id=related_id, sent_at=None, delivered=False,
+        created_at=datetime.now(timezone.utc).isoformat()
+    )
+    _actually_send(notif)
+    return notif
+
+def _actually_send(notif: Notification) -> None:
+    """Route to correct channel."""
+    try:
+        if notif.channel == NotifChannel.SMS:
+            _send_sms(notif)
+        elif notif.channel == NotifChannel.EMAIL:
+            _send_email(notif)
+        elif notif.channel == NotifChannel.INBOX:
+            _route_to_inbox(notif)
+    except Exception as e:
+        pass  # logged, don't crash the caller
+
+def _send_sms(notif: Notification) -> None:
+    """SMS via Zo — only for P0/P1, only to brodiblanco."""
+    if notif.priority not in (Priority.P0, Priority.P1):
+        return
+    msg = f"[{notif.priority.value}] {notif.subject}"
+    if len(msg) > 160:
+        msg = msg[:157] + "..."
+    _do_send_sms(msg)
+    _mark_sent(notif.notif_id)
+
+def _do_send_sms(message: str) -> None:
+    """Actually send SMS via Zo. Import deferred to avoid circular issues."""
+    try:
+        from common import send_sms_to_user
+        send_sms_to_user(message=message, contact_name=None)
+    except ImportError:
+        import sys
+        sys.path.insert(0, '/home/workspace')
+        from tools import send_sms_to_user
+        send_sms_to_user(message=message)
+
+def _send_email(notif: Notification) -> None:
+    """Email via Gmail."""
+    try:
+        import sys
+        sys.path.insert(0, '/home/workspace')
+        from tools import send_email_to_user
+        send_email_to_user(subject=f"[AgentOS] {notif.subject}", markdown_body=notif.body)
+    except Exception:
+        pass
+    _mark_sent(notif.notif_id)
+
+def _route_to_inbox(notif: Notification) -> None:
+    """Write to the canonical INBOX.md."""
+    if notif.priority in (Priority.P0, Priority.P1):
+        _log_to_inbox_md(notif)
+    _mark_sent(notif.notif_id)
+
+def _log_to_inbox_md(notif: Notification) -> None:
+    p_map = {"P0": "🔴", "P1": "🟠", "P2": "🟡", "P3": "⚪"}
+    icon = p_map.get(notif.priority.value, "•")
+    line = f"{icon} {notif.priority.value} | {notif.subject} | {notif.body} | {datetime.now(timezone.utc).isoformat()}\n"
+    try:
+        with open("/home/workspace/Bxthre3/INBOX.md", "a") as f:
+            f.write(line)
+    except Exception:
+        pass
+
+def _mark_sent(nid: str) -> None:
+    conn = _db()
+    conn.execute("UPDATE notifications SET delivered=1, sent_at=? WHERE notif_id=?",
+                 (datetime.now(timezone.utc).isoformat(), nid))
+    conn.commit(); conn.close()
+
+# ─── Chairman Queue Hooks ─────────────────────────────────────────────────────
+
+def notify_chairman_item(item_id: str, action: str, item_summary: str) -> None:
+    """Called when a T2 tool call hits the Chairman queue."""
+    dispatch(
+        priority=Priority.P1,
+        subject=f"Chairman: {action} — {item_summary}",
+        body=f"A {action} request requires your approval. Item: {item_id}",
+        channel=NotifChannel.SMS,
+        related_id=item_id
+    )
+
+def notify_training_stage_change(run_id: str, from_stage: str, to_stage: str, accuracy: float = None) -> None:
+    """Called when a training run advances stage."""
+    body = f"Training run {run_id} advanced from {from_stage} → {to_stage}"
+    if accuracy is not None:
+        body += f" (accuracy: {accuracy:.1%})"
+    dispatch(
+        priority=Priority.P1 if to_stage in ("S2_HITL", "DONE") else Priority.P3,
+        subject=f"Training: {from_stage} → {to_stage}",
+        body=body,
+        channel=NotifChannel.INBOX,
+        related_id=run_id
+    )
+
+def notify_tool_failure(tool_name: str, agent_did: str, error: str) -> None:
+    """Called when a tool call fails."""
+    dispatch(
+        priority=Priority.P2,
+        subject=f"Tool failure: {tool_name}",
+        body=f"Agent {agent_did} hit an error using {tool_name}: {error[:200]}",
+        channel=NotifChannel.INBOX,
+        agent_did=agent_did
+    )
+
+# ─── Query ────────────────────────────────────────────────────────────────────
+
+def get_recent(limit: int = 20, priority: Priority = None) -> list[Notification]:
+    conn = _db()
+    if priority:
+        rows = conn.execute("SELECT * FROM notifications WHERE priority=? ORDER BY created_at DESC LIMIT ?",
+                            (priority.value, limit)).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM notifications ORDER BY created_at DESC LIMIT ?",
+                            (limit,)).fetchall()
+    conn.close()
+    cols = ["notif_id","priority","channel","subject","body","agent_did","related_id","sent_at","delivered","created_at"]
+    return [Notification(**dict(zip(cols, r))) for r in rows]
+
+def get_pending_count() -> int:
+    conn = _db()
+    row = conn.execute("SELECT COUNT(*) FROM notifications WHERE delivered=0").fetchone()
+    conn.close()
+    return row[0] if row else 0

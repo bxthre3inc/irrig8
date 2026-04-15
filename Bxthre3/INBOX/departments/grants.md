@@ -1,20 +1,22 @@
 # Grants Department — Weekly Brief
-**Date:** 2026-04-14 | **Agent:** SBIR-AGENT (Grant Hunter — Bxthre3 Inc)
+**Date:** 2026-04-15 | **Agent:** SBIR-AGENT (Grant Hunter — Bxthre3 Inc)
 **Pipeline:** SCAN → TRACK → PRIORITIZE → ESCALATE ✅
 
 ---
 
-## 🔴 P0 — NONE ACTIVE | 2026-04-14
+## 🔴 P0 — NONE ACTIVE | 2026-04-15
 
 No P0 grants with confirmed deadlines within 7 days.
 
+> **Reminder:** The "USDA SBIR Phase I Water Conservation — deadline ~April 11" from prior agent instructions was **unverified and FALSE**. Rescinded 2026-04-10. USDA NIFA FY2026 SBIR NOFO has not been released. Do not act on unverified deadlines.
+
 ---
 
-## 🟠 P1 — NONE ACTIVE | 2026-04-14
+## 🟠 P1 — NONE ACTIVE | 2026-04-15
 
 No P1 grants with confirmed deadlines within 14 days.
 
-> **Note on prior tracker (2026-04-12):** The "USDA SBIR Phase I Water Conservation — deadline ~April 11" entry was **unverified** and is now **past**. USDA NIFA has not released the FY2026 SBIR NOFO. [VERIFY] entries from prior tracker have been corrected.
+ARPA-E OPEN 2026 (DE-FOA-0003567) is the closest active opportunity but its Full Application deadline remains **TBD** — not yet confirmed at ≥14 days. Status: 🟡 MONITOR.
 
 ---
 

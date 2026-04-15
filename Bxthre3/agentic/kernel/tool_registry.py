@@ -85,12 +85,25 @@ TOOL_CALL_RE = re.compile(
 )
 
 def parse_lfm_tool_call(raw: str) -> tuple[str, dict]:
-    """Parse LFM Pythonic syntax into (tool_name, {param_dict})."""
+    """Parse LFM Pythonic syntax into (tool_name, {param_dict}).
+    
+    Accepts two formats:
+    - Full LFM: <|tool_call_start|>[tool_name(k=v,...)]<|tool_call_end|>
+    - Plain Python: tool_name(k=v,...)
+    """
+    # Try full LFM format first
     match = TOOL_CALL_RE.search(raw)
-    if not match:
-        raise ValueError(f"Invalid LFM syntax: {raw!r}")
-    tool_name = match.group(1)
-    args_str  = match.group(2)
+    if match:
+        tool_name = match.group(1)
+        args_str  = match.group(2)
+    else:
+        # Fall back to plain Python syntax: tool_name(args)
+        plain_match = re.match(r"^(\w+)\((.*)\)$", raw.strip())
+        if not plain_match:
+            raise ValueError(f"Invalid LFM syntax: {raw!r}")
+        tool_name = plain_match.group(1)
+        args_str  = plain_match.group(2)
+    
     params = {}
     if args_str.strip():
         for part in args_str.split(","):

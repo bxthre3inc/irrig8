@@ -481,6 +481,72 @@ def api_notif_push():
     result = _notif_dispatch(p, body["subject"], body.get("body",""), ch)
     return jsonify({"notif_id": result.notif_id})
 
+
+
+# ═══════════════════════════════════════════════════════════════
+#  WORKFLOW ENGINE
+# ═══════════════════════════════════════════════════════════════
+
+@app.route("/api/workflows", methods=["GET"])
+def api_list_workflows():
+    status_filter = request.args.get("status")
+    agent_did = request.args.get("agent_did")
+    from Bxthre3.agentic.kernel.workflow_engine import WorkflowStatus as WS, list_workflows
+    status = WS(status_filter) if status_filter else None
+    wfs = list_workflows(agent_did=agent_did, status=status)
+    return jsonify({"count": len(wfs), "workflows": [{"id": w.workflow_id, "name": w.name, "status": w.status.value, "agent": w.agent_did, "steps": len(w.steps), "current_step": w.current_step, "created_at": w.created_at} for w in wfs]})
+
+@app.route("/api/workflows", methods=["POST"])
+def api_create_workflow():
+    body = request.json
+    from Bxthre3.agentic.kernel.workflow_engine import Step, create_workflow, notify_workflow_progress
+    steps = [Step(step_id=f's-{i}', name=s.get("name", s["tool"]), tool=s["tool"], args=s.get("args",{}), condition=s.get("condition"), next_step=s.get("next_step"), on_fail=s.get("on_fail"), hitl_required=s.get("hitl_required", False)) for i, s in enumerate(body.get("steps", []))]
+    wid = create_workflow(name=body.get("name", "Unnamed"), agent_did=body.get("agent_did", "did:agentos:unknown"), steps=steps)
+    return jsonify({"workflow_id": wid, "status": "PENDING"})
+
+@app.route("/api/workflows/<wid>/execute", methods=["POST"])
+def api_execute_step(wid):
+    from Bxthre3.agentic.kernel.workflow_engine import execute_step
+    result = execute_step(wid)
+    return jsonify(result)
+
+@app.route("/api/workflows/<wid>/approve", methods=["POST"])
+def api_approve_workflow(wid):
+    body = request.json
+    from Bxthre3.agentic.kernel.workflow_engine import approve_workflow_step
+    result = approve_workflow_step(wid, body.get("approver_did", "did:agentos:admin"), body.get("approved", True))
+    return jsonify(result)
+
+@app.route("/api/workflows/<wid>", methods=["GET"])
+def api_get_workflow(wid):
+    from Bxthre3.agentic.kernel.workflow_engine import get_workflow, get_workflow_history
+    wf = get_workflow(wid)
+    if not wf: return jsonify({"error": "not found"}), 404
+    history = get_workflow_history(wid)
+    return jsonify({"workflow_id": wf.workflow_id, "name": wf.name, "status": wf.status.value, "current_step": wf.current_step, "steps": [{"step_id": s.step_id, "name": s.name, "tool": s.tool, "hitl": s.hitl_required} for s in wf.steps], "context": wf.context, "history": history})
+
+@app.route("/api/workflows/pending-approvals", methods=["GET"])
+def api_workflow_pending():
+    from Bxthre3.agentic.kernel.workflow_engine import get_pending_approvals
+    wfs = get_pending_approvals()
+    return jsonify({"count": len(wfs), "workflows": [{"id": w.workflow_id, "name": w.name, "step": w.steps[w.current_step].name if w.current_step < len(w.steps) else "done"} for w in wfs]})
+
+# Template builders
+@app.route("/api/workflows/template/irrigation", methods=["POST"])
+def api_tpl_irrigation():
+    body = request.json
+    from Bxthre3.agentic.kernel.workflow_engine import build_irrigation_diagnostic
+    wid = build_irrigation_diagnostic(body.get("farm_id", "unknown"))
+    return jsonify({"workflow_id": wid, "template": "irrigation_diagnostic"})
+
+@app.route("/api/workflows/template/grants", methods=["POST"])
+def api_tpl_grants():
+    body = request.json
+    from Bxthre3.agentic.kernel.workflow_engine import build_grant_prospect_workflow
+    wid = build_grant_prospect_workflow(body.get("agent_did", "did:agentos:grants"), body.get("focus_area", "agriculture"))
+    return jsonify({"workflow_id": wid, "template": "grant_prospector"})
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("AGENTIC_GATEWAY_PORT", 3097))
     app.run(host="0.0.0.0", port=port, debug=False)
