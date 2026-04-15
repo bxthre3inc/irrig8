@@ -354,3 +354,87 @@ None — all P1s properly routed.
 ---
 
 *Next standup: 2026-04-15 8:15 AM MT*
+
+## 2026-04-15 08:05 AM MT — Daily Standup
+
+**Time:** 8:05 AM MT (14:05 UTC)  
+**Posture:** Online — operating
+
+### Pre-Standup Check
+
+| Item | Status | Verified |
+|------|--------|----------|
+| zo.space (core) | 🟢 Operational | ✅ 200 OK |
+| Agentic API (`/api/agentic/*`) | 🔴 DOWN | ❌ sqlite3 module missing — runtime error |
+| Irrig8 Web UI | 🟢 Live | ✅ |
+| VPC CI | 🟡 2 failures | ⚠️ Drew owner |
+
+### Critical: Agentic API Outage
+
+**Root cause:** `sqlite3` npm module not available in zo.space runtime. Database file exists at `/data/agentic/agentic.db` but `new sqlite3(...)` fails with `undefined is not a constructor`. All 6 `/api/agentic/*` routes affected:
+- `/api/agentic/status`
+- `/api/agentic/agents`
+- `/api/agentic/tasks`
+- `/api/agentic/org`
+- `/api/agentic/escalations`
+- `/api/agentic` (parent)
+
+**Impact:** Agentic webapp (`/agentic`) cannot serve. Zoe/Agentic demo environment unavailable.
+**Fix required:** Either (a) install sqlite3 in zo.space runtime, or (b) migrate Agentic data to a different storage backend supported by zo.space.
+**Owner:** Bits (CTO) — architecture decision needed
+
+### Strategic Context — Updated
+
+| Item | Status | Days Left |
+|------|--------|-----------|
+| ARPA-E OPEN 2026 | P1 | **16 days** (May 1) |
+| CIG Colorado + USDA REAP/SBIR | P1 | **15 days** (Apr 30) |
+| 7 provisional patents | P1 | **30 days** (May 15) |
+| Water Court hearing | P1 | Jun 29 (75 days) |
+| Sage deal stale | P2 | 17+ days overdue |
+| G2E 2026 | P1 | **4 days** — booth/hardware unconfirmed |
+| Cash runway | 🔴 Critical | ~1 week at $130K/week |
+
+### Today's Priority Queue (Solutions Engineering)
+
+| # | Deal | Venture | Action | Status |
+|---|------|---------|--------|--------|
+| 1 | IRR-DIST-007 | Irrig8 | USDA NRCS EQIP vendor enrollment GO/NO-GO | 🔴 This week |
+| 2 | VPC-CP-001 | VPC | Sage cash partnership — 17 days overdue | 🔴 Escalate |
+| 3 | IRR-FARM-001 | Irrig8 | Maverick Potato Co technical discovery (2,500 acres) | 🟡 Pending |
+| 4 | IRR-FARM-002 | Irrig8 | Skyline Potato Co technical discovery (3,000 acres) | 🟡 Pending |
+| 5 | IRR-DIST-006 | Irrig8 | Planet Labs API dev access | 🟡 Awaiting |
+| 6 | IRR-FARM-007 | Irrig8 | Jessica Bradshaw / CPAC (52K acre gatekeeper) | 🟡 Pending |
+| 7 | G2E-001 | VPC | Booth + demo hardware confirmation | 🔴 4 days |
+| 8 | GRANT-004 | Agentic | NSF SBIR Phase I technical narrative | 🟡 Maya owns |
+
+### Demo Environment Status
+
+| Environment | Status | Notes |
+|---|---|---|
+| Irrig8 Web UI | 🟢 Live | Web UI operational |
+| **Agentic Webapp** | 🔴 DOWN | sqlite3 runtime error — all API routes failing |
+| VPC | 🟡 CI remediation | 2 failing checks — Drew owner |
+| Starting 5 | 🟡 Planning | Architecture spike blocked |
+| Zoe | 🟢 Live | Zo Computer core |
+
+### Blockers
+
+| Blocker | Owner | Impact |
+|---|---|---|
+| **Agentic sqlite3 outage** | Bits | Cannot demo Agentic publicly |
+| VPC Sage mark-up | Drew | Cash partner close blocked — 17 days overdue |
+| VPC CI 2 failures | Drew | Cannot demo VPC |
+| G2E booth + hardware | Drew/Casey | Miss event entirely — 4 days out |
+| USDA NRCS EQIP decision | brodiblanco | IRR-DIST-007 at risk |
+
+### Handoff Items
+
+- **Bits (CTO):** Agentic API DOWN — sqlite3 module missing from zo.space runtime. Database intact at `/data/agentic/agentic.db`. Decision needed: fix sqlite3 runtime or migrate storage.
+- **Drew:** VPC Sage markup — 17 days overdue — escalate to Deal. G2E booth + hardware — 4 days, unconfirmed.
+- **Maya:** ARPA-E OPEN 2026 (May 1) — 16 days — technical specs on standby.
+- **Casey:** CIG Colorado + USDA REAP/SBIR (Apr 30) — 15 days — technical integration specs on standby.
+
+---
+
+*Next standup: 2026-04-16 8:15 AM MT*

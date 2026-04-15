@@ -1,21 +1,21 @@
 # RBF Analysis — Bxthre3 Funding Assessment
 
 **Agent:** RBF-AGENT
-**Date:** 2026-04-14
-**Need:** $400K bridge by 2026-07-01 (77 days remaining)
+**Date:** 2026-04-15
+**Need:** $400K bridge by 2026-07-01 (76 days remaining)
 **Cash Position:** ~$130,450 | **Burn:** ~$130K/week | **Runway:** ~1 week
 
 ---
 
 ## Executive Summary
 
-**Verdict:** RBF is **not currently viable** for Bxthre3. Neither VPC nor Irrig8 meet minimum revenue thresholds. The $400K bridge need is too urgent and too large for RBF given zero current MRR.
+**Verdict:** RBF is **not currently viable** for Bxthre3. Neither VPC nor Irrig8 meet minimum revenue thresholds. The $400K bridge need is too urgent and too large for RBF given zero confirmed paid MRR.
 
 **Immediate path:** Equity/convertible note bridge (Danny Romero in-person offer P1; F&F outreach this week) + grant wins (ARPA-E OPEN May 1, CIG Colorado April 30, USDA SBIR Phase I April 30) to cover the gap.
 
-**RBF future trigger:** If Irrig8 crosses **$10K MRR** within 60–90 days, RBF becomes a non-dilutive top-up option for $25K–$500K deployments.
+**RBF future trigger:** If Irrig8 crosses **$10K+ MRR** within 60–90 days, RBF becomes a non-dilutive top-up option for $25K–$500K deployments.
 
-**Better option today:** Equity — Danny Romero offer still active (P1).
+**Better option today:** Equity — Danny Romero offer still active (P1 per INBOX.md 2026-04-14).
 
 ---
 
@@ -29,7 +29,7 @@
 | Time in business | 6–12 months | ❌ Pre-launch, no ops |
 | Credit score | 680+ | [VERIFY] |
 
-**Conclusion:** VPC does not qualify. Pre-launch with no operational revenue.
+**Conclusion:** VPC does not qualify. Pre-launch with no operational revenue. Revenue model shows all [TBD] fields. [^1]
 
 ### Irrig8 (Flagship Ag-Tech Product)
 
@@ -39,13 +39,13 @@
 | Time in business | 6–12 months | ✅ Product launched |
 | Credit score | 680+ (founder) | [VERIFY] |
 
-**Conclusion:** Irrig8 projected ARR ($100K) falls short of typical RBF minimum MRR thresholds ($10K–$25K/month). The optimistic FY2027 projection of $250K ARR ($20.8K/mo) would qualify — but that is 12+ months away.
+**Conclusion:** Irrig8 projected ARR ($100K) falls short of typical RBF minimum MRR thresholds ($10K–$25K/month). The FY2027 projection of $250K ARR ($20.8K/mo) would qualify — but that is 12+ months away. [^2]
 
 **Revenue Gap:**
 - Current MRR: ~$0 (pre-revenue pilots, zero confirmed paid acres)
 - Required MRR for RBF eligibility: $10K–$25K/month
-- Irrig8 projected to cross $10K MRR: Q3–Q4 2026 at earliest (4,000 acres × $25/acre ÷ 12 = $8.3K/mo — below threshold)
-- To hit $15K MRR: 7,200 acres under management
+- Irrig8 projected to cross $10K MRR: Q3–Q4 2026 at earliest
+- To hit $15K MRR: 7,200 acres under management at $25/acre/year
 
 ---
 
@@ -58,6 +58,7 @@
 | **Nautix Capital** | $25K–$500K | $10K–$15K | 4.5–12% of revenue | 24–48 hrs | ✅ Explicit agriculture vertical |
 | **Capital Two** | $50K–$2.5M | $10K–$25K | Revenue % | 2–4 days | ✅ Ag-tech friendly |
 | **Axiant Partners** | $10K–$5M+ | $10K–$25K | 5–20% of revenue | 3–10 days | ✅ Ag-tech friendly |
+| **Decathlon Capital** | $1M–$50M+ | ~$333K ARR ($4M–$100M revenue range) | Revenue % | 4–8 weeks | ✅ Agriculture/FarmTech explicitly mentioned |
 | **Lighter Capital** | $500K–$5M+ | $200K+ ARR | Revenue % | 2–4 weeks | ⚠️ MRR threshold too high |
 | **River SaaS Capital** | $150K+ | $150K MRR | Revenue % | Fast | ❌ MRR threshold too high |
 
@@ -68,23 +69,36 @@
 - **Repayment:** Fixed % of daily/weekly revenue
 - **Term:** 18–36 months
 - **Rate:** 4.5%–12%
-- **Best direct fit for Irrig8** — explicitly targets agriculture and farming SaaS [^1]
+- **Best direct fit for Irrig8** — explicitly targets agriculture and farming SaaS [^3]
 
 #### Capital Two — Larger Ticket
 - **URL:** capitaltwo.com/products/revenue-based-financing
 - **Funding:** $50K–$2.5M
 - **Speed:** 2–4 days
-- **Ag-tech friendly** — good for larger Irrig8 deployment or VPC post-launch [^2]
+- **Ag-tech friendly** — good for larger Irrig8 deployment or VPC post-launch [^4]
 
-### Tier 2 — General RBF (Backup)
+#### Decathlon Capital Partners — Ag-Tech RBF (Newly Identified)
+- **URL:** decathloncapital.com
+- **Funding Range:** $1M–$50M+
+- **Min Revenue:** $4M–$100M annual revenue (significantly higher threshold)
+- **Speed:** 4–8 weeks
+- **Repayment:** Revenue % until cap reached
+- **Agriculture Fit:** ✅ Explicitly targets agricultural technology companies
+- **Note:** Ceres AI (agricultural intelligence platform) recently closed growth financing with Decathlon [^5]
+- **Relevance to Bxthre3:** Too large at current scale — revisit if/when Irrig8 reaches $4M+ ARR
+
+### Tier 2 — General RBF (Backup / Lower Threshold)
 
 | Provider | Funding Range | Min MRR | Notes |
 |----------|--------------|---------|-------|
-| **Kredline** | $25K–$500K | $15K/mo | 5–20% repayment |
+| **Kredline** | $25K–$500K | $15K/mo | 5–20% repayment; tracks business growth over time [^6] |
 | **CapitalXO** | $50K–$2M+ | $15K–$25K/mo | 2–8% repayment, capped 1.1x–1.5x |
 | **Funding Zone** | $25K–$500K | $10K/mo | Quick approval, soft credit check |
 | **Yardline** | $10K–$5M | $10K/mo | 5–20% of revenue |
 | **Stenn** | Up to 150% of monthly revenue | $10K/mo | Fixed fee 6–9.5% per transaction |
+| **Liberis** | £50K–£1M+ | Revenue-based | Embedded finance platform; 7–15% revenue share [^6] |
+| **Outfund** | £20K–£5M+ | £10K+/mo | UK/EU focused; digital revenue assessment in 48 hrs [^6] |
+| **Velocity** | Up to US$500K | Revenue-based | ~1 week approval; equity-free up to $500K [^6] |
 
 ---
 
@@ -108,7 +122,7 @@
 | Term | Context |
 |------|---------|
 | Amount needed | $400K bridge |
-| Danny Romero offer | In-person offer on table — active P1 |
+| Danny Romero offer | In-person offer on table — active P1 per INBOX.md 2026-04-14 |
 | F&F targets | David Beebe, Jerry Beebe, Andrew Beebe, Keegan Beebe, Fabian Gomez, Jonathan Montes, Jennifer Salazar |
 | SAFE terms referenced | $1M cap, 20% discount, MFN (from F&F pipeline docs) |
 | Valuation | [VERIFY] — no recent 409A on file |
@@ -134,7 +148,7 @@
 | $20K | 8% | $1,600/mo | 31 months | ❌ Exceeds typical term |
 | $25K | 8% | $2,000/mo | 25 months | ✅ Fits 36-month term |
 
-**RBF only makes math sense if MRR ≥ $15K–$20K.** At current zero MRR, a $400K RBF is mathematically impossible. The largest plausible RBF today at zero revenue would be a merchant cash advance or similar, which would be suboptimal for a $400K bridge.
+**RBF only makes math sense if MRR ≥ $15K–$20K.** At current zero MRR, a $400K RBF is mathematically impossible. The largest plausible RBF today at zero MRR would be a merchant cash advance (MCA), which would be suboptimal for a $400K bridge and typically carries daily repayment which would devastate a pre-revenue company.
 
 ---
 
@@ -157,10 +171,10 @@
 | Priority | Action | Owner | Timeline |
 |----------|--------|-------|----------|
 | 🔴 P1 | Danny Romero — advance equity offer in-person | brodiblanco | Immediate |
-| 🔴 P1 | Friends & Family cash partner outreach (7 targets) | brodiblanco | This week |
-| 🔴 P1 | ARPA-E OPEN 2026 full proposal (deadline May 1 — 17 days) | Casey | Daily until submitted |
-| 🔴 P1 | CIG Colorado outreach + USDA REAP (deadline April 30 — 16 days) | Casey | Daily until submitted |
-| 🔴 P1 | USDA SBIR Phase I write (deadline April 30 — 16 days) | Casey | Daily until submitted |
+| 🔴 P1 | Friends & Family cash partner outreach (7 targets) | Drew | This week |
+| 🔴 P1 | ARPA-E OPEN 2026 full proposal (deadline May 1 — 16 days) | Casey | Daily until submitted |
+| 🔴 P1 | CIG Colorado outreach + USDA REAP (deadline April 30 — 15 days) | Casey | Daily until submitted |
+| 🔴 P1 | USDA SBIR Phase I write (deadline April 30 — 15 days) | Casey | Daily until submitted |
 
 ### Medium-Term (30–90 Days)
 
@@ -196,25 +210,29 @@
 
 ---
 
-## 7. Sources
+## 7. Updated Findings (2026-04-15)
 
-[^1]: Nautix Capital — Agriculture & Farming Funding. https://www.nautixcapital.com/industries/agriculture-farming
-[^2]: Capital Two — Revenue-Based Financing. https://capitaltwo.com/products/revenue-based-financing
-[^3]: Axiant Partners — Revenue-Based Financing. https://axiantpartners.com/revenue-based-financing
-[^4]: Lighter Capital — SaaS Financing Options. https://www.lightercapital.com/blog/five-debt-funding-options-for-your-saas-company
-[^5]: Kredline — Revenue-Based Financing. https://kredline.com/funding-options/revenue-based-financing/
-[^6]: CapitalXO — Revenue-Based Financing. https://capitalxo.com/financing/revenue-based-financing/
-[^7]: Funding Zone — RB Financing. https://www.funding-zone.com/unsecured-business-loans/
-[^8]: Yardline — Revenue Based Financing. https://yardline.com/revenue-based-financing
-[^9]: Stenn — Subscription Revenue-Based Financing. https://www.stenn.com/solutions/subscription
-[^10]: VPC Revenue Model. `file 'Bxthre3/finance/models/ventures/VPC_REVENUE_MODEL.md'`
-[^11]: Irrig8 SaaS ARR Model. `file 'Bxthre3/finance/models/ventures/IRRIG8_SAAS_ARR_MODEL.md'`
-[^12]: Bxthre3 INBOX — P0/P1 Only. `file 'Bxthre3/INBOX.md'`
-[^13]: SOUL.md — Current Priority Context. `file 'Bxthre3/SOUL.md'`
-[^14]: GAMEPLAN-2026-MASTER.md. `file 'Bxthre3/GAMEPLAN-2026-MASTER.md'`
-[^15]: REVENUE-SPRINT-PLAN-30-90-180.md. `file 'Bxthre3/REVENUE-SPRINT-PLAN-30-90-180.md'`
+### Newly Identified Providers
+- **Decathlon Capital Partners** — Large-ticket RBF ($1M–$50M+), explicitly agriculture/FarmTech. Currently out of range for Bxthre3 but worth monitoring if Irrig8 scales to $4M+ ARR. Ceres AI (agricultural intelligence) recently closed a financing package with Decathlon. [^5]
+- **Liberis, Outfund, Velocity** — Smaller-ticket options for earlier stage. Less relevant for ag-tech but may be viable if Irrig8 reaches £10K/mo+ revenue. [^6]
+
+### Key Observation
+RBF market is growing (~13% CAGR through 2035) and increasingly tech-enabled. [^7] As more providers enter the market, terms are improving for borrowers. This trend benefits Bxthre3 in 6–12 months when/if MRR thresholds are met.
 
 ---
 
-*RBF-AGENT | 2026-04-14*
-*Document Status: Current — RBF not viable at zero MRR. Tracking MRR threshold triggers.*
+## 8. Sources
+
+[^1]: VPC Revenue Model. `file 'Bxthre3/finance/models/ventures/VPC_REVENUE_MODEL.md'`
+[^2]: Irrig8 SaaS ARR Model. `file 'Bxthre3/finance/models/ventures/IRRIG8_SAAS_ARR_MODEL.md'`
+[^3]: Nautix Capital — Agriculture & Farming Funding. https://www.nautixcapital.com/industries/agriculture-farming
+[^4]: Capital Two — Revenue-Based Financing. https://capitaltwo.com/products/revenue-based-financing
+[^5]: Ceres AI / Decathlon Capital Partners Growth Financing. https://www.prnewswire.com/news-releases/agricultural-intelligence-leader-ceres-ai-secures-growth-financing-package-from-decathlon-capital-partners-302590699.html
+[^6]: SourceForge — Best Small Business Revenue-Based Financing Companies 2026. https://sourceforge.net/software/revenue-based-financing/for-small-business
+[^7]: Market Research Future — Revenue-Based Financing Market 2035. https://www.marketresearchfuture.com/reports/revenue-based-financing-market-34165
+[^8]: Bxthre3 INBOX — P0/P1 Only. `file 'Bxthre3/INBOX.md'`
+
+---
+
+*RBF-AGENT | 2026-04-15*
+*Document Status: Current — RBF not viable at zero MRR. Tracking MRR threshold triggers. Equity bridge remains optimal path.*

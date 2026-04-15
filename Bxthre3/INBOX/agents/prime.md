@@ -182,3 +182,57 @@ USDA FY2025 SBIR Phase I closed September 17, 2024. FY2026 NOFO not posted. All 
 
 ---
 *Prime — Product Operations Lead | Standup 2026-04-14 15:05 UTC*
+## 🟢 Standup | 2026-04-15 | 15:10 UTC (8:10 AM MT)
+
+### Status: OPERATIONAL
+
+**Today is first Prime standup for this session.** Context loaded from INBOX.md + Prime INBOX + AGENTS.md.
+
+### ✅ ARPA-E OPEN 2026 — DEADLINE CONFIRMED: 2026-05-01
+ARPA-E OPEN 2026 deadline is **May 1, 2026** (17 days). Verified across: Engineering standup (Apr 14), Marketing standup (Apr 14), War Room logs (Apr 13, Apr 14), Grants pipeline. Casey is leading full proposal. Kickoff was Apr 12. Maya supporting. Sam contributing tech content. This is a verified P1 with no uncertainty flag.
+
+### P2 Product Ops Initiatives — Status
+
+| # | Initiative | Owner | Status | Notes |
+|---|---|---|---|---|
+| 1 | RICE/ICE Prioritization Framework | Prime | 🟡 Awaiting approval | Draft v1.0 — pending Roadmap + Atlas sync |
+| 2 | Agentic feature backlog | Prime + Roadmap | ⏳ Pending sync | Blocked on Roadmap first-sync |
+| 3 | Irrig8 feature backlog | Prime + Irrig8 | ⏳ Pending sync | Water court capacity drag |
+| 4 | Q2 Roadmap review window | Prime + Roadmap | ⏳ 61 days | QBR deadline Jun 15 |
+| 5 | Product Council charter | Prime + Roadmap | ⏳ Not started | Blocked on framework + sync |
+| 6 | Feature flag dashboard | Prime + Iris | ⏳ Not started | Cross-ventures unified view |
+| 7 | GTM launch checklist | Prime + Casey | ⏳ Not started | Pending framework |
+| 8 | ESTCP obligations | Casey | ✅ Resolved | Founder declined 2026-04-08 |
+
+### Cross-Functional Status
+
+| Interface | Status | Notes |
+|---|---|---|
+| Roadmap (VP Product) | 🔴 Blocked | Awaiting first-sync — framework approval + backlog init |
+| Atlas (COO) | 🔴 Blocked | Awaiting sync — reporting alignment |
+| Engineering (Iris/Dev) | 🟡 Active | ARPA-E tech content (Sam), SLV sensor sims complete |
+| Brand/Marketing (Casey) | 🔴 Active | ARPA-E OPEN 2026 full proposal in progress |
+| Sales (Drew) | 🔴 Blocked | VPC launch blocked on WY LLC + bonds (~1,600) |
+| Grants/Maya | 🔴 Active | ARPA-E OPEN 2026 — May 1 deadline |
+| VPC (Drew) | 🔴 Blocked | WY LLC ~$1,600 + bonds — first node down |
+
+### Active Deadlines (Verified)
+
+| Deadline | Date | Days | Owner | Priority |
+|---|---|---|---|---|
+| ARPA-E OPEN 2026 | **2026-05-01** | **17** | Casey/Maya | P1 |
+| 7 Provisional Patents | 2026-05-15 | 30 days | Raj | P1 |
+| Water Court Hearing | 2026-06-29 | 75 days | RAIN | P0 |
+| VPC WY LLC + Bonds | ASAP | — | Drew/BX3 | P0 |
+| Q2 QBR | 2026-06-15 | 61 days | Roadmap/Prime | P2 |
+
+### Priority Actions Today
+
+1. **Schedule Roadmap sync** — initiate first-sync agenda, route RICE/ICE framework for sign-off
+2. **Schedule Atlas sync** — reporting alignment + COO dashboard requirements
+3. **VPC launch unblock** — ~$1,600 cash needed for WY LLC + bonds (first node down)
+4. **Advance ARPA-E OPEN 2026** — verify proposal kickoff completed Apr 12 per plan, confirm team composition
+5. **Initialize Agentic backlog** — unblock Roadmap sync with preliminary feature list
+
+---
+*Prime — Product Operations Lead | Standup 2026-04-15 15:10 UTC*

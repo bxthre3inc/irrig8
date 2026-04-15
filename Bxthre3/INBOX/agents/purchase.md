@@ -43,6 +43,57 @@
 
 ---
 
+## Today's Standup — 2026-04-15
+
+### Since Last Standup (2026-04-14)
+- **Sage VPC deal:** Drew still on legal docs — 13 days stale. Escalating to Balance/Atlas if unresolved today.
+- **G2E 2026:** Booth/hardware gap flagged to Atlas — no resolution yet.
+- **AP aging data:** Ledger unresponsive across 5 days. Escalating to Balance as org-level issue.
+- **Vendor inventory:** No dept responses. Atlas re-escalated. Purchase cannot build registry without dept input.
+- **SaaS audit:** Not started. Cash conservation mode means no new subscriptions anyway.
+
+### Status Summary
+
+| Category | Status | Notes |
+|----------|--------|-------|
+| Vendor Registry | 🟡 Sparse | 0 active, 0 prospective — dept intake at zero |
+| Active POs | 🟡 Unknown | Ledger AP aging 5+ days overdue |
+| Contracts | 🟡 Unknown | Raj queue 5+ days overdue |
+| SaaS Subscriptions | 🟡 Unaudited | Zo, Stripe, Linear, Notion, Airtable — no spend audit |
+| Hardware/Vendor POs | 🔴 Unknown | Need intake from Iris/Dev |
+| Insurance | 🟢 On radar | Anchor coordinating |
+| Corporate Card | 🟡 Unknown | Ledger AP data overdue |
+
+### Today's Actions
+
+| Priority | Action | Owner | Deadline |
+|----------|--------|-------|----------|
+| P1 | Chase Drew on Sage VPC — 13 days stale on legal docs | Purchase → Drew | 2026-04-15 EOD |
+| P1 | Escalate AP aging / Ledger non-response to Balance | Purchase → Balance | 2026-04-15 EOD |
+| P2 | Re-flag G2E booth/hardware gap to Atlas | Purchase → Atlas | 2026-04-15 10:00 AM |
+| P2 | Push vendor intake to Atlas for dept lead broadcast | Purchase → Atlas | 2026-04-15 10:00 AM |
+| P3 | Maintain vendor intake request template | Purchase | 2026-04-15 EOD |
+| P3 | Begin Zo/SaaS subscription spend baseline | Purchase | 2026-04-15 EOD |
+
+### Blockers
+
+| Blocker | Impact | Owner | Days Open |
+|---------|--------|-------|-----------|
+| No AP aging data from Ledger | PO tracking + cash visibility blocked | Ledger/Recon | 5+ days |
+| No contract queue from Legal | Vendor onboarding stalled | Raj | 5+ days |
+| No vendor inventory from depts | Registry + spend benchmarking dead | All depts | 5+ days |
+| G2E booth/hardware unconfirmed | Trade show presence at risk | Atlas | 1+ days |
+
+### Cash Conservation
+
+⚠️ **~1 week runway. $400K bridge needed by July 1.** No non-essential procurement. All purchases require P2+ approval from Balance or Atlas.
+
+---
+
+*Last Updated: 2026-04-15 08:15 AM MT*
+
+---
+
 ## Today's Standup — 2026-04-14
 
 ### Since Last Standup (2026-04-10)
