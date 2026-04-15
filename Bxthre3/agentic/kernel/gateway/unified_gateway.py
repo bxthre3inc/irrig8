@@ -18,7 +18,7 @@ from Bxthre3.agentic.kernel.gateway.chairman_queue import enqueue, get_pending, 
 from Bxthre3.agentic.kernel.service_mesh.peer_bridge.peer_bridge import register_peer, list_peers, publish_message, get_messages, get_mesh_summary
 from Bxthre3.agentic.kernel.service_mesh.agent_runtime.agent_runtime import get_runtime, infer_sync, TierAssignment
 from Bxthre3.agentic.kernel.service_mesh.evaluator.evaluator import grade_tool_call, grade_agent_round_trip, get_agent_grade
-from Bxthre3.agentic.kernel.service_mesh.event_bus import subscribe, drain_all, list_subscriptions
+from Bxthre3.agentic.kernel.service_mesh.event_bus import subscribe, drain_all, list_subscriptions, emit_training_event
 import json
 from pathlib import Path
 from enum import Enum
@@ -195,6 +195,78 @@ def api_events():
 @app.route("/api/events/subscriptions", methods=["GET"])
 def api_subs():
     return jsonify(list_subscriptions())
+
+# ─── Training Pipeline ────────────────────────────────────────────────────────
+
+from Bxthre3.agentic.kernel.service_mesh.training_gateway.training_gateway import (
+    create_run, get_run, advance_stage, approve_hitl,
+    submit_sample, get_samples, get_pending_hitl, trigger_eval, list_runs
+)
+
+@app.route("/api/training/run", methods=["POST"])
+def api_create_training_run():
+    body = request.json
+    run_id = create_run(
+        agent_did=body.get("agent_did", "did:agentos:chairman"),
+        base_model=body.get("base_model", "LFM2.5-350M"),
+        sample_source=body.get("sample_source", "agentic")
+    )
+    emit_training_event(run_id, "S0_COLLECT", "created")
+    return jsonify({"run_id": run_id, "stage": "S0_COLLECT", "status": "RUNNING"})
+
+@app.route("/api/training/runs", methods=["GET"])
+def api_list_training_runs():
+    runs = list_runs()
+    return jsonify({"runs": [_flat(r) for r in runs], "count": len(runs)})
+
+@app.route("/api/training/run/<run_id>", methods=["GET"])
+def api_get_training_run(run_id):
+    run = get_run(run_id)
+    if not run:
+        return jsonify({"error": f"Run '{run_id}' not found"}), 404
+    return jsonify(_flat(run))
+
+@app.route("/api/training/run/<run_id>/advance", methods=["POST"])
+def api_advance_training_run(run_id):
+    operator = request.json.get("operator", "system") if request.is_json else "system"
+    ok = advance_stage(run_id, operator)
+    run = get_run(run_id)
+    return jsonify({"ok": ok, "stage": run.stage.value if run else "UNKNOWN", "run_id": run_id})
+
+@app.route("/api/training/run/<run_id>/hitl/approve", methods=["POST"])
+def api_approve_hitl(run_id):
+    approver = request.json.get("approver_did", "did:agentos:chairman")
+    ok = approve_hitl(run_id, approver)
+    return jsonify({"ok": ok, "run_id": run_id})
+
+@app.route("/api/training/run/<run_id>/samples", methods=["GET"])
+def api_get_training_samples(run_id):
+    return jsonify({"run_id": run_id, "samples": get_samples(run_id)})
+
+@app.route("/api/training/run/<run_id>/sample", methods=["POST"])
+def api_submit_training_sample(run_id):
+    body = request.json
+    sid = submit_sample(
+        rid=run_id,
+        conversation_id=body.get("conversation_id", "synth"),
+        role=body.get("role", "assistant"),
+        content=body.get("content", ""),
+        lfm_tool_call=body.get("lfm_tool_call"),
+        gold_reasoning=body.get("gold_reasoning"),
+        sample_type=body.get("sample_type", "TOOL_CALL"),
+        grade_score=body.get("grade_score", 1.0)
+    )
+    return jsonify({"sample_id": sid, "run_id": run_id})
+
+@app.route("/api/training/run/<run_id>/eval", methods=["POST"])
+def api_trigger_training_eval(run_id):
+    result = trigger_eval(run_id)
+    return jsonify(result)
+
+@app.route("/api/training/pending-hitl", methods=["GET"])
+def api_pending_hitl():
+    runs = get_pending_hitl()
+    return jsonify({"runs": [_flat(r) for r in runs], "count": len(runs)})
 
 # ─── Gateway info ─────────────────────────────────────────────────────────────
 
