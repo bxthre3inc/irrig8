@@ -22,6 +22,11 @@ from Bxthre3.agentic.kernel.service_mesh.event_bus import subscribe, drain_all, 
 import json
 from pathlib import Path
 from enum import Enum
+from Bxthre3.agentic.kernel.auth_service import (
+    login, get_session, logout, verify_api_key,
+    require_role, audit_log, create_api_key, list_api_keys,
+    delete_api_key, list_users, get_audit_log
+)
 
 AGENTIC_STORE = Path(__file__).parent / "agentic-store.json"
 GRANTS_DB    = Path(__file__).parent.parent.parent / "store" / "grants_pipeline.json"
@@ -334,6 +339,117 @@ def api_grants():
         {"id": "usda-sbir",    "name": "USDA SBIR Phase I",      "due": "2026-07-15", "amount": 100000, "status": "prospecting", "stage": "research"},
     ]
     return jsonify({"grants": grants, "count": len(grants)})
+
+# ─── Auth Routes ─────────────────────────────────────────────────────────────
+
+@app.route("/api/auth/login", methods=["POST"])
+def api_login():
+    body = request.json
+    sess = login(body.get("user_id"), pin=body.get("pin"), password=body.get("password"))
+    if not sess:
+        return jsonify({"error": "Invalid credentials"}), 401
+    resp = jsonify({"user_id": sess["user_id"], "name": sess["name"], "role": sess["role"], "expires_at": sess["expires_at"]})
+    resp.set_cookie(SESSION_COOKIE, sess["session_id"], httponly=True, samesite="Strict", max_age=86400)
+    audit_log(action="login", user_id=sess["user_id"], role=sess["role"], result="success")
+    return resp
+
+@app.route("/api/auth/logout", methods=["POST"])
+def api_logout():
+    sess_id = request.cookies.get(SESSION_COOKIE)
+    if sess_id:
+        sess = get_session(sess_id)
+        if sess:
+            audit_log(session_id=sess_id, action="logout", user_id=sess["user_id"], role=sess["role"], result="success")
+        logout(sess_id)
+    resp = jsonify({"logged_out": True})
+    resp.delete_cookie(SESSION_COOKIE)
+    return resp
+
+@app.route("/api/auth/me", methods=["GET"])
+def api_me():
+    creds = get_credentials(request)
+    if not creds:
+        return jsonify({"authenticated": False}), 401
+    return jsonify({"authenticated": True, **creds})
+
+@app.route("/api/auth/keys", methods=["GET"])
+def api_list_keys():
+    creds = get_credentials(request)
+    if not creds or not require_role(creds, "admin"):
+        return jsonify({"error": "Forbidden"}), 403
+    return jsonify({"keys": list_api_keys()})
+
+@app.route("/api/auth/keys", methods=["POST"])
+def api_create_key():
+    creds = get_credentials(request)
+    if not creds or not require_role(creds, "admin"):
+        return jsonify({"error": "Forbidden"}), 403
+    body = request.json
+    key_id, raw_key = create_api_key(body.get("user_id", "admin"), body.get("name", "API Key"), body.get("role", "operator"))
+    audit_log(user_id=creds["user_id"], role=creds["role"], action="create_api_key", resource=key_id, result="created")
+    return jsonify({"key_id": key_id, "api_key": raw_key, "warning": "Copy this key — it will not be shown again."})
+
+@app.route("/api/auth/keys/<key_id>", methods=["DELETE"])
+def api_delete_key(key_id):
+    creds = get_credentials(request)
+    if not creds or not require_role(creds, "admin"):
+        return jsonify({"error": "Forbidden"}), 403
+    ok = delete_api_key(key_id)
+    audit_log(user_id=creds["user_id"], role=creds["role"], action="delete_api_key", resource=key_id, result="deleted" if ok else "not_found")
+    return jsonify({"deleted": ok})
+
+@app.route("/api/auth/users", methods=["GET"])
+def api_list_users():
+    creds = get_credentials(request)
+    if not creds or not require_role(creds, "admin"):
+        return jsonify({"error": "Forbidden"}), 403
+    return jsonify({"users": list_users()})
+
+@app.route("/api/auth/audit", methods=["GET"])
+def api_audit():
+    creds = get_credentials(request)
+    if not creds or not require_role(creds, "admin"):
+        return jsonify({"error": "Forbidden"}), 403
+    entries = get_audit_log(limit=int(request.args.get("limit", 100)))
+    return app.response_class(json.dumps(_flat(entries)), mimetype="application/json")
+
+# ─── Protected Route Wrapper ─────────────────────────────────────────────────
+# Apply @require_role("admin") decorator to any route that needs protection
+# Example: @require_role("operator") on tool execution routes
+
+SESSION_COOKIE = "agentos_session"
+API_KEY_HEADER = "X-AgentOS-Key"
+
+def get_credentials(req):
+    """Extract session or API key from request. Returns dict with role or None."""
+    # Check header key first (API calls)
+    key = req.headers.get(API_KEY_HEADER) or req.headers.get("Authorization", "").replace("Bearer ", "")
+    if key:
+        vk = verify_api_key(key)
+        if vk:
+            return vk
+    # Check session cookie
+    sess_id = req.cookies.get(SESSION_COOKIE)
+    if sess_id:
+        sess = get_session(sess_id)
+        if sess:
+            return sess
+    return None
+
+def auth_required(role="admin"):
+    """Decorator factory: enforce auth + role on routes."""
+    def decorator(f):
+        def wrapped(req, *args, **kwargs):
+            creds = get_credentials(req)
+            if not creds:
+                return jsonify({"error": "Unauthorized"}), 401
+            if not require_role(creds, role):
+                return jsonify({"error": "Forbidden — requires " + role}), 403
+            req.auth_context = creds
+            return f(req, *args, **kwargs)
+        wrapped.__name__ = f.__name__
+        return wrapped
+    return decorator
 
 if __name__ == "__main__":
     port = int(os.environ.get("AGENTIC_GATEWAY_PORT", 3097))
