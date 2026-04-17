@@ -203,3 +203,25 @@ Department report          → Bxthre3/INBOX/departments/{dept}.md
 | **Quarterly QBR** | 2:00 PM MT | Mar/Jun/Sep/Dec 15th | Leadership |
 | **Annual Summit** | 9:00 AM MT | Jan 15 | Everyone |
 
+## Integration Architecture
+
+> **Full reference:** `file 'Bxthre3/INBOX/INTEGRATIONS.md'` — canonical source of truth for all integrations
+
+### Event-Driven Stack (2026-04-16)
+- **GitHub → Linear:** Webhook on PR merge → closes Linear issue instantly. No polling.
+- **GitHub webhook endpoint:** `https://brodiblanco.zo.space/api/github-webhook` (HMAC verified)
+- **Registered repos:** agent-os, bxthre3, agentos-command-center, Distributed-Execution-System, CREDsWallet
+- **Linear ↔ Google Tasks bridges:** 15-min polling (both platforms lack push webhooks)
+- **Daily hygiene agents:** 8am Morning Brief (email), 9am Linear audit
+
+### Key IDs (Linear)
+- Team ID: `ffb6f386-e51a-4aa9-a686-e92e3e1c3e81`
+- User ID: `be904814-6678-4b8d-8e62-c7acd880cef2`
+- Issue convention: `BX3-N` (e.g. `BX3-5`)
+
+### Key IDs (Google Tasks)
+- BX3:Today `MjJ3TlRoU3pjT1c4X2pERw`
+- BX3:Agentic `eG9wOUxObnpidmptczNRNA`
+- BX3:Irrig8 `bGsxVXFOcmotNnRscWhKMQ`
+- BX3:Projects `WEozRDdoa1VrUFRjRnAzag`
+
