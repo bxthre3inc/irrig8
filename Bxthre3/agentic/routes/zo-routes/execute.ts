@@ -1,8 +1,10 @@
 // P3: Execute — run inference via Zo API, log result, update workqueue
+// P0: Truth Gate wired into every execution — hallucination kills on sight
 import type { Context } from "hono";
 import { randomUUID } from "crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
+import { verifyTruthGate, type DataClass, type TruthGateResult } from "../../kernel/truth-gate/truth-gate";
 
 const STORE_DIR = "/dev/shm/agentic";
 const EXECUTION_LOG = join(STORE_DIR, "execution_log.json");
@@ -60,6 +62,37 @@ export default async (c: Context) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     const data = await res.json();
     raw_response = data.output || "";
+
+    // ─── TRUTH GATE: Every output must pass before it can leave ───
+    const tgResult: TruthGateResult = verifyTruthGate({
+      data_class: (body.data_class as DataClass) ?? "project_context",
+      claim: raw_response.slice(0, 500),   // hash the claim
+      source: body.source ?? `intent://${intent_id ?? item_id}`,
+      source_hash: body.source_hash,
+      max_age_ms: body.max_age_ms,
+      retrieved_at: Date.now(),
+      fetched: false,
+    });
+
+    if (!tgResult.passed) {
+      // Hallucination detected — seal the violation and block the response
+      const violationRecord = {
+        result_id,
+        item_id,
+        agent_id,
+        raw_response: "[BLOCKED BY TRUTH GATE]",
+        status: "FAILURE",
+        duration_ms,
+        error: `TruthGate violations: ${tgResult.violations.join(" | ")}`,
+        truth_gate: tgResult,
+        created_at: now,
+      };
+      const log = loadExecLog();
+      log.push(violationRecord);
+      saveExecLog(log);
+      updateWQStatus(item_id, "FAILED");
+      return c.json({ blocked: true, result: violationRecord }, 400);
+    }
   } catch (e: any) {
     status = e.message.includes("TIMEOUT") ? "TIMEOUT" : "FAILURE";
     error_msg = e.message;

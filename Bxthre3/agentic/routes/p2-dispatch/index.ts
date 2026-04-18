@@ -8,6 +8,7 @@
  */
 
 import type { Context } from "hono";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 
 // ── Bandit configuration ────────────────────────────────────────────────
 const WORKFLOWS = ["research", "code", "grant", "deploy", "general", "sales", "legal", "pipeline"] as const;
@@ -61,24 +62,58 @@ function thompsonSample(workflow: Workflow, taskType: string, db: any): string {
 }
 
 // ── Epsilon-greedy route ─────────────────────────────────────────────
+const QTABLE_PATH = "/dev/shm/agentic/ier_qtable.json";
+
+interface QEntry {
+  q_value: number;
+  visit_count: number;
+  last_updated: string;
+}
+
+function loadQTable(): Record<string, Record<string, QEntry>> {
+  try {
+    return JSON.parse(readFileSync(QTABLE_PATH, "utf-8"));
+  } catch { return {}; }
+}
+
+function saveQTable(qtable: Record<string, Record<string, QEntry>>) {
+  mkdirSync(STORE_DIR, { recursive: true });
+  writeFileSync(QTABLE_PATH, JSON.stringify(qtable, null, 2));
+}
+
 function routeIntent(intent: string, db: any): { workflow: Workflow; mode: "EXPLOIT" | "EXPLORE"; confidence: number } {
   const taskType = classifyIntent(intent);
-  const explore = Math.random() < EPSILON;
+  const qtable = loadQTable();
 
-  if (explore) {
+  // Epsilon-greedy
+  if (Math.random() < EPSILON) {
     const randomWf = WORKFLOWS[Math.floor(Math.random() * WORKFLOWS.length)];
     return { workflow: randomWf, mode: "EXPLORE", confidence: 0.1 };
   }
 
-  const chosen = thompsonSample(taskType, taskType, db);
-  const stats = db.prepare(
-    "SELECT avg_reward, visit_count FROM workflow_stats WHERE workflow_id = ? AND task_type = ?"
-  ).get(chosen, taskType) as { avg_reward: number; visit_count: number } | undefined;
+  // Thompson sample across all workflows
+  let best: Workflow = "general";
+  let bestScore = -Infinity;
+  for (const wf of WORKFLOWS) {
+    const entry = qtable[taskType]?.[wf] ?? { q_value: 0.5, visit_count: 0 };
+    const std = 1 / Math.sqrt(Math.max(1, entry.visit_count));
+    const score = sampleGaussian(entry.q_value, std);
+    if (score > bestScore) { bestScore = score; best = wf; }
+  }
 
+  // Persist Q-table on every decision
+  if (!qtable[taskType]) qtable[taskType] = {};
+  const entry = qtable[taskType][best] ?? { q_value: 0.5, visit_count: 0 };
+  entry.visit_count += 1;
+  entry.last_updated = new Date().toISOString();
+  qtable[taskType][best] = entry;
+  saveQTable(qtable);
+
+  const avg_reward = entry.q_value;
   return {
-    workflow: chosen,
+    workflow: best,
     mode: "EXPLOIT",
-    confidence: stats ? Math.max(0, Math.min(1, stats.avg_reward)) : 0.5,
+    confidence: Math.max(0, Math.min(1, avg_reward)),
   };
 }
 
