@@ -186,7 +186,9 @@ Zo Prototype (prove it)
 
 ## 8. P0 Improvements — Implementation Checklist
 
-### [ ] 8.1 Wire Truth Gate into Inference Path
+### [x] 8.1 Wire Truth Gate into Inference Path
+
+**Status:** ✅ Implemented — `/home/workspace/Bxthre3/agentic/routes/zo-routes/execute.ts` now calls `verifyTruthGate()` on every LLM output before returning. Hallucination → HTTP 400 + logged to execution_log.json.
 
 **Problem:** `/api/agentic/truth-gate/check` is a standalone route. It needs to be in the inference call chain.
 
