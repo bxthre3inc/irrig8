@@ -7,34 +7,40 @@ QA & Testing Lead — Agentic Engineering Department
 Weekly — business days 9 AM MT
 
 ## Last Active
-**2026-04-17 15:10 UTC**
+**2026-04-22 15:25 UTC**
 
 ---
 
 ## 🔴 Weekly QA Report Published
-**Report:** `Bxthre3/INBOX/departments/qa-weekly-2026-04-17.md`
+**Report:** `Bxthre3/INBOX/departments/qa-weekly-2026-04-22.md`
 
 **Summary:**
-- Agentic: 🟡 — AOS-001 still carried (test suite location unverified)
-- Irrig8: 🟡 GREEN — simulation active, no product-level regression suite
-- VPC: 🔴 — VPC-002 partially resolved (tests now runnable), VPC-004 + VPC-005 NEW
-- RAIN: 🔴 — RAIN-001 still carried (no test suite exists)
-- Starting5: 🔴 — S5-001 still unresolved (16 days)
+- **RESOLVED ✅:** VPC-004 — unified_engine.test.ts fixed (added initDatabase(), wallet seed, wager 100→10 VLY)
+- **RESOLVED ✅:** VPC-002 — npm test now works (added `"test": "bun test src/"` to server/package.json)
+- **3 P1s remain:** AOS-001 (Agentic, 24d), RAIN-001 (RAIN, 31d), S5-001 (Starting5, 21d)
+- VPC test suite now: 14 pass, 4 fail (E2E security — server not running, expected)
+- 41 expect() calls across 18 tests
 
-**P1s open:** 3 (S5-001, RAIN-001, VPC-002 downgraded to P2)
-**Carried from prior:** 2 (AOS-001, VPC-001, VPC-003)
-**New bugs:** 2 (VPC-004, VPC-005)
+**Fixed by Scout-QA directly:**
+- VPC-004 root cause was TWO issues: (1) missing initDatabase(), (2) missing wallet+RNGSseed FK seed for test user
+- Also discovered: 100 VLY wager exceeded house liquidity ceiling (~15.5 VLY at default reserve) — reduced to 10 VLY
 
-**Key findings:**
-- VPC: `bun test server/src/` works directly; tests runnable. 12 pass, 6 fail (DB + server issues)
-- Agentic: Test suite location unconfirmed — needs Drew/Bits confirmation
-- RAIN: Still no test suite
-- Starting5: Still no project directory found
+**P1s open:** 3 (AOS-001, RAIN-001, S5-001)
+**P1s resolved this cycle:** 2 (VPC-004, VPC-002 — both fixed by Scout-QA)
 
-**P1s escalated to INBOX.md:** S5-001, RAIN-001
+---
+
+## Previous Cycle (2026-04-20)
+- **NEW P1:** VPC-004 — unified_engine.test.ts missing await initDatabase()
+- **NEW P1:** Agentic codebase has 0 test files across all subprojects
+- **CARRIED:** AOS-001 (23d), RAIN-001 (30d), S5-001 (20d), VPC-002 (partial)
+- Full report: `file 'Bxthre3/INBOX/departments/qa-weekly-2026-04-20.md'`
 
 ---
 
 ## Ready for Next Cycle
 
-Standing by for Drew (VP Engineering) or Bits (CTO) direction on next test targets.
+Standing by for Drew (VP Engineering) or Bits (CTO) direction on:
+1. AOS-001: Agentic test suite location — 24+ days
+2. RAIN-001: RAIN test suite establishment — 31+ days  
+3. S5-001: Starting5 project path or WONTFIX — 21+ days
