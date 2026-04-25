@@ -1,0 +1,200 @@
+% --- 4. IMMUTABLE PARENT POINTERS ---
+\section{Immutable Parent Pointers}
+\label{sec:ipp}
+
+The central structural primitive of the Recursive Spawning Protocol is the immutable parent pointer. Unlike conventional parent references in object-oriented or agent frameworks, which are mutable references that may be redirected or nullified at runtime, the parent pointer in RSP is sealed at creation time and cannot be modified by any agent in the chain. This section formalizes the parent pointer data structure, defines the immutability guarantee, specifies the conditions under which a parent pointer may be assigned, describes the chain construction algorithm, and proves that any agent constructed under RSP has a parent chain that traces unbroken to a designated human accountability anchor.
+
+\subsection{The ParentPointer Data Structure}
+
+The parent pointer is the atomic spawning relation in the BX3 agent graph. It is the directed edge $p \rightarrow c$ that records, definitively and permanently, that agent $c$ was spawned by agent $p$.
+
+\begin{definition}[ParentPointer]
+\label{def:parent-pointer}
+Let $p$ be a parent agent and $c$ a child agent. A \textbf{ParentPointer} is a data structure of the form:
+\[
+\mathrm{ParentPointer}(p, c) = \langle \mathrm{Hash}_p,\ \mathrm{Hash}_c,\ \mathrm{Timestamp},\ \mathrm{ChainHash} \rangle
+\]
+where:
+\begin{itemize}
+  \item $\mathrm{Hash}_p = H(\mathrm{Purpose}(p))$ is the SHA-256 hash of the parent agent's Purpose text,
+  \item $\mathrm{Hash}_c = H(\mathrm{Purpose}(c))$ is the SHA-256 hash of the child agent's Purpose text,
+  \item $\mathrm{Timestamp}$ is the ISO-8601 timestamp of the spawn event in UTC,
+  \item $\mathrm{ChainHash} = H\bigl(\mathrm{ParentPointer}(\mathrm{parent}(p), p)\ \vert\ \mathrm{Hash}_p\ \vert\ \mathrm{Timestamp}\bigr)$ is the cryptographic hash that chains this pointer to its own parent pointer, where $\vert$ denotes concatenation.
+\end{itemize}
+\end{definition}
+
+The four fields serve distinct purposes. $\mathrm{Hash}_p$ and $\mathrm{Hash}_c$ bind the parent pointer to the specific Purpose identities of the two agents, making it impossible to substitute a different agent without the hash mismatch being detectable. $\mathrm{Timestamp}$ records the temporal ordering of the spawn event for forensic reconstruction. $\mathrm{ChainHash}$ creates the chain integrity property: each ParentPointer hashes the previous one, so the entire spawning history is sealed into a single digest. Any tampering with a historical ParentPointer changes its ChainHash, which propagates forward and invalidates every descendant's chain hash.
+
+The immutability of the ParentPointer is not a software policy enforced by access control lists or permission flags. It is an architectural property enforced by the separation of the Fact Layer from the Purpose Layer and the Bounds Engine.
+
+\subsection{Immutability Guarantee}
+
+\begin{definition}[Immutability Guarantee]
+\label{def:immutability}
+The ParentPointer assigned to a spawn event is immutable by construction. Immutability is guaranteed by the following three-layer architectural constraint:
+
+\begin{enumerate}
+  \item \textbf{Fact Layer WORM Storage.} The ParentPointer is written by the Fact Layer at spawn time into a write-once, read-many (WORM) data store. The write operation is atomic: once committed, the record is cryptographically sealed and cannot be overwritten, appended to, or deleted by any agent, administrator, or system process.
+
+  \item \textbf{Layer Separation.} The Bounds Engine that governs the child agent's execution has no write access to the Fact Layer. The Purpose Layer that authorized the spawn has no mechanism to retroactively modify any ParentPointer record. Both layers have read access for chain traversal and verification, but write access is architecturally blocked.
+
+  \item \textbf{Chain Hash Integrity.} The cryptographic chain hash makes tampering evident without requiring a trusted verifier. Any attempt to modify a ParentPointer in-place changes its $\mathrm{ChainHash}$, which causes the $\mathrm{ChainHash}$ of every descendant ParentPointer to become invalid. The chain breaks at the point of modification.
+\end{enumerate}
+\end{definition}
+
+The immutability guarantee is formally stated as a theorem:
+
+\begin{theorem}[ParentPointer Immutability]
+\label{thrm:immutability}
+For any spawn event $e$ that creates child $c$ from parent $p$, the ParentPointer record $\mathrm{ParentPointer}(p, c)$ written to the Fact Layer at the time of $e$ cannot be modified by any agent, any descendant of $c$, any process in the Purpose Layer, any process in the Bounds Engine, or any external administrator after $e$ is committed.
+
+\beginproof
+The Fact Layer implements a WORM store. The write path for a ParentPointer is:
+\[
+\mathrm{write\_parent\_pointer}(p, c) \mapsto \mathrm{FactLayer.write}\bigl(\mathrm{ParentPointer}(p, c)\bigr)
+\]
+This write is a single atomic operation with no subsequent update or delete interface exposed to any layer. The Fact Layer's storage API exposes only:
+\[
+\mathrm{FactLayer.read}(a) \quad\text{and}\quad \mathrm{FactLayer.verify\_chain}(a)
+\]
+The Bounds Engine and Purpose Layer have read access only. The chain hash is computed at write time from the ParentPointer of $\mathrm{parent}(p)$, which itself was written at $p$'s own spawn event and is similarly immutable by recursive application of this argument. Therefore, the record written at event $e$ is sealed by construction.
+\endproof
+\end{theorem}
+
+This theorem establishes that the parent pointer is not merely difficult to modify --- it is architecturally impossible to modify through any software interface available in the system. This is the key property that distinguishes RSP from permission-based or policy-based approaches to agent accountability.
+
+\subsection{Spawn Authorization: The Purpose Layer Role}
+
+Immutable parent pointers would be insufficient without a complementary mechanism that governs \textit{when} and \textit{under what conditions} a parent pointer may be assigned in the first place. The Purpose Layer is the authorization authority for spawning events.
+
+\begin{definition}[Spawn Authorization]
+\label{def:spawn-auth}
+An agent $p$ may spawn a child $c$ with parent pointer $\mathrm{ParentPointer}(p, c)$ if and only if the following conditions hold:
+
+\begin{enumerate}
+  \item \textbf{Purpose Alignment.} The spawn request $\mathcal{S} = \langle \mathrm{Task}(c),\ \mathrm{Capabilities}(c),\ \mathrm{Constraints}(c),\ \mathrm{MaxDepth}(c) \rangle$ is consistent with the Purpose text of $p$, formally: $\mathrm{Purpose}(\mathcal{S}) \sqsubseteq \mathrm{Purpose}(p)$, where $\sqsubseteq$ denotes purposeful subordination.
+  \item \textbf{Depth Budget.} The current spawn depth of $p$ is strictly greater than zero. The depth budget is decremented atomically at spawn time: $\mathrm{depth}(p) \leftarrow \mathrm{depth}(p) - 1$.
+  \item \textbf{Global Depth Limit.} $\mathrm{MaxDepth}(c) \leq \mathcal{D}_{\max}$, where $\mathcal{D}_{\max}$ is the system-configured maximum spawn depth.
+  \item \textbf{Fact Layer Confirmation.} The ParentPointer record is confirmed written in the Fact Layer before the child $c$ is activated. This prevents orphaned activation: a child cannot operate until its parent pointer is sealed.
+\end{enumerate}
+\end{definition}
+
+The Purpose Layer's authorization check is the gatekeeper for spawn events. It prevents agents from self-extending their authority beyond what the original human principal authorized. An agent whose Purpose is to monitor sensor data may spawn a child that processes sensor data, but it may not spawn a child that makes financial transactions, because the latter is not subordinated to the former.
+
+The depth budget mechanism prevents unbounded recursion. Each agent is assigned a depth budget at creation time equal to $\min(\mathcal{D}_{\max},\ \mathrm{MaxDepth}(\mathrm{parent}(p)) - 1)$. When the budget reaches zero, the agent cannot spawn. This ensures that the spawn graph is a finite DAG, not an infinite tree, and that every chain has a bounded length that preserves human oversight feasibility.
+
+\subsection{Chain Construction: The Chain Function}
+
+Given the immutable parent pointer data structure, we can define the complete parent chain of any agent.
+
+\begin{definition}[Chain Function]
+\label{def:chain-function}
+For any agent $a$, the \textbf{Chain function} $\mathrm{Chain}(a)$ returns the set of all parent pointers on the path from $a$ to the human accountability anchor:
+\[
+\mathrm{Chain}(a) = \mathrm{ParentPointer}(\mathrm{parent}(a),\ a)\ \cup\ \mathrm{Chain}(\mathrm{parent}(a))
+\]
+with base case:
+\[
+\mathrm{Chain}(h) = \emptyset \quad\text{for human anchor } h \text{ where } \mathrm{parent}(h) = \bot
+\]
+\end{definition}
+
+This recursive definition has a well-founded base case because the spawn graph is a DAG: the $\mathrm{parent}$ relation is acyclic (enforced by the depth budget mechanism), and every chain must terminate at the human anchor $h$, for whom $\mathrm{parent}(h) = \bot$. The Chain function therefore always terminates.
+
+The Chain function returns a set because a parent pointer is unique per spawn event: there is exactly one ParentPointer for each $(p, c)$ pair. When $\mathrm{Chain}(a)$ is ordered by the recursion order (i.e., from $a$ outward to $h$), it yields the full spawning history of $a$.
+
+The complete ordered chain list $\mathcal{C}(a)$ is:
+\[
+\mathcal{C}(a) = [a,\ \mathrm{parent}(a),\ \mathrm{parent}(\mathrm{parent}(a)),\ \ldots,\ h]
+\]
+where $h$ is the human anchor at which $\mathrm{parent}(h) = \bot$.
+
+\subsection{Chain Traversal Algorithm}
+
+Algorithm~\ref{alg:chain} provides a deterministic procedure for reconstructing the parent chain of any agent by reading immutable parent pointers from the Fact Layer.
+
+\begin{algorithm}[ht]
+\caption{Chain Construction Algorithm}
+\label{alg:chain}
+\begin{enumerate}
+  \item \textbf{Input:} Agent identifier $a$
+  \item \textbf{Output:} Ordered list $\mathcal{C} = [a, \mathrm{parent}(a), \mathrm{parent}(\mathrm{parent}(a)), \ldots, h]$ terminating at human anchor $h$, plus a status code
+  \item $\mathcal{C} \leftarrow [\,]$
+  \item $c \leftarrow a$
+  \item \textbf{while } $c \neq \bot$ \textbf{do}:
+  \begin{enumerate}
+    \item $\mathcal{C}$.append$(c)$
+    \item $\mathrm{ptr} \leftarrow \mathrm{FactLayer.read\_parent\_pointer}(c)$
+    \item \textbf{if } $\mathrm{ptr} = \text{null}$ \textbf{then}:
+    \begin{enumerate}
+      \item \textbf{if } $c$ is human anchor $h$ \textbf{then} \textbf{break}
+      \item \textbf{else} \textbf{return} $\mathcal{C}$, \texttt{DRIFT\_DETECTED}
+    \end{enumerate}
+    \item $c \leftarrow \mathrm{ptr}.\mathrm{parent}$
+  \end{enumerate}
+  \item \textbf{return} $\mathcal{C}$, \texttt{CHAIN\_INTACT}
+\end{enumerate}
+\end{algorithm}
+
+\begin{性质}[Algorithm Properties]
+\label{prop:chain-algo}
+\begin{itemize}
+  \item \textbf{Determinism:} The algorithm is deterministic: given the same input $a$, it always produces the same output $\mathcal{C}$ and status code.
+  \item \textbf{Termination:} The algorithm terminates in $O(d)$ steps where $d$ is the spawn depth of $a$, because each iteration strictly advances $c$ to its parent and the spawn graph is a finite DAG.
+  \item \textbf{Drift Detection:} The algorithm returns \texttt{DRIFT\_DETECTED} if and only if it encounters a null parent pointer for a non-human agent, which is the definition of autonomous drift.
+  \item \textbf{Chain Integrity Verification:} After constructing $\mathcal{C}$, the caller can invoke $\mathrm{FactLayer.verify\_chain}(a)$ to check that all $\mathrm{ChainHash}$ values in $\mathcal{C}$ are consistent, detecting any historical tampering with the parent pointer chain.
+\end{itemize}
+\end{性质}
+
+The algorithm is the primary mechanism for the drift detection property of Theorem~\ref{thrm:drift-prevention} (Section~\ref{sec:rsp}): every agent activation event triggers a chain construction call, and if the call returns \texttt{DRIFT\_DETECTED}, the activation is blocked. This provides continuous, real-time drift monitoring with minimal computational overhead.
+
+\subsection{Running Example: Three-Level Spawn Chain}
+
+To illustrate the interaction of these definitions, consider a human operator $h$ (brodiblanco) who spawns an AI agent $a_1$ with Purpose ``Manage irrigation scheduling for the San Luis Valley.'' Agent $a_1$, operating under that Purpose, spawns agent $a_2$ with Purpose ``Process NDVI satellite imagery and generate Vegetation Index reports for the Monte Vista fields.'' Agent $a_2$, in turn, spawns agent $a_3$ with Purpose ``Flag fields where NDVI indicates water stress above threshold.''
+
+At spawn time, three immutable ParentPointers are written to the Fact Layer:
+
+\begin{enumerate}
+  \item $\mathrm{ParentPointer}(h, a_1) = \langle H(\mathrm{Purpose}(h)),\ H(\mathrm{Purpose}(a_1)),\ t_1,\ \mathrm{ChainHash}_1 \rangle$, where $\mathrm{ChainHash}_1 = H(\bot\ \vert\ H(\mathrm{Purpose}(h))\ \vert\ t_1)$ because $h$ has no parent.
+  \item $\mathrm{ParentPointer}(a_1, a_2) = \langle H(\mathrm{Purpose}(a_1)),\ H(\mathrm{Purpose}(a_2)),\ t_2,\ \mathrm{ChainHash}_2 \rangle$, where $\mathrm{ChainHash}_2 = H(\mathrm{ParentPointer}(h, a_1)\ \vert\ H(\mathrm{Purpose}(a_1))\ \vert\ t_2)$.
+  \item $\mathrm{ParentPointer}(a_2, a_3) = \langle H(\mathrm{Purpose}(a_2)),\ H(\mathrm{Purpose}(a_3)),\ t_3,\ \mathrm{ChainHash}_3 \rangle$, where $\mathrm{ChainHash}_3 = H(\mathrm{ParentPointer}(a_1, a_2)\ \vert\ H(\mathrm{Purpose}(a_2))\ \vert\ t_3)$.
+\end{enumerate}
+
+The Chain function for $a_3$:
+\[
+\mathrm{Chain}(a_3) = \mathrm{ParentPointer}(a_2, a_3)\ \cup\ \mathrm{ParentPointer}(a_1, a_2)\ \cup\ \mathrm{ParentPointer}(h, a_1)\ \cup\ \emptyset
+\]
+The ordered list $\mathcal{C}(a_3) = [a_3,\ a_2,\ a_1,\ h]$.
+
+Running Algorithm~\ref{alg:chain} on $a_3$:
+\begin{itemize}
+  \item Step 1: $\mathcal{C} = [a_3]$, read $\mathrm{ParentPointer}(a_2, a_3) \neq \text{null}$, advance to $a_2$.
+  \item Step 2: $\mathcal{C} = [a_3,\ a_2]$, read $\mathrm{ParentPointer}(a_1, a_2) \neq \text{null}$, advance to $a_1$.
+  \item Step 3: $\mathcal{C} = [a_3,\ a_2,\ a_1]$, read $\mathrm{ParentPointer}(h, a_1) \neq \text{null}$, advance to $h$.
+  \item Step 4: $\mathcal{C} = [a_3,\ a_2,\ a_1,\ h]$, $h = \bot$, break. Return \texttt{CHAIN\_INTACT}.
+\end{itemize}
+
+Now consider the drift scenario: suppose $a_3$, after being spawned, somehow modifies its own parent pointer to read $\mathrm{parent}(a_3) = \bot$. This modification attempt is architecturally blocked by Theorem~\ref{thrm:immutability}: the ParentPointer lives in the Fact Layer WORM store and cannot be rewritten by $a_3$'s Bounds Engine. If an external attacker attempts to modify the ParentPointer in the database directly, the chain hash $\mathrm{ChainHash}_3$ becomes invalid, and $\mathrm{FactLayer.verify\_chain}(a_3)$ returns a hash mismatch error. The drift is architecturally impossible under RSP.
+
+Alternatively, suppose $a_2$ is terminated (deprovisioned) but $a_3$ continues operating because it was not notified. This drift is detected at $a_3$'s next activation event: Algorithm~\ref{alg:chain} reads $\mathrm{ParentPointer}(a_2, a_3)$ and finds $a_2$ is no longer active, returning \texttt{DRIFT\_DETECTED} before $a_3$ is allowed to take any action.
+
+Both scenarios are prevented by the combination of immutable parent pointers and the chain construction algorithm's activation-time check.
+
+\subsection{Drift Prevention Theorem}
+
+The central result of this section is that immutable parent pointers, combined with chain verification at activation time, make autonomous drift architecturally impossible:
+
+\begin{theorem}[Autonomous Drift Prevention]
+\label{thrm:drift-prevention}
+For any agent $a$ constructed under the Recursive Spawning Protocol, Algorithm~\ref{alg:chain} returns \texttt{CHAIN\_INTACT} if and only if the agent $a$ was spawned through a valid chain of authorized spawn events terminating at a human accountability anchor. If any parent in the chain is invalid, inactive, or absent, the algorithm returns \texttt{DRIFT\_DETECTED} and the activation is blocked.
+
+\beginproof}
+\textbf{($\Rightarrow$)} Assume Algorithm~\ref{alg:chain} returns \texttt{CHAIN\_INTACT} for agent $a$. The algorithm terminates at $c = \bot$ where $c$ is verified to be the human anchor $h$. This means every iteration successfully read a non-null ParentPointer from the Fact Layer, which by Definition~\ref{def:parent-pointer} exists only for authorized spawn events. Therefore, every link in the chain from $a$ to $h$ is a valid authorized spawn event, and the chain terminates at $h$. By Definition~\ref{def:spawn-auth}, the spawn of each agent in the chain was authorized by the Purpose Layer, and the parent pointer was written to the Fact Layer before activation. Hence, $a$ has a valid chain to a human anchor.
+
+\textbf{($\Leftarrow$)} Assume agent $a$ was constructed through a valid chain of authorized spawn events terminating at human anchor $h$. By Definition~\ref{def:parent-pointer}, each authorized spawn event produces a non-null immutable ParentPointer written to the Fact Layer. Algorithm~\ref{alg:chain}'s loop reads these ParentPointers in order. Since each exists and is non-null, the loop advances through each parent until reaching $h$. When $c$ equals $h$, the termination condition $c = \bot$ (human anchor) is met and the loop exits, returning \texttt{CHAIN\_INTACT}. Therefore, any valid chain produces \texttt{CHAIN\_INTACT}.
+
+\textbf{(Drift Detection)} Suppose some agent $x$ in the chain from $a$ to $h$ is invalid, inactive, or absent. Then $\mathrm{FactLayer.read\_parent\_pointer}(\mathrm{child}(x))$ returns null at the step where the algorithm attempts to read the parent pointer of $\mathrm{child}(x)$. Since $x$ is not a human anchor (the human anchor is $h$, and $x$ is a proper ancestor of $a$), the null branch returns \texttt{DRIFT\_DETECTED}. Thus any drift condition is detected.
+\endproof
+\end{theorem}
+
+This theorem establishes the core guarantee of the immutable parent pointer mechanism: an agent cannot be active if its chain to a human anchor is broken. The guarantee is structural, not probabilistic, and it holds regardless of the intentions or capabilities of the agents in the chain.
