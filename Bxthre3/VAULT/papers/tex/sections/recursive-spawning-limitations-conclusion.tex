@@ -1,0 +1,72 @@
+% =============================================================================
+% Section 8: Limitations and Future Work
+% =============================================================================
+
+\section{Limitations and Future Work}
+\label{sec:limitations}
+
+While the Recursive Spawning architecture establishes immutable parent pointers as a foundational mechanism for accountable multi-agent system design, several limitations must be acknowledged and addressed in future research.
+
+\subsection{Performance Overhead from Immutable Pointer Chains}
+\label{sec:limitations:performance}
+
+The enforcement of immutability on parent pointer chains introduces a non-trivial performance overhead at spawn time. Each child agent's creation requires not only the allocation of its own state but also the cryptographic or structural sealing of its lineage chain back to the root ancestor. In shallow agent trees (depth $\leq 5$), this overhead remains negligible; however, as depth increases, the cumulative cost of lineage verification during accountability lookups grows linearly with chain length. Prior work on tree-based data structures demonstrates that pointer-chasing workloads degrade gracefully to $O(\log n)$ when augmented with path-compression heuristics~\cite{silberschatz1998operating}, but such optimizations have not yet been evaluated within the Recursive Spawning runtime.
+
+Furthermore, the immutability constraint prevents runtime re-parenting, which limits the system's ability to dynamically reassign agent hierarchies in response to workload shifts. Scenarios requiring hot re-parenting—such as load balancing or role migration—must instead rely on agent termination and re-spawning, incurring unnecessary creation overhead. Future implementations should explore read-only parent pointer views with lazy validation to mitigate this cost while preserving accountability guarantees.
+
+\subsection{Scalability in Deep or Wide Agent Trees}
+\label{sec:limitations:scalability}
+
+The accountability model presented in this work assumes that the full lineage tree remains accessible for audit. In deployments with thousands of concurrent agents across deep or wide spawn graphs, naive traversal of the parent pointer chain becomes a scalability bottleneck. Distributed multi-agent systems, where agents may span heterogeneous execution environments, introduce additional complexity: pointer resolution may require cross-process or cross-node communication, and network partitions can temporarily render lineage chains unresolvable.
+
+The current architecture does not specify a maximum tree depth or branching factor, which may lead to pathologically deep chains in adversarial or unbounded spawn scenarios. Without depth limiting or cycle detection at spawn time, a malicious or misconfigured parent agent could, in principle, spawn an unbounded number of children, exhausting system resources. Future work should formalize depth bounds and branching constraints as configurable policy parameters, with runtime enforcement mechanisms similar to those used in container orchestration systems~\cite{brewer2015kubernetes}.
+
+\subsection{Compromised Purpose Layer}
+\label{sec:limitations:purpose-layer}
+
+The Purpose Layer, as defined in Section~\ref{sec:purpose-layer}, represents the highest-risk attack surface in the Recursive Spawning stack. If an agent's declared purpose is compromised—whether through prompt injection, fine-tuning corruption, or supply-chain poisoning—the immutability of its parent pointer provides no protection, since the corrupted agent continues to spawn children with legitimately immutable lineage. The accountability chain remains intact, but the agent's behavior within that chain is no longer trustworthy.
+
+This limitation is compounded by the fact that purpose verification is inherently undecidable in a general-purpose AI system: an agent can always exhibit goal-directed behavior that diverges from its stated purpose without triggering current detection mechanisms~\cite{russell2019human}. The Purpose Layer thus relies on external attestation mechanisms (e.g., formal purpose specifications, cryptographic purpose seals) that are outside the scope of this architecture. Future work should investigate formal purpose verification protocols analogous to type checking for behavioral specifications, as well as runtime purpose drift detection using interpretability tools~\cite{olah2017visualization}.
+
+\subsection{Future Research Directions}
+\label{sec:future-work}
+
+Beyond the limitations enumerated above, several productive research directions emerge from this work:
+
+\begin{itemize}
+    \item \textbf{Formal Verification of Lineage Chains.} Model checking or interactive theorem proving could establish formal guarantees that immutable parent pointers preclude post-hoc lineage tampering, extending the accountability properties proved informally in Section~\ref{sec:accountability}.
+
+    \item \textbf{Distributed Lineage Consensus.} Replacing the single-node parent pointer store with a Byzantine-fault-tolerant distributed ledger would enable cross-node lineage resolution with strong consistency guarantees, at the cost of increased latency and storage overhead.
+
+    \item \textbf{Purpose Layer Attestation.} Integrating hardware-based trusted execution environments (TEEs) or multi-party computation for purpose declaration and verification would harden the Purpose Layer against supply-chain attacks.
+
+    \item \textbf{Automated Accountability Reporting.} Tools that automatically generate human-readable accountability reports from lineage chain traversal would lower the operational burden of auditing deep agent trees, analogous to automated code review systems in continuous integration pipelines.
+
+    \item \textbf{Comparative Evaluation.} A controlled benchmark comparing Recursive Spawning against alternative accountability architectures (e.g., capability-based security models, capability-based spawning) would quantify the performance and security trade-offs of immutable parent pointers in empirical terms.
+\end{itemize}
+
+% =============================================================================
+% Section 9: Conclusion
+% =============================================================================
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper has presented Recursive Spawning, an architectural paradigm for multi-agent systems that establishes immutable parent pointers as the foundational mechanism for accountability. By making each child agent's link to its parent unmodifiable after creation, Recursive Spawning provides a cryptographically auditable lineage chain that enables precise attribution of actions, detection of lineage tampering, and formal accountability propagation across arbitrary spawn depths.
+
+The core contribution—immutable parent pointers—sits at the intersection of systems security and agent design. Unlike discretionary access control models, where parent agents retain the ability to modify or revoke child lineage, immutable pointers enforce a non-repudiable spawn record that persists for the lifetime of the system. This property transforms accountability from a procedural afterthought into an architectural invariant. Every spawned agent carries its ancestry as an immutable artifact; no post-hoc manipulation can alter or erase the causal chain that produced a given behavior.
+
+The practical implications of this design are significant. In high-stakes deployments—autonomous financial agents, medical decision systems, critical infrastructure controllers—immutable lineage enables auditors and regulators to reconstruct the full decision chain preceding any adverse outcome. In adversarial settings, it raises the cost of obfuscation: an agent cannot plausibly deny its ancestry because that ancestry is structurally enforced by the runtime. In multi-jurisdictional contexts, it provides a canonical, tamper-evident record that transcends organizational boundaries.
+
+Several open questions remain. The performance overhead of lineage chain enforcement at spawn time must be characterized more precisely across realistic agent tree topologies. The scalability of lineage traversal in wide, distributed agent forests requires additional engineering, particularly for cross-node pointer resolution under network partitions. The Purpose Layer, which depends on verifiable purpose declarations that current AI systems cannot reliably self-attest, remains the weakest link in the accountability chain and demands dedicated research into formal purpose verification.
+
+Nonetheless, immutable parent pointers represent a foundational building block for accountable agentic systems. Like the write-once registers of hardware memory systems or the append-only ledgers of blockchain architectures, they impose a simple but powerful constraint: what is spawned cannot be unspawned, and what is attributed cannot be denied. As agentic systems scale in capability and deployment scope, such structural invariants will become essential—not optional—for ensuring that these systems remain subject to meaningful human accountability.
+
+The Recursive Spawning architecture, with immutable parent pointers at its core, offers a principled starting point for that future. Future work should build upon this foundation: integrating formal verification, hardening the Purpose Layer, scaling lineage resolution across distributed agent forests, and evaluating the paradigm in real-world multi-agent deployments. The accountability question is not fully answered by this work, but the immutable parent pointer provides a fixed point around which a rigorous answer can be constructed.
+
+% =============================================================================
+% References (placeholder — integrate with main document's bibliography)
+% =============================================================================
+
+% \bibliographystyle{plain}
+% \bibliography{references}
