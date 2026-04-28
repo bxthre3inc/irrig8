@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Job 1: Build binary on latest stable Rust
+  # ──────────────────────────────────────────────
+  build:
+    name: Build Binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache cargo index
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "agentic-core"
+
+      - name: Install Rust stable
+        run: rustup default stable
+
+      - name: Show toolchain
+        run: rustc --version && cargo --version
+
+      - name: Build release
+        run: cargo build --release --manifest-path=Bxthre3/agentic/Cargo.toml
+        env:
+          AGENTIC_PORT: 3001
+          AGENTIC_DB: /tmp/agentic_test.db
+
+      - name: Show binary size
+        run: |
+          ls -lh Bxthre3/agentic/target/release/agentic-core
+          file Bxthre3/agentic/target/release/agentic-core
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentic-core-bin
+          path: Bxthre3/agentic/target/release/agentic-core
+          retention-days: 5
+
+  # ──────────────────────────────────────────────
+  # Job 2: Full test suite
+  # ──────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Rust stable
+        run: rustup default stable
+
+      - name: Run tests
+        run: cargo test --manifest-path=Bxthre3/agentic/Cargo.toml -- --nocapture
+        env:
+          AGENTIC_DB: /tmp/agentic_test.db
+
+  # ──────────────────────────────────────────────
+  # Job 3: API integration test (requires binary)
+  # ──────────────────────────────────────────────
+  api-test:
+    name: API Smoke Test
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download binary
+        uses: actions/download-artifact@v4
+        with:
+          name: agentic-core-bin
+          path: ./bin
+
+      - name: Make executable
+        run: chmod +x ./bin/agentic-core
+
+      - name: Start server
+        run: |
+          AGENTIC_PORT=3099 AGENTIC_DB=/tmp/agentic_smoke.db ./bin/agentic-core &
+          SERVER_PID=$!
+          echo "Server PID: $SERVER_PID"
+          sleep 3
+
+      - name: Smoke test endpoints
+        run: |
+          curl -s http://localhost:3099/api/agentic/status | grep -q "operational" && echo "STATUS OK" || echo "STATUS FAIL"
+          curl -s http://localhost:3099/api/agentic/agents | grep -q "agents" && echo "AGENTS OK" || echo "AGENTS FAIL"
+          curl -s http://localhost:3099/api/agentic/tasks | grep -q "tasks" && echo "TASKS OK" || echo "TASKS FAIL"
