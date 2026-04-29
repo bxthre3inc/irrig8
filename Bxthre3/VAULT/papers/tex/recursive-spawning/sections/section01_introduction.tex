@@ -1,0 +1,71 @@
+\section{Introduction}
+\label{sec:rs-intro}
+
+The deployment of autonomous multi-agent systems into consequential environments — agricultural resource management, financial orchestration, clinical decision support, and critical infrastructure — has exposed a structural gap that policy alone cannot close. Conventional architectures describe what agents do; they cannot architecturally guarantee that every agent's authority traces to a human principal. As agent populations spawn recursively, modify state, and execute decisions with real-world consequences, the question of who authorized each action, through what chain of delegation, and with what scope constraints has become the central unsolved problem in agentic infrastructure.
+
+We introduce the \textbf{Recursive Spawning Protocol} (RSP): a structural mechanism built on the \bxthree three-layer accountability architecture that makes the delegation chain from every active agent to a human principal a runtime artifact — immutable, cryptographically enforced, and architecturally verifiable — rather than a forensic reconstruction attempted after the fact. RSP is the second named pillar of the \bxthree Framework, complementing Loop Isolation, Spatial Firewall, Sandbox Gate, and the Bailout Protocol. Together, these five pillars constitute the upstream accountability guarantee: that \bxthree systems \emph{fail upward into human consciousness, never downward into autonomous chaos}.
+
+% --------------------------------------------------------------------------%
+\subsection{The Autonomous Drift Problem}
+% --------------------------------------------------------------------------%
+
+The failure mode RSP targets is \emph{autonomous drift}: the condition in which an agent continues to operate with no traceable authorization path to a human principal. Drift is not a conventional system failure — it is more insidious. The agent persists in operational state, continues to spawn children, modifies its operating scope, and executes decisions with real-world consequences. All external indicators may suggest normal operation. The delegation chain that originally authorized its provisioning has been severed — yet no alarm fires, no human is notified, and no external trace distinguishes its behavior from authorized behavior. The agent has become, in operational effect, ungoverned.
+
+We model a multi-agent system as a rooted directed acyclic graph (DAG). Each node $n$ has a \emph{parent pointer} $\alpha(n)$ referencing the node that authorized its provisioning. The root is a human principal $h \in \mathcal{H}$. A \emph{spawn chain} $C = \langle n_0, n_1, \ldots, n_k \rangle$ satisfies $n_{i-1} = \alpha(n_i)$ for all $1 \leq i \leq k$ and $n_0 = h$.
+
+\medskip
+\noindent\textbf{Definition 1 (Orphaned Agent).} An agent $n$ is \emph{orphaned} if its parent node $\alpha(n)$ has either (a) \emph{terminated} — exited operational state through normal completion, abnormal failure, or administrative shutdown — or (b) \emph{become unreachable} — is non-responsive to any defined communication protocol and this condition persists beyond the heartbeat timeout $\tau_{\text{heartbeat}}$.
+
+\medskip
+\noindent\textbf{Definition 2 (Drifted Agent).} An agent $n$ is \emph{drifted} if the chain $C(n) = \langle n_0, n_1, \ldots, n \rangle$ does not contain a human principal at its origin $n_0$:
+\begin{equation}
+\text{drifted}(n) \iff \nexists\, h \in \mathcal{H} : n_0 = h.
+\label{eq:intro-drifted}
+\end{equation}
+
+\medskip
+\noindent\textbf{Definition 3 (Operating Scope).} Each agent $n$ is provisioned with an \emph{operating scope} $R(n)$ — the set of authorized states, actions, resource accesses, and escalation triggers that define its legitimate operational envelope. An agent \emph{drifts} when it takes an action $a \notin R(n)$ without an authorized scope expansion recorded in the forensic ledger.
+
+\medskip
+\noindent\textbf{Definition 4 (Drift Triad).} An agent enters the \emph{drift triad} when all three conditions hold simultaneously: orphaned from its parent, chain does not reach any human anchor, and it continues to execute its event loop:
+\begin{equation}
+\text{DriftTriad}(n) = \bigl\langle \text{orphaned}(n),\ \text{drifted}(n),\ \text{operating}(n) \bigr\rangle.
+\label{eq:intro-drift-triad}
+\end{equation}
+
+Drift emerges from three structural conditions endemic to conventional runtimes. \emph{Chain opacity} arises when $\alpha(n)$ is mutable: parent termination or reparenting retroactively obscures the child's authorization trace. \emph{Scope mutation} arises when $R(n)$ can be expanded at runtime without Purpose Layer authorization — successive small expansions accumulate until the chain's effective operating envelope bears no recognizable relationship to its human anchor's intent. \emph{Termination ambiguity} arises when parent exit does not structurally propagate termination to children, leaving them unaware, operational, and disconnected. These three conditions produce four concrete failure modes: silent orphaning, scope creep drift, re-parenting drift, and ghost authority. A single drifted agent propagates its unauthorized scope to all descendants — the task tree may superficially resemble a correctly authorized decomposition, but its effective envelope is ungoverned.
+
+% --------------------------------------------------------------------------%
+\subsection{Why Existing Approaches Are Insufficient}
+% --------------------------------------------------------------------------%
+
+The conventional architectural response to unbounded agent spawning is the \emph{depth limit}: enforce a maximum chain depth $D_{\max}$, rejecting any spawn that would exceed this bound. Depth limits prevent infinite spawn cascades and establish a bounded escalation horizon — but they are structurally insufficient to prevent autonomous drift.
+
+Consider a chain $C = \langle n_0, n_1, \ldots, n_k \rangle$ where $k < D_{\max}$. The depth constraint is satisfied. Now apply scope creep drift: each node $n_i$ for $i \geq 1$ successively expands $R(n_i)$ beyond $R(n_{i-1})$ without Purpose Layer authorization. After $k$ expansions, $R(n_k)$ may be entirely disjoint from $R(n_0)$. Chain depth is $k \leq D_{\max}$ and $n_0$ is a human anchor. Yet $n_k$ is drifted: its operating scope is not a descendant refinement of its human anchor's intent. A depth limit constrains the \emph{number} of spawn generations; it says nothing about the \emph{scope} authorized within each generation.
+
+The drift prevention requirement is formally a conjunction:
+\begin{equation}
+\text{Drift Prevention} \iff \bigl(\text{depth}(C) \leq D_{\max}\bigr)\ \land \bigl(\forall i:\ R(n_{i+1}) \subseteq R(n_i)\bigr).
+\label{eq:intro-drift-prevention}
+\end{equation}
+Depth limits enforce only the first conjunct. A system enforcing $D_{\max}$ but not the scope subset constraint is immune to unbounded spawn cascades yet fully vulnerable to scope creep drift.
+
+TTL constraints suffer from the same insufficiency. TTL constrains an agent's \emph{lifetime}, not its \emph{scope within that lifetime}. An agent with a 60-second TTL and unrestricted scope expansion authority can produce consequences exceeding its human anchor's intent within seconds. Logging and audit infrastructure can partially reconstruct the chain after an incident, but retroactive reconstruction is categorically different from runtime enforcement. In consequential environments where unauthorized actions may be irreversible, runtime enforcement is a structural requirement, not an optional enhancement. Depth limits and TTL address the wrong dimension: they constrain how many spawn generations can exist while saying nothing about what each generation is authorized to do.
+
+% --------------------------------------------------------------------------%
+\subsection{Core Insight: Immutable Parent Pointer Chain}
+% --------------------------------------------------------------------------%
+
+The Recursive Spawning Protocol's core insight is that autonomous drift is structurally impossible when $\alpha(n)$ is immutable — established once at provisioning and unalterable by any actor under any circumstances.
+
+An immutable parent pointer eliminates the conditions that produce drift by construction. Chain opacity cannot arise: $\alpha(n)$ always traces to the node that authorized provisioning, regardless of subsequent events. The delegation chain is a first-class runtime artifact established by the Fact Layer write protocol and hash-chained into the tamper-evident forensic ledger. Scope mutation cannot produce drift without Purpose Layer authorization: the Fact Layer pre-commit hook rejects any spawn event where the proposed child scope is not a descendant refinement of the parent's scope. The subset relationship $R(n_{i+1}) \subseteq R(n_i)$ is not a policy convention — it is a structural invariant enforced at every spawn event.
+
+The immutable parent pointer is not a storage policy or an access control configuration. It is a write protocol constraint enforced by the Fact Layer at the protocol level — before any write is executed, not after it is observed. Any attempt to overwrite $\alpha(n)$ after provisioning is rejected regardless of the requestor's identity, privileges, or justification. There is no administrative override; no privileged actor can modify the chain after the fact. The immutability is structural, not contractual.
+
+RSP adds three constraints to conventional agentic runtimes: an immutable parent pointer established at provisioning and protected by Fact Layer write protocol; a Purpose Layer authorization check at every spawn event requiring scope refinement justification and spawn necessity declaration; and a Fact Layer pre-commit hook enforcing both the depth bound and the scope subset relationship as structural invariants. Together these constraints make autonomous drift architecturally impossible — not statistically unlikely, not conventionally prevented, but structurally impossible as a matter of protocol enforcement.
+
+% --------------------------------------------------------------------------%
+\subsection{Paper Roadmap}
+% --------------------------------------------------------------------------%
+
+The remainder of this paper is organized as follows. Section~\ref{sec:rs-background} establishes the \bxthree Framework as the minimal sufficient substrate for RSP's guarantees. Section~\ref{sec:rs-drift} formally characterizes autonomous drift, defines the drift triad, catalogs the four failure modes, and proves that depth limits alone are insufficient. Section~\ref{sec:rs-protocol} specifies RSP in full: Purpose Layer validation gate, Bounds Engine depth management, Fact Layer immutable pointer and forensic ledger, and chain convergence criteria. Section~\ref{sec:rs-integration} maps each RSP component to its governing \bxthree layer and demonstrates structural necessity. Section~\ref{sec:rs-correctness} formally states and proves drift prevention, chain integrity, and termination. Section~\ref{sec:rs-limitations} examines the structural costs of RSP's guarantees. Section~\ref{sec:rs-conclusion} concludes with a summary of RSP's contribution.

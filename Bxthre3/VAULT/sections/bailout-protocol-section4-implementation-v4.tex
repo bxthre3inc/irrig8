@@ -1,0 +1,309 @@
+% ---------------------------------------------------------------
+% Section 4 — Implementation in the BX3 Framework
+% Paper: Bailout Protocol (Pillar 5)
+% ---------------------------------------------------------------
+
+\section{Implementation in the BX3 Framework}
+\label{sec:bailout-implementation}
+
+The Bailout Protocol is not a safety module appended to an existing agent runtime.
+It is the \emph{runtime expression} of the BX3 Framework's upstream accountability
+guarantee --- the mechanism that converts a declarative layer commitment into a binding,
+non-configurable, auditable operational decision at the precise moment a decision
+proposal crosses a defined boundary.  This section details how the protocol integrates
+with the Purpose Layer, how the Bounds Engine triggers bail-out events, how the Fact Layer
+enforces the resulting audit trail, how the state machine governs the full trigger
+lifecycle, and the formal relationship between the protocol and BX3's upstream intent.
+
+% ----------------------------------------------------------------
+\subsection{Purpose Layer as Human Accountability Anchor}
+% ----------------------------------------------------------------
+
+The Purpose Layer (\texttt{PurposeLayer.ts}) defines the intent, judgment, and
+accountability boundary for every node in the BX3 execution tree.  Each node is
+initialised with three canonical, immutable fields:
+
+\begin{itemize}
+  \item \texttt{nodeId} --- a unique identifier for this agent or process.
+  \item \texttt{humanRoot} --- the designated human decision-maker at the terminal
+        boundary of the accountability chain for this node's subtree.
+  \item \texttt{accountabilityAnchor} --- a stable, versioned reference string that
+        identifies the governing policy regime under which this node operates.
+\end{itemize}
+
+These fields are sealed at node initialisation and propagated downward through the
+entire execution tree.  When a child node is spawned, it receives a \texttt{parentId}
+and a \texttt{parentPurposeHash} that cryptographically binds it to its parent's
+purpose.  The chain is not merely informational --- it is tamper-evident: any divergence
+between a child's purpose and its parent's purpose is detectable by comparing the
+stored hash against the parent's computed hash at any point in the execution history.
+
+The Bailout Protocol leverages the Purpose Layer at two distinct stages:
+
+\begin{enumerate}
+  \item \textbf{Anchor resolution at trigger time.}  When the protocol fires, it
+        traverses the \texttt{propagationChain} upward until it locates the node
+        whose \texttt{nodeId} matches the \texttt{humanRoot} field.  This node is the
+        mandatory review endpoint.  No autonomous resolution is permitted beyond this
+        boundary.  The anchor resolution is deterministic and $O(1)$ relative to tree depth.
+
+  \item \textbf{Provenance recording at fire time.}  The current
+        \texttt{accountabilityAnchor} is written into the trigger's \texttt{event}
+        payload at the moment of firing.  This permanently attaches the governing
+        policy context to the bail-out record, enabling post-hoc reconstruction of
+        which policy regime was active at the time of the event --- independent of
+        whether that policy has since been revised.  A policy change after the fact
+        cannot retroactively alter the anchor that was recorded.
+\end{enumerate}
+
+The Purpose Layer thus provides the \emph{semantic grounding} for every bail-out.
+It answers not only ``who is responsible?'' but also ``under which governing
+commitment was this escalation mandatory?''  This distinction is essential for
+regulatory defensibility: an auditor can reconstruct the full policy context
+surrounding any trigger, not merely its operational chain.
+
+% ----------------------------------------------------------------
+\subsection{Bounds Engine: The Triggering Mechanism}
+% ----------------------------------------------------------------
+
+The Bounds Engine (\texttt{BoundsEngine.ts}) implements BX3's bounded-reasoning
+layer.  Its responsibilities are two-fold: (i) generating decision proposals
+(\emph{P5}), and (ii) projecting the consequences of those proposals through
+confidence scoring (\emph{P6}).  The Bounds Engine is the exclusive source of
+bail-out trigger events in the BX3 runtime.  No other component may directly invoke
+\texttt{BailoutProtocol.fire()}.  This exclusivity is architecturally enforced:
+the engine is the only module with a dependency on the Bailout Protocol's internal API.
+
+Triggering occurs when the Bounds Engine evaluates a proposal against the active
+\texttt{SafetyEnvelope} and detects one of three named \texttt{TriggerCondition}
+types:
+
+\begin{verbatim}
+type TriggerCondition =
+  | 'capability_boundary'
+      // proposed action exceeds the defined capability of this node
+  | 'safety_envelope_predicted'
+      // P6 projection forecasts a SafetyEnvelope violation
+  | 'accountability_boundary'
+      // proposed action requires human decision by active policy
+\end{verbatim}
+
+Each condition is evaluated against the \texttt{SafetyEnvelope} struct, which carries
+domain-specific constraints (e.g., water-rights limits, soil-moisture thresholds,
+equipment load limits).  Critically, the Bounds Engine does not block actions directly ---
+it generates a \texttt{BailoutTrigger} record and returns control to the Bailout Protocol
+orchestrator.  This separation is architectural: the Bounds Engine reasons about
+possibility; the Bailout Protocol governs what happens when possibility exceeds permission.
+
+When a trigger condition is met, the protocol calls \texttt{BailoutProtocol.fire()}:
+
+\begin{verbatim}
+fire({
+  triggerCondition: TriggerCondition,
+  confidence: number,           // P6 confidence score
+  event: Record<string,unknown>,
+  nodeState: Record<string,unknown>,
+  proposedResolution: string | null
+}): BailoutTrigger
+\end{verbatim}
+
+The returned \texttt{BailoutTrigger} carries a unique \texttt{triggerId}, the
+\texttt{originatingNodeId}, the full \texttt{propagationChain}, and the
+\texttt{accountabilityAnchor} from the Purpose Layer at fire time.  The trigger
+is now a first-class runtime object managed by the state machine described in
+Section~\ref{sec:state-machine}.
+
+% ----------------------------------------------------------------
+\subsection{Fact Layer: Enforcement Partner and Audit Authority}
+% ----------------------------------------------------------------
+
+The Fact Layer (\texttt{FactLayer.ts}) serves two roles in the Bailout Protocol:
+the \emph{enforcement partner} that gates actionuation, and the \emph{audit authority}
+that maintains the forensic ledger.
+
+\bigskip
+\noindent\textbf{Fact Layer as enforcement partner.}  The Fact Layer's
+\texttt{evaluate(P5Decision, P6Projection): SandboxVerdict} method is the
+architectural choke point for all P5-to-P8 transitions.  It accepts a
+\texttt{P5Decision} and its corresponding P6 projection, then returns one of
+three verdicts:
+
+\begin{verbatim}
+type SandboxVerdict = 'EXECUTE' | 'BLOCK' | 'REVIEW'
+\end{verbatim}
+
+The \texttt{EXECUTE} verdict is a necessary but not sufficient condition for
+actionuation.  Even after a proposal passes the Sandbox Gate, the Bailout Protocol
+may suppress execution if the trigger is in \texttt{human\_review} status.
+The Fact Layer is therefore not the sole authority --- it is the enforcement partner
+of a two-key system: Fact Layer clears the technical path; the Bailout Protocol
+clears the accountability path.  Both keys must be turned.
+
+\bigskip
+\noindent\textbf{Forensic ledger.}  The Fact Layer maintains a tamper-evident
+forensic ledger (\texttt{ForensicLedger}) that records every state transition,
+trigger event, and resolution action with cryptographic integrity seals.
+The ledger's append-only structure is:
+
+\begin{verbatim}
+seal_n = SHA256(
+  JSON.stringify(payload_n) ||
+  previousSeal_{n-1} ||
+  timestamp_n
+)
+\end{verbatim}
+
+where \texttt{previousSeal\_\{n-1\}} is the \texttt{seal} of the entry immediately
+preceding the new one (or the string literal \texttt{'GENESIS'} for the first entry).
+This construction is equivalent to a blockchain block header: any modification of a
+historical entry invalidates all subsequent seals, because each subsequent entry's
+computed \texttt{seal} would not match the stored value.
+
+For the Bailout Protocol specifically, the ledger records four event types:
+
+\begin{enumerate}
+  \item \texttt{TRIGGER\_FIRED} --- logged at P1 when \texttt{fire()} is called,
+        capturing the full \texttt{triggerCondition}, \texttt{confidence}, and
+        \texttt{nodeState} snapshot.  This entry anchors the entire trigger record
+        in time.
+
+  \item \texttt{ESCALATED} --- logged at each P3--P5 hop, recording the intermediate
+        \texttt{nodeId}, the action taken (\texttt{ESCALATED}), and the
+        \texttt{propagationDirection}.  The sequence of \texttt{ESCALATED} entries
+        reconstructs the exact path the trigger took toward the \texttt{humanRoot}.
+
+  \item \texttt{HUMAN\_REVIEW} --- logged at P7 when the trigger arrives at the
+        \texttt{humanRoot}, recording the arrival timestamp, the trigger's
+        \texttt{propagationChain} length at arrival, and a \texttt{pendingDecision}
+        field set to \texttt{true}.
+
+  \item \texttt{RESOLUTION\_RECORDED} --- logged at P8 when the human resolves the
+        trigger, recording the \texttt{resolutionText}, the resolver's identity
+        (derived from \texttt{humanRoot}), and the end-to-end latency computed as
+        $\delta t = \texttt{resolvedAt} - \texttt{firedAt}$.  This entry closes the
+        trigger record and establishes the total time the system was in a
+        constrained state.
+\end{enumerate}
+
+The combination of the \texttt{propagationChain} array inside the \texttt{BailoutTrigger}
+and the corresponding \texttt{LedgerEntry} sequence in the Forensic Ledger provides
+dual-mode auditability: the chain gives a human-readable provenance graph, while the
+ledger gives a machine-verifiable cryptographic proof of integrity.  Both are generated
+from the same runtime events, eliminating the possibility of divergence between
+operational records and forensic records.
+
+% ----------------------------------------------------------------
+\subsection{State Machine as Fact Layer Extension}
+\label{sec:state-machine}
+% ----------------------------------------------------------------
+
+The Bailout Protocol is implemented as a deterministic state machine whose states
+form a superset of the BX3 layer-plane taxonomy.  Five states are defined, each
+mapped to a \texttt{status} field in the \texttt{BailoutTrigger} record:
+
+\bigskip
+\noindent
+\begin{tabular}{llp{7.5cm}}
+  \hline
+  \textbf{State} & \textbf{Plane} & \textbf{Semantics} \\
+  \hline
+  \texttt{pending}         & P1 & Trigger authored; \texttt{propagationChain} initialised with
+                              originating node; not yet transmitted \\
+  \texttt{escalating}    & P3--P5 & Propagating upward through intermediate nodes;
+                              each hop appends to \texttt{propagationChain} \\
+  \texttt{human\_review} & P7 & Arrived at \texttt{humanRoot}; execution is blocked;
+                              human decision is required and pending \\
+  \texttt{resolved}      & P8 & Human has acted; resolution recorded; trigger closed \\
+  \texttt{expired}       & P9 & TTL exceeded without human resolution; protocol
+                              enters a defined failure state \\
+  \hline
+\end{tabular}
+\bigskip
+
+State transitions are driven by three primitive operations:
+
+\begin{itemize}
+  \item \texttt{fire()} --- P1 transition.  Creates the \texttt{BailoutTrigger} record,
+        initialises \texttt{propagationChain} with the originating node, sets
+        \texttt{status} to \texttt{pending}, and appends a \texttt{TRIGGER\_FIRED}
+        entry to the Forensic Ledger.
+
+  \item \texttt{receiveAndPropagate()} --- P3--P5 transitions.  Each intermediate node
+        in the propagation chain receives the trigger, appends its \texttt{nodeId},
+        action (\texttt{ESCALATED}), and timestamp to \texttt{propagationChain},
+        advances \texttt{status} to \texttt{escalating}, and forwards the trigger
+        toward the next node in the chain.  A corresponding \texttt{ESCALATED}
+        ledger entry is written at each hop.
+
+  \item \texttt{resolve(\{resolutionText, resolverId\})} --- P7/P8 transition.
+        The \texttt{humanRoot} node receives the trigger, changes \texttt{status}
+        to \texttt{human\_review} (P7), records the human's decision, and advances
+        \texttt{status} to \texttt{resolved} (P8).  A \texttt{RESOLUTION\_RECORDED}
+        entry is appended to the Forensic Ledger, closing the trigger record.
+\end{itemize}
+
+The state machine is a Fact Layer extension in the specific sense that all of its
+state variables --- \texttt{status}, \texttt{propagationChain}, \texttt{firedAt},
+\texttt{resolvedAt} --- are maintained within the Fact Layer's authority domain.
+No Bounds Engine or Purpose Layer process can write or mutate these fields.
+The state machine's integrity is therefore guaranteed by the same deterministic
+enforcement mechanism that guarantees all Fact Layer state transitions.
+
+% ----------------------------------------------------------------
+\subsection{Relationship: Bailout Protocol as Runtime Expression of
+            the Upstream Accountability Guarantee}
+% ----------------------------------------------------------------
+
+The BX3 Framework's accountability guarantee is formally expressed in the Intent
+Layer's constraint: \emph{for every intent $i \in I$, there exists a role $r \in R$
+and an action $a \in A$ such that $i \rightarrow (r, a)$}.  This guarantee is
+declarative --- it describes what must be true about the system's design.  The Bailout
+Protocol is the mechanism by which this declaration becomes operative at runtime.
+
+The causal chain from declaration to enforcement is:
+
+\begin{enumerate}
+  \item The \texttt{humanRoot} field in the Purpose Layer \emph{declares} that a
+        specific human is the final accountable authority for actions originating
+        under this node's governance subtree.
+  \item The \texttt{accountability\_boundary} condition in the Bounds Engine
+        \emph{detects} when a proposed action falls outside the scope of autonomous
+        authorisation --- i.e., when the action is required by policy to reach the human.
+  \item The Bailout Protocol's \texttt{fire()} method \emph{operationalises} the
+        detection by creating a trigger that is obligated to propagate to the
+        declared human.  The trigger's propagation is not discretionary; the state
+        machine enforces it.
+  \item The state machine \emph{enforces} that no autonomous resolution is
+        permitted beyond \texttt{human\_review}.  Even if the Fact Layer has cleared
+        the technical path, the accountability path blocks execution until the human
+        resolves.
+  \item The Forensic Ledger \emph{records} every step of this chain, providing
+        cryptographic evidence that the guarantee was honoured in practice.
+\end{enumerate}
+
+If any step in this chain is absent --- if the Bounds Engine fails to detect the
+condition, if the protocol fails to propagate, if the state machine permits
+autonomous override, or if the ledger is not written --- the upstream accountability
+guarantee is voided.  The Bailout Protocol is therefore not an additional feature
+layered on top of BX3; it is the \emph{necessary and sufficient runtime
+implementation} of the guarantee.  Without it, the BX3 Intent Layer is a
+specification without an execution path.
+
+This relationship is the basis for regulatory defensibility.  An auditor who accepts
+the BX3 Intent Layer's formal guarantee as a design commitment can verify its
+enforcement by querying the Forensic Ledger for any trigger whose
+\texttt{triggerCondition} is \texttt{accountability\_boundary} and confirming that
+the \texttt{propagationChain} terminates at the declared \texttt{humanRoot} with a
+corresponding \texttt{RESOLUTION\_RECORDED} entry.  The existence of a queryable,
+cryptographically integrity-verified record is itself evidence of the guarantee's
+operationalisation --- not merely its declaration.
+
+The protocol thus closes the loop between BX3's abstract layer model and its
+operational reality: the same formal structure that defines what each layer does
+also defines how accountability is enforced when layers interact in ways that
+violate declared constraints.  The Bailout Protocol is the point of translation
+between BX3's architectural commitments and their runtime consequences.
+
+% ---------------------------------------------------------------
+% End of Section 4
+% ---------------------------------------------------------------

@@ -1,0 +1,83 @@
+\section{Background}
+\label{sec:background}
+
+The challenge of managing agent spawns — and the delegation chains they produce — sits at the intersection of five research lineages: agent lifecycle management, accountability and provenance in distributed systems, fixed versus mutable delegation chains, hierarchical task decomposition, and the BX3 three-layer model as a substrate for immutable parent chaining. This section traces each lineage and establishes the specific gaps that Recursive Spawning is designed to address.
+
+% ---------------------------------------------------------------
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+\label{sec:lifecycle-management}
+
+Multi-agent AI systems require formalized lifecycle management to govern the creation, activation, suspension, migration, forking, succession, and decommissioning of autonomous agents. Unlike traditional software services, AI agents are stateful entities whose capabilities, permissions, and trust contexts evolve over time. Without explicit lifecycle boundaries, spawned sub-agents become orphaned, delegated authority becomes untrackable, and accountability chains fragment at the first failure or transition \cite{alp2026}.
+
+The Agent Lifecycle Protocol (ALP) defines a seven-state machine — provisioning, active, suspended, migrating, deprecated, decommissioned, and failed — that provides formal semantics for agent transitions \cite{alp2026}. Critically, ALP addresses the \emph{accountability gap} that emerges when agents spawn successors: a forked child agent inherits a genetically and epigenetically defined lineage from its parent, with explicit inheritance rules for reputation, mandate, and operational state. This genealogical tracking is essential for answering the question \emph{who is responsible for what this agent did?} — a question that becomes exponentially harder as delegation chains deepen.
+
+Lifecycle governance in distributed agent ecosystems requires more than state machines. PROV-AGENT extends the W3C PROV data model with agent-centric metadata — prompts, reasoning traces, decisions, and interaction records — to capture fine-grained provenance for every agent in a workflow \cite{provagent2025}. PROV-AGENT enables spawn-and-terminate tracing, decision rationalization, and output propagation tracking across heterogeneous environments (edge, cloud, and HPC), addressing the accountability deficit in conventional logging systems that treat agent actions as isolated events rather than causally linked nodes in a distributed execution graph.
+
+The W3C PROV ontology provides the foundational structure: \texttt{wasGeneratedBy}, \texttt{wasDerivedFrom}, \texttt{wasAssociatedWith}, and \texttt{actedOnBehalfOf} form the core predicates for linking agent actions to their causal ancestors. However, W3C PROV was designed for data transformations, not autonomous agent behavior with non-deterministic execution, emergent goals, and recursive spawning. The BX3 Framework adapts these provenance primitives into its \fact{} layer, where they are operationalized as cryptographically sealed ledger entries that are append-only, queryable, and immutable.
+
+% ---------------------------------------------------------------
+\subsection{Accountability and Provenance in Distributed Systems}
+\label{sec:accountability-provenance}
+
+Accountability in distributed AI systems requires three integrated components: signed identity (who is acting), authoritative delegation (who authorized what), and enforceable policy (what is permitted) \cite{zylos2026}. Logs alone are insufficient — they provide historical records without cryptographic guarantees of non-repudiation, and without linkage between authorization decisions and subsequent actions.
+
+The fundamental challenge is that agent actions in distributed systems are non-deterministic, delegation chains are often opaque, and emergent behaviors can decouple outcomes from their original intent \cite{zylos2026}. Traditional audit logging treats each action as an isolated event; effective accountability requires reconstructing the full causal chain from the root human principal through every intermediate agent to the terminal action. This is the \emph{accountability chain problem}: ensuring that for any outcome — correct, incorrect, or harmful — there exists a cryptographically verifiable path back to a human who authorized it.
+
+The OpenExecution Provenance Specification addresses this with a three-layer cryptographic ledger: behavior recording via hash-linked events using deterministic JSON canonicalization (RFC 8785), tamper-proof causality via pluggable hash algorithms (SHA-2/SHA-3 families), and independent accountability via Ed25519/Ed448/ECDSA signed certificates \cite{openexecution2025}. Each agent spawn, tool invocation, and decision is recorded as a hash-linked event; any single-byte alteration breaks the chain, providing court-ready evidence of what happened, in what order, and who authorized it.
+
+The Agentic Identity framework (AGENTRA) operationalizes this through cryptographic identity anchors (where the public key \emph{is} the agent's identity), action receipts (digitally signed records of every significant action), and temporal continuity (an unbroken experience history from genesis with no gaps) \cite{agenticidentity2025}. Identity inheritance in spawn/lineage tracking ensures that child agents carry bounded authority derived from their parent, preventing privilege-widening attacks where a spawned agent claims greater scope than its parent authorized.
+
+BX3's \fact{} layer is architecturally aligned with this lineage. Every node carries an immutable parent pointer — a cryptographic reference to the agent that spawned or delegated to it — and every significant action is sealed into the Forensic Ledger with a hash-link to its predecessor. This produces an append-only, tamper-evident record that reconstructs the full delegation chain from any terminal node back to its human anchor, closing the accountability gap that plagues conventional multi-agent deployments.
+
+% ---------------------------------------------------------------
+\subsection{Fixed vs Mutable Delegation Chains}
+\label{sec:fixed-vs-mutable}
+
+Delegation chains in multi-agent systems can be classified along a spectrum from fully mutable to strictly fixed, each carrying distinct tradeoffs for accountability, flexibility, and fault tolerance. Understanding this spectrum is essential for designing spawn and delegation mechanisms that are both operationally effective and governance-compliant.
+
+\textbf{Mutable delegation chains} are dynamic: parent nodes may be replaced, authority may be re-delegated across different agents mid-execution, and the delegation graph can be rewired as conditions change. Mutable chains offer maximum flexibility — an orchestrator can reassign sub-agents, redistribute budgets, and re-prioritize tasks in response to changing conditions. However, mutability creates a fundamental auditability problem: if the chain of delegation can change after the fact, then any historical record of who authorized what becomes unreliable. Mutable chains also introduce security vulnerabilities, as privilege-widening attacks become possible when delegated authority is dynamically reshaped without cryptographic re-authorization \cite{agenticcontrolplane2025}.
+
+\textbf{Fixed delegation chains} are append-only and immutable: once a delegation edge is established, it cannot be rewired. Authority flows downward through the chain, and every hop is cryptographically sealed. Fixed chains provide strong auditability guarantees — the delegation path from any action back to the human anchor is static and verifiable — but they sacrifice operational flexibility. If a delegated agent becomes unavailable or a task requires reallocation, a fixed chain may force a complete re-authorization from the root, introducing latency and requiring the human principal to re-engage for every mid-execution reallocation.
+
+The Agent-to-Agent Governance framework formalizes this tradeoff through permission narrowing at each hop \cite{agenticcontrolplane2025}: a child agent's effective permissions are the intersection of its parent's effective permissions and its own profile permissions. This intersection rule ensures that permissions \emph{never widen} down the chain — a property essential for security — but it also means that the delegation chain must be statically defined before execution begins, since any post-hoc modification would require re-propagation of narrowed permissions.
+
+BX3 adopts a fixed delegation model with a structured escape mechanism: the delegation chain from the root human anchor to any terminal node is immutable and cryptographically sealed in the Forensic Ledger. This satisfies the accountability requirement — every action traces to a human principal — while the Bailout Protocol (described in \S\ref{sec:bailout}) provides a fault-tolerance pathway that does not require modifying the delegation chain itself. Rather than re-wiring authority mid-execution, the protocol routes exceptions upward through the existing parent chain to the human anchor, preserving chain immutability while enabling responsive fault handling.
+
+% ---------------------------------------------------------------
+\subsection{Hierarchical Task Decomposition in AI}
+\label{sec:hierarchical-decomposition}
+
+Hierarchical task decomposition is the process by which a high-level directive is recursively broken into sub-tasks and assigned to specialized agents at lower levels of a hierarchy. This approach addresses the context-overload problem in complex, multi-step tasks: a single agent processing a large, undifferentiated context loses focus and makes errors, whereas a hierarchy allows each agent to operate on a focused, domain-specific slice of the overall problem \cite{ibm2025hierarchical, heavybit2025multiagent}.
+
+High-level agents in a hierarchy handle strategy and orchestration, mid-tier agents translate directives into coordinated sub-tasks, and low-level agents execute specialized functions \cite{linkedin2025orgchart}. This tiered structure mirrors classical organizational theory: the executive sets direction, middle management decomposes and assigns, and operational units execute. In AI agent hierarchies, the same structure enables parallelization, domain specialization, and bounded context windows — each agent operates on a slice of the problem that fits within its cognitive horizon.
+
+The Intelligent AI Delegation framework from DeepMind explicitly addresses recursive delegation: an agent that has accepted a task may further decompose and delegate it, with decomposition potentially occurring not only before task assignment but also dynamically during execution \cite{deepmind2025delegation}. This recursive structure — where any node in the hierarchy may itself become an orchestrator — is the operational model that Recursive Spawning formalizes and augments with accountability guarantees.
+
+However, hierarchical decomposition introduces accountability challenges that existing frameworks do not adequately address. When a high-level agent decomposes a task and spawns sub-agents, the delegation chain deepens, and the path from each sub-agent's action back to the human anchor lengthens. Without an immutable parent pointer and a structured exception pathway, a failure at a deep sub-agent may propagate unpredictably upward, or may be silently absorbed by the parent without reaching human attention. The BX3 Framework's immutable parent chain ensures that every sub-agent, regardless of depth, has a cryptographically sealed path to its human anchor, and the Bailout Protocol ensures that unresolved exceptions always propagate upward until they reach a human who can issue a binding directive.
+
+% ---------------------------------------------------------------
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+\label{sec:bxthree-substrate}
+
+The BX3 three-layer model — \purpose{} (P), \bounds{} (B), and \fact{} (F) — provides the architectural substrate on which Recursive Spawning operates. Each layer serves a distinct function in the accountability architecture:
+
+\begin{itemize}
+\item \textbf{\purpose{} (\P{})}: Encodes the goal, constraints, and operational boundaries for every node in the agent network. The \P{} layer is the source of authority: it defines what each agent is permitted to do, what it must not do, and what conditions trigger exception handling. In Recursive Spawning, every spawned child node inherits a constrained \P{} derived from its parent's \P{}, ensuring that authority narrows — never widens — at each spawn.
+
+\item \textbf{\bounds{} (\B{})}: Enforces operating constraints at runtime, monitoring node behavior against provisioned boundaries and triggering exception events when constraints are violated or thresholds are exceeded. The \B{} layer is the enforcement mechanism for the \P{} layer — it observes, detects, and flags, but does not resolve. Resolution authority is held by the human anchor or, within bounded time windows, by the \fact{} layer acting on approved resolution patterns.
+
+\item \textbf{\fact{} (\F{})}: Maintains the Forensic Ledger — an append-only, cryptographically sealed record of every spawn event, delegation edge, exception, and resolution in the agent network. The \F{} layer is the accountability substrate: it provides the immutable audit trail that enables full reconstruction of the delegation chain for any node at any point in time. Every parent pointer is a \F{}-layer entry; every exception propagation is a \F{}-layer event; every human acknowledgment is a \F{}-layer record.
+\end{itemize}
+
+The three-layer model resolves the tension between mutable flexibility and fixed accountability by separating concerns: the delegation chain is immutable (fixed structure in \F{}), the operational boundaries are dynamic within constraints (\P{} and \B{}), and the exception pathway (Bailout Protocol) provides fault tolerance without structural mutation. This is the key architectural distinction: BX3 does not modify the delegation chain to handle failures; it propagates failures upward through the existing immutable chain until they reach a human anchor.
+
+In Recursive Spawning specifically, the BX3 Framework enables each spawned node to carry its complete ancestry as an immutable parent chain. When a node spawns a child, the \F{} layer records the spawn event with a cryptographic reference to the parent, sealing the delegation edge into the ledger. The child node inherits its parent's \P{} constraints narrowed to its specific sub-task. If the child encounters an unresolved exception, the Bailout Protocol routes it upward through the parent chain — each hop sealed and traceable in \F{} — until it reaches the human anchor designated at the root. No machine actor can terminate or redirect an exception; only a human principal can issue a binding resolution directive.
+
+This architecture ensures that Recursive Spawning operates with three non-negotiable properties: (1) every spawn is recorded as an immutable \F{}-layer event with a cryptographic parent pointer, (2) every delegation edge narrows — never widens — the inherited \P{} constraints, and (3) every unresolved exception propagates upward through the immutable parent chain until it reaches a human who can issue a binding directive. Together, these properties close the accountability gap in recursive spawning and establish Recursive Spawning as the first spawn mechanism with formal, verifiable, human-anchored accountability at arbitrary depth.
+
+% ---------------------------------------------------------------
+% BIBLIOGRAPHY
+\bibliographystyle{plain}
+\bibliography{bx3framework}
+
+\end{document}

@@ -1,0 +1,215 @@
+\section{The Recursive Spawning Protocol}
+\label{sec:rs-protocol}
+
+The Recursive Spawning Protocol (RSP) is the operational mechanism by which the BX3 Framework transforms multi-agent spawning from a forensic reconstruction problem into a runtime-verified structural property. Every spawn event is governed by a mandatory five-stage sequence executed across all three BX3 layers. No stage is advisory; no layer may be bypassed; no operational urgency constitutes an exception to any protocol requirement. The result is that every agent in any spawn chain is, by architectural construction: traceable to a human principal, constrained to a scope narrower than its parent, and recorded in an immutable forensic ledger before it enters operational state.
+
+% -------------------------------------------------------------------------
+\subsection{Protocol Architecture: Three-Layer Coordination}
+
+RSP coordinates three BX3 layers at every spawn event. Each layer has a defined, non-negotiable responsibility:
+
+\begin{itemize}
+  \item[\textbf{Purpose Layer.}] Validates that the proposed child agent's purpose clause is a \textit{strict, descendant refinement} of the parent agent's purpose clause. The Purpose Layer is the sole source of legitimate operational scope; no spawn proceeds without a valid Purpose Layer artifact.
+
+  \item[\textbf{Bounds Engine.}] Evaluates the spawn request against the chain depth limit $D_{\max}$ and the scope projection constraint. The Bounds Engine is the structural gatekeeper for resource bounds and scope narrowing; it does not evaluate intent, only formal compliance with depth and subset constraints.
+
+  \item[\textbf{Fact Layer.}] Creates an immutable pointer from the child to its parent at spawn time, records the complete spawn event to the forensic ledger, and verifies the chain's human anchor before activating the child. The Fact Layer is the authoritative record of every spawn event and cannot be bypassed.
+\end{itemize}
+
+The protocol is atomic: all three layer operations must succeed for a spawn to be authorized. A failure in any layer results in refusal, ledger logging, and escalation. There is no fallback path, no override mechanism, and no administrative bypass that permits a spawn to proceed without completing all three layer validations. This atomicity is what makes the drift triad---orphaned, drifted, and operating simultaneously---architecturally impossible: every structural condition required for drift is checked and recorded before any agent enters operational state.
+
+% -------------------------------------------------------------------------
+\subsection{Five-Stage Spawn Event Lifecycle}
+
+A \emph{spawn event} is the atomic sequence of operations that initializes a child agent $c$ from a parent agent $p$. The protocol proceeds through five ordered stages. Each stage is deterministic: given the current chain state and the spawn request, the outcome is fully determined. No stage involves discretionary judgment by any agent in the chain.
+
+\bigskip
+\noindent\textbf{Stage 1 -- Spawn Request.} Agent $p$ initiates a spawn request by submitting a \texttt{SPAWN-REQUEST} to the Fact Layer. The request contains: the proposed child identifier $\mathrm{id}(c)$, the proposed purpose clause $p_c$, the proposed operational scope $R(c)$, and the current depth of $p$. This request is recorded as the first entry in the spawn sequence.
+
+\bigskip
+\noindent\textbf{Stage 2 -- Purpose Layer Validation.} The Purpose Layer receives $p_c$ and $R(c)$ and evaluates whether $R(c)$ is a strict descendant refinement of $R(p)$. The validation checks two conditions:
+
+\begin{enumerate}
+  \item[(PL-V1)] $R(c) \subset R(p)$ --- a proper subset, not merely equal. Lateral scope ($R(c) = R(p)$) is a drift condition and causes immediate refusal.
+  \item[(PL-V2)] $p_c$ is a deterministic projection of $p$'s purpose clause, computed by the Purpose Layer's scope projection function at request time and verifiable by replay.
+\end{enumerate}
+
+If either condition fails, the Purpose Layer returns a refusal with reason code \texttt{PURPOSE-SCOPE-VIOLATION}. The Fact Layer records the refusal as event type \texttt{SPAWN-REFUSED} with the violation code. The child is not activated.
+
+\bigskip
+\noindent\textbf{Stage 3 -- Bounds Engine Depth and Scope Check.} The Bounds Engine independently verifies:
+
+\begin{enumerate}
+  \item[(BE-V1)] $\mathrm{depth}(p) + 1 \leq D_{\max}$. If depth equals $D_{\max}$, the spawn is refused with code \texttt{DEPTH-LIMIT-REACHED}.
+  \item[(BE-V2)] The scope projection $R(c) \subseteq R(p)$ computed by the Bounds Engine matches the scope submitted in the spawn request. Any discrepancy constitutes a mismatch refusal with code \texttt{SCOPE-MISMATCH}.
+\end{enumerate}
+
+The Bounds Engine check is independent of the Purpose Layer validation: both must pass. This independence is deliberate. A compromise of the Purpose Layer's projection function cannot bypass the scope subset constraint, because the Bounds Engine computes its own projection independently and compares it against the submitted request.
+
+\bigskip
+\noindent\textbf{Stage 4 -- Fact Layer Immutable Pointer and Ledger Write.} Upon receiving confirmation from both the Purpose Layer and the Bounds Engine, the Fact Layer executes the following atomic write sequence:
+
+\begin{enumerate}
+  \item[(FL-W1)] \textbf{Immutable parent pointer creation.} Records the immutable parent pointer: $\alpha(c) \gets p$. This pointer is written to the Fact Layer as a \texttt{PARENT-POINTER-ESTABLISHED} event and is \emph{structurally immutable} from this point forward. No actor---human, administrative process, or compromised layer---may modify, redirect, or delete this pointer after the write is confirmed.
+  \item[(FL-W2)] \textbf{Forensic ledger entry.} Records the complete spawn provenance: parent identifier, child identifier, parent purpose clause hash at spawn time, child purpose clause hash, Bounds Engine constraint artifact, and timestamp. This entry is linked to the previous Fact Layer entry via SHA-256 hash chaining.
+  \item[(FL-W3)] \textbf{Chain identity computation.} Computes the child's Fact Layer entry hash and returns it to the parent as the child's \emph{chain identity}. This hash is the authoritative identifier for the child in all subsequent chain operations.
+\end{enumerate}
+
+The immutability of $\alpha(c)$ is protocol-enforced, not access-control-enforced. The Fact Layer write protocol does not expose a modification operation; the data structure does not support an overwrite. An attacker with full access to ledger storage cannot produce a valid overwritten entry because the hash chain would break and verification would fail.
+
+\bigskip
+\noindent\textbf{Stage 5 -- Child Activation.} The Fact Layer issues a \texttt{CHILD-ACTIVATED} event only after all preceding stages have confirmed. The child agent enters operational state with its Purpose Layer artifact frozen, its operational scope bounded by the verified projection, its immutable parent pointer established, and its chain identity recorded in the ledger. The child is now traceable to the human anchor at the root of the chain.
+
+% -------------------------------------------------------------------------
+\subsection{Immutable Parent Pointer: Formal Properties}
+
+The immutable parent pointer $\alpha(c) = p$ is the central data element of the Recursive Spawning Protocol. Its immutability is not a policy convention---it is a structural property enforced by the Fact Layer's append-only write protocol.
+
+\medskip
+\noindent\textbf{Immutable Pointer Invariant.} For any agent $a$ that has completed the spawn lifecycle, the following invariant holds:
+
+\begin{equation}
+\neg\,\exists\,\mathrm{modify}(\alpha(a))\ \text{after}\ \mathrm{provisioned}(a) = \mathrm{true}.
+\label{eq:immutable-pointer-invariant}
+\end{equation}
+
+This invariant is maintained by the absence of a modification operation in the Fact Layer protocol. The ledger does not expose an overwrite function; it exposes only \texttt{append}. Any attempt to redirect a parent pointer requires appending a new entry, which the verification protocol rejects because the appended entry would not match the parent's initialization record.
+
+\medskip
+\noindent\textbf{Ledger Entry Structure.} Each Fact Layer entry $\ell_j$ for spawn event $j$ is structured as:
+
+\begin{equation}
+\ell_j = \bigl\langle
+  \texttt{index}=j,\
+  \texttt{event-type},\
+  \texttt{parent-id},\
+  \texttt{child-id},\
+  \texttt{parent-purpose-hash},\
+  \texttt{child-purpose-hash},\
+  \texttt{bounds-artifact},\
+  \texttt{timestamp},\
+  \texttt{prev\_hash}
+\bigr\rangle .
+\label{eq:spawn-ledger-entry}
+\end{equation}
+
+The \texttt{event-type} field distinguishes spawn events (\texttt{SPAWN-AUTHORIZED}, \texttt{SPAWN-REFUSED}), parent pointer events (\texttt{PARENT-POINTER-ESTABLISHED}), and termination events (\texttt{AGENT-TERMINATED}). The \texttt{prev\_hash} field links each entry to its predecessor, forming the Merkle chain that enables tamper detection.
+
+\medskip
+\noindent\textbf{Tamper-Evidence Property.} Let $\mathcal{L}$ be the Fact Layer ledger after $n$ entries. An adversary who modifies entry $\ell_k$ ($k < n$) without detection must also modify all subsequent entries $\ell_{k+1}, \ldots, \ell_n$ to repair the hash chain. This is computationally infeasible under standard cryptographic hash function assumptions. Verification consists of recomputing the chain of \texttt{prev\_hash} values from the genesis entry and comparing against stored values---a linear-time operation that any observer with read access to the ledger can perform independently.
+
+% -------------------------------------------------------------------------
+\subsection{Chain Verification: Termination at Human Anchor}
+
+Every agent activated under the Recursive Spawning Protocol is guaranteed to be traceable to a human principal at the root of its spawn chain. This guarantee is enforced by the Fact Layer's \emph{chain anchor verification}, executed at child activation and verified on demand by any external auditor.
+
+\medskip
+\noindent\textbf{Chain Anchor Verification Procedure.} Given an agent $a$, the following procedure determines whether $a$'s chain reaches a human principal:
+
+\begin{enumerate}
+  \item[(CA-V1)] Retrieve $a$'s Fact Layer entry. Extract $\alpha(a)$ (the immutable parent pointer).
+  \item[(CA-V2)] If $\alpha(a) = \bot$, the agent is a root. Verify that the root's Purpose Layer artifact was initialized by a human principal (verified via authentication assertion in the root's Fact Layer genesis entry).
+  \item[(CA-V3)] If $\alpha(a) \neq \bot$, retrieve $\alpha(a)$'s Fact Layer entry and repeat from step CA-V2.
+\end{enumerate}
+
+Because the chain depth is bounded by $D_{\max}$, this procedure terminates in at most $D_{\max}$ steps. The human anchor is identified by the genesis entry of the chain, which contains the authenticated human principal's identifier.
+
+\medskip
+\noindent\textbf{Human Anchor Verification at Spawn Time.} Before issuing the \texttt{CHILD-ACTIVATED} event, the Fact Layer confirms:
+
+\begin{enumerate}
+  \item[(HAV-1)] The parent's chain has a verified human anchor. If the parent is a child, this is confirmed by replaying the chain verification procedure. If the parent is a root, the genesis entry is verified.
+  \item[(HAV-2)] The child's Purpose Layer artifact is a descendant refinement of the human anchor's intent, verified by traversing the purpose clause hash chain from root to child.
+\end{enumerate}
+
+These checks cannot be circumvented by any agent in the chain. The Fact Layer is the sole authority on chain anchor verification; no agent can self-assert a human anchor without the ledger providing cryptographic corroboration.
+
+% -------------------------------------------------------------------------
+\subsection{Depth Management}
+
+Depth management in the Recursive Spawning Protocol serves two purposes: preventing unbounded resource consumption (a practical necessity) and ensuring that chain traversal by auditors is bounded by a known finite limit (an accountability requirement).
+
+\medskip
+\noindent\textbf{Maximum Spawn Depth.} The maximum spawn depth $D_{\max}$ is established at root initialization and recorded as a Fact Layer authorization artifact. It is a fixed positive integer. The root's human principal sets $D_{\max}$ based on the operational requirements of the task domain; the protocol itself places no lower bound on $D_{\max}$ beyond $D_{\max} \geq 1$. The value of $D_{\max}$ is immutable after chain initialization: the Fact Layer does not expose a depth limit modification operation.
+
+\medskip
+\noindent\textbf{Depth Computation.} Chain depth is determined entirely by the immutable parent pointer chain:
+
+\begin{equation}
+\mathrm{depth}(n) =
+\begin{cases}
+0 & \text{if }\alpha(n) = \bot\ (\text{root}) \\
+1 + \mathrm{depth}(\alpha(n)) & \text{otherwise}.
+\end{cases}
+\label{eq:depth}
+\end{equation}
+
+No agent can manipulate its apparent depth without breaking the Fact Layer hash chain.
+
+\medskip
+\noindent\textbf{Spawn Refusal at the Depth Limit.} When a parent agent at depth $d = D_{\max}$ submits a spawn request, the Bounds Engine returns \texttt{DEPTH-LIMIT-REACHED} and the Fact Layer records the refusal as event type \texttt{SPAWN-REFUSED}. The child is not activated. The parent enters \texttt{ESCALATING} state and notifies the human principal through the Result Layer.
+
+The escalation is not discretionary---it is a mandatory protocol response to depth limit refusal. This prevents a parent at the depth limit from independently deciding to continue spawning, which would be the precise point at which unbounded spawn behavior emerges.
+
+% -------------------------------------------------------------------------
+\subsection{Convergence Criteria}
+
+The spawn chain converges---terminates its growth---under three independent conditions:
+
+\begin{enumerate}
+  \item[(CC-1)] \textbf{Task completion:} The parent agent completes its assigned objective and emits \texttt{AGENT-TERMINATED} to the Fact Layer. All descendants that have not independently spawned are also terminated, recursively.
+
+  \item[(CC-2)] \textbf{Depth limit reached:} A spawn request is refused at depth $D_{\max}$. The parent escalates and no further spawning occurs in this branch.
+
+  \item[(CC-3)] \textbf{Purpose exhaustion:} The parent agent's Purpose Layer artifact evaluates to completed---the declared objective has been fully decomposed and assigned to children, and no further scope remains to delegate. The parent terminates.
+\end{enumerate}
+
+These three convergence criteria ensure that chain growth is always finite and always traceable. There is no convergence criterion that does not involve either successful completion, a bounds check refusal, or a Purpose Layer artifact reaching its terminal state. Each is verifiable against the Fact Layer ledger.
+
+% -------------------------------------------------------------------------
+\subsection{Protocol Invariants}
+
+The Recursive Spawning Protocol maintains four structural invariants throughout its execution. These invariants are not runtime conventions---they are properties enforced by the protocol's state machine transitions and verified by the Fact Layer's pre-commit hook at every spawn event.
+
+\bigskip
+\noindent\textbf{Invariant 1 -- Purpose Layer Validity.} For every spawn event from parent $p$ to child $c$:
+
+\begin{equation}
+R(c) \subset R(p)\quad \text{and} \quad \mathrm{hash}(p_c) = \mathrm{compute\_projection}(p_p).
+\label{eq:inv-purpose-validity}
+\end{equation}
+
+Violation: The spawn is refused. The Fact Layer records \texttt{PURPOSE-SCOPE-VIOLATION}.
+
+\bigskip
+\noindent\textbf{Invariant 2 -- Bounds Engine Compliance.} For every spawn event:
+
+\begin{equation}
+\mathrm{depth}(c) = \mathrm{depth}(p) + 1 \leq D_{\max}.
+\label{eq:inv-bounds-compliance}
+\end{equation}
+
+Violation: The spawn is refused. The Fact Layer records \texttt{DEPTH-LIMIT-REACHED} or \texttt{SCOPE-MISMATCH}.
+
+\bigskip
+\noindent\textbf{Invariant 3 -- Immutable Parent Pointer.} For every agent $a$ after provisioning:
+
+\begin{equation}
+\alpha(a)\ \text{recorded at spawn time is identical to}\ \alpha(a)\ \text{at any subsequent time}.
+\label{eq:inv-immutable-parent}
+\end{equation}
+
+Violation: Impossible under the protocol's append-only Fact Layer. Any apparent violation indicates a compromised ledger.
+
+\bigskip
+\noindent\textbf{Invariant 4 -- Human Anchor Reachability.} For every agent $a$ in operational state:
+
+\begin{equation}
+\exists\, h \in \mathcal{H}:\ \mathrm{chain-reaches}(a, h) = \mathrm{true}.
+\label{eq:inv-human-anchor}
+\end{equation}
+
+Violation: The Fact Layer pre-commit hook would have refused activation. An agent in operational state without a reachable human anchor cannot exist in a correctly implemented protocol.
+
+\bigskip
+These four invariants together encode the Recursive Spawning Protocol's core accountability guarantee: every agent in every spawn chain is authorized by a human principal, bounded by a finite depth, constrained to a narrower scope than its parent, and recorded in an immutable ledger. The drift triad (orphaned, drifted, operating) is not merely statistically unlikely under these conditions---it is structurally impossible. An agent cannot be orphaned from its parent without the Fact Layer recording the parent pointer established at spawn. It cannot be drifted without violating the Purpose Layer validity invariant or the human anchor reachability invariant. And it cannot be operating without having passed all three layer validations at activation time. The Recursive Spawning Protocol makes these conditions not improbable but nonexistent by construction.

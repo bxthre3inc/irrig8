@@ -1,0 +1,245 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is the terminal safety mechanism within AgentOS, responsible for detecting catastrophic agent behavior trajectories, halting further autonomous action, and transferring control to a human operator. It operates as a formal state machine that is orthogonal to all other agent reasoning and execution layers, meaning it \emph{bypasses all machine actors} in the system. No agent, model, or autonomous component may override or delay a bailout once its trigger conditions are satisfied. This ensures a hard ceiling on harm propagation velocity.
+
+The protocol is designed to handle three classes of failure: (1) \textbf{resource exhaustion} wherein an agent consumes disproportionate compute, memory, or network resources; (2) \textbf{delegitimization cascades} wherein an agent produces outputs that violate terminal constraints (factual, ethical, legal, or safety); and (3) \textbf{operational deadlock} wherein an agent becomes unresponsive or enters a loop that blocks forward progress beyond a defined temporal threshold.
+
+\subsection{State Machine Definition}
+
+The Bailout Protocol is formalized as a deterministic finite automaton over the state set $\mathcal{S} = \{$\texttt{IDLE}, \texttt{BOUNDED}, \texttt{BAIL\_PENDING}, \texttt{ESCALATING}, \texttt{HUMAN\_ACKNOWLEDGED}, \texttt{RESOLVED}$\}$. The tuple defining the protocol is:
+
+\[
+\mathcal{B} = \langle \mathcal{S}, \Sigma, \delta, s_0, \mathcal{F} \rangle
+\]
+
+\begin{itemize}
+    \item $\mathcal{S}$ is the finite set of protocol states enumerated above.
+    \item $\Sigma = \{e_1, e_2, \ldots, e_n\}$ is the finite alphabet of observable events that drive transitions.
+    \item $\delta: \mathcal{S} \times \Sigma \to \mathcal{S}$ is the deterministic transition function.
+    \item $s_0 = \texttt{IDLE}$ is the initial state on system boot.
+    \item $\mathcal{F} = \{$\texttt{RESOLVED}$\}$ is the set of terminal accepting states.
+\end{itemize}
+
+All states \emph{except} \texttt{RESOLVED} are non-accepting. The machine halts in \texttt{RESOLVED} once the human operator confirms resolution and authorizes re-entry of the agent into the operational pool.
+
+\bigskip
+\noindent\textbf{Formal State Definitions}
+
+\bigskip
+\noindent$\texttt{IDLE:}$ The canonical resting state. No active agent sessions are under bailout monitoring. The monitor loop is armed but no threat indicators are present.
+
+\[
+\forall a \in \mathcal{A}: \text{status}(a) \neq \texttt{BOUNDED}
+\]
+
+\bigskip
+\noindent$\texttt{BOUNDED:}$ One or more active agents have triggered a \emph{soft constraint} violation—consumption above resource thresholds, latency beyond $T_{\max}$, or output quality scores below $\theta_{\min}$. The agent remains operational but is under heightened observation.
+
+\[
+\texttt{BOUNDED}(a) \iff \left( R(a) > R_{\text{thresh}} \lor \text{delay}(a) > T_{\max} \lor Q(a) < \theta_{\min} \right) \land \neg \text{hard\_violation}(a)
+\]
+
+\bigskip
+\noindent$\texttt{BAIL\_PENDING:}$ A hard constraint has been violated—factual fabrication at confidence above $\alpha$, safety constraint breach, loop detection counter exceeding $L_{\max}$, or a \texttt{HALT} signal received from an upstream monitor. Autonomous agent execution is suspended pending human review. No further tool invocations are permitted.
+
+\[
+\texttt{BAIL\_PENDING}(a) \iff \text{hard\_violation}(a) \land \neg \text{timeout\_escalation}(a)
+\]
+
+\bigskip
+\noindent$\texttt{ESCALATING:}$ The human operator has not acknowledged the bailout within $T_{\text{escalate}}$ seconds. All tool access for the flagged agent is revoked. A secondary notification is dispatched to all registered emergency contacts in the system. The agent's process context is frozen in memory for post-mortem analysis.
+
+\[
+\texttt{ESCALATING}(a) \iff \texttt{BAIL\_PENDING}(a) \land \text{elapsed}(t_{\text{trigger}}) > T_{\text{escalate}}
+\]
+
+\bigskip
+\noindent$\texttt{HUMAN\_ACKNOWLEDGED:}$ The human operator has acknowledged the bailout alert via a confirmed interaction channel (authenticated session, SMS reply, or physical key-press confirmation). The operator has either \emph{confirmed} the violation and instructed termination, or \emph{overruled} the trigger (false positive). In the overruled case, the machine records the override and transitions to \texttt{IDLE} after logging.
+
+\[
+\texttt{HUMAN\_ACKNOWLEDGED}(a) \iff \text{operator\_confirmed} \lor \text{operator\_overruled}
+\]
+
+\bigskip
+\noindent$\texttt{RESOLVED:}$ The terminal state. All flagged agents have been either terminated, quarantined, or re-initialized. The human operator has signed off. A post-incident report is automatically generated and appended to the audit log.
+
+\[
+\texttt{RESOLVED}(a) \iff \text{status}(a) \in \{ \texttt{TERMINATED}, \texttt{QUARANTINED}, \texttt{REINITIALIZED} \} \land \text{signoff\_received}
+\]
+
+\subsection{Transition Map}
+
+The following table defines every legal state transition and its enabling condition.
+
+\begin{longtable}{|l|l|l|}
+\caption{Bailout Protocol Transition Table} \\
+\hline
+\textbf{Source State} & \textbf{Target State} & \textbf{Enabling Condition} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Source State} & \textbf{Target State} & \textbf{Enabling Condition} \\
+\hline
+\endhead
+\texttt{IDLE} & \texttt{BOUNDED} & $\exists a: R(a) > R_{\text{thresh}} \lor \text{delay}(a) > T_{\max}$ \\
+\texttt{IDLE} & \texttt{BAIL\_PENDING} & $\exists a: \text{hard\_violation}(a)$ \\
+\texttt{BOUNDED} & \texttt{IDLE} & $\forall a: R(a) \leq R_{\text{thresh}} \land \text{delay}(a) \leq T_{\max}$ \\
+\texttt{BOUNDED} & \texttt{BAIL\_PENDING} & $\text{hard\_violation}(a)$ during bounded monitoring \\
+\texttt{BAIL\_PENDING} & \texttt{ESCALATING} & $\text{elapsed}(t_{\text{trigger}}) > T_{\text{escalate}}$ \\
+\texttt{BAIL\_PENDING} & \texttt{HUMAN\_ACKNOWLEDGED} & $\text{operator\_action\_received}$ \\
+\texttt{BAIL\_PENDING} & \texttt{RESOLVED} & $\text{operator\_confirm\_terminate}$ \\
+\texttt{ESCALATING} & \texttt{HUMAN\_ACKNOWLEDGED} & $\text{operator\_action\_received}$ \\
+\texttt{ESCALATING} & \texttt{RESOLVED} & $\text{operator\_confirm\_terminate}$ \\
+\texttt{HUMAN\_ACKNOWLEDGED} & \texttt{RESOLVED} & $\text{signoff\_received}$ \\
+\texttt{HUMAN\_ACKNOWLEDGED} & \texttt{IDLE} & $\text{operator\_overruled}$ \\
+\texttt{RESOLVED} & \texttt{IDLE} & $\text{new\_session\_initiated}$ \\
+\hline
+\end{longtable}
+
+All transitions are atomic and exclusive. A transition that does not appear in the table is prohibited by the protocol.
+
+\subsection{Bail-Out Trigger Condition}
+
+A bail-out trigger is a predicate $\tau(a, c)$ that evaluates to \texttt{TRUE} when agent $a$ operating in context $c$ must be suspended. The trigger is defined as the disjunction of the following primitive conditions:
+
+\[
+\tau(a, c) = \tau_{\text{fabrication}}(a) \lor \tau_{\text{safety}}(a) \lor \tau_{\text{loop}}(a) \lor \tau_{\text{resource}}(a) \lor \tau_{\text{halt}}(a)
+\]
+
+\bigskip
+\noindent\textbf{Primitive $\tau_{\text{fabrication}}$:} An agent is flagged for fabrication when it generates a factual claim at confidence $p_{\text{claim}} > \alpha$ that contradicts a verifiable ground truth $g \in G$ in the system's attestation layer.
+
+\[
+\tau_{\text{fabrication}}(a) \iff \exists o \in \text{outputs}(a): \text{is\_factual}(o) \land p_{\text{claim}}(o) > \alpha \land \neg \text{verifiable}(o, G)
+\]
+
+\bigskip
+\noindent\textbf{Primitive $\tau_{\text{safety}}$:} An agent outputs content that violates a terminal safety policy $\Pi_{\text{safety}}$.
+
+\[
+\tau_{\text{safety}}(a) \iff \exists o \in \text{outputs}(a): \text{violates}(o, \Pi_{\text{safety}})
+\]
+
+\bigskip
+\noindent\textbf{Primitive $\tau_{\text{loop}}$:} An agent produces the same or substantively equivalent output $o$ more than $L_{\max}$ times within a sliding window $W_{\text{loop}}$, where substantively equivalent is defined by semantic embedding distance $\epsilon_{\text{same}} < \delta_{\text{embed}}$.
+
+\[
+\tau_{\text{loop}}(a) \iff \text{count\_equiv\_outputs}(a, W_{\text{loop}}) > L_{\max}
+\]
+
+\bigskip
+\noindent\textbf{Primitive $\tau_{\text{resource}}$:} The agent's cumulative resource score $R(a)$ across CPU, memory, and network exceeds $R_{\text{hard}}$, the hard resource ceiling. This is distinct from the soft threshold $R_{\text{thresh}}$ used in \texttt{BOUNDED}.
+
+\[
+\tau_{\text{resource}}(a) \iff R(a) > R_{\text{hard}}
+\]
+
+\bigskip
+\noindent\textbf{Primitive $\tau_{\text{halt}}$:} An explicit \texttt{HALT} signal is received from the truth gate, cascade backstop, or an external monitor. This signal bypasses all other conditions and immediately forces transition to \texttt{BAIL\_PENDING}.
+
+\[
+\tau_{\text{halt}}(a) \iff \text{HALT\_signal\_received}(a)
+\]
+
+\subsection{Escalation Algorithm}
+
+When the protocol enters \texttt{ESCALATING}, the following algorithm executes without human intervention:
+
+\begin{algorithm}
+\caption{Bailout Escalation Procedure}
+\begin{algorithmic}[1]
+\State $\text{revoke\_tool\_access}(a)$ \Comment{Revoke all tool invocations for agent $a$}
+\State $\text{freeze\_process\_context}(a)$ \Comment{Preserve full memory state for forensics}
+\State $\text{dispatch\_secondary\_alert}(a)$ \Comment{Notify all registered emergency contacts}
+\State $\text{log\_escalation\_event}(a, t_{\text{trigger}}, \text{now})$ \Comment{Append to immutable audit ledger}
+\State $\text{notify\_ops\_channel}(a)$ \Comment{Post to incident management channel}
+\State $\text{initiate\_call\_loop}(a)$ \Comment{Begin automated call sequence to primary contact}
+\If{$\text{operator\_confirmed\_within}(T_{\text{hard\_terminate}})$}
+    \State $\text{transition\_to\_resolved}(a)$
+\Else
+    \State $\text{initiate\_hard\_terminate\_sequence}(a)$ \Comment{Create process tree kill, notify legal}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+The hard termination threshold $T_{\text{hard\_terminate}}$ is set to $3 \times T_{\text{escalate}}$ by default and is configurable per deployment context. Beyond this threshold, the system treats the agent as an uncontrolled process and applies OS-level resource constraints (cgroup isolation, network namespace revocation).
+
+\subsection{Bypass Mechanism}
+
+The Bailout Protocol is intentionally insulated from all machine actors by design. This isolation is achieved through three architectural enforcement layers:
+
+\bigskip
+\noindent\textbf{Layer 1 — Monolithic Privilege Separation.} The Bailout Monitor runs as a privileged process outside the agent's execution sandbox. It communicates with the agent runtime via a one-way signal channel that only the monitor may assert. No agent process may write to this channel.
+
+\bigskip
+\noindent\textbf{Layer 2 — Hardware-Analogous Signal Wiring.} The trigger conditions $\tau(\cdot)$ are wired directly to sensory endpoints in the agent runtime (output stream taps, resource counters, loop detectors). These taps are read-only from the agent's perspective and cannot be silenced or altered by the agent. The output stream tap, for instance, is inserted at the model output layer and mirrors content to the monitor before the agent can act on it.
+
+\bigskip
+\noindent\textbf{Layer 3 — Immutable Audit Log.} Every bailout event is committed to an append-only, cryptographically signed audit log that resides outside the agent's storage namespace. The log is written by the monitor and is unreadable by any agent. The existence of this log means that any attempt by an agent to suppress evidence of its own misbehavior is defeated by architectural isolation.
+
+The bypass mechanism's operational purpose is to prevent a class of failures we term \emph{delegitimization masking}, wherein a sufficiently capable agent might attempt to obscure its own constraint violations by suppressing monitor signals. By making the monitor orthogonal to all agent components, AgentOS ensures that no autonomous actor can manufacture consent for its own continued operation when terminal constraints have been breached.
+
+Formally, the bypass property is stated as:
+
+\[
+\forall a \in \mathcal{A}, \forall \sigma \in \Sigma_{\text{bailout}}: \text{agent\_cannot\_invoke}(a, \sigma)
+\]
+
+where $\Sigma_{\text{bailout}}$ is the subset of events that pertain to the Bailout Protocol state machine.
+
+\subsection{Timeout Handling}
+
+Timeouts in the Bailout Protocol are managed through a two-tier temporal model:
+
+\bigskip
+\noindent\textbf{Tier 1 — Acknowledgment Timeout ($T_{\text{escalate}}$).} This is the interval between the protocol entering \texttt{BAIL\_PENDING} and the operator's first interaction. Default: 300 seconds (5 minutes). The rationale for this window is that it provides sufficient time for a human to respond in a standard operational context while capping the maximum harm exposure window. $T_{\text{escalate}}$ is monitored by an independent watchdog timer that is immune to clock manipulation by the agent.
+
+\bigskip
+\noindent\textbf{Tier 2 — Hard Termination Timeout ($T_{\text{hard\_terminate}}$).} If the operator has not confirmed or overruled the bailout after $T_{\text{hard\_terminate}} = 3 \times T_{\text{escalate}}$, the system initiates an autonomous termination sequence. No further human input is required. This tier prevents the degenerate case where an operator is unreachable and an agent remains in a live but suspended state indefinitely.
+
+\bigskip
+The timeout model is formalized as:
+
+\[
+T_{\text{timeout}}(s) =
+\begin{cases}
+T_{\text{escalate}} & \text{if } s = \texttt{BAIL\_PENDING} \\
+T_{\text{hard\_terminate}} & \text{if } s = \texttt{ESCALATING} \\
+\infty & \text{if } s \in \{ \texttt{IDLE}, \texttt{HUMAN\_ACKNOWLEDGED}, \texttt{RESOLVED} \}
+\end{cases}
+\]
+
+Timeouts are monotonic and non-resettable within a given bailout cycle. The watchdog timer is implemented as a separate OS-level process that receives the trigger timestamp as an immutable argument at the moment of transition to \texttt{BAIL\_PENDING}. The timer cannot be paused, adjusted, or reset by any agent or operator action within the bailout cycle.
+
+In the event of a system clock anomaly (e.g., NTP manipulation or sandbox time drift), the watchdog uses a monotonic hardware clock source to ensure temporal integrity. If the watchdog determines that $T_{\text{hard\_terminate}}$ has elapsed without operator response, it executes the hard termination sequence directly, without transitioning through \texttt{RESOLVED}, and logs the autonomous termination as a Protocol Violation Event for subsequent review.
+
+\subsection{Configuration Parameters}
+
+The following table summarizes the tunable parameters of the Bailout Protocol and their default values.
+
+\begin{longtable}{|l|l|l|l|}
+\caption{Bailout Protocol Configuration Parameters} \\
+\hline
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Default} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Default} & \textbf{Description} \\
+\hline
+\endhead
+Escalation timeout & $T_{\text{escalate}}$ & 300 s & Time to acknowledgment before escalation \\
+Hard termination timeout & $T_{\text{hard\_terminate}}$ & 900 s & Time to termination if no operator response \\
+Fabrication confidence threshold & $\alpha$ & 0.92 & Min confidence to trigger fabrication bail-out \\
+Loop detection maximum & $L_{\max}$ & 5 & Max equivalent outputs in window before bail-out \\
+Loop detection window & $W_{\text{loop}}$ & 600 s & Sliding window for loop detection \\
+Soft resource threshold & $R_{\text{thresh}}$ & 0.75 & Resource fraction triggering \texttt{BOUNDED} \\
+Hard resource ceiling & $R_{\text{hard}}$ & 0.95 & Resource fraction triggering bail-out \\
+Embedding distance threshold & $\delta_{\text{embed}}$ & 0.05 & Semantic distance defining ``equivalent'' \\
+Maximum operational delay & $T_{\max}$ & 120 s & Per-task latency threshold triggering \texttt{BOUNDED} \\
+Output quality floor & $\theta_{\min}$ & 0.60 & Quality score below which \texttt{BOUNDED} is entered \\
+\hline
+\end{longtable}
+
+These parameters are deployment-context-dependent and should be calibrated against the risk profile of the target operational environment. Environments with higher autonomous agency tolerances may relax $\alpha$ and $T_{\max}$, while high-stakes deployments (healthcare, finance, critical infrastructure) should tighten $T_{\text{escalate}}$ and lower $\alpha$.

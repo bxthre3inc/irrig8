@@ -1,0 +1,65 @@
+\section{Guarantees and Correctness Properties}
+
+\subsection{Overview}
+The Bailout Protocol is evaluated against three formal guarantees: \textbf{SAFETY} (no autonomous collapse), \textbf{LIVENESS} (eventual human contact), and \textbf{ACCOUNTABILITY} (human always identifiable). Each guarantee is formalized as a theorem and supported by a proof sketch grounded in the BX3 architecture. Together, these guarantees ensure that recursive autonomous systems operating under the Bailout Protocol never detach from human oversight, regardless of system scale, network conditions, or failure modes.
+
+\subsection{Theorem 1: SAFETY --- No Autonomous Collapse}
+\textbf{Statement.} \emph{Under the Bailout Protocol, no autonomous action can result in irreversible system state change without explicit human authorization.}
+
+\textbf{Proof Sketch.}
+We prove SAFETY by contradiction. Assume a scenario in which an autonomous agent executes an irreversible action without human authorization. Under BX3, every action requires a Purpose directive from an authorized actor. The Human Accountability Anchor is the sole authority capable of issuing directives for irreversible operations --- water-right depletion above threshold, actuator commands exceeding safe operating limits, or cross-boundary physical movement. All other actors are Machine Accountability Anchors with bounded operational authority that does not extend to irreversible decisions.
+
+Consider the WORKSHEET embedded at every node, from edge sensor to cloud-hosted model. Each WORKSHEET contains the complete Bailout Protocol and the node's current state across all nine planes. An irreversible action can only execute under two conditions: (1) a valid Purpose directive issued by an authorized actor, or (2) deliberate bypass of the Bailout Protocol triggering mechanism.
+
+The Bailout Protocol is immutable. It is embedded as a fixed capability in every node's WORKSHEET and cannot be disabled, delayed, or overwritten by any Machine actor. The \textbf{Bypass Rule} further guarantees that Machine Accountability Anchors are excluded from the resolution path: when a Cascading Trigger propagates upward through the parent chain, it does not stop at intermediate Machine actors --- it continues until it reaches the Human Accountability Anchor. A compromised or misconfigured Bounds Engine cannot suppress a legitimate trigger.
+
+Therefore, any irreversible action either carries valid human authorization (Purpose directive from Human Root) or triggers an upward cascade that reaches the Human Accountability Anchor before the action is executed. In the latter case, execution is suspended pending human review. No execution path exists that produces irreversible state change without human sign-off. ∎
+
+\subsection{Theorem 2: LIVENESS --- Eventual Human Contact}
+\textbf{Statement.} \emph{For any trigger event fired by any node in the BX3 system, human contact is guaranteed within a bounded time horizon.}
+
+\textbf{Proof Sketch.}
+We formalize liveness in terms of trigger propagation. Let $T$ denote the time at which a trigger fires at an originating node. Let $C$ denote the time at which the Human Accountability Anchor receives the trigger package. We assert that $C - T \leq \Delta$, where $\Delta$ is a finite, architecturally determined bound.
+
+The WORKSHEET maintains an immutable parent pointer at every node. This pointer defines a directed acyclic graph (DAG) from each node to the Human Accountability Anchor. The maximum depth of this DAG is bounded by the system's architectural parameter $D_{\max}$ --- the maximum recursive spawning depth configured at system initialization. For agricultural deployments, typical values are $D_{\max} \leq 7$ (sensor $\rightarrow$ hub $\rightarrow$ zone controller $\rightarrow$ cloud $\rightarrow$ Human Root). Corporate deployments may extend to $D_{\max} \leq 12$. In all cases, $D_{\max}$ is finite.
+
+Each node in the propagation chain has a bounded per-hop processing time $t_i$, consisting of: (a) trigger package assembly and evaluation, and (b) asynchronous uplink delivery confirmation. The total propagation time is at most $\sum_{i=1}^{D_{\max}} t_i$. In nominal conditions, $t_i$ is on the order of milliseconds. Under network partition, each node persists the trigger package locally and retries delivery at configurable intervals. The Local Survivability sub-system ensures that no trigger is lost due to transient connectivity loss.
+
+The liveness argument does not rely on network reliability assumptions. Even under sustained partition, every node along the path retains the trigger package in non-volatile storage. Partition resolution triggers immediate delivery. The DAG structure guarantees that the Human Accountability Anchor is reachable via at least one path in the graph --- parent pointers are immutable and cannot be updated to create cycles. Therefore, $C$ is guaranteed to exist and $C - T \leq \Delta$ holds. ∎
+
+\subsection{Theorem 3: ACCOUNTABILITY --- Human Always Identifiable}
+\textbf{Statement.} \emph{For every directive recorded in the Forensic Ledger, the identity of the human authorizer is deterministically retrievable and cryptographically sealed.}
+
+\textbf{Proof Sketch.}
+Accountability relies on three architectural properties: (1) the immutability of the Human Accountability Anchor's identity, (2) the append-only nature of the Forensic Ledger, and (3) the SHA-256 sealing mechanism that prevents post-hoc modification of the audit trail.
+
+Every Purpose directive recorded in the Ledger includes the issuer's identity, encoded as a Human Accountability Anchor identifier (HAID). The HAID is assigned at system deployment and is cryptographically bound to the Human Root's authentication material. Machine actors do not possess HAIDs --- they propagate triggers and execute authorized directives but cannot originate Purpose directives. The Authorization Plane (P8) in the 9-Plane DAP model explicitly records the human's HAID for every directive, forming an unbroken chain from the originating trigger event to the human who authorized resolution.
+
+The propagation chain itself is part of the Ledger entry for every trigger. This chain records which nodes received the trigger, which nodes evaluated it, and which nodes propagated it upward. The Human Root's directive --- when issued --- is the final entry in that chain. No Machine actor can insert itself as an authorizing principal.
+
+The SHA-256 Forensic Sealing mechanism ensures that once a Ledger entry is committed, it cannot be altered without detection. Each entry references the hash of the previous entry, forming a Merkle-chain. Tampering with any historical entry breaks the chain and is detectable by any audit. This makes the accountability trail not only retrievable but cryptographically provable.
+
+Taken together: every directive traces to a HAID, the HAID is bound to the Human Root's authentication, and the entire chain is sealed against post-hoc modification. The human responsible for any action taken under the Bailout Protocol is always identifiable. ∎
+
+\subsection{Corollary: Compositional Correctness}
+The three guarantees compose to form a system-level correctness property. SAFETY prevents unauthorized irreversible actions. LIVENESS ensures that when a trigger fires, human review is inevitable within a bounded horizon. ACCOUNTABILITY ensures that after human review, the decision is permanently attributable to an identified individual. These properties are mutually independent and jointly sufficient to satisfy the Bailout Protocol's core design objective: no autonomous collapse, no orphaned accountability, no undetectable human absence.
+
+\subsection{Architectural Enforcement Summary}
+\begin{table}[h]
+\centering
+\begin{tabular}{p{2.8cm}p{3.2cm}p{6.2cm}}
+\hline
+\textbf{Guarantee} & \textbf{Property} & \textbf{Enforcement Mechanism} \\
+\hline
+SAFETY & No unauthorized irreversible action & Immutable Bailout Protocol; Machine Actor Exclusion in propagation; trigger suspends execution \\
+LIVENESS & Bounded human contact time & Finite DAG depth; async fire-and-forget delivery; Local Survivability persistence under partition \\
+ACCOUNTABILITY & Human identity retrievable and sealed & HAID in every directive; append-only Forensic Ledger; SHA-256 Merkle-chain sealing \\
+\hline
+\end{tabular}
+\caption{Bailout Protocol: Guarantee Enforcement Mechanisms}
+\end{table}
+
+\subsection{Assumptions and Scope}
+These guarantees hold under the following architectural assumptions: (1) the Human Accountability Anchor is non-null at system initialization, (2) parent pointers in the WORKSHEET are immutable and acyclic, (3) the SHA-256 implementation used for Forensic Sealing is correctly implemented and not compromised, and (4) the Human Root possesses the cognitive capacity to respond to triggered alerts within the bounded time horizon $\Delta$. Violation of any assumption invalidates the corresponding guarantee and triggers a system-level Lockdown mode under the Training Wheels Protocol. The Bailout Protocol does not assume perfect humans --- it assumes bounded, identifiable humans whose decisions are permanently recorded and auditable.
+
+\end{document}

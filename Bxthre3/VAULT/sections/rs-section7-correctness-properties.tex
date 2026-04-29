@@ -1,0 +1,91 @@
+% ============================================================
+\section{Correctness Properties}
+\label{sec:rs-correctness}
+% ============================================================
+
+This section establishes three correctness properties for the Recursive Spawning Protocol: drift prevention, chain integrity, and termination. Each property is stated formally, proved sketchedly, and connected to the specific BX3 Framework layers that enforce it. All three proofs are deterministic and require no probabilistic assumptions --- the guarantees follow from the RSP's structural constraints.
+
+% ------------------------------------------------------------
+\subsection{Drift Prevention}
+\label{sec:rs-drift-prevention}
+
+\begin{thrm}[Drift Prevention]
+\label{thrm:drift-prevention}
+Let $C = \langle n_0, n_1, \ldots, n_k \rangle$ be an RSP chain rooted at $n_0$ with human anchor $h(n_0) = h(n_k)$. For all $i$ ($0 \leq i \leq k$), the operating scope $R(n_i)$ is a descendant refinement of the intent of $h(n_0)$. Equivalently: no node in $C$ can exhibit behavior outside the authorized intent of its human anchor.
+\end{thrm}
+
+\medskip\noindent\textbf{Proof sketch (structural induction).} The proof proceeds by induction on chain depth, where each inductive step is enforced at runtime by the Fact Layer pre-commit hook.
+
+\medskip\noindent\textit{Base case ($i=0$).} $R(n_0)$ is defined by $h(n_0)$ at provisioning. By the Purpose Layer's definition of authorized operating scope, $R(n_0)$ is a descendant refinement of $h(n_0)$'s intent by construction. No drift exists at the root.
+
+\medskip\noindent\textit{Inductive step.} Assume $R(n_i)$ is a descendant refinement of $h(n_0)$'s intent for some $i$ with $0 \leq i < k$. For spawn of $n_{i+1}$ to be authorized, three conditions must hold simultaneously:
+
+\begin{enumerate}
+  \item[(i)] The Purpose Layer issues warrant $w_i$, which requires $R(n_{i+1}) \subset R(n_i)$ (strict scope refinement) and a specific declaration that the unmet condition is unsatisfiable within $R(n_i)$ (operational necessity).
+  \item[(ii)] The Bounds Engine evaluates and confirms operational proportionality and convergence feasibility for $R(n_{i+1})$.
+  \item[(iii)] The Fact Layer pre-commit hook re-verifies $R(n_{i+1}) \subset R(n_i)$ as a structural invariant before recording the spawn.
+\end{enumerate}
+
+All three conditions are enforced before $n_{i+1}$ is provisioned. There is no path by which $n_{i+1}$ can be created with a scope that is not a strict descendant of $R(n_i)$. By transitivity of subset refinement, $R(n_{i+1})$ is therefore a descendant refinement of $h(n_0)$'s intent. The inductive step holds.
+
+By induction, the drift prevention property holds for all $i$ in $C$. No node in the chain can exhibit behavior outside the authorized intent of its human anchor. $\square$
+
+\medskip\noindent\textbf{Corollary (Structural necessity of the triad).} The drift prevention guarantee depends on three structural elements working in concert:
+
+\begin{enumerate}
+  \item[(A)] The immutable parent pointer $\alpha(n)$ (Fact Layer) --- prevents $n_{i+1}$ from severing its connection to $n_i$ after provisioning.
+  \item[(B)] The forensic ledger (Fact Layer) --- provides the tamper-evident, hash-chained record that makes scope provenance permanently auditable.
+  \item[(C)] Chain termination at the Purpose Layer human anchor --- ensures the terminus is human, not machine, preventing the chain from looping back into autonomous drift.
+\end{enumerate}
+
+Removing any one element from the triad breaks the guarantee. Without (A), a drifted node could re-parent to a non-ancestor, orphaning itself from the human anchor's accountability chain. Without (B), the scope provenance record is mutable and the audit trail can be retroactively altered. Without (C), the chain terminates at a machine actor and the upstream BX3 accountability guarantee collapses. The drift prevention proof is a proof about the structural necessity of the triad, not merely the empirical correctness of the RSP implementation.
+
+% ------------------------------------------------------------
+\subsection{Chain Integrity}
+\label{sec:rs-chain-integrity}
+
+\begin{thrm}[Chain Integrity]
+\label{thrm:chain-integrity}
+For any chain $C = \langle n_0, n_1, \ldots, n_k \rangle$ produced by RSP, the parent pointer relation $\alpha(n_i) = n_{i-1}$ holds for all $i \in \{1, \ldots, k\}$, and no retroactive modification of any $\alpha(n_i)$ or any ledger entry $\ell_j$ is possible by any machine actor.
+\end{thrm}
+
+\medskip\noindent\textbf{Proof sketch.} Chain integrity follows from two Fact Layer mechanisms operating in mandatory concert.
+
+\medskip\noindent\textit{Immutability of the parent pointer.} $\alpha(n_i)$ is assigned exactly once at provisioning and is thereafter permanently immutable by structural constraint, not access control policy. No operation exists --- privileged or otherwise --- that can modify or delete a parent pointer after assignment. This guarantees the parent-child topology of $C$ is fixed at provisioning and is never altered.
+
+\medskip\noindent\textit{Forensic ledger tamper-evidence.} Each ledger entry $\ell_j$ contains $\text{hash}(\ell_{j-1})$, creating a cryptographically linked chain. Any retroactive insertion, deletion, reordering, or modification of an entry breaks hash continuity and is detectable in $O(1)$ time by any observer with ledger read access. The ledger provides a tamper-evident surface for chain topology: every spawn event, every state transition, and every configuration is permanently recorded and permanently legible.
+
+The combination establishes that for chain $C$: (a) the parent-child topology is immutably fixed at provisioning, and (b) the complete authorization history is permanently auditable with cryptographic integrity verification. Chain integrity is not merely a property of the current chain state --- it is a property of the entire historical record, enforceable at any future time. $\square$
+
+% ------------------------------------------------------------
+\subsection{Termination}
+\label{sec:rs-termination}
+
+\begin{thrm}[Termination]
+\label{thrm:termination}
+Every RSP chain $C = \langle n_0, n_1, \ldots, n_k \rangle$ terminates --- either at a resolution state or at the escalation threshold --- within a finite number of spawn steps bounded by $\max(D_{\max}, D_{\mathrm{ESCALATE}})$.
+\end{thrm}
+
+\medskip\noindent\textbf{Proof sketch.} The proof establishes two lemmas and combines them.
+
+\medskip\noindent\textit{Lemma 1 (Depth-bounded growth).} The chain grows only through spawn events. By the Bounds Engine depth enforcement, any spawn event producing $|C| \geq D_{\max}$ is rejected by the Fact Layer pre-commit hook. Therefore the chain cannot exceed depth $D_{\max} - 1$ through autonomous spawn. Rejected spawns are logged; the Bounds Engine transitions to \texttt{ESCALATING}. Autonomous chain growth is thus bounded by $D_{\max}$.
+
+\medskip\noindent\textit{Lemma 2 (Escalation-triggered halt).} If the chain reaches $D_{\mathrm{ESCALATE}}$ before resolving the exception condition, the protocol enters \texttt{ESCALATING} state and suspends all autonomous spawn activity. The Bounds Engine enters quiescent hold, awaiting a directive from $h(n_k)$ --- the human anchor. No further spawn events occur until $h(n_k)$ issues \texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT}. Since $h(n_k)$ is a human principal, a directive arrives in finite time. \texttt{REJECT} terminates the chain definitively; \texttt{RESOLVE} redirects behavior and records a new ledger entry; \texttt{ACK} permits continued operation under Purpose Layer authorization.
+
+\medskip\noindent\textit{Theorem conclusion.} Combining Lemma 1 and Lemma 2: the chain grows autonomously at most $D_{\max} - 1$ spawn steps. If it reaches $D_{\mathrm{ESCALATE}}$ before resolution, it halts and escalates. If it reaches $D_{\max}$ before resolution, the Fact Layer blocks further spawn and triggers mandatory escalation. In all execution paths, the chain reaches a terminal state within $\max(D_{\max}, D_{\mathrm{ESCALATE}})$ spawn steps. Since both $D_{\max}$ and $D_{\mathrm{ESCALATE}}$ are finite integers defined at provisioning, the chain terminates in finite time. $\square$
+
+The termination guarantee also precludes infinite spawn-escalate cycles. When $D_{\max}$ is reached, the Fact Layer blocks further spawn and triggers mandatory escalation. The human anchor's \texttt{REJECT} directive terminates the chain. There is no mechanism by which the chain can circumvent this bound and re-enter autonomous spawn --- the Fact Layer pre-commit hook is structural, not configurable at runtime by any machine actor.
+
+% ------------------------------------------------------------
+\subsection{Collective Guarantee}
+\label{sec:rs-collective-guarantee}
+
+Together, the three correctness properties constitute RSP's overall guarantee: a spawn chain is an accountable, bounded, and auditable refinement process that terminates in human judgment.
+
+\medskip\textbf{Drift prevention} ensures that scope refinement is the only authorized direction of chain growth. Without it, successive scope expansions could gradually migrate the chain's operating scope away from the human anchor's intent --- an autonomy runway within an otherwise bounded-depth chain. The depth-limit insufficiency argument (Section~\ref{sec:rs-depth-limit}) establishes that depth bounds alone cannot prevent this; scope refinement enforcement is independently required.
+
+\medskip\textbf{Chain integrity} ensures the chain topology is stable and tamper-evident. Without it, an adversarial actor could manipulate chain parentage or configuration to redirect accountability or obscure the provenance of a spawned node --- a form of accountability laundering. The immutable parent pointer and ledger immutability together ensure that every node's lineage and configuration are fixed at provisioning and auditable at any future time.
+
+\medskip\textbf{Termination} ensures the chain cannot grow indefinitely and cannot sustain an infinite spawn-escalate cycle. Without it, an unresolvable exception condition could drive unbounded chain growth exceeding any human's supervisory capacity, defeating the upstream BX3 accountability guarantee by overwhelming the human anchor.
+
+Together these properties guarantee that a Recursive Spawning chain is an accountable, bounded, and auditable refinement process: it grows only in authorized directions (drift prevention), preserves the topology established at provisioning (chain integrity), halts within a Purpose-defined depth bound (termination), and maintains a complete forensic record of every decision point (Fact Layer). This is the operational expression of the upstream BX3 accountability guarantee applied to recursive agent populations.

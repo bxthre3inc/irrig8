@@ -1,0 +1,48 @@
+\documentclass[11pt,oneside]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\usepackage{ntheorem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black}
+
+\newtheoremstyle{bx3plain}
+  {\item[\hsize=\fullwidth]{}}
+\theoremstyle{bx3plain}
+\newtheorem{invariant}{Invariant}
+\newtheorem{property}[invariant]{Property}
+\newtheorem{assumption}[invariant]{Assumption}
+\newtheorem{theorem}{Theorem}
+
+% Shorthand
+\newcommand{\bxthree}{BX3}
+\newcommand{\purpose}{\textit{Purpose}}
+\newcommand{\bounds}{\textit{Bounds}}
+\newcommand{\fact}{\textit{Fact}}
+
+\begin{document}
+
+% Section 1 — Introduction
+\input{BailoutProtocol_Section1_Introduction.tex}
+
+% Section 2 — Background
+\input{BailoutProtocol_Section2_Background.tex}
+
+% Section 3 — The Bailout Protocol
+\input{BailoutProtocol_Section3.tex}
+
+% Section 4 — Implementation in the BX3 Framework
+\input{BailoutProtocol_Section4_Implementation_FINAL.tex}
+
+% Section 5 — Guarantees and Correctness Properties
+\input{BailoutProtocol_Section5_Guarantees.tex}
+
+% Section 6 — Limitations and Future Work
+\input{BailoutProtocol_Sections_6_7.tex}
+
+% Section 7 — Conclusion
+\input{BailoutProtocol_Section7_Conclusion.tex}
+
+\end{document}

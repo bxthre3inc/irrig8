@@ -1,0 +1,32 @@
+name: literature_review
+description: "Conduct literature review on specified topic."
+version: 1.0.0
+role: researcher
+inputs:
+  - name: research_topic
+    type: document
+    source: s3://research-bucket/topics/
+outputs:
+  - name: review_report
+    type: document
+    destination: s3://research-bucket/reports/
+steps:
+  - name: search_literature
+    action: search
+    tool: zotero
+    parameters:
+      keywords: ["machine learning", "neural networks"]
+  - name: organize_references
+    action: organize
+    tool: zotero
+    parameters:
+      collection: "Literature Review"
+  - name: write_report
+    action: write
+    tool: latex
+    parameters:
+      document_class: report
+constraints:
+  max_retries: 1
+  timeout: 21600
+version: 1.0.0

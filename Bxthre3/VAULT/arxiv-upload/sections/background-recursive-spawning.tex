@@ -1,0 +1,111 @@
+\section{Background}
+
+% ============================================================
+% 2.1 Agent Lifecycle Management in Multi-Agent Systems
+% ============================================================
+
+Modern AI systems increasingly employ multiple autonomous agents to solve complex, long-horizon tasks. An agent's lifecycle spans creation, tool invocation, sub-agent spawning, error recovery, and eventual termination. Managing this lifecycle robustly is a foundational challenge for production-grade multi-agent systems (MAS).
+
+The \textbf{Agent Lifecycle Toolkit (ALTK)} defines six checkpoint stages within an agent's execution loop: post-user input, pre-prompt conditioning, post-LLM output, pre-tool validation, post-tool result, and pre-final response assembly~\cite{arxiv:2603.15473}. Each stage presents distinct failure modes---misinterpreted tool arguments, silent reasoning errors, policy violations, and cascading propagation of bad outcomes. Enterprise MAS deployments require lifecycle-aware middleware that can detect, repair, and mitigate failures at each checkpoint without destabilizing the broader workflow.
+
+Complementing ALTK's checkpoint model, \textbf{Agentic Services Computing (ASC)} formalizes a four-phase lifecycle: Design, Deployment, Operation, and Evolution~\cite{arxiv:2509.24380v1}. ASC treats services not as static functions but as living, goal-driven participants whose interfaces, intents, and behaviors evolve through environmental interaction. The ASC lifecycle emphasizes that agent termination is not a terminal state but a transition point that should preserve accumulated context for audit and for downstream handoff.
+
+In the protocol layer, surveys of agent interoperability protocols identify four major standards that collectively manage lifecycle phases: \textbf{Model Context Protocol (MCP)} handles secure tool invocation and context ingestion; \textbf{Agent Communication Protocol (ACP)} provides RESTful session-aware messaging; \textbf{Agent-to-Agent Protocol (A2A)} enables peer-to-peer task delegation via capability-based Agent Cards; and \textbf{Agent Network Protocol (ANP)} supports decentralized marketplace-style discovery~\cite{arxiv:2604.02369}. A phased adoption roadmap recommends starting with MCP for secure tool access within lifecycles, layering ACP for structured messaging, introducing A2A for cross-agent coordination, and advancing to ANP for decentralized ecosystems.
+
+\textbf{HASHIRU} demonstrates a hierarchical, resource-aware lifecycle management model where a central CEO agent dynamically instantiates and retires specialized employee agents based on task demands, cost constraints, and memory pressure~\cite{arxiv:2506.04255}. Agents autonomously create API tools, manage persistent memory, and adapt their tool suites as tasks evolve, illustrating that lifecycle management is not merely about start and end points but about continuous capability extension and retraction throughout an agent's active lifespan.
+
+The autonomy taxonomy for data agents ranges from Level-0 (no autonomy) to Level-5 (full autonomy), with Proto-L3 systems beginning to autonomously orchestrate end-to-end workflows under human supervision~\cite{arxiv:2602.04261}. This taxonomy clarifies accountability boundaries: as agents gain lifecycle autonomy, the corresponding governance and traceability requirements scale proportionally, necessitating formal models that can express lifecycle properties in temporal logic~\cite{arxiv:2510.14133v2}.
+
+% ============================================================
+% 2.2 Accountability and Provenance in Distributed Systems
+% ============================================================
+
+Distributed agent systems introduce a fundamental accountability challenge: when a task flows through multiple agents and tools, who is responsible for the final outcome? Traditional provenance models from data management are insufficient because agentic workflows are non-deterministic, involve LLM inference, and produce interleaved prompts, responses, and tool-call chains that are difficult to attribute retroactively.
+
+\textbf{PROV-AGENT} extends the W3C PROV model via MCP to capture fine-grained, agent-centric provenance metadata including prompts, responses, decisions, and their linkage to broader workflow context~\cite{arxiv:2508.02866}. PROV-AGENT enables post-hoc reconstruction of how agent decisions propagated through a workflow, supporting error diagnosis, audit trails, and regulatory compliance in edge, cloud, and HPC environments. By integrating agent-level provenance with end-to-end workflow tracing, systems can answer counterfactual questions such as ``at which decision point could the error have been detected and corrected?''
+
+The \textbf{Human Delegation Provenance Protocol (HDP)} addresses the human-in-the-loop accountability gap by creating a cryptographically bound, append-only chain of custody from root human authorization through each agent hop~\cite{IETF:draft-helixar-hdp-agentic-delegation}. An HDP token specifies delegation scope and session; each agent appends a signed hop, forming a tamper-evident provenance chain verifiable offline using only the issuer's public key and session ID. HDP directly addresses prompt-injection attacks and chain-of-authority ambiguities by preserving an auditable delegation trail that downstream agents can independently verify.
+
+\textbf{Warrant Certificate Authorities (WCA)} extend this model with cryptographic attestation of data provenance across tool-call chains, drawing on supply-chain security practices (SLSA, in-toto) and OS provenance models (IMA, CamFlow)~\cite{IETF:draft-bondar-wca-00}. WCA introduces graduated trust levels (WAL-0 to WAL-3) analogous to SLSA build levels, providing a graduated verification scheme for attestation chains. This enables reference-monitor properties---complete mediation, tamperproofness, and verifiability---across distributed agent-tool interactions.
+
+Beyond single-chain provenance, \textbf{Adaptive Accountability in Networked MAS} combines lifecycle-aware audit ledgers with decentralized sequential hypothesis tests to detect emergent norms (collusion, resource hoarding) in real time~\cite{arxiv:2512.18561}. The framework intervenes via local policy updates and reward shaping, with a bounded-compromise theorem guaranteeing that if intervention costs exceed adversary payoff, compromised interactions remain bounded below unity. This work demonstrates that provenance data becomes operationally actionable only when coupled with detection and intervention mechanisms.
+
+The \textbf{BAID (Binding Agent ID)} framework provides verifiable user-code binding using three orthogonal mechanisms: biometric operator authentication, decentralized on-chain identity management, and zkVM-based code-level authentication via recursive proofs~\cite{arxiv:2512.17538}. BAID ensures that each agent action can be cryptographically traced to a bound operator and a verified code state, addressing scenarios where agent identity and configuration integrity must be provably maintained across distributed deployments.
+
+% ============================================================
+% 2.3 Fixed vs. Mutable Delegation Chains
+% ============================================================
+
+A delegation chain records the sequence of principals and agents that authorized and executed each step of a workflow. Two fundamentally different design philosophies govern chain mutability.
+
+\textbf{Fixed delegation chains} are immutable once established. The chain of custody is append-only; no agent can retroactively modify, remove, or insert hops after the fact. Fixed chains provide strong provenance guarantees and simplify audit by ensuring that every hop is permanently recorded. However, fixed chains are brittle in dynamic environments: if an agent fails, its parent cannot re-delegate its role to a new agent without breaking the original chain's integrity. Fixed chains are well-suited to regulated environments where auditability outweighs operational flexibility, such as financial compliance, medical AI, and legal automation.
+
+\textbf{Mutable delegation chains} allow retroactive modification of the delegation graph---agents can be added, removed, roles reassigned, or scopes adjusted at runtime. Mutable chains enable dynamic load balancing, fault tolerance, and adaptive task decomposition. However, mutability introduces provenance fragility: retroactive changes can invalidate audit trails, obscure the true sequence of decisions, and complicate attribution. Mutable chains are therefore most appropriate in sandboxed or research environments where operational flexibility is prioritized over immutable audit.
+
+\textbf{AGENTHIVE} treats delegation as a first-class primitive, enabling recursive spawning where any agent can dynamically spawn and coordinate sub-agents without a central orchestrator~\cite{openreview:iuZ5AIGmBm}. The delegation graph in AGENTHIVE is task-adaptive and emergent rather than predefined; agents form trees, forests, or star topologies on demand. This recursive delegation model demonstrates that the delegation chain's structure is itself a first-class artifact that should adapt to task demands, not a static configuration.
+
+\textbf{Implicit Execution Tracing (IET)} addresses the provenance challenge in mutable chains by embedding agent-specific, secret-keyed signals directly into token distributions during generation, turning the output text into a self-describing execution trace~\cite{arxiv:2603.17445}. At detection time, a transition-aware scoring method reconstructs the interaction topology from plain output without relying on external metadata logs. IET enables privacy-preserving auditing even when delegation chains are modified after the fact.
+
+The fundamental tension between fixed and mutable delegation has motivated hybrid approaches. The \textbf{BX3 Framework} (detailed in Section 3) resolves this tension through an immutable parent-chain model: delegation hops are recorded as immutable events, but the delegation graph itself is allowed to grow dynamically, preserving full provenance without sacrificing operational flexibility.
+
+% ============================================================
+% 2.4 Hierarchical Task Decomposition in AI
+% ============================================================
+
+Hierarchical task decomposition (HTD) is the process by which a complex goal is recursively broken into subgoals, each potentially handled by a specialized agent or sub-process. HTD is a core enabler of scalability in multi-agent systems, as it allows parallel processing of independent sub-tasks and bounded context windows at each level of the hierarchy.
+
+\textbf{ReAcTree} introduced a hierarchical LLM agent tree framework where a complex goal is decomposed into subgoals handled by dynamically constructed agent nodes within a tree structure~\cite{arxiv:2511.02424}. Control flow nodes coordinate execution strategies across agent nodes, and two complementary memory systems---episodic memory for goal-specific examples and working memory for environment-specific observations---maintain coherence across the hierarchy. Empirically, ReAcTree approximately doubles the goal success rate of flat ReAct baselines on long-horizon planning tasks.
+
+\textbf{AgentOrchestra} organizes problem-solving around a central planning agent that decomposes high-level objectives into sub-tasks and delegates them to specialized sub-agents with domain-specific capabilities~\cite{arxiv:2506.12508v3}. The framework achieves approximately 83.39\% average score on the GAIA benchmark, ranking among top general-purpose agents, by coupling explicit sub-goal formulation with an MCP Manager Agent that dynamically creates, retrieves, and reuses tools across the hierarchy.
+
+\textbf{HiMAC} decouples decision-making into macro-level planning (high-level blueprints) and micro-level execution (goal-conditioned actions)~\cite{arxiv:2603.00977v1}. This bi-level hierarchy improves robustness and sample efficiency for long-horizon tasks where flat autoregressive policies struggle with exploration, error accumulation, and planning across many steps. Critically, HiMAC demonstrates that structured hierarchy, not merely increased model size, enhances long-horizon agentic intelligence.
+
+\textbf{STRUCTUREDAGENT} combines online hierarchical planning via dynamic AND/OR trees with a structured memory module that tracks candidate solutions and historical reasoning~\cite{arxiv:2603.05294v1}. The approach addresses key weaknesses of existing web agents: limited in-context memory, poor long-horizon planning, fragile error recovery, and premature greedy termination. By maintaining interpretable hierarchical plans, STRUCTUREDAGENT enables human intervention and debugging at any level of the decomposition.
+
+\textbf{TDAG} dynamically decomposes complex tasks into subtasks and generates specialized subagents on the fly, addressing error propagation and adaptability shortcomings of static, hard-coded agent systems~\cite{arxiv:2402.10178}. TDAG demonstrated superior adaptability and context awareness on ItineraryBench, a travel-planning benchmark with interconnected, progressively complex tasks.
+
+\textbf{Deep Agent} introduces the Hierarchical Task DAG (HTDAG) as a dynamic decomposition framework where high-level goals are broken into interrelated sub-tasks within a directed acyclic graph, with real-time adaptation as new information arrives~\cite{arxiv:2502.07056}. A recursive two-stage planner-executor enables ongoing refinement, and an Autonomous API and Tool Creation mechanism automatically generates reusable components from UI interactions, reducing operational costs for repetitive tasks.
+
+\textbf{Task-Decoupled Planning (TDP)} replaces entangled history-based planning with a directed acyclic graph of sub-goals, where scoped contexts constrain reasoning and replanning to the active sub-task only~\cite{arxiv:2601.07577}. This isolation reduces cascading failures, lowers token consumption by up to 82\%, and enables local corrections without disrupting the overall workflow.
+
+The collective evidence from these systems establishes HTD as a mature and well-studied paradigm. However, a persistent gap remains: existing HTD frameworks treat task decomposition as a computational concern but provide no unified substrate for recording the resulting delegation chains with immutable parentage. The BX3 Framework addresses this gap by treating the decomposition hierarchy itself as an accountability artifact.
+
+% ============================================================
+% 2.5 The BX3 Framework as Substrate for Immutable Parent Chains
+% ============================================================
+
+The BX3 Framework is designed around a central insight: in multi-agent systems, the parent-child relationships formed during task decomposition carry accountability-critical metadata that should be preserved with immutability guarantees. Unlike traditional delegation models where a parent agent spawns a child and retains only a weak reference (e.g., a session ID or callback URL), BX3 treats each spawning event as a first-class, auditable artifact.
+
+In BX3, every agent in a workflow has a unique identifier and a permanent ancestry trail: the chain of parent agents that authorized and spawned it. This ancestry is written to an append-only event log at the moment of spawning and cannot be retroactively modified. When a child agent completes (or fails), its outcome is recorded as an event linked to both the child and its parent, enabling full causal tracing from root human authorization to terminal task outcome.
+
+The framework distinguishes between two core record types: \textbf{SpawnEvent} records (which agent spawned which other agent, with what scope, at what logical timestamp, and with what initial context) and \textbf{OutcomeEvent} records (which agent completed or failed, with what result or error, and what side effects were produced). Together, these form a complete DAG of agent lifecycle events that preserves both hierarchical decomposition structure and causal outcome linkage.
+
+BX3's immutable parent-chain model resolves the fixed-versus-mutable delegation tension as follows: the delegation graph is allowed to grow dynamically (mutable topology), but every growth event is recorded immutably (fixed provenance). This means that at any point in time, the full history of who delegated what to whom is fully auditable, while the runtime system retains the flexibility to adapt the delegation structure to task demands.
+
+Critically, BX3 supports recursive spawning: an agent that has itself been spawned can, in turn, spawn additional sub-agents, forming a hierarchy of arbitrary depth. Each spawning event at each level independently records its parent, forming a chain of arbitrary length that can be traversed auditably from any descendant to any ancestor. This recursive property is what makes BX3 particularly suited to long-horizon, multi-level task decomposition tasks where the full depth of the hierarchy is unknown at design time.
+
+By combining the hierarchical decomposition capabilities established in the HTD literature with the provenance guarantees developed in the accountability literature, BX3 provides a unified substrate for building multi-agent systems where task decomposition, delegation, execution, and audit are treated as co-equal concerns rather than orthogonal afterthoughts.
+
+% ============================================================
+% REFERENCES
+% ============================================================
+% [1] ALTK: Agent Lifecycle Toolkit - arxiv:2603.15473
+% [2] ASC: Agentic Services Computing - arxiv:2509.24380v1
+% [3] Protocol survey multi-agent systems - arxiv:2604.02369
+% [4] HASHIRU: Hierarchical AI Resource Agent System - arxiv:2506.04255
+% [5] Data agent autonomy taxonomy - arxiv:2602.04261
+% [6] Formalizing safety/security agentic AI - arxiv:2510.14133v2
+% [7] PROV-AGENT: Provenance for AI agent workflows - arxiv:2508.02866
+% [8] HDP: Human Delegation Provenance Protocol - IETF:draft-helixar-hdp-agentic-delegation
+% [9] WCA: Warrant Certificate Authorities - IETF:draft-bondar-wca-00
+% [10] Adaptive Accountability Networked MAS - arxiv:2512.18561
+% [11] BAID: Binding Agent ID - arxiv:2512.17538
+% [12] Implicit Execution Tracing - arxiv:2603.17445
+% [13] AGENTHIVE: Delegation as first-class primitive - openreview:iuZ5AIGmBm
+% [14] ReAcTree: Hierarchical LLM Agent Trees - arxiv:2511.02424
+% [15] AgentOrchestra: Hierarchical Multi-Agent Framework - arxiv:2506.12508v3
+% [16] HiMAC: Hierarchical Macro-Micro Learning - arxiv:2603.00977v1
+% [17] STRUCTUREDAGENT: Hierarchical Planning Framework - arxiv:2603.05294v1
+% [18] TDAG: Task Decomposition Multi-Agent - arxiv:2402.10178
+% [19] Deep Agent: Hierarchical Task DAG - arxiv:2502.07056
+% [20] TDP: Task-Decoupled Planning - arxiv:2601.07577

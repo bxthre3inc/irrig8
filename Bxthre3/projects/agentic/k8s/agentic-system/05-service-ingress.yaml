@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentic-api-service
+  namespace: agentic
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 5182
+      name: http
+  selector:
+    app: agentic-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-service
+  namespace: agentic
+spec:
+  type: ClusterIP
+  ports:
+    - port: 11434
+      targetPort: 11434
+      name: ollama
+  selector:
+    app: agentic-ollama
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agentic-ingress
+  namespace: agentic
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: agentic.brodiblanco.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: agentic-api-service
+                port:
+                  number: 80

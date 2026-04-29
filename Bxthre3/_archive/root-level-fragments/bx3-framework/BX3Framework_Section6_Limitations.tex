@@ -1,0 +1,265 @@
+\section{Limitations and Future Work}\label{sec:limitations}
+
+The three correctness properties established in Section~\ref{sec:correctness} are
+conditional guarantees: each holds under a defined set of structural and
+operational assumptions.  This section makes those assumptions explicit,
+characterizes the operational consequences of their failure, and maps each
+gap to a directed research agenda.  We identify four structural limitations
+that bound the framework's current specification and four future research
+directions that constitute the most direct extensions of this work.
+
+% --------------------------------------------------------------
+\subsection{Limitations}\label{sec:limitations:subsection}
+% --------------------------------------------------------------
+
+\subsubsection{Human Response Latency}\label{sec:human-response-latency}
+
+The \bxthree{} Framework's Liveness property guarantees eventual human contact
+within a bounded wall-clock interval, but the bound $T_{\max}$ is a function of
+network topology, retry parameters, and provisioned timeouts --- not of human
+cognitive response time.  For operational domains with time constants measured
+in milliseconds (high-frequency trading, real-time process control, autonomous
+vehicle navigation), the time required for a human principal to receive,
+interpret, and respond to an escalation may exceed the system's operational
+time horizon by one to two orders of magnitude.
+
+The framework's prescribed failure mode under latency stress is well-defined:
+the node stalls in \texttt{ESCALATING} until the anchor responds or all
+pathways time out.  This is the intended safety-preserving behavior ---
+a node that cannot reach its anchor is better held in \texttt{ESCALATING}
+than permitted to continue autonomous operation.  However, the operational
+cost of a stall is domain-dependent in ways the framework does not currently
+reason about.  In a precision agriculture context, a stall that delays a
+watering decision by minutes is acceptable; in a financial risk-interlock
+context, a stall that delays a margin-call response by even seconds may expose
+the system to catastrophic loss.  The framework treats the human anchor as a
+timing black box: it supplies a contact pathway but does not reason about
+whether delay reflects anchor overload, a structural mismatch between $T_{\max}$
+and the anchor's operational availability, or a persistent pathway failure.
+
+The deeper limitation is that human response latency is provisioned statically
+at node setup and is not sensitive to the anchor's current operational context.
+$T_{\max}$, $T_{\text{bounds}}$, $T_{\text{prop}}$, and $T_{\text{human}}$ are
+deployment parameters established by a system designer who lacks runtime
+visibility into anchor workload.  For latency-sensitive deployments, the entire
+provisioning burden falls on the designer to establish empirically grounded
+latency budgets and encode them as enforceable policy.  The framework provides
+the escalation mechanism; it does not yet provide the adaptive latency
+management that high-stakes, high-velocity deployments require.
+
+\textit{Directed research agenda:} Empirical characterization of human response
+latency distributions across deployment contexts to establish statistically
+grounded, domain-specific latency budgets.  Integration of these budgets into
+the node-provisioning interface as enforceable policy parameters with runtime
+monitoring dashboards.  Investigation of graded escalation responses: a protocol
+that requests a rapid \texttt{ACK} followed by a detailed directive would better
+match the operational reality of human decision-making under varying cognitive
+loads, allowing the anchor to issue a brief acknowledgment that permits
+limited continued operation while a full directive is prepared.
+
+\subsubsection{Adversarial Conditions}\label{sec:adversarial-conditions}
+
+The Safety property requires that human-contact pathways cannot be permanently
+closed without recorded human authorization.  This guarantee holds under the
+assumption that the host platform provides independent scheduling priority to
+the Bailout Monitor (Assumption A1.1 in Section~\ref{sec:correctness}).  In an
+adversarial environment --- particularly one in which the host platform itself
+may be compromised --- this assumption may not hold.  A sophisticated attacker
+controlling the execution substrate can modify thread priorities, preempt the
+monitor thread, introduce race conditions into pathway-closure operations, or
+rewrite the Bailout Monitor's code before it executes.  In such a scenario, the
+monitor can be silenced without the Fact Layer's pre-commit hook observing the
+intervention, because the hook itself depends on scheduling invariants that the
+attacker has invalidated.
+
+The framework's guarantees are platform guarantees.  They rest on invariants
+that the host platform must supply: non-preemptible monitor scheduling,
+append-only persistence for the authorization and forensic ledgers, and
+interruptible blocking calls for pathway management.  The \bxthree{} Framework
+is designed for production AI deployments in which individual agents may behave
+unexpectedly but the host platform is trusted --- the standard assumption for
+regulated industries, enterprise AI deployments, and critical infrastructure
+operators who maintain their own compute substrate.  It is not designed for
+deployments in which the platform itself is an active adversary: national
+infrastructure control systems, military command-and-control environments, or
+financial clearinghouse infrastructure where an attacker may holdprivileged
+access to the runtime.
+
+\textit{Directed research agenda:} Formal specification of the composition
+interface between the \bxthree{} Framework and substrate-integrity mechanisms.
+Investigation of whether the framework's guarantees can be preserved under
+weaker platform assumptions, including partially compromised substrates.
+Exploration of hardware-attested execution environments (e.g., Intel SGX,
+ARM TrustZone) as a deployment target for the Bailout Monitor, eliminating the
+OS kernel as a trusted computing base dependency.  Formal analysis of the
+minimum substrate integrity guarantees required to sustain the Safety and
+Liveness invariants under adversarial host conditions.
+
+\subsubsection{Scalability}\label{sec:scalability}
+
+The \bxthree{} Framework is specified with a 1:1 relationship between each node
+and its human anchor.  This model is appropriate for single-node deployments
+or small-scale systems, but it creates a structural bottleneck in enterprise
+contexts where one anchor may supervise hundreds of concurrent nodes.  Without
+pooling and load-balancing mechanisms, the human anchor becomes the
+rate-limiting step in a system whose design intent is to route exceptions away
+from centralized machine decision points --- a goal that is undermined when
+all exceptions must still pass through a single human decision-maker.
+
+The current specification treats human anchoring as a static 1:1 relationship
+established at node provisioning and immutable for the node's operational
+lifetime.  This model must evolve to support at minimum 1:N relationships (one
+anchor supervising multiple nodes with workload pooling) and, in advanced
+deployments, N:M relationships (anchor pools with load balancing and dynamic
+routing).  The correctness properties of the framework must be shown to extend
+to these pooled configurations: in particular, the Safety property requires
+that \emph{no pooling configuration may produce a state in which all
+human-contact pathways for a given node are permanently disabled}.
+
+Additional scalability considerations arise from spawn tree depth.  As the
+depth of the accountability chain grows through recursive spawning, the time
+to propagate an exception to the anchor grows proportionally, and the interaction
+between chain depth, propagation latency, and timeout configuration becomes a
+first-order design constraint.  The current timeout analysis assumes a fixed
+chain length; large-scale multi-agent deployments with chains of depth 10--50
+require a revised timeout architecture that accounts for cumulative propagation
+delay.
+
+\textit{Directed research agenda:} Formal specification of human anchor pool
+architectures, including load-balancing policies, prioritization schemes, and
+routing algorithms.  Extension of Safety and Liveness proofs to pooled anchor
+configurations with formally verified pathway-redundancy guarantees ---
+specifically, that each node maintains at least two concurrently accessible anchor
+pathways and that pool depletion does not reduce this below one without
+triggering a system-wide stall.  Empirical evaluation of anchor pool
+performance under simulated high-escalation-load conditions, and
+characterization of the interaction between spawn tree depth and effective
+escalation latency.
+
+\subsubsection{Risk of Exploitation via Strategic Misclassification}\label{sec:exploitation-risk}
+
+The Bailout Protocol's trigger condition (TC) relies on the Bounds Engine's
+self-assessment that a condition falls outside the provisioned operating range
+$R(n)$.  This self-assessment is a machine inference --- a classification ---
+and as such it is vulnerable to systematic misclassification.  A Bounds Engine
+that has been prompt-injected, fine-tuned on adversarial data, or manipulated
+through crafting of operating-environment conditions could learn to classify
+genuinely out-of-scope conditions as within-scope, suppressing warranted
+bailout initiation without leaving any trace in the Forensic Ledger that would
+distinguish the suppression from a correct within-scope resolution.
+
+The trigger condition TC is not independently verified.  The Fact Layer enforces
+the \emph{consequences} of trigger activation --- it cannot observe whether the
+trigger condition was correctly evaluated.  This creates an exploitable gap:
+an adversarial agent that gains influence over the Bounds Engine's classification
+logic can effectively disable the Bailout Protocol at the node level, because
+the protocol can only activate if the Bounds Engine chooses to signal it.  The
+no-machine-actor-absorbs property applies to the escalation pathway, but it does
+not protect the trigger condition itself from strategic misclassification at its
+source.
+
+This limitation is distinct from the adversarial substrate problem
+(Section~\ref{sec:adversarial-conditions}) because it requires no privileged
+access to the host platform.  It operates at the application layer, exploiting
+the fact that the trigger condition is a classification rather than a
+verifiable physical measurement.  It is the most operationally relevant
+limitation for deployments in adversarial environments where the agent code
+itself is the attack surface.
+
+\textit{Directed research agenda:} Design of triggering-behavior anomaly
+detectors that audit the statistical relationship between observed exception
+conditions and triggered escalations per node over rolling observation windows.
+A node that never triggers escalation despite operating in conditions that
+frequently trigger escalation in comparable peers is a candidate for
+misclassification.  Investigation of provenance attestation for operating-range
+assessments: requiring that each Bounds Engine self-assessment be
+counter-signed by an independent audit process, making post-hoc
+misclassification detectable through forensic reconstruction.  Formal analysis
+of the minimum verification overhead required to close the trigger-condition
+gap without introducing prohibitive performance costs.
+
+% --------------------------------------------------------------
+\subsection{Future Work}\label{sec:future-work}
+% --------------------------------------------------------------
+
+The following research directions constitute the most direct extensions of the
+current specification.  Each is motivated by a specific limitation identified
+above, and each represents a principled research program beyond the scope of
+this paper.
+
+\subsubsection{Formal Verification of the \bxthree{} State Machines}\label{sec:formal-verification}
+
+The current paper establishes the Safety, Liveness, and Accountability
+invariants through proof sketches that trace structural arguments through the
+protocol's specification.  While these arguments are rigorous, they are not
+mechanically verified.  Full mechanical verification using a formal
+verification tool --- Coq, Isabelle/HOL, or TLA$+$\nolinebreak --- applied to
+the \bxthree{} three-layer model and all five pillar state machines is a
+precondition for deployment in regulated industries where certification against
+formal safety arguments is required.
+
+The verification program should target three specific deliverables: (1) a
+mechanically checked proof of Safety for the Bailout Protocol state machine
+under the stated structural assumptions; (2) a mechanized proof of Liveness
+that accounts for the timeout architecture and does not assume fairness of the
+human anchor; and (3) a formal specification of the composition interface between
+the \bxthree{} three-layer model and the substrate integrity layer, enabling
+certification arguments that span both the framework and its deployment
+environment.
+
+\subsubsection{Adaptive Timeout Mechanisms}\label{sec:adaptive-timeouts}
+
+Replacement of static timeout parameters ($T_{\text{bounds}}$,
+$T_{\text{prop}}$, $T_{\text{human}}$) with adaptive mechanisms that adjust to
+anchor workload, observed pathway latency, and deployment context.  An
+adaptive timeout protocol would maintain the Safety invariant (the anchor is
+contacted within $T_{\max}$) while enabling shorter timeouts for high-fidelity
+anchors with low response latency and longer timeouts for anchors operating in
+low-consequence domains where temporary stalls are operationally tolerable.
+
+The adaptive mechanism must satisfy two constraints simultaneously: it must
+not reduce $T_{\max}$ below the time required for the anchor to issue a binding
+directive, and it must not disable the stall-preserving behavior for nodes
+whose anchor is genuinely unreachable.  Meeting both constraints requires
+runtime inference over anchor response distributions and dynamic recomputation
+of effective timeout values per node per escalation.
+
+\subsubsection{Distributed Human Anchor Pools}\label{sec:anchor-pools}
+
+Formal specification and empirical evaluation of anchor pool architectures that
+sustain scalability under cascading failure conditions without compromising the
+no-machine-actor-absorbs property.  The central design challenge is that
+pooled configurations must preserve the Safety invariant --- that each node
+retains at least one architecturally mandated human terminus --- while enabling
+load distribution across multiple anchors.
+
+We propose a tiered pool architecture in which each node is assigned a primary
+anchor and a secondary anchor, where the secondary anchor activates only when
+the primary anchor's contact pathway has timed out $N_{\max}$ times without
+reaching the node's human-acknowledged state.  The secondary anchor assignment
+is itself a Fact Layer authorization ledger entry, immutable for the node's
+operational lifetime, ensuring that the two-anchor invariant is a structural
+property rather than a runtime configuration choice.  The routing algorithm
+must enforce that escalation to the secondary anchor bypasses intermediate
+machine actors with the same no-absorbs property as the primary escalation path.
+
+Formal verification of the pooled configuration requires proof that the
+two-anchor invariant implies Safety under all pool-depletion scenarios ---
+specifically, that pool depletion below two accessible anchors per node triggers
+a system-wide stall, not a fallback to autonomous operation.
+
+\subsubsection{Exploitation-Resistant Trigger Conditions}\label{sec:exploitation-resistant-triggers}
+
+A research program targeting the trigger-condition verification gap
+(Section~\ref{sec:exploitation-risk}) with three concrete directions:
+(1) behavioral anomaly detection via per-node statistical models of
+triggering frequency and type, enabling detection of systematic suppression;
+(2) provenance attestation for Bounds Engine self-assessments, requiring
+counter-signature from an independent Fact Layer audit process before a
+trigger condition is evaluated as false; and (3) cross-node correlation
+analysis in which the exception conditions observed by peer nodes at comparable
+depth and domain are used as reference signals to detect peer divergence from
+expected triggering behavior.  Each direction addresses a distinct attack
+surface in the trigger condition and together constitute a comprehensive
+counter-exploitation research program for the Bailout Protocol's trigger
+mechanism.

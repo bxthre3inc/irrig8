@@ -1,0 +1,112 @@
+\section{Pillar 1: Loop Isolation}\label{sec:pillar-loop-isolation}
+
+\subsection{Conceptual Motivation}
+
+Multi-agent systems composed from agents that observe each other's outputs, act on shared state, and recursively spawn sub-agents are structurally susceptible to feedback loops — cycles of mutual causation in which an agent's output influences its own input through a path that includes other agents. Feedback loops are not inherently harmful; they are the operational substrate of coordinated systems. They become dangerous when they are invisible — when the agents that participate in a cycle are unaware that they do, when the system's self-observation is distorted by the very activity it observes, or when a loop amplifies a perturbation into a runaway deviation before any human principal can intervene.
+
+Existing multi-agent frameworks that permit inter-agent state observation suffer from what we term \textit{loop entanglement}: each agent's observation function is a function of the global state, and the global state is a function of all agents' actions. In such architectures, any agent observing any part of the system is observing a quantity that its own actions have influenced — directly or through the chain of other agents' actions. The result is that the act of observing the system changes the system, and the system that is changed is the system being observed. In benign cases, this produces oscillatory behavior that stabilizes. In adversarial or novel conditions, it produces unbounded amplification: the system observes a deviation, acts to correct it, and the correction produces a larger deviation that the system again acts to correct.
+
+Loop Isolation addresses this at the architectural level. Rather than relying on agents to recognize and break cycles — a judgment that requires global knowledge the agent cannot possess — the \bxthree{} framework enforces isolation boundaries that prevent any cycle from spanning more than one loop. Each loop is a closed causal domain: agents within the loop may observe and act on each other, but the loop's boundary prevents its internal dynamics from propagating back into the external system as a causal force, and prevents external causal forces from entering the loop as unmediated inputs.
+
+The upstream accountability guarantee depends critically on Loop Isolation. If loops could propagate unbounded deviations across the agent network, the system state reaching the human anchor would be an amplification product of multiple nested cycles rather than a direct record of the originating exception. The human principal would receive distorted context, and the accountability record would conflate the original failure with the loop dynamics that followed it.
+
+\subsection{Formal Definition}\label{sec:loop-isolation-formal}
+
+A \bxthree{} loop $L$ is a directed acyclic graph (DAG) of nodes $\mathcal{N}(L)$ such that the causality relation $C \subseteq \mathcal{N}(L) \times \mathcal{N}(L)$ induced by observation and action dependencies is acyclic. The causality relation is defined by the inter-agent observation graph: for any two nodes $n, m \in \mathcal{N}(L)$, $(n, m) \in C$ if and only if the output of $n$ is an input to $m$ through direct observation or action dependency.
+
+The Loop Isolation invariant states that for every pair of nodes $n, m \in \mathcal{N}(L)$ that are causally linked through direct or transitive inter-agent observation, there exists no path from $m$ back to $n$ through the observation graph that does not pass through the loop's boundary interface. Formally:
+
+\begin{equation}
+\forall n, m \in \mathcal{N}(L) : (n \to^{*} m) \land (m \to^{+} n) \implies (n, m) \text{ cross the boundary of } L
+\end{equation}
+
+where $\to^{*}$ denotes the reflexive transitive closure of the causality relation and $\to^{+}$ denotes its transitive closure (excluding the reflexive case). This invariant is structural: it is enforced by the \fact{} layer's pre-commit hook at loop provisioning and cannot be violated by any machine actor at runtime.
+
+The boundary interface of loop $L$ consists of the set of permitted cross-boundary causal transmissions — an explicitly enumerated set of channels through which information may cross the loop's causal perimeter. Every cross-boundary transmission is intercepted by the interface controller and validated against this enumeration before it is permitted to propagate.
+
+\subsection{State Machine Formalism}\label{sec:loop-state-machine}
+
+The Loop Isolation mechanism is formally modeled as a deterministic finite state machine embedded in the \fact{} layer of every loop-capable node:
+
+\[
+\mathcal{L} \;=\; (Q_L,\; q_0^L,\; \Sigma_L,\; \rightarrow_L,\; Q_F^L)
+\]
+
+where:
+
+\begin{itemize}\itemsep=0pt
+\item $Q_L = \{\,\text{BOUNDARY\_OPEN},\; \text{BOUNDARY\_CLOSED},\; \text{LOOP\_ISOLATED},\; \text{LOOP\_TERMINATED}\,\}$ is the set of loop states;
+\item $q_0^L = \text{BOUNDARY\_OPEN}$ is the initial state, entered when loop provisioning begins;
+\item $\Sigma_L$ comprises boundary-establishment events $e_{\text{boundary}}$, loop-composition signals $e_{\text{compose}}$, violation events $e_{\text{violate}}$, isolation confirmation $e_{\text{isolated}}$, and human-authorized termination $e_{\text{terminate}}$;
+\item $\rightarrow_L \subseteq Q_L \times \Sigma_L \times Q_L$ is the deterministic transition relation (Table~\ref{tab:loop-transition});
+\item $Q_F^L = \{\text{LOOP\_TERMINATED}\}$ is the terminal accepting state.
+\end{itemize}
+
+\begin{table}[htbp]
+\caption{Loop Isolation state transition relation $\rightarrow_L \subseteq Q_L \times \Sigma_L \times Q_L$. Rows are current state; columns are input events. Blank cells indicate no defined transition.}
+\label{tab:loop-transition}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{Input event} \\
+\cmidrule(l){2-6}
+Current state & $e_{\text{boundary}}$ & $e_{\text{compose}}$ & $e_{\text{violate}}$ & $e_{\text{isolated}}$ & $e_{\text{terminate}}$ \\
+\midrule
+BOUNDARY\_OPEN & BOUNDARY\_CLOSED & — & — & — & — \\
+BOUNDARY\_CLOSED & — & LOOP\_ISOLATED & — & — & — \\
+LOOP\_ISOLATED & — & LOOP\_ISOLATED & BOUNDARY\_CLOSED & — & LOOP\_TERMINATED \\
+LOOP\_TERMINATED & — & — & — & — & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subparagraph{State definitions.}
+
+\begin{itemize}\itemsep=0pt
+\item[\textbf{BOUNDARY\_OPEN.}] The loop is being provisioned and its causal boundary is being defined. The \purpose{} layer is establishing the permitted cross-boundary channels, the interface controller configuration, and the set of participating nodes $\mathcal{N}(L)$. No agent may transmit causal signals across the prospective boundary during this state.
+
+\item[\textbf{BOUNDARY\_CLOSED.}] The loop's causal boundary is fully defined and the interface controller is active. Inter-agent causal transmissions within $L$ proceed normally. Cross-boundary transmissions are intercepted by the interface controller and validated against the permitted channel list. The loop has not yet received confirmation that all participating nodes have acknowledged the isolation boundary.
+
+\item[\textbf{LOOP\_ISOLATED.}] All participating nodes have acknowledged the isolation boundary and the loop is operating in full isolation. Cross-boundary causal transmissions are logged and validated; within-loop transmissions proceed without interception. If a violation event is detected (a causal signal attempting to cross the boundary outside the permitted channel list), the machine transitions to BOUNDARY\_CLOSED — the boundary is suspended until the violation is reviewed by the human anchor.
+
+\item[\textbf{LOOP\_TERMINATED.}] The loop has been explicitly terminated by human authorization. All participating nodes are halted, the final loop state is recorded in the Forensic Ledger, and no further causal transmissions are permitted. This is the only state from which the loop's history can be archived.
+\end{itemize}
+
+\subsection{Invariants}\label{sec:loop-invariants}
+
+Two invariants govern the Loop Isolation state machine and the loop's causal structure throughout its lifecycle.
+
+\begin{invariant}[Acyclicity Invariant]\label{inv:loop-acyclicity}
+For every loop $L$, the causality relation $C$ induced by observation and action dependencies among $\mathcal{N}(L)$ is acyclic. Formally: there exists no sequence $n_1, n_2, \ldots, n_k$ with $k \geq 2$ such that $(n_i, n_{i+1}) \in C$ for all $i = 1, \ldots, k-1$ and $(n_k, n_1) \in C$.
+\end{invariant}
+
+\subparagraph{Enforcement.} The \fact{} layer's pre-commit hook evaluates the acyclicity condition whenever a new inter-agent observation dependency is added to the loop's causality graph. If the addition would create a cycle, the hook rejects the dependency and records a \texttt{causality-cycle-detected} event in the Forensic Ledger. The cycle cannot be created through any machine-actor action.
+
+\begin{invariant}[Boundary Integrity Invariant]\label{inv:loop-boundary}
+During the LOOP\_ISOLATED state, all cross-boundary causal transmissions from $L$ to any external node pass through the interface controller, and all such transmissions are recorded in the Forensic Ledger with both endpoints and the direction of information flow.
+\end{invariant}
+
+\subparagraph{Enforcement.} The interface controller is implemented as a pre-commit hook in the \fact{} layer. Any attempt to transmit a causal signal across the loop boundary without passing through the controller is intercepted and rejected. The rejection event is recorded in the Forensic Ledger and triggers the BOUNDARY\_CLOSED transition.
+
+The boundary integrity invariant ensures that the loop's causal perimeter is not just a conceptual boundary but an architecturally enforced one. The human anchor reviewing a loop's execution history can reconstruct the complete causal topology of the loop from the Forensic Ledger entries.
+
+\subsection{Relationship to the Three-Layer Model}\label{sec:loop-three-layer}
+
+The \purpose{} layer defines the scope and causal boundary of each loop at provisioning time, including which inter-agent observation paths are permitted within the loop and which external inputs are routed through the boundary interface. The layer also establishes the permitted cross-boundary channel list and configures the interface controller.
+
+The \bounds{} layer evaluates whether an inter-agent observation crosses the isolation boundary — a decision that is a deterministic bounds check against the declared boundary definition, not a judgment call. When the \bounds{} layer detects a proposed cross-boundary transmission that is not in the permitted channel list, it emits a \texttt{bailout\_signal} and the transmission is blocked.
+
+The \fact{} layer enforces that all causal paths crossing the loop boundary are routed through the interface controller, maintains the loop registry as an append-only data structure, and records all cross-boundary transmissions in the Forensic Ledger. When a node spawns a sub-loop, the \fact{} layer records the child loop's identifier in the parent's loop registry and establishes the child's isolation boundary as a child of the parent's boundary — a hierarchical isolation structure that ensures loop topology is auditable at any depth.
+
+The hierarchical isolation structure means that child loops inherit their parent loop's boundary as a constraint: a child loop's causal domain must be a proper subset of its parent loop's causal domain. This prevents the recursive spawning mechanism from creating a loop that spans the parent's boundary, which would undermine the isolation guarantee.
+
+Loop Isolation is not a configuration choice available to agents. The causal boundary is established at loop provisioning by the \purpose{} layer and is enforced by the \fact{} layer's deterministic logic. An agent within a loop cannot override the isolation boundary any more than it can override the operating range constraint in the Bailout Protocol — the boundary is a structural property of the architecture, not a policy choice made by the agent.
+
+\subsection{Relationship to the Upstream Accountability Guarantee}\label{sec:loop-uag}
+
+The upstream accountability guarantee requires that the human anchor $h(n)$ receives a faithful representation of the exception state that triggered the escalation. If loops could propagate unbounded deviations across the agent network, the system state reaching $h(n)$ would be a distorted amplification of the original exception rather than the exception itself. The human principal would be adjudicating the consequences of loop dynamics rather than the originating failure, and the accountability record would conflate two distinct events that require different responses.
+
+Loop Isolation ensures that this distortion cannot occur by construction. Each loop is a bounded causal domain: deviations within a loop remain within the loop until they reach the loop's boundary interface, at which point they are transmitted as discrete, attributable signals rather than as unbounded amplification. The human anchor receives each signal separately, with full attribution for its origin and propagation path within the loop.
+
+The Forensic Ledger records the complete loop topology for every node's accountability history. When an exception is escalated, the ledger entry includes the loop identifier, the node's position within the loop's causal graph, and the propagation path that carried the exception to the boundary. This allows a human principal reviewing the escalation to understand not only that an exception occurred, but the causal structure that carried it from origin to boundary — a reconstruction that would be impossible if loops could span arbitrary causal distances.
+
+The guarantee that Loop Isolation provides is therefore a prerequisite for the Bailout Protocol's guarantee of accountable escalation: if loops could violate isolation, the Bailout Protocol would escalate a distorted signal rather than the originating exception, and the human anchor's ability to make an informed adjudication would be compromised.

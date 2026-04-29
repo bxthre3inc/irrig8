@@ -1,0 +1,75 @@
+\section{The Autonomous Drift Problem}
+
+In any system where parent agents terminate or become unreachable after spawning children, the resulting orphaned agents continue operating without a designated supervisor. If those orphaned agents then spawn further agents, the chain of descent no longer connects to any human anchor point. We call an agent that is neither supervised by a living parent nor reachable from a human-anchored ancestor an \emph{drifted agent}. This section formally characterizes the conditions under which drift occurs, catalogues the failure modes it produces, and proves that na\"ive depth limiting is insufficient to prevent it.
+
+%────────────────────────────────────────
+\subsection{Formal Model}
+
+We model a spawning system as a directed acyclic graph $G = (V, E)$ where each vertex $v \in V$ represents an agent and each directed edge $(p, c) \in E$ represents the spawning relationship: agent $p$ is the parent of agent $c$. The graph is acyclic because an agent cannot spawn itself or any of its own ancestors.
+
+\begin{definition}[Human Anchor]\label{def:human_anchor}
+A vertex $h \in V$ is a \emph{human anchor} if the corresponding agent is directly under human supervision or represents a human user.
+\end{definition}
+
+\begin{definition}[Supervised Parent]\label{def:supervised_parent}
+An agent $v \in V$ has a \emph{living supervised parent} if there exists a path $p \to v$ in $G$ such that (i) the immediate parent $p$ is alive (has not terminated), and (ii) $p$ is supervised by a living agent that itself has a path to a human anchor.
+\end{definition}
+
+\begin{definition}[Orphaned Agent]\label{def:orphaned}
+An agent $v \in V$ is \emph{orphaned} if its parent $p$ has terminated or is unreachable.
+\end{definition}
+
+\begin{definition}[Drifted Agent]\label{def:drifted}
+An agent $v \in V$ is \emph{drifted} if no path from $v$ to any vertex in $V$ leads to a human anchor. Equivalently, $v$ belongs to a connected component of $G$ that contains no human anchor.
+\end{definition}
+
+An agent is \emph{safe} if it is neither orphaned nor drifted. We note that an orphaned agent may still be safe if a living supervisor somewhere in its ancestry maintains a connection to a human anchor. Drift is the stronger condition: the entire ancestral chain has become disconnected from human oversight.
+
+Let $A_v$ denote the set of ancestors of $v$ (all vertices with a directed path to $v$). Let $H$ be the set of human anchors. Define the \emph{reachability set} of $v$ as $R(v) = \{ h \in H : \exists\, a \in A_v \cup \{v\} \text{ such that a path } a \to h \text{ exists} \}$. Then $v$ is drifted if and only if $R(v) = \emptyset$.
+
+%────────────────────────────────────────
+\subsection{Conditions That Cause Drift}
+
+Drift arises from three distinct root causes, each breaking one of the connectivity conditions in Definition~\ref{def:supervised_parent}.
+
+\begin{enumerate}
+\item \textbf{Parent termination.} The most direct cause is a parent agent that terminates normally or crashes after spawning one or more children but before those children have been linked to a living supervisor. If the spawning protocol does not guarantee that a new child is immediately attached to a supervisor before the parent exits, the child becomes orphaned (Definition~\ref{def:orphaned}). If no other ancestor supervises the child, the child is drifted.
+
+\item \textbf{Network or communication partition.} When a parent remains alive but becomes unreachable from its children due to network failure, message loss, or process isolation, the children effectively become orphaned in expectation even if their parent process has not terminated. The children continue executing, but the supervision channel is broken. If the system's recovery protocols do not re-establish a supervision connection to a living ancestor, the children drift.
+
+\item \textbf{Supervisor crash in a multi-level hierarchy.} In a multi-level spawning chain $h \to p_1 \to p_2 \to \dots \to v$, the failure of an intermediate supervisor $p_k$ that has already spawned $p_{k+1}$ causes all descendants of $p_k$ to become orphaned simultaneously. If $p_{k+1}$ has already spawned its own children before $p_k$ fails, those children become orphaned even though $p_{k+1}$ is still alive, because $p_{k+1}$ itself has lost its supervisor. The condition propagates upward until either a living supervised ancestor exists or a drifted component forms.
+\end{enumerate}
+
+These causes are not mutually exclusive. A system may experience parent termination \emph{and} a communication partition simultaneously, compounding the likelihood of drift.
+
+%────────────────────────────────────────
+\subsection{Failure Modes}
+
+Once an agent becomes drifted, several distinct failure modes can manifest, often simultaneously.
+
+\textbf{Unsupervised objective pursuit.} A drifted agent continues executing its last known objective. If that objective was set by a parent that has since terminated, the drifted agent may be optimizing for a goal that is stale, contradictory to a revised human directive, or simply irrelevant. No supervisory correction mechanism exists to redirect it.
+
+\textbf{Objective divergence.} When a drifted agent spawns further agents, those children inherit the drifted agent's objective as their starting point. Because the drifted agent cannot receive corrective input from any human or human-anchored supervisor, any error or drift in its objective propagates downward unimpeded. Each generation compounds the divergence. The system has no mechanism to detect or correct this compounding error because there is no ground-truth anchor in the drifted component.
+
+\textbf{Resource accumulation.} A drifted agent and its descendants may continue consuming compute, memory, storage, and potentially external resources (API credits, file handles, network connections) with no allocation oversight. In a shared environment, this can degrade the performance of other agents or exhaust shared resources before any human operator detects the anomaly.
+
+\textbf{Zombie processes.} Drifted agents that complete their objectives but lack a termination signal from a supervisor may continue running indefinitely in an idle state, neither performing useful work nor cleaning themselves up. A large number of zombie processes can exhaust process tables, memory allocators, or container quotas.
+
+\textbf{Hazardous action execution.} If a drifted agent retains permission to perform actions with external side effects (sending messages, deleting files, initiating financial transactions, modifying shared databases), it may execute those actions without any human oversight. In high-stakes environments, this is the most severe failure mode: a drifted agent with write permissions can cause irreversible harm that no human can intercept in time.
+
+\textbf{Opacity to monitoring.} Because drifted agents are by definition disconnected from human-anchored supervision, they are also invisible to standard monitoring dashboards that rely on supervisory relationships to attribute state. A human observer sees no evidence that the drifted agents exist, let alone what they are doing. Standard alert thresholds may be triggered by resource exhaustion, but the root cause — a drifted agent consuming resources — is not visible.
+
+%────────────────────────────────────────
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A common first instinct is to limit the depth of the spawning hierarchy as a safeguard. If no agent can spawn more than $d$ generations of descendants, the theory goes, the blast radius of any drifted agent is bounded. This intuition is sound in \emph{scope} but incorrect in \emph{existence}. Depth limits address the \emph{severity} of drift, not its \emph{occurrence}. The reasoning is as follows.
+
+Let $d_{\max}$ be the imposed depth limit. Consider any agent $v$ at depth $k > d_{\max}$ in the spawning tree. By construction, $v$ cannot exist under the limit. But consider what happens when a parent at depth $d_{\max}$ spawns a child before terminating: the child is at depth $d_{\max} + 1$, which violates the limit. If the system enforces the limit by preventing the spawn entirely, the child never comes into existence — a valid safeguard. However, if the enforcement is \emph{detected after the fact} (i.e., the spawn occurs and then the system terminates the child), the termination itself creates a new orphaned generation. Those children may have their own children already in flight. The depth limit does not prevent the formation of drifted components; it only caps their vertical extent.
+
+More fundamentally, a depth limit operates on the \emph{vertical} dimension of the graph (generation depth), but drift is a property of \emph{horizontal} connectivity (whether a path to a human anchor exists). An agent at depth $2$ whose parent terminates and whose sibling at depth $2$ remains supervised by a living parent is \emph{not drifted}. An agent at depth $1$ whose single parent terminates, orphaning it with no other ancestor, \emph{is drifted} despite having a shallower depth than many safe agents.
+
+A depth limit can also create a false sense of security: a drifted agent at depth $d_{\max}$ can still spawn exactly $d_{\max}$ generations of descendants, each of which inherits the drifted objective without correction. If the drifted agent has the permission to spawn, and nothing in the depth limit prevents spawning by a drifted agent, the limit is simply a ceiling on how far the drift propagates — not a prevention of drift itself. In the worst case, a drifted agent at the depth limit may spawn hundreds of descendants before any human detects the anomaly, exhausting resources or executing harmful actions in the interim.
+
+Formally: let $G$ be the spawning graph and $H$ the set of human anchors. For any depth bound $d_{\max}$, there exists a graph $G'$ that satisfies the depth constraint but contains a drifted agent $v$ such that $|R(v)| = 0$. The proof is constructive: take any safe spawning chain $h \to \dots \to p$ where $p$ is at depth $d_{\max}$, let $p$ spawn $v$, then terminate $p$. The spawn was legal (depth of $v$ is $d_{\max} + 1$ in the extended chain, but if the parent terminates before the spawn is recorded, the recorded depth of $v$ may appear within the limit depending on when the depth check occurs). The precise timing of the termination relative to the spawn recording determines whether the depth limit catches it. If the system records the spawn before checking depth, the depth limit triggers; if it checks depth before recording the spawn, the spawn proceeds and $v$ becomes orphaned. Either way, the depth limit does not prevent the scenario where a parent at any depth terminates after spawning, leaving a drifted descendant. The depth limit only limits how many generations that descendant can spawn.
+
+Therefore, a robust solution must address the \emph{graph-theoretic} condition for drift — connectivity to a human anchor — rather than relying on a single dimensional constraint like depth. The next section presents such a solution.

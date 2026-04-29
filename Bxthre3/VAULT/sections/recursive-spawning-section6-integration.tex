@@ -1,0 +1,85 @@
+% ---------------------------------------------------------------
+\section{Integration with the BX3 Framework}
+\label{sec:integration}
+% ---------------------------------------------------------------
+
+The Recursive Spawning Protocol is not a standalone mechanism. It achieves its guarantees only through tight integration with the three-layer architecture defined by the \bxthree{} Framework: the Purpose Layer, the Bounds Engine, and the Fact Layer. Each layer plays a distinct and non-redundant role in the enforcement chain, and the failure of any one layer to perform its designated function causes the entire drift-prevention system to fail closed. This section specifies the role of each layer in RSP, the interfaces between them, and the proof that their composition is sufficient to guarantee chain integrity.
+
+% ---------------------------------------------------------------
+\subsection{Purpose Layer: Accountability Anchor}
+\label{sec:purpose-layer-accountability-anchor}
+% ---------------------------------------------------------------
+
+The Purpose Layer is the source of all legitimate spawn authority in the RSP system. Every spawn event requires a Purpose Layer warrant — a cryptographically signed authorization issued by a node that holds a direct or tunneled connection to a human principal. The warrant encodes: the identity of the authorizing principal $p$, the identity of the child node $c$ being spawned, the permitted maximum depth $d_{\max}$ for the child, the Purpose directive governing the child's operation, and a timestamp establishing the warrant's temporal validity window.
+
+The Purpose Layer serves as the \textit{accountability anchor}: the unique terminal point of every delegation chain. For any node $n$, the chain $\Chain{n}$ terminates at a human principal $h \in \mathcal{H}$ by construction, because the Purpose Layer's warrant-issuance protocol requires that every spawn request either (a) originates from a human principal directly or (b) originates from an existing node that itself received a Purpose Layer warrant with a chain terminating at a human principal. There is no warrant-issuance path that does not eventually terminate at a human principal, because the Purpose Layer issues warrants only to principals it can authenticate against the human registry, and the registry contains only human principals.
+
+This is what makes the Purpose Layer the accountability anchor: it is the root of a verified tree, not the root of a policy document. A policy can be reinterpreted, contested, or superseded. A verified tree structure is a structural property of the execution state. The chain $\Chain{n}$ terminates at $h$ because the Purpose Layer enforces at spawn time that every link in the chain is a verified descendant of a human principal. The chain does not need to be inferred from logs — it is embedded in the immutable parent pointer of every node, each of which is verifiable against the Purpose Layer's warrant registry.
+
+The Purpose Layer additionally provides the \textbf{Root Tunneling} mechanism, which allows a human principal to project Purpose Layer authority directly into a descendant task for the purpose of executing a bounded, self-contained action without spawning a new agent. Root Tunneling does not create a new node in the delegation chain — it temporarily elevates an existing node's Purpose context to that of the human principal. When the tunneled action completes, the node's Purpose context reverts to its original warrant. Root Tunneling is recorded in the forensic ledger with the human principal's identity as both the originating accountable party and the executing principal, ensuring non-repudiation.
+
+% ---------------------------------------------------------------
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:bounds-engine-depth-enforcement}
+% ---------------------------------------------------------------
+
+The Bounds Engine enforces the depth constraint that prevents unbounded chain growth. For every spawn request, the Bounds Engine performs a \textbf{depth check}: it computes the depth of the requesting node $p$ relative to the human anchor $h$ — call this $d(p)$ — and compares it to the maximum permitted depth $D_{\max}$ configured for the deployment. If $d(p) + 1 \geq D_{\max}$, the spawn is rejected and the rejection is recorded in the forensic ledger with the requesting node's identity, the current depth, and the configured limit.
+
+The depth computation uses the immutable parent pointer $\alpha(n)$ rather than any mutable log. The Bounds Engine traverses $\alpha$ from the requesting node to the human anchor, counting the edges. This traversal is O($d(p)$) and is deterministic: given the same node $n$, the traversal always yields the same depth. There is no scenario in which the Bounds Engine computes a different depth for the same node at different times, because $\alpha(n)$ is immutable and the traversal algorithm is defined purely in terms of the pointer structure.
+
+The depth check is not a policy constraint — it is a structural constraint enforced by the Fact Layer's spawn gate. The Bounds Engine computes the depth, but the Fact Layer's provisioning protocol refuses to execute the spawn if the depth check fails. The Fact Layer does not accept a override signal from the Bounds Engine or any other component. The depth check output is a binary input to the provisioning protocol, and the protocol accepts only the value \texttt{PASS}. The enforcement is therefore compositionally non-circumventable: no component that is not the Fact Layer itself can issue a spawn operation that bypasses the depth gate.
+
+The Bounds Engine additionally performs \textbf{depth accounting}: for each active node, it tracks the remaining depth budget $d_{\max}(n) - d(n)$, where $d_{\max}(n)$ is the node's configured maximum depth from its warrant and $d(n)$ is its current depth from the human anchor. When a node's remaining depth budget reaches zero, it cannot spawn children — it can only complete, fail, or escalate. The depth accounting state is maintained in the forensic ledger and is recomputed at each spawn event to ensure that race conditions cannot cause a node to spawn children after its depth budget has been exhausted.
+
+% ---------------------------------------------------------------
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:fact-layer-forensic-ledger}
+% ---------------------------------------------------------------
+
+The Fact Layer is the immutable record-keeper of RSP. Every RSP event — node creation, state transition, warrant issuance, depth check result, spawn approval or rejection, chain verification query, and bailout escalation — is written to the forensic ledger as an append-only entry. The forensic ledger is the single authoritative record of all RSP state transitions, and it is structured to make retrospective tampering structurally evident.
+
+Each ledger entry $e$ contains:
+\begin{itemize}
+    \item $seq$: sequential entry number, monotonically increasing
+    \item $ts$: hardware-attached timestamp (not a software clock)
+    \item $type$: event type from the RSP event taxonomy
+    \item $node\_id$: the node to which the event pertains
+    \item $parent\_ptr$: the immutable parent pointer $\alpha(node\_id)$ at time of event
+    \item $warrant\_ref$: reference to the Purpose Layer warrant authorizing the node's existence
+    \item $depth$: the computed depth $d(node\_id)$ at time of event
+    \item $payload$: event-specific data (state transition details, rejection reason, etc.)
+    \item $prev\_hash$: SHA-256 hash of the preceding ledger entry, chaining the log
+\end{itemize}
+
+The cryptographic chaining of entries (each entry contains the SHA-256 hash of the previous entry) ensures that any retrospective modification to a historical entry breaks the chain at the modified entry. The break is detectable in O(1) time by recomputing the chain hash from any entry backwards to the genesis entry and comparing it to the stored hash. The chain is tamper-evident: it provides no cryptographic resistance to modification (an attacker with write access to the ledger storage can modify entries), but it provides conclusive evidence that modification occurred, because the hash chain will not recompute correctly.
+
+The Fact Layer enforces the \textbf{append-only invariant}: after an entry is committed to the ledger, it is immutable. There is no update operation, no delete operation, and no revert operation defined in the Fact Layer's write protocol. Corrections are expressed as new entries that reference and correct prior entries (the ``correction entry'' pattern), but the original entry is never overwritten. This means the forensic ledger is a complete, immutable history of all RSP events from system initialization to the present moment — there is no gap, no redacted entry, and no ambiguous state.
+
+The forensic ledger serves three specific functions in RSP:
+
+\begin{enumerate}
+\item \textbf{Chain reconstruction:} Given any node $n$, the chain $\Chain{n}$ is reconstructed by reading the forensic ledger entries for each ancestor node and composing them in order. The chain is not stored as a first-class object — it is derived from the immutable parent pointers in the ledger entries. This means the chain is always consistent with the ledger: there is no scenario in which a node claims a parent that is not reflected in the ledger, because every parent assignment is recorded as a ledger entry at spawn time.
+
+\item \textbf{Drift detection:} The Chain-Verify operation (Section~\ref{sec:chain-traversal}) traverses the chain from node to human anchor and compares each step against the forensic ledger entry for that node. If any node's claimed parent pointer does not match the parent recorded in its ledger entry, the chain is fraudulent and Chain-Verify fails. This detects both accidental chain corruption and intentional drift attempts.
+
+\item \textbf{Compliance evidence:} For regulatory or audit contexts, the forensic ledger provides the complete, tamper-evident record of every spawn event, every state transition, and every depth check in the system. The ledger is the authoritative evidence that RSP is operating correctly at any point in time.
+\end{enumerate}
+
+% ---------------------------------------------------------------
+\subsection{Three-Layer Composition Proof Sketch}
+\label{sec:three-layer-composition}
+% ---------------------------------------------------------------
+
+We argue that RSP's integration with the three-layer architecture is sufficient to guarantee chain integrity by composition. The argument proceeds by analyzing each layer's invariant and showing that the layers' invariants are jointly consistent and jointly sufficient.
+
+\begin{enumerate}
+\item[\textbf{L1}] \textbf{Purpose Layer invariant:} For every node $n$ in the active set, $\Chain{n}$ terminates at a human principal $h \in \mathcal{H}$. This holds because the Purpose Layer issues warrants only to authenticated principals and the chain of warrant issuance is a directed acyclic graph rooted at human principals. No node can exist without a valid warrant; no warrant can be issued without a chain to a human principal. Therefore every active node has a chain to a human principal by construction of the warrant protocol.
+
+\item[\textbf{L2}] \textbf{Bounds Engine invariant:} For every node $n$, $d(n) < D_{\max}$. This holds because the Fact Layer's spawn gate rejects any spawn request for which the depth check fails, and the depth check is computed from immutable parent pointers. No spawn can increase any node's depth to $D_{\max}$ or beyond.
+
+\item[\textbf{L3}] \textbf{Fact Layer invariant:} Every RSP event is recorded as an append-only ledger entry with correct chain topology. This holds because the Fact Layer's write protocol defines exactly one valid write operation (append) and zero valid modification or deletion operations for any entry after commit.
+\end{enumerate}
+
+Joint sufficiency: Suppose, for contradiction, that an active node $n$ is in a state of drift. By Definition~\ref{dfn:drift}, this requires (D2): the human principal is not reachable as the terminus of $\Chain{n}$ at runtime. But L1 guarantees that $\Chain{n}$ terminates at a human principal for every active node. Therefore (D2) cannot hold for any active node, and drift is impossible. The argument requires no assumptions about the correctness of any single layer — L1, L2, and L3 are established by separate enforcement mechanisms (Purpose Layer warrant issuance, Fact Layer depth enforcement, and Fact Layer append-only protocol), and they jointly imply the negation of drift.
+
+\end{document}

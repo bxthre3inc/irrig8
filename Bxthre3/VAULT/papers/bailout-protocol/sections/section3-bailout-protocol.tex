@@ -1,0 +1,314 @@
+% -------------------------------------------------------
+\section{The Bailout Protocol}
+\label{sec:bailout-protocol}
+
+The Bailout Protocol is the runtime mechanism by which the \bxthree{} Framework enforces its upstream accountability guarantee. When a Bounds Engine node encounters a condition outside its provisioned operating range that it cannot resolve within delegated authority, the protocol compulsorily propagates the exception to the node's designated human anchor, bypassing all intermediate machine actors. This section provides the complete formal specification: the deterministic state machine, all transition conditions, the bail-out trigger predicate, the escalation algorithm, the bypass mechanism, and timeout handling that collectively guarantee human contact under all operational conditions.
+
+The protocol operates within the \bxthree{} three-layer architecture. The Purpose Layer carries intent, judgment, and final authority; it defines the operating range $R(n)$ for each node $n$ and receives all escalated exceptions. The Bounds Layer carries constrained autonomous reasoning within $R(n)$; it evaluates whether proposed actions fall within the node's provisioned authority and initiates bailout when they do not. The Fact Layer carries deterministic enforcement and forensic auditability; it enforces the state machine's transition relation, evaluates trigger conditions, and maintains the append-only Forensic Ledger as an immutable record of every protocol event. Every spawned node carries an immutable parent pointer $\alpha(n)$ established at provisioning and a reference to its human accountability anchor $h(n)$ --- a named human principal --- that is immutable for the node's operational lifetime. The Bailout Protocol exploits this structure to guarantee that exception states propagate to $h(n)$ without passing through any intermediate machine actor as a terminus.
+
+% ---------------------------------------------------------------
+\subsection{State Machine Definition}
+\label{sec:bailout-state-machine}
+
+The Bailout Protocol is formally modeled as a deterministic finite state machine $\mathcal{B}(n)$ embedded in the Fact Layer of each \bxthree{} node $n$:
+
+\begin{equation}
+\mathcal{B}(n) \;=\; \bigl( Q,\; q_0,\; \Sigma,\; \rightarrow,\; F,\; \text{Ledger} \bigr)
+\label{eq:bailout-fsm}
+\end{equation}
+
+where:
+
+\begin{itemize}\itemsep=0pt
+\item[$Q$] $\{\; \text{IDLE},\; \text{BOUNDED},\; \text{BAIL\_PENDING},\; \text{ESCALATING},\; \text{HUMAN\_ACKNOWLEDGED},\; \text{RESOLVED}\; \}$ is the finite set of protocol states;
+\item[$q_0$] $\text{IDLE}$ is the designated initial state, entered at node startup and after every successful directive resolution;
+\item[$\Sigma$] the input alphabet comprising trigger events $e_{\text{trigger}}$, authorization confirmations $e_{\text{auth}}$, timeout signals $e_{\text{timeout}}$, human acknowledgments $e_{\text{ack}}$, binding resolution directives $e_{\text{resolve}}$, and rejection directives $e_{\text{reject}}$;
+\item[$\rightarrow$] $\subseteq Q \times \Sigma \times Q$ is the deterministic transition relation (Table~\ref{tab:bailout-transitions});
+\item[$F$] $\{\text{RESOLVED}\}$ is the set of terminal accepting states;
+\item[$\text{Ledger}$] the Fact Layer append-only event log recording every transition firing, every timeout expiry, and every directive received with full attribution.
+\end{itemize}
+
+The machine is \emph{deterministic}: for every $(q, \sigma) \in Q \times \Sigma$, at most one $q' \in Q$ satisfies $(q, \sigma, q') \in \rightarrow$. Determinism is enforced by the Bailout Monitor's priority function $\pi$, which totally orders simultaneous trigger conditions and selects the highest-priority enabled transition before committing any state change. If no transition is defined for a $(q, \sigma)$ pair, the machine stalls and the Bailout Monitor records a protocol violation in the Forensic Ledger.
+
+\begin{table}[htbp]
+\centering
+\caption{Bailout Protocol state transition relation $\rightarrow \subseteq Q \times \Sigma \times Q$. Rows are current state; columns are input events. Entries denote the next state. Blank cells indicate that no transition is defined --- the machine stalls and the Bailout Monitor records a protocol violation.}
+\label{tab:bailout-transitions}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \multicolumn{6}{c}{Input event} \\
+\cmidrule(l){2-7}
+Current state & $e_{\text{trigger}}$ & $e_{\text{auth}}$ & $e_{\text{timeout}}$ & $e_{\text{ack}}$ & $e_{\text{resolve}}$ & $e_{\text{reject}}$ \\
+\midrule
+IDLE              & BOUNDED            & --- & --- & --- & --- & --- \\
+BOUNDED           & --- & HUMAN\_ACKNOWLEDGED & BAIL\_PENDING & --- & --- & --- \\
+BAIL\_PENDING     & --- & --- & ESCALATING & --- & --- & --- \\
+ESCALATING        & --- & HUMAN\_ACKNOWLEDGED & ESCALATING & IDLE & RESOLVED & RESOLVED \\
+HUMAN\_ACKNOWLEDGED & --- & --- & --- & IDLE & RESOLVED & IDLE \\
+RESOLVED          & --- & --- & --- & --- & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\bigskip
+\noindent\textbf{State definitions.}
+
+\begin{enumerate}\itemsep=0pt
+\item[\textbf{IDLE.}] The node operates within its provisioned operating range $R(n)$. No exception condition is active. The Fact Layer dispatches normal action requests through the standard execution path. The node may transition to BOUNDED upon receipt of $e_{\text{trigger}}$ satisfying the bail-out trigger condition (TC), defined in \S~\ref{sec:bailout-trigger}.
+
+\item[\textbf{BOUNDED.}] An exception $x$ has been detected by the Bounds Layer and is being held at the Bounds--Fact layer boundary. A time-bounded resolution attempt is in progress. The Bounds Engine may propose resolution candidates, each requiring Fact Layer pre-commit approval. If an approved resolution is produced before $T_{\text{bounds}}$ expires, the node returns to IDLE. If all resolution paths are exhausted or $T_{\text{bounds}}$ expires, the state advances to BAIL\_PENDING.
+
+\item[\textbf{BAIL\_PENDING.}] The node has determined --- either through an explicit \texttt{bailout\_signal} or through $T_{\text{bounds}}$ expiration without a Fact-Layer-approved resolution --- that the exception exceeds its current authority. The Bailout Protocol is formally activated. This is the last architectural point at which a machine actor could theoretically suppress escalation. It cannot: entry to BAIL\_PENDING triggers an immediate atomic transition to ESCALATING via $e_{\text{timeout}}$ (T4), with no dwell time and no machine-actor intervention permitted.
+
+\item[\textbf{ESCALATING.}] The exception is propagating directly to $h(n)$ via the bypass mechanism (BP), bypassing all intermediate machine actors. The Bounds Engine is in suspensive halt: no autonomous actions execute, no new resolution candidates are proposed, and no machine actor may issue a resolution directive. The state remains ESCALATING until either (a) the human anchor acknowledges receipt and issues a directive ($e_{\text{ack}}$, $e_{\text{resolve}}$, or $e_{\text{reject}}$), or (b) all retry pathways exhaust after $N_{\max}$ retries at $T_{\text{cap}}$ and the protocol transitions to RESOLVED with \texttt{PATHWAY\_EXHAUSTED}.
+
+\item[\textbf{HUMAN\_ACKNOWLEDGED.}] The human anchor has received the exception, observed the diagnostic context, and issued a directive ($d \in \{\;\texttt{ACK},\; \texttt{RESOLVE},\; \texttt{REJECT}\;\}$). The directive has been validated by the Fact Layer pre-commit hook and recorded with full attribution. No machine actor may issue, simulate, or substitute a directive in this state. The node awaits dispatch of the human's directive.
+
+\item[\textbf{RESOLVED.}] The protocol run has concluded. All events, directives, resolutions, and timeout expiries have been recorded in the Fact Layer Ledger. The directive is recorded and the machine is quiescent. This state is terminal: no further transitions are defined under any input.
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{State invariants.} The following invariants hold for all reachable states of $\mathcal{B}(n)$:
+
+\begin{align}
+\text{INV}_1 &: \forall n \in \text{nodes},\; \text{state}(n) \in Q \setminus \{\text{ESCALATING}\} \iff \neg\text{active\_bailout}(n). \tag{INV-1}
+\end{align}
+
+A node occupies a non-escalating state \emph{iff} it has no active bailout propagation in flight. A node may carry a bailout history (a ledger entry recording a past propagation) while in IDLE, but no active propagation may be underway.
+
+\begin{align}
+\text{INV}_2 &: \text{state}(n) = \text{BAIL\_PENDING} \implies \text{active\_bailout}(n) \land \text{transition}(\text{BAIL\_PENDING}, e_{\text{timeout}}) = \text{ESCALATING}. \tag{INV-2}
+\end{align}
+
+Any node in BAIL\_PENDING has an active bailout and the only permissible next transition is to ESCALATING, enforced by the Bailout Monitor without machine-actor discretion.
+
+\begin{align}
+\text{INV}_3 &: \text{state}(n) = \text{RESOLVED} \iff \exists d \in \{\text{ACK},\; \text{RESOLVE},\; \text{REJECT}\} : \text{directive}(n) = d. \tag{INV-3}
+\end{align}
+
+RESOLVED is terminal and the directive is recorded. No further transitions are defined from RESOLVED.
+
+% ---------------------------------------------------------------
+\subsection{Transition Conditions}
+\label{sec:bailout-transitions}
+
+Each transition in Table~\ref{tab:bailout-transitions} fires under the following conditions:
+
+\begin{enumerate}\itemsep=0pt
+\item[T1 --- IDLE $\rightarrow$ BOUNDED:] $\text{TRIGGER}(n, x)$ holds for some exception $x$, as defined in \S~\ref{sec:bailout-trigger}. Record trigger event in Ledger; initialize exception record $(n, x, t_{\text{trigger}})$; start timer $T_{\text{bounds}}$.
+
+\item[T2 --- BOUNDED $\rightarrow$ HUMAN\_ACKNOWLEDGED:] The Bounds Engine produces a resolution $r$ and the Fact Layer issues $e_{\text{auth}}$ confirming $r$ is within the node's provisioned authority. This is the only path that avoids escalation: resolution absorbs the exception within the machine-only execution graph. Record resolution Ledger entry $(n, r, t_{\text{dispatch}}, \text{APPROVED})$.
+
+\item[T3 --- BOUNDED $\rightarrow$ BAIL\_PENDING:] $T_{\text{bounds}}$ expires without a Fact-Layer-approved resolution, or an explicit \texttt{bailout\_signal} is received from the Bounds Engine. Write timeout Ledger entry $(n, T_{\text{bounds}}, \text{EXPIRED})$.
+
+\item[T4 --- BAIL\_PENDING $\rightarrow$ ESCALATING:] $e_{\text{timeout}}$ fires immediately upon entry to BAIL\_PENDING. There is no dwell time. The Bailout Monitor commits the transition atomically; no machine actor may interpose. Transmit diagnostic context directly to $h(n)$ via bypass mechanism; start $T_{\text{prop}}$ and $T_{\text{cap}}$.
+
+\item[T5 --- ESCALATING $\rightarrow$ HUMAN\_ACKNOWLEDGED:] The Fact Layer receives a directive $d \in \{\;\texttt{ACK},\; \texttt{RESOLVE},\; \texttt{REJECT}\;\}$ from $h(n)$. The pre-commit hook verifies $d$ originated from $h(n)$ and is a permitted directive type. Record directive in Ledger with full attribution: $(n, h(n), d, t_{\text{directive}})$.
+
+\item[T6 --- ESCALATING self-loop:] $T_{\text{prop}}$ expires without acknowledgment. The algorithm retries via \texttt{SelectPathway} with exponential backoff (defined in \S~\ref{sec:bailout-timeouts}). After $N_{\max}$ retries at $T_{\text{cap}}$ without success, the machine transitions via T7.
+
+\item[T7 --- ESCALATING $\rightarrow$ RESOLVED:] $N_{\max}$ consecutive retries at $T_{\text{cap}}$ have failed. The protocol records \texttt{PATHWAY\_EXHAUSTED} in the Forensic Ledger and transitions to RESOLVED. This is a terminal state indicating that all communication pathways to $h(n)$ have failed.
+
+\item[T8 --- HUMAN\_ACKNOWLEDGED $\rightarrow$ IDLE:] The human principal issues \texttt{ACK}. The exception is acknowledged but not resolved; the node resumes operation with the exception context recorded. This is a non-terminal recovery path.
+
+\item[T9 --- HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED:] The human principal issues \texttt{RESOLVE} or \texttt{REJECT}. The directive is recorded and the protocol run terminates.
+\end{enumerate}
+
+% ---------------------------------------------------------------
+\subsection{Bail-Out Trigger Condition}
+\label{sec:bailout-trigger}
+
+The bail-out trigger condition (TC) determines when a node enters BOUNDED state (T1). Rather than requiring system designers to enumerate specific error codes in advance --- a practice that provides coverage only for anticipated failure modes and leaves unanticipated ones invisible --- the Bailout Protocol defines the trigger in terms of \emph{observational boundary violation}: a node escalates precisely when its observable input space contains a condition outside its provisioned operating range and the node cannot produce a Fact-Layer-approved resolution within $T_{\text{bounds}}$.
+
+\bigskip
+\noindent\textbf{Primary trigger condition.} The trigger $\text{TRIGGER}(n, x)$ is defined as a conjunction of three sub-conditions, all of which must hold simultaneously:
+
+\begin{equation}
+\text{TRIGGER}(n, x) \;\equiv\; \underbrace{x \notin R(n)}_{(i)} \;\land\; \underbrace{\neg\text{resolved}(n, x)}_{(ii)} \;\land\; \underbrace{\text{confidence}(n, x) < \tau}_{(iii)} \tag{TC}
+\end{equation}
+
+where:
+
+\begin{itemize}\itemsep=0pt
+\item[(i)] $x$ is an element of the node's observable input space that falls outside the provisioned operating range $R(n)$. This is the \emph{bound signal}: the node observes something it was not provisioned to handle autonomously.
+
+\item[(ii)] $x$ has not been previously resolved by the node within the current operational session. This prevents re-trigger on known-exception inputs that have already received human adjudication.
+
+\item[(iii)] $\text{confidence}(n, x) < \tau$ is the node's self-assessed confidence that it can produce a correct resolution for $x$ without human input, where $\tau$ is the provisioned confidence threshold. The confidence function $\text{confidence} : \text{node} \times \text{input} \rightarrow [0, 1]$ is defined at node provisioning and is \emph{immutable at runtime}. This prevents a machine actor from inflating its own confidence to suppress a warranted escalation.
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Trigger priority function.} When multiple trigger conditions fire simultaneously for node $n$, they are totally ordered by the priority function $\pi(n, x)$, which ensures deterministic transition selection:
+
+\begin{equation}
+\pi(n, x) \;=\; w_1 \cdot \text{severity}(x) \;+\; w_2 \cdot \bigl(1 - \text{confidence}(n, x)\bigr) \;+\; w_3 \cdot \text{distance}\bigl(n, h(n)\bigr) \tag{PF}
+\end{equation}
+
+where $\text{severity}(x) \in [0, 1]$ is the assigned severity of exception $x$, $\text{distance}(n, h(n))$ is the number of hops from $n$ to the human anchor in the parent chain, and $w_1, w_2, w_3$ are provisioned constants satisfying $w_1 > w_2 > w_3 \geq 0$. The highest-priority trigger fires first.
+
+\bigskip
+\noindent\textbf{Secondary trigger: explicit \texttt{bailout\_signal}.} In addition to TC, the Bounds Engine may emit an explicit \texttt{bailout\_signal} at any time, regardless of confidence scores. This handles the case where the Bounds Engine detects a condition --- for example, a logical contradiction between two inputs within $R(n)$ --- that it can recognize as unresolvable even though both inputs are individually within the operating range. The \texttt{bailout\_signal} bypasses TC entirely and immediately initiates T3:
+
+\begin{equation}
+\texttt{bailout\_signal}(x) \;\implies\; \text{T3 fires for node } n \text{ with exception } x. \tag{TC-secondary}
+\end{equation}
+
+\bigskip
+\noindent\textbf{The no-discretion property.} The Bounds Layer does not exercise discretion over the trigger condition. Specifically: (i) the evaluation of $\text{TRIGGER}(n, x)$ is a read-only query against the operating range definition $R(n)$, not a judgment call made by a machine actor; (ii) the result of the query directly drives the state machine transition without an intervening decision step --- there is no machine-actor gate between trigger evaluation and protocol activation; (iii) the confidence function is provisioned at node initialization and is immutable at runtime. These constraints ensure that TC is architecturally enforced rather than operationally optional.
+
+% ---------------------------------------------------------------
+\subsection{Escalation Algorithm}
+\label{sec:bailout-escalation}
+
+When the state machine enters ESCALATING, the protocol executes the \texttt{Escalate} algorithm to propagate the exception to $h(n)$ via the bypass mechanism. The algorithm is executed by the Bailout Monitor on the originating node; intermediate nodes are excluded from the propagation path by BP (Section~\ref{sec:bailout-bypass}).
+
+\begin{algorithm}[htbp]
+\caption{Bailout Protocol escalation algorithm.}
+\label{alg:escalate}
+\begin{algorithmic}[1]
+\Procedure{Escalate}{$n$, $x$, $\Delta$}
+  \State $\text{ctx} \leftarrow \text{BuildDiagnosticContext}(n, x)$
+  \State $\text{path} \leftarrow \text{SelectPathway}(h(n))$
+  \State $T_{\text{prop}} \leftarrow T_{\text{prop}}^{\text{init}}$
+  \State $N \leftarrow 0$
+
+  \State $\triangleright$ Bypass mechanism: transmit directly to $h(n)$
+  \State $\text{sent} \leftarrow \text{SendToAnchor}(h(n),\; \text{ctx},\; \text{path})$
+  \State $\text{ack\_received} \leftarrow \text{WaitForAck}(T_{\text{prop}})$
+
+  \While{$\neg\text{ack\_received}$}
+    \State $T_{\text{prop}} \leftarrow \min(2 \cdot T_{\text{prop}},\; T_{\text{cap}})$
+    \State $\text{path} \leftarrow \text{SelectPathway}(h(n))$
+    \State $\text{sent} \leftarrow \text{SendToAnchor}(h(n),\; \text{ctx},\; \text{path})$
+    \State $\text{ack\_received} \leftarrow \text{WaitForAck}(T_{\text{prop}})$
+    \State $N \leftarrow N + 1$
+
+    \If{$N \geq N_{\max}$}
+      \State $\text{RecordPathwayFailure}(n, h(n))$
+      \State \Return \texttt{PATHWAY\_EXHAUSTED}
+    \EndIf
+  \EndWhile
+
+  \State $\text{CommitToLedger}(\text{ESCALATING}, \text{ctx}, h(n))$
+  \State \Return \texttt{delivered}
+\EndProcedure
+
+\bigskip
+\Procedure{BuildDiagnosticContext}{$n$, $x$}
+  \State $\Delta \leftarrow (n,\; x,\; t_{\text{trigger}},\; t_{\text{bounds\_expired}},\; \text{attempted\_resolutions})$
+  \State $\Delta \leftarrow \Delta \;\circ\; \text{AppendNodeMetadata}(n)$
+  \State $\Delta \leftarrow \Delta \;\circ\; \text{ComputePriorityScore}(\pi(n, x))$
+  \State \Return $\Delta$
+\EndProcedure
+
+\bigskip
+\Procedure{SelectPathway}{$h(n)$}
+  \State $\text{available} \leftarrow \text{PathwayHealthRegistry.Query}(h(n))$
+  \State $\text{available} \leftarrow \text{FilterDegraded}(\text{available})$
+  \State \Return $\text{available}[0]$ \Comment{Lowest latency functional pathway}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm exploits the immutable parent-pointer structure. Because $\alpha(n)$ and $h(n)$ are stored in Fact-Layer-managed memory and are read-only at the machine-actor level, the propagation path is structurally fixed: there is no machine-actor discretion to redirect, interpose, or absorb the exception en route. The diagnostic context chain accumulated during propagation provides $h(n)$ with a full evidentiary record of the triggering condition, every resolution attempt made, and every pathway failure encountered.
+
+The Pathway Health Registry (PHR) tracks the availability, latency, and error rate of each provisioned communication pathway to $h(n)$. Before each \texttt{SelectPathway} call, the registry is queried and the pathway with the lowest estimated latency among currently functional pathways is selected. Pathways that fail $K$ consecutive health checks (default $K = 3$) are marked \texttt{DEGRADED} and excluded from pathway selection until a health check succeeds.
+
+% ---------------------------------------------------------------
+\subsection{Bypass Mechanism}
+\label{sec:bailout-bypass}
+
+The bypass mechanism (BP) is the architectural property that ensures the Bailout Protocol \emph{bypasses all machine actors} en route from the originating node $n$ to $h(n)$. This property is formally stated:
+
+\begin{align}
+\text{BYPASS} &: \forall n \in \text{nodes},\; \forall p \in \text{path}(n, h(n)) : p \notin \text{MachineActors}. \tag{BYPASS}
+\end{align}
+
+That is, for every node $n$ and every node $p$ on the propagation path from $n$ to $h(n)$, $p$ is not a machine actor. The only permissible terminus of the path is $h(n)$ itself, which is a human principal by definition.
+
+\begin{definition}[Parent-Chain Bypass Mechanism (BP)]
+\label{def:bp}
+
+Let $n$ be a node and $h(n)$ its human anchor. Let $P = (n, \alpha(n), \alpha^2(n), \ldots, \alpha^m(n))$ be the parent pointer chain terminating at $h(n)$. The bypass mechanism BP requires that the exception propagation from $n$ to $h(n)$ satisfy:
+
+\begin{equation}
+\forall\; k \in \{1, 2, \ldots, m\}:\quad \text{propagation\_path} \cap \{\,\alpha^k(n)\,\} = \emptyset
+\label{eq:bp}
+\end{equation}
+
+Equivalently: $\text{propagation\_path} = (n, h(n))$. The exception is transmitted directly from the triggering node to the human anchor. All intermediate machine actors are excluded.
+\end{definition}
+
+BP is enforced by two cooperating mechanisms operating at different layers:
+
+\begin{enumerate}\itemsep=0pt
+\item[\textbf{Fact Layer gate.}] The Fact Layer pre-commit hook rejects any ledger entry for a resolution where the underlying trigger satisfies TC and $T_{\text{bounds}}$ has expired. This prevents the Bounds Engine from issuing a retroactive resolution after timeout to suppress warranted escalation. There is no privileged machine actor with the ability to bypass this check.
+
+\item[\textbf{Immutable parent-pointer and human-root architecture.}] The parent pointer $\alpha(n)$ and the human-root identifier $h(n)$ are stored in Fact-Layer-managed memory and are read-only at the machine-actor level. A machine actor cannot redirect the parent chain, cannot insert itself as an intermediate resolver, and cannot modify the $humanRootId$ field that terminates the chain.
+\end{enumerate}
+
+Together, these mechanisms ensure that BYPASS holds for all $n \in \text{nodes}$ under all execution conditions, including partial node failure, network partition, and deliberate attempt by a compromised machine actor to redirect the bailout pathway.
+
+\bigskip
+\noindent\textbf{Why bypass is structurally necessary.} The necessity of the bypass follows directly from the upstream accountability guarantee. Any machine actor $m$ that could receive or absorb an exception in ESCALATING state would become a potential terminal node for that exception. If $m$ then fails, or if $m$'s resolution is incorrect or insufficient, no human principal is present in the chain to detect or correct the failure. The system compounds failure instead of surfacing it.
+
+Three mutually independent failure modes would be introduced if machine actors were permitted in the propagation path:
+
+\begin{enumerate}
+\item[\textbf{Intercept.}] A machine actor could absorb the escalation, suppress the exception, and continue autonomous operation without ever reaching $h(n)$. This is precisely the failure mode the Bailout Protocol is designed to prevent.
+
+\item[\textbf{Redirect.}] A machine actor could redirect the escalation to a different principal, creating an accountability gap in which the wrong human receives the exception and the correct human never learns of it.
+
+\item[\textbf{Delay.}] A machine actor could buffer or queue the escalation, delaying $h(n)$'s receipt beyond $T_{\text{max}}$ and violating the liveness guarantee.
+\end{enumerate}
+
+The bypass eliminates all three failure modes by architectural constraint. This is analogous to a hardware interrupt line hardwired to a designated handler --- just as a hardware interrupt cannot be intercepted or redirected by user-space code, the bailout escalation cannot be intercepted or redirected by any agent-level component.
+
+Conventional escalation hierarchies make human oversight a high-tier option rather than a compulsory terminus. The Bailout Protocol forbids this absorption by architectural constraint: $h(n)$ is not one option among many --- it is the \emph{only} permissible terminus for every unresolved exception.
+
+% ---------------------------------------------------------------
+\subsection{Timeout Handling}
+\label{sec:bailout-timeouts}
+
+Timeouts in the Bailout Protocol serve a liveness function: they prevent the protocol from permanently stalling when a communication pathway is unresponsive or the human anchor is temporarily unavailable. Each timeout has a defined scope, a defined scope-exit action, and an escalation path that prevents deadlock. The critical design constraint is that timeout expiry never results in autonomous continuation of the escalated exception.
+
+\bigskip
+\noindent\textbf{Timeout definitions.}
+
+\begin{enumerate}\itemsep=0pt
+\item[\textbf{$T_{\text{bounds}}$ --- Bounds Engine resolution timeout.}] The maximum time a node may remain in BOUNDED state attempting autonomous resolution. Default: provisioned per node class at node initialization. If $T_{\text{bounds}}$ expires without a Fact-Layer-approved resolution, the node transitions to BAIL\_PENDING $\rightarrow$ ESCALATING via T3 and T4. The Fact Layer cannot extend $T_{\text{bounds}}$ unilaterally; any extension requires human authorization via a separate ledger entry recorded before $T_{\text{bounds}}$ expires.
+
+\item[\textbf{$T_{\text{prop}}$ --- Propagation timeout.}] The maximum time node $n$ waits for an acknowledgment from $h(n)$ after sending an exception via \texttt{SendToAnchor}. Default initial value: 5 seconds. If $T_{\text{prop}}$ expires without ACK, the algorithm retries with exponential backoff: $T_{\text{prop}} \leftarrow \min(2 \cdot T_{\text{prop}},\; T_{\text{cap}})$. After $N_{\max}$ consecutive retries at $T_{\text{cap}}$ without ACK, the algorithm fires \texttt{PATHWAY\_EXHAUSTED} and transitions to RESOLVED.
+
+\item[\textbf{$T_{\text{cap}}$ --- Maximum propagation timeout value.}] The ceiling value for the exponential backoff of $T_{\text{prop}}$. Default: 60 seconds. This parameter bounds the worst-case per-hop retry duration and ensures the overall escalation terminates within a defined wall-clock bound.
+
+\item[\textbf{$T_{\text{human}}$ --- Human acknowledgment timeout.}] The maximum time $h(n)$ may remain in HUMAN\_ACKNOWLEDGED state without issuing a directive. Default: 300 seconds (5 minutes), configurable per deployment based on the expected human response time for the node's operational domain. If $T_{\text{human}}$ expires, the protocol records an \texttt{unresolved} tag in the Forensic Ledger and transitions to RESOLVED. The node becomes quiescent: no autonomous retry occurs, no further actions are attempted, and human re-engagement is required to clear the state. The protocol does not re-escalate automatically; automatic re-escalation would create a potential denial-of-service condition against the human anchor.
+\end{enumerate}
+
+\begin{table}[htbp]
+\centering
+\caption{Timeout parameters, start conditions, and functional scopes.}
+\label{tab:bailout-timeouts}
+\begin{tabular}{@{}lcl@{}}
+\toprule
+\textbf{Timeout} & \textbf{Started at} & \textbf{Functional scope} \\
+\midrule
+$T_{\text{bounds}}$ & T1 fires (TC) & Bounds Engine autonomous resolution window \\
+$T_{\text{prop}}$ & T4 fires (transmit to $h(n)$) & Human anchor contact establishment \\
+$T_{\text{cap}}$ & On entering ESCALATING & Diagnostic capture and retry ceiling \\
+$T_{\text{human}}$ & Contact confirmed with $h(n)$ & Human directive issuance window \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\bigskip
+\noindent\textbf{Liveness guarantee.} Together, $T_{\text{bounds}}$, $T_{\text{prop}}$, $T_{\text{cap}}$, and $T_{\text{human}}$ define a finite upper bound on the wall-clock time from trigger firing (T1) to human acknowledgment under any combination of parent unavailability and pathway degradation. This bound is a deployment parameter --- not a protocol constant --- derived from the network topology, the number of hops to the human anchor, and the provisioned $T_{\max}$ parameter:
+
+\begin{equation}
+T_{\max} \;=\; T_{\text{bounds}} \;+\; N_{\max} \cdot T_{\text{cap}} \;+\; T_{\text{human}} \tag{T-max}
+\end{equation}
+
+A deployment that cannot guarantee human acknowledgment within the required $T_{\max}$ under all failure scenarios must provision additional or higher-bandwidth pathways, or must reduce $T_{\text{prop}}$ and $T_{\text{cap}}$ to bring the worst-case bound within the required limit. This analysis is a required part of deployment certification for any \bxthree{} system operating in a regulated or safety-critical environment.
+
+\bigskip
+\noindent\textbf{Timeout interaction with the bypass mechanism.} The bypass mechanism ensures that timeouts cannot be weaponized by a machine actor to delay or suppress escalation. Specifically: (a) $T_{\text{bounds}}$ is enforced by the Fact Layer pre-commit hook, not by the Bounds Layer; a machine actor cannot artificially extend $T_{\text{bounds}}$ to prevent the transition to ESCALATING. (b) $T_{\text{prop}}$ backoff is calculated by the Bailout Monitor, not by any machine actor; the backoff curve is defined in the protocol specification and cannot be altered at runtime. (c) If all pathways timeout at $T_{\text{cap}}$, the protocol resolves with \texttt{PATHWAY\_EXHAUSTED} --- this is a terminal RESOLVED state, not a suppression of escalation. The \texttt{PATHWAY\_EXHAUSTED} tag in the Forensic Ledger ensures that the failure of the pathway is recorded as an incident requiring human remediation, not as a silent machine-actor absorption of the exception.

@@ -1,0 +1,27 @@
+name: manager
+description: "Managerial role responsible for task coordination, resource allocation, and progress tracking."
+version: 1.0.0
+capabilities:
+  - task_coordination
+  - resource_allocation
+  - progress_tracking
+  - reporting
+tools:
+  - name: trello
+    type: tool
+    version: 1.0.0
+  - name: slack
+    type: tool
+    version: 4.29.0
+  - name: excel
+    type: tool
+    version: "2023"
+permissions:
+  - read:task_status
+  - write:progress_reports
+  - execute:coordination_script
+constraints:
+  max_memory: "4Gi"
+  max_cpu: "2"
+  timeout: 1800
+version: 1.0.0

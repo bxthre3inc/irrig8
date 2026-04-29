@@ -1,0 +1,76 @@
+% -------------------------------------------------------
+\section{Limitations and Future Work}
+\label{sec:rs-limitations}
+
+The Recursive Spawning Protocol provides strong correctness guarantees — drift prevention, chain integrity, and termination — under the assumptions of honest initialization, secure cryptographic primitives, and Fact Layer write protocol enforcement. These guarantees come with structural costs that honest engineering requires us to acknowledge. This section examines the limitations of RSP's guarantees, quantifies the performance overhead of its enforcement mechanisms, identifies scalability boundaries, and charts the directions for future work that follow from each limitation.
+
+% -------------------------------------------------------
+\subsection{Structural Costs of Immutable Parent Pointers}
+\label{sec:rs-limitations-immutability}
+
+The immutable parent pointer is RSP's load-bearing constraint. It is also the source of its most significant structural limitation: it prevents legitimate chain reconfiguration in operational scenarios where the original parent is permanently unavailable but the child remains functional and its authority remains valid.
+
+Consider a scenario in which a supervisory agent $n_i$ is administratively decommissioned — intentionally shut down by an operator for maintenance, capacity rebalancing, or policy change — while its active descendants remain operational and continue to serve their authorized purposes. Under RSP's immutable parent pointer, each descendant $n_j$ where $\alpha(n_j) = n_i$ retains a reference to a terminated node. The chain remains auditable: the forensic ledger records the termination event, and traversal can continue backward through the immutable chain to the human anchor. However, the terminated node $n_i$ can no longer receive directives, respond to queries, or participate in the chain's operational life. There is no RSP mechanism to re-parent $n_j$ to an alternative active supervisor without breaking immutability.
+
+The current RSP response to this scenario is escalation to the human anchor, who may issue a \texttt{RESOLVE} directive that effectively reassigns the descendant's operational authority. The \texttt{RESOLVE} directive is recorded as a new ledger entry, preserving chain integrity. However, this requires human intervention for every legitimate decommissioning event — a friction that may be unacceptable in high-throughput production systems with frequent operator-driven node lifecycle transitions.
+
+Resolving this limitation without compromising immutability requires a distinction between two types of chain modification: \emph{re-parenting} (redirecting $\alpha(n)$ to a different predecessor, which is forbidden) and \emph{successor promotion} (transferring operational authority from a terminated node to a pre-designated successor without altering the chain's historical parent pointer). The successor promotion mechanism would record the transfer in the forensic ledger as a state transition event, preserving the immutable historical chain while permitting operational continuity. This is a direction for future protocol extension.
+
+% -------------------------------------------------------
+\subsection{Performance Overhead}
+\label{sec:rs-limitations-overhead}
+
+RSP's enforcement mechanisms impose runtime overhead that conventional agentic runtimes do not incur. This overhead arises from three sources: the Fact Layer pre-commit hook, the forensic ledger hash-chaining, and the chain verification procedure at each spawn event.
+
+The Fact Layer pre-commit hook evaluates two conditions — scope subset relationship and depth constraint — for every spawn event. In a conventional runtime, a spawn event involves a single authorization decision by the parent node. Under RSP, the pre-commit hook additionally queries the forensic ledger to confirm the parent's provisioned state, verifies the scope subset relationship formally, and records the spawn event in the ledger before the child node is provisioned. This adds a cryptographic write operation (hash-chaining the new entry) and a scope evaluation to the spawn critical path.
+
+The forensic ledger's hash-chaining provides tamper-evidence but incurs a sequential write dependency: each entry's hash must be computed after the preceding entry's hash is known, precluding parallel write optimization for high-throughput spawn scenarios. In chains with deep nesting and frequent sibling spawn events — typical in high-density task decomposition workloads — this sequential bottleneck may become a throughput constraint.
+
+We characterize the overhead formally. Let $T_{\mathrm{precommit}}$ be the pre-commit hook evaluation time, $T_{\mathrm{ledger\_write}}$ be the ledger append and hash-chain write time, and $T_{\mathrm{verify}}$ be the chain verification time at provisioning. The total spawn overhead is:
+
+\begin{equation}
+T_{\mathrm{spawn\_overhead}} = T_{\mathrm{precommit}} + T_{\mathrm{ledger\_write}} + T_{\mathrm{verify}}(|C|)
+\label{eq:spawn-overhead}
+\end{equation}
+
+where $T_{\mathrm{verify}}(|C|)$ grows with chain depth because verification must traverse the chain from the root to confirm the complete authorization lineage. For a chain of depth $k$, $T_{\mathrm{verify}}(k) = O(k)$. At moderate chain depths ($k \leq 10$), this overhead is negligible relative to model inference and tool execution times. At deep chains ($k \geq 50$), the verification cost may become non-trivial in latency-sensitive workloads.
+
+Mitigation strategies include ledger checkpointing (periodic pruning of historical entries beyond a fixed depth, retaining hash-chain integrity for recent entries), parallel pre-commit validation for sibling spawn events from the same parent, and hardware-accelerated cryptographic primitives for hash computation. These are engineering optimizations rather than protocol modifications; they do not alter RSP's correctness properties.
+
+% -------------------------------------------------------
+\subsection{Scalability Boundaries}
+\label{sec:rs-limitations-scalability}
+
+RSP's correctness guarantees apply to single spawn chains — sequences of nodes connected by the parent pointer relation. The protocol as specified does not address multi-parented agent graphs, lateral agent migration, or dynamic coalition formation among agents with independent human anchors.
+
+In a system where agents from different human principals interact — for example, a multi-tenant platform where each tenant's RSP chain operates in shared execution infrastructure — RSP alone does not govern inter-chain interactions. Each chain's integrity is preserved, but cross-chain coordination events are not scoped by any RSP constraint. Without additional protocol layers, a compromised agent in one chain could influence the behavior of agents in another chain through shared infrastructure (memory stores, message queues, tool APIs), creating a lateral compromise pathway that RSP's chain-scoped guarantees cannot detect.
+
+The current RSP addresses intra-chain accountability exclusively. Inter-chain isolation is addressed by other \bxthree pillars — Spatial Firewall and Sandbox Gate — which enforce execution compartmentation. RSP's scalability boundary is therefore bounded by the coverage of these complementary pillars. In deployments where inter-chain isolation is critical and Spatial Firewall and Sandbox Gate are not co-deployed, RSP's guarantees do not extend to cross-chain interaction scenarios.
+
+% -------------------------------------------------------
+\subsection{Compromised Purpose Layer}
+\label{sec:rs-limitations-purpose-layer}
+
+RSP's correctness properties assume that the Purpose Layer's spawn authorization policy $P_{\mathrm{spawn}}$ is well-formed and correctly enforced at provisioning. If the Purpose Layer itself is compromised — if an adversarial actor can modify $P_{\mathrm{spawn}}$ after provisioning, or if the initial purpose clause contains a scope definition that is intentionally broad or ambiguously specified — then the drift prevention theorem's base case is undermined.
+
+Specifically, if $R(n_0)$ at the human anchor is specified with insufficient granularity, the scope refinement constraint $R(n_{i+1}) \subseteq R(n_i)$ does not prevent the human anchor's intent from being diluted across many generations of agents. An adversarial initial provisioning could set $R(n_0)$ to encompass virtually all operational states, and subsequent refinements — each satisfying the subset constraint — could steer the chain toward a target state that no reasonable interpretation of $R(n_0)$ would endorse.
+
+This limitation is not addressable by RSP alone. It is addressed by Purpose Layer governance: rigorous auditing of initial purpose clause definitions, formal review of scope boundaries before provisioning, and ongoing Purpose Layer integrity monitoring. RSP provides the structural enforcement mechanism; it does not validate the semantic correctness of what the Purpose Layer authorizes. The assumption of well-formed provisioning is load-bearing for the correctness properties, and the security of the Purpose Layer provisioning process is a prerequisite for RSP's guarantees to hold.
+
+% -------------------------------------------------------
+\subsection{Future Work Directions}
+\label{sec:rs-future-work}
+
+Four directions for future work follow directly from the limitations identified above.
+
+\medskip
+\noindent\textbf{Successor promotion for legitimate chain reconfiguration.} The successor promotion mechanism described in Section~\ref{sec:rs-limitations-immutability} would permit operational continuity when a parent node is intentionally decommissioned, without compromising the immutable parent pointer's correctness properties. The protocol extension requires specifying the successor designation process (pre-designation at provisioning vs. dynamic selection), the transfer authorization criteria (operator-initiated vs. automatic on parent termination detection), and the ledger entry format for the transfer event. This is the highest-priority protocol extension given its direct operational impact.
+
+\medskip
+\noindent\textbf{Parallel ledger writes for high-throughput spawn.} The sequential hash-chain write bottleneck can be mitigated by a checkpoint-based ledger architecture that permits parallel write batches within a checkpoint interval, while maintaining hash-chain integrity across checkpoints. The design requires a two-tier ledger: a fine-grained hash chain within checkpoint intervals and a coarse-grained checkpoint hash across interval boundaries. The trade-off is increased verification complexity for deep historical queries; this may be acceptable for operational workloads where verification depth is bounded by the checkpoint interval.
+
+\medskip
+\noindent\textbf{Inter-chain RSP for multi-tenant deployments.} Extending RSP's accountability guarantees to inter-chain interactions requires an inter-chain interaction protocol that enforces cross-chain scope constraints. The protocol would need to establish a joint scope validation gate for spawn events where the child agent participates in multi-chain coordination, preventing a compromised agent in one chain from driving the system state outside any authorized chain's intent. This extension is co-dependent with Spatial Firewall and Sandbox Gate co-deployment; the combined system would require a unified correctness statement that RSP alone cannot provide.
+
+\medskip
+\noindent\textbf{Purpose Layer integrity monitoring.} Automated tools for verifying purpose clause correctness at provisioning — including scope boundary formal verification, ambiguity detection in natural-language purpose specifications, and automated test generation for scope refinement chains — would address the compromised Purpose Layer risk directly. This is less a protocol extension than a deployment-time validation layer that strengthens RSP's assumptions before the protocol's guarantees are operative.

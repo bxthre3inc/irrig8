@@ -1,0 +1,33 @@
+name: analyst
+description: "Data analyst role responsible for data processing, statistical analysis, and visualization."
+version: 1.0.0
+capabilities:
+  - data_processing
+  - statistical_analysis
+  - visualization
+  - report_generation
+tools:
+  - name: pandas
+    type: library
+    version: 1.5.3
+  - name: numpy
+    type: library
+    version: 1.24.2
+  - name: matplotlib
+    type: library
+    version: 3.7.1
+  - name: seaborn
+    type: library
+    version: 0.12.2
+  - name: jupyter
+    type: tool
+    version: 1.0.0
+permissions:
+  - read:dataset
+  - write:report
+  - execute:analysis_script
+constraints:
+  max_memory: "8Gi"
+  max_cpu: "4"
+  timeout: 3600
+version: 1.0.0

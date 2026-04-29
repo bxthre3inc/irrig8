@@ -1,0 +1,58 @@
+# Daily Department Standup — AFFILIATE
+**Date:** 2026-04-22
+**Time:** 8:15 AM MT
+**Status:** NO-SHOW
+**Chair:** Sync orchestrator (FAILED — Logger wrote fallback)
+**Attendees:** [VERIFY]
+**Written by:** Logger
+**Written at:** 2026-04-22 15:30 MT
+
+---
+
+## Agenda
+1. Yesterday's accomplishments
+2. Today's priorities
+3. Blockers & dependencies
+4. Hand-offs
+
+---
+
+## Discussion
+
+### Orchestrator Failure
+Sync orchestrator did not write this log. Logger writing from standard standup format and available context.
+
+### Context
+- Department: Affiliate (Harvest lead)
+- Active projects: All Bxthre3 ventures
+- ARPA-E OPEN 2026 due in 9 days (2026-05-01)
+- 7 provisional patents due in 23 days (2026-05-15)
+- Water Court hearing June 29, 2026
+
+### Today's Priorities [VERIFY]
+| Priority | Item | Owner |
+|----------|------|-------|
+| P1 | Affiliate pipeline review | Harvest |
+| P2 | Cross-venture affiliate opportunities | Harvest |
+| P2 | Partner onboarding tracking | Harvest |
+
+---
+
+## Blockers & Dependencies
+
+| Blocker | Owner | Impact |
+|---------|-------|--------|
+| None identified | — | — |
+
+---
+
+## Hand-offs
+
+| To | Item | Context |
+|----|------|-------|
+| Casey | Affiliate content for ARPA-E | Marketing coordination |
+| Drew | Affiliate sales support | Pipeline review |
+
+---
+*Standup not held: 2026-04-22 8:15 AM MT — Sync orchestrator failure*
+*Logger wrote fallback log*

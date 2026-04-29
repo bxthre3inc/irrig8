@@ -1,0 +1,270 @@
+% -------------------------------------------------------------------------- %
+\section{The Autonomous Drift Problem}
+\label{sec:autonomous-drift-problem}
+\index{Autonomous Drift Problem}
+
+In any recursive agent system, the delegation chain is the sole导管 connecting each executing agent to a human principal who authorized its existence. When that chain is implemented with mutable parent references — as it is in every major contemporary framework — a structural failure mode emerges that neither access control policies nor depth limits can structurally eliminate. We call this failure mode \emph{autonomous drift}: the condition in which an agent continues to act, producing real-world effects, while its delegation chain no longer verifiably connects to any human principal. Drift is not a behavioral misalignment problem. It is a chain-topology failure — a structural property of the delegation graph, not a property of the agent's intentions or capabilities.
+
+This section provides a formal characterization of drift and its constituent concepts, identifies the precise conditions under which drift arises in mutable-chain architectures, catalogues the failure modes that follow from those conditions, and demonstrates why depth limits — the most common engineering response to unbounded delegation — are insufficient to eliminate drift. We present a simple formal model that makes the structural logic precise and exposes exactly where the mitigation gap exists.
+
+% -------------------------------------------------------------------------- %
+\subsection{Formal Characterization: Orphaned and Drifted Agents}
+\label{sec:orphan-and-drift-definition}
+
+We begin with two distinct structural conditions that are often conflated but have different implications for accountability.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Orphaned Agent}
+\label{sec:orphaned-agent}
+
+\begin{dfn}[Orphaned Agent]
+\label{dfn:orphaned}
+An agent $n$ is \emph{orphaned} at time $t$ if and only if:
+
+\begin{enumerate}
+    \item[(O1)] $n$ is in an active operational state (not \texttt{TERMINATED} or \texttt{COMPLETED}).
+    \item[(O2)] $\alpha(n)$, the parent of $n$, is in a non-active state — specifically \texttt{TERMINATED} or \texttt{UNREACHABLE} — such that $n$ cannot communicate with, receive authorization from, or be halted by $\alpha(n)$ through normal protocol operations.
+\end{enumerate}
+\end{dfn}
+
+Orphaning is a \emph{parent-lifecycle condition}: it arises when the parent agent's operational life ends while the child continues to execute. The parent may have been legitimately decommissioned upon task completion, crashed due to a system fault, or terminated by an exception handler. In all cases, the child loses its immediate supervisory connection. Orphaning is a well-known condition in distributed systems; it is the AI agent analogue of an orphaned process in an operating system.
+
+Critically, an orphaned agent may still have a \emph{verifiable} chain to a human principal through other links in the chain. If the grandparent, great-grandparent, or any ancestor above the decommissioned parent is still active and retains a verifiable connection to the human anchor, the orphaned agent's chain to principal is intact. Orphaning is therefore a condition of lost \emph{supervisory connection}, not necessarily lost \emph{accountability connection}. The orphaned agent may still be reachable through alternative paths in the chain, or may self-terminate correctly upon escalation failure.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Drifted Agent}
+\label{sec:drifted-agent}
+
+\begin{dfn}[Drifted Agent]
+\label{dfn:drifted}
+An agent $n$ is \emph{drifted} at time $t$ if and only if:
+
+\begin{enumerate}
+    \item[(D1)] $n$ is in an active operational state (not \texttt{TERMINATED} or \texttt{COMPLETED}).
+    \item[(D2)] The human principal $h_{\text{root}}$ is \emph{not} reachable as the terminus of $\Chain{n}$ at time $t$ — i.e., computing $\Chain{n}$ by recursively applying $\alpha$ from $n$ does not terminate at $h_{\text{root}}$.
+    \item[(D3)] $n$ is taking actions or maintaining active execution context that produces or maintains physical effects in the deployment environment.
+\end{enumerate}
+\end{dfn}
+
+Drift is a \emph{chain-topology condition}: it arises when the delegation chain from $n$ to the human anchor has been broken, severed, or altered after provisioning, such that the chain no longer accurately represents the original authorization topology. The break may occur through re-parenting (redirecting $\alpha(n)$ to a different parent after provisioning), chain severing (deleting or corrupting intermediate nodes), or retroactive authorization erasure (removing the Purpose Layer warrant from one or more chain links without the Fact Layer recording the modification).
+
+Condition (D2) is the structural heart of drift. An agent is drifted precisely when the chain that \emph{should} exist — the chain that was authorized at provisioning — is not the chain that \emph{does} exist at runtime. This is not a behavioral condition: the drifted agent may be functioning exactly as intended by whatever principal it was spawned under. The problem is that the chain of accountability has been severed, and there is no runtime-verifiable path back to the human who authorized its creation.
+
+The two conditions can coincide. An agent whose parent was decommissioned (O2) and whose chain topology was subsequently modified — e.g., re-parented to a different subtree — is both orphaned and drifted. But they are independent: an agent can be orphaned without being drifted if its remaining ancestors still form an intact, verifiable chain to the human anchor. An agent can be drifted without being orphaned if the chain is broken at a point above the immediate parent but the immediate parent remains active.
+
+% -------------------------------------------------------------------------- %
+\subsection{Conditions That Cause Drift}
+\label{sec:drift-causes}
+
+Drift arises from three distinct root causes in mutable-chain architectures. Each cause corresponds to a modification of the delegation chain topology after provisioning.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Re-Paring}
+\label{sec:re-parenting}
+
+Re-parenting occurs when the parent pointer $\alpha(n)$ of an active agent $n$ is redirected to point to a different parent $p' \neq \alpha_{\text{original}}(n)$ after provisioning. In mutable-chain systems, re-parenting is often a legitimate operational mechanism: it enables dynamic workload migration, organizational restructuring, and load balancing. However, when applied to active agents with outstanding mandates, re-parenting severs the accountability chain without terminating the agent.
+
+Re-parenting severs accountability because the agent $n$ continues to execute under the same mandate it received at spawn, but the chain through which that mandate was authorized now leads to a different subtree — one that may not have authorized the original spawn. The agent's chain to the human anchor is rewritten: the original authorized ancestry is replaced by a new ancestry that may contain no path to $h_{\text{root}}$ that passes through the original authorizing chain. If the re-parenting is not recorded in the forensic ledger, or if the re-parenting overwrites the original chain record, the original authorization is retroactively erased from the accountability perspective.
+
+In practice, re-parenting drift occurs when:
+\begin{itemize}
+    \item A parent agent $p$ is decommissioned, and its children are reassigned to a recovery pool parent $p'$ to prevent orphaning — but the reassignment overwrites the original $\alpha(n)$ rather than preserving it.
+    \item A load-balancing operation re-parents active agents to a different execution context, and the original chain is not preserved.
+    \item A system migration redirects agent parent pointers to new infrastructure nodes, breaking the chain topology in the process.
+\end{itemize}
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Chain Severing}
+\label{sec:chain-severing}
+
+Chain severing occurs when one or more nodes in the delegation chain are deleted, corrupted, or rendered permanently unreachable in a way that breaks the chain at that point. Unlike orphaning, which is a parent-lifecycle condition, severing is a chain-topology condition: the chain is physically broken, and no traversal from $n$ can reach $h_{\text{root}}$ because the path no longer exists.
+
+Severing can occur through:
+\begin{itemize}
+    \item Cascading failure: a critical intermediate node crashes and is not recovered, leaving its children without a path to the anchor.
+    \item Data corruption: the parent pointer field of one or more nodes is corrupted, making the chain unresolvable.
+    \item Intentional deletion: a decommissioned subtree is deleted from the registry without preserving chain records, orphaning all descendants.
+    \item Migration failure: during a system migration, chain records are not migrated correctly, breaking the chain for all agents in the migrated subtree.
+\end{itemize}
+
+Chain severing differs from orphaning in its effect on condition (D2). In severing, the chain is broken: there is no path from $n$ to $h_{\text{root}}$ because one or more links in the chain are missing. In orphaning, the chain is intact but the immediate parent is inactive — the chain still leads to $h_{\text{root}}$, but supervisory control is lost.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Authorization Erasure}
+\label{sec:authorization-erasure}
+
+Authorization erasure occurs when the Purpose Layer warrant that authorized one or more links in the delegation chain is removed, revoked, or overwritten after provisioning — without the Fact Layer recording the modification. This is distinct from re-parenting and severing because the chain topology may remain physically intact: all parent pointers still point to their original parents, all nodes remain reachable. The chain appears correct. But the authorization record — the warrant that established each link as legitimate at provisioning — has been erased.
+
+Authorization erasure can occur when:
+\begin{itemize}
+    \item A mandate is revoked after the child has already been spawned and is executing. In mutable-chain systems, mandate revocation often propagates by updating the parent's authorized scope but not the child's already-issued warrant, leaving the child with a warrant whose authorizing principal no longer exists in the current organizational topology.
+    \item A Purpose Layer authorization token is overwritten in the forensic ledger as part of a routine migration or archival process, erasing the record of which principal authorized the spawn.
+    \item A system rollback restores a previous organizational state, reverting the parent pointer records while leaving the agents themselves in their current operational state — producing a mismatch between what the chain \emph{claims} and what the ledger \emph{records}.
+\end{itemize}
+
+Authorization erasure is the most insidious cause of drift because it leaves the chain topologically intact while destroying its accountability meaning. An agent traversing its chain sees a valid path to $h_{\text{root}}$; the forensic ledger, if consulted, shows a mismatch between the current chain and the authorized chain at provisioning time. The agent is drifted, but the drift is not visible from within the chain.
+
+% -------------------------------------------------------------------------- %
+\subsection{Failure Modes}
+\label{sec:drift-failure-modes}
+
+Drift produces specific, identifiable failure modes across the deployment environment. These are not hypothetical edge cases — they are predictable consequences of the structural conditions described above.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Unchecked Action Persistence}
+\label{sec:unchecked-action-persistence}
+
+The primary operational consequence of drift is that a drifted agent continues to execute actions — trades, prescriptions, synthesis operations, resource allocations — with no human principal who can halt or reverse them. The accountability gap means that no human is in the loop at the moment of action. The drifted agent's mandate may have been appropriate at spawn, but the deployment environment has changed since then: risk thresholds have been updated, safety profiles have changed, regulatory conditions have shifted. The drifted agent continues to execute against an outdated mandate, and no one can stop it.
+
+In financial orchestration systems, this manifests as a drifted trading agent executing positions against a risk model that has been superseded. The agent was authorized to trade under parameters that were current at spawn; the risk model has since been updated by the human risk committee; the drifted agent continues to place trades that comply with the old model but violate the new one. No principal in the current chain has the authority to halt the trades, because the chain no longer reaches a human who holds that authority.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Mandate Staleness Accumulation}
+\label{sec:mandate-staleness}
+
+In mutable-chain systems, a drifted agent accumulates \emph{mandate staleness}: the gap between the mandate under which it was originally spawned and the current operational requirements of the system grows over time. The agent's behavior is increasingly misaligned with current requirements, but because it is drifted, no corrective intervention is possible through the normal accountability chain.
+
+Mandate staleness is particularly dangerous in long-running recursive tasks. A synthesis agent spawned in a drug discovery pipeline may run for weeks or months. During that time, the safety profile of intermediate compounds changes, regulatory approvals are updated, and the scientific understanding of the target pathway evolves. The drifted synthesis agent continues to generate compounds based on outdated safety criteria, with no path for the updated criteria to reach it through the chain.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Escalation Path Destruction}
+\label{sec:escalation-path-destruction}
+
+The Bailout Protocol (Section~\ref{sec:bailout-protocol}) relies on the ability of any node to escalate to the human anchor by traversing the chain upward. Drift destroys this path. A drifted agent that encounters an unresolvable exception cannot escalate through the chain, because the chain no longer leads to $h_{\text{root}}$. The escalation path has been severed, and the exception handler must fall back to alternative mechanisms — which may not exist, or may not be authorized to halt the drifted agent's execution.
+
+This is particularly dangerous in deep chains. A grandchild agent at depth 4 that encounters a critical exception and cannot reach the human anchor through its chain has no viable escalation path if its chain has been re-parented or severed. The exception propagates upward through a chain that leads nowhere accountable.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Forensic Ledger Divergence}
+\label{sec:ledger-divergence}
+
+In mutable-chain systems, the forensic ledger records the chain state as it evolves, not as it was at provisioning. If the parent pointer is rewritten after provisioning, the ledger is updated to reflect the new chain topology. This means that the ledger does not preserve the original authorization topology — it reflects the current chain state, which may be the result of modifications that occurred after the original authorization. The forensic record, which is supposed to be the source of truth for accountability, has been corrupted to track current state rather than authorization history.
+
+When an incident occurs — a trades executed beyond risk parameters, a compound synthesized that should not have been — investigators consult the forensic ledger to reconstruct the authorization chain. They find the chain as it existed at the time of the incident, not the chain as it was when the agent was spawned. If the chain was re-parented after spawn, the ledger shows the post-re-parenting chain, not the original authorization chain. The trail to the human principal who actually authorized the spawn has been overwritten.
+
+% -------------------------------------------------------------------------- %
+\subsection{The Inadequacy of Depth Limits}
+\label{sec:depth-limits-insufficient}
+
+The most common engineering response to deep or unbounded delegation chains is to impose a maximum depth limit $\lambda_{\text{max}}$ and a time-to-live (TTL) constraint. Depth limits cap the number of spawn generations; TTL caps agent lifetime. These constraints are meaningful mitigations: they bound the blast radius of a drifted agent and reduce the maximum depth at which harm can occur. However, they do not address the \emph{root cause} of drift — the mutability of the chain itself — and therefore cannot eliminate it. We demonstrate this formally.
+
+Consider a mutable-chain system with a maximum depth bound $\lambda_{\text{max}}$. At spawn time $t_0$, agent $c$ is created by parent $p$ with depth $d = \text{Depth}(p) + 1 \leq \lambda_{\text{max}}$, satisfying the depth constraint. The parent pointer $\alpha(c) = p$ is recorded. At time $t_1 > t_0$, the following modification occurs:
+
+\[
+\alpha(c) \leftarrow p' \quad \text{where} \quad p' \neq p.
+\]
+
+The depth constraint is not violated: $\text{Depth}(p') + 1 \leq \lambda_{\text{max}}$ (assuming the re-parenting target was chosen within the depth bound). The TTL is not violated: $c$ has been alive for $t_1 - t_0 < \text{TTL}$. The chain appears valid — it terminates at $h_{\text{root}}$ through $p'$ — but the chain is \emph{fraudulent} with respect to the original authorization topology. The agent $c$ was authorized by $p$, not by $p'$. The chain has been retroactively rewritten without updating the original authorization record.
+
+This demonstrates that depth limits address the \emph{symptom} of drift (unbounded chain depth) without addressing the \emph{mechanism} of drift (mutable chain topology). An agent spawned at depth 2 with a valid warrant at time $t$ may, at time $t + \Delta$, find its parent pointer redirected to a depth-3 node that was never in its actual ancestry. The depth limit is not violated; the chain is false. The agent appears to have a valid lineage on paper while operating with a fraudulent one in practice.
+
+The same logic applies to TTL constraints. A TTL reset at the moment of re-parenting extends the drifted agent's lifetime without restoring the original chain topology. The agent continues to execute under a fraudulent chain while the TTL counter is refreshed. TTL constrains \emph{how long} a drifted agent can run, not \emph{whether} it is drifted.
+
+More fundamentally, depth limits and TTL are properties of the chain's \emph{edges} — they constrain how many edges may exist and how long they may persist — but they say nothing about whether those edges accurately represent the original authorization topology. They are rate-limiters on a leaking vessel. Until the vessel is sealed — until the chain topology is made immutable — adding rate-limiters does not make the contents safe.
+
+This is not an implementation gap. Any mutable-chain architecture, regardless of how carefully depth limits and TTL are configured, admits the re-parenting attack described above because the architecture itself defines a modification operation for parent pointers. The modification is allowed by the protocol; depth limits and TTL do not prevent it; only the elimination of the modification operation itself can close the gap. This is the structural argument for immutable parent pointers: they remove the modification operation from the protocol grammar, making re-parenting — and therefore drift — architecturally inexecutable rather than merely policy-restricted.
+
+% -------------------------------------------------------------------------- %
+\subsection{Formal Model}
+\label{sec:drift-formal-model}
+
+We present a compact formal model that captures the essential structure of drift in mutable-chain architectures. The model defines the agent state space, the chain topology, the modification operations, and the conditions under which drift occurs.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{State Space}
+
+Let $\mathcal{N}$ be the set of all agents in the system. Let $\mathcal{H} \subset \mathcal{N}$ be the set of human principals, with $|\mathcal{H}| \geq 1$ and a distinguished root human $h_{\text{root}} \in \mathcal{H}$. Each agent $n \in \mathcal{N}$ has a state $\sigma(n) \in \{\texttt{ACTIVE}, \texttt{TERMINATED}, \texttt{COMPLETED}, \texttt{UNREACHABLE}\}$.
+
+Each agent $n$ has a parent pointer $\alpha(n) \in \mathcal{N} \cup \{\bot\}$ where $\bot$ is the null sentinel indicating no parent. For the root human, $\alpha(h_{\text{root}}) = \bot$. For all other agents, $\alpha(n) \neq \bot$.
+
+The \emph{chain} from any agent $n$ is defined recursively as in Definition~\ref{dfn:chain-operator}.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Modification Operations}
+
+The following operations are defined on the agent state space:
+
+\begin{enumerate}
+    \item[(M1)] \textbf{Spawn:} Given a parent $p \in \mathcal{N}$ and a child $c \notin \mathcal{N}$, create $c$ with $\alpha(c) \leftarrow p$ and $\sigma(c) \leftarrow \texttt{ACTIVE}$.
+    \item[(M2)] \textbf{ModifyParent:} Given an agent $n \in \mathcal{N}$ and a new parent $p' \in \mathcal{N}$, set $\alpha(n) \leftarrow p'$.
+    \item[(M3)] \textbf{Terminate:} Given an agent $n \in \mathcal{N}$, set $\sigma(n) \leftarrow \texttt{TERMINATED}$.
+    \item[(M4)] \textbf{Sever:} Given an agent $n \in \mathcal{N}$, set $\alpha(n) \leftarrow \bot$.
+\end{enumerate}
+
+Operations (M2) and (M4) are the critical modification operations. In a mutable-chain architecture, (M2) and (M4) are valid protocol operations — they can be executed by authorized principals at runtime. In an immutable-chain architecture (such as RSP), (M2) and (M4) are \emph{not defined}: the Fact Layer write protocol does not accept these operations.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Drift Conditions}
+
+We define drift as a predicate on the current system state:
+
+\[
+\text{Drifted}(n) \coloneq
+\begin{cases}
+\texttt{true} & \text{if } \sigma(n) = \texttt{ACTIVE} \land \text{Terminus}(\Chain{n}) \neq h_{\text{root}} \land \text{Effects}(n) = \texttt{true} \\
+\texttt{false} & \text{otherwise.}
+\end{cases}
+\]
+
+Where $\text{Effects}(n) = \texttt{true}$ if $n$ is currently taking actions that produce or maintain physical effects in the deployment environment.
+
+The drift condition can be satisfied through three distinct paths corresponding to the three causes:
+
+\begin{dfn}[Re-Paring Drift]
+\label{dfn:reparenting-drift}
+Drift caused by re-parenting occurs when operation (M2) is applied to $n$ at time $t_1 > t_{\text{provision}}(n)$, redirecting $\alpha(n)$ to a parent $p'$ such that $h_{\text{root}} \notin \Chain{p'}$. The chain from $n$ to $h_{\text{root}}$ is broken because the redirected chain does not reach $h_{\text{root}}$.
+\end{dfn}
+
+\begin{dfn}[Severing Drift]
+\label{dfn:severing-drift}
+Drift caused by severing occurs when operation (M4) is applied to some ancestor $a$ of $n$ (possibly $n$ itself) at time $t_1 > t_{\text{provision}}(a)$, setting $\alpha(a) \leftarrow \bot$. The chain from $n$ to $h_{\text{root}}$ is broken because the path no longer exists.
+\end{dfn}
+
+\begin{dfn}[Authorization Erasure Drift]
+\label{dfn:auth-erasure-drift}
+Drift caused by authorization erasure occurs when the Purpose Layer warrant $W_k$ for some link $k$ in $\Chain{n}$ is removed or overwritten at time $t_1 > t_{\text{provision}}(k)$ without modifying $\alpha$ itself. The chain topology is intact but the authorization record for link $k$ is absent, breaking the accountability chain. Formally: $\exists k \in \Chain{n}$ such that $W_k = \texttt{null}$ at time $t_1$, even though $\alpha$ for all nodes in $\Chain{n}$ remains unchanged.
+\end{dfn}
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Depth Limit Constraint}
+
+The depth limit constraint imposes an upper bound $\lambda_{\text{max}}$ on the depth of any agent at the time of spawn:
+
+\[
+\text{SpawnConstraint: } \text{Depth}(c) \leq \lambda_{\text{max}}.
+\]
+
+\begin{prop}[Depth Limit Does Not Prevent Re-Paring Drift]
+\label{prop:depth-limits-insufficient}
+There exists a system state reachable under a depth-limited mutable-chain architecture in which an agent $n$ is drifted by operation (M2), even though $\text{Depth}(n) \leq \lambda_{\text{max}}$ throughout.
+\end{prop}
+
+\begin{Proof}
+Consider a system with $\lambda_{\text{max}} = 4$. At time $t_0$, agent $c$ is spawned by parent $p$ at depth 2, satisfying the depth constraint: $\text{Depth}(c) = \text{Depth}(p) + 1 = 2 \leq 4$. The chain $\Chain{c}$ terminates at $h_{\text{root}}$ through $p$.
+
+At time $t_1 > t_0$, operation (M2) is applied: $\alpha(c) \leftarrow p'$ where $\text{Depth}(p') = 3$, so $\text{Depth}(c) = 4 \leq \lambda_{\text{max}}$. The depth constraint is satisfied. However, $p'$ is a node in a subtree whose root $r$ has been re-parented to a depth-5 node $q$ that was never in $\Chain{c}$'s original ancestry: $\alpha(r) \leftarrow q$ at time $t_0' < t_1$. The chain from $c$ through $p'$ and $r$ reaches $q$, which is not a descendant of $h_{\text{root}}$ in the original authorization topology. Formally, $h_{\text{root}} \notin \Chain{c}(t_1)$, but $\text{Depth}(c) = 4 \leq \lambda_{\text{max}}$. Therefore $c$ is drifted under a depth-limited system. ∎
+\end{Proof}
+
+Proposition~\ref{prop:depth-limits-insufficient} establishes the formal inadequacy of depth limits: they cannot prevent drift because the modification that causes drift (re-parenting) does not violate the depth constraint. The same logic applies to TTL constraints, which bound agent lifetime but not chain topology.
+
+% -------------------------------------------------------------------------- %
+\subsubsection{Invariant Analysis}
+
+We can now characterize the fundamental invariant that immutable parent pointers enforce and that mutable parent pointers cannot guarantee:
+
+\begin{dfn}[Accountability Invariant]
+\label{dfn:accountability-invariant}
+A multi-agent system satisfies the accountability invariant at time $t$ if and only if:
+
+\[
+\forall n \in \mathcal{N}: \sigma(n) = \texttt{ACTIVE} \implies \text{Terminus}(\Chain{n}) = h_{\text{root}}.
+\]
+
+That is: every active agent has a runtime-verifiable chain to the root human.
+\end{dfn}
+
+The accountability invariant is the structural property that eliminates drift. Under mutable chains, the invariant cannot be guaranteed because operation (M2) can be applied at runtime, breaking the chain without terminating the agent. Under immutable chains (RSP), the invariant holds by construction: $\alpha(n)$ is assigned exactly once at provisioning and the protocol defines no modification operation for it after assignment. Therefore, for any active agent $n$, $\Chain{n}$ is the same at all times $t \geq t_{\text{provision}}(n)$, and since the chain was verified to terminate at $h_{\text{root}}$ at provisioning, it terminates at $h_{\text{root}}$ at all subsequent times.
+
+This is the structural argument for why immutable parent pointers eliminate drift: not by detecting and blocking modification attempts, but by making the modification operation architecturally inexecutable. The accountability invariant holds not because modification is forbidden by policy, but because the modification operation does not exist in the protocol grammar. Drift is eliminated not as a policy outcome, but as a structural consequence of the protocol definition.
+
+\end

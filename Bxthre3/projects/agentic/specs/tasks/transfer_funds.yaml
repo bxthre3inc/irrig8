@@ -1,0 +1,16 @@
+Task: "Transfer_Funds"
+Description: "Transfer funds between subsidiaries or accounts."
+Prerequisites:
+  Access: [BankingAPI, FinancialDB]
+  Requires: [LLM, ERP]
+VelocityRequirement:
+  Min: 1
+  Stretch: 1
+RiskWeight: 9
+EscalationPath: [You]
+Alignment: ["#growth"]
+Modalities:
+  Input: [Text, Data]
+  Output: [Text, Data]
+CascadingTriggers:
+  - OnComplete: "Update_Ledger"

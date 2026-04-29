@@ -1,0 +1,193 @@
+% ============================================================
+% Section 6: Integration with the BX3 Framework
+% ============================================================
+
+\section{Integration with the BX3 Framework}
+\label{sec:integration}
+
+Recursive Spawning Protocol is not a standalone mechanism. It is defined in concert with the three structural layers of the \bxthree architecture, each of which plays a distinct and irreplaceable role in enforcing RSP's non-drift guarantees. This section specifies the responsibilities of each layer within the RSP protocol and the end-to-end accountability flow that their interaction produces.
+
+% --------------------------------------------------------
+\subsection{Purpose Layer: The Accountability Anchor}
+% --------------------------------------------------------
+
+The \purpose is the uppermost layer of the \bxthree stack and the only layer whose contents are definitively immutable post-deployment. It encodes the singular objective for which a node was commissioned: an unambiguous statement of the principal's intent, sealed at spawn time. In RSP, the \purpose layer serves a function that no other component can fulfil: it is the \emph{sole permissible termination point} for the delegation chain.
+
+Every spawned node $n$ carries a \purpose layer $\Pi_n$ that is instantiated atomically at spawn time and is never modified during the node's operational lifetime. This layer contains four structural fields that together constitute the node's authorization instrument:
+
+\begin{enumerate}
+    \setlength\itemsep{0.4em}
+    \item \textbf{Principal identity} $\泌_n$: a resolvable reference to the human or organizational principal who authorized the node's creation. For the root node, this is the founding human principal. For all descendants, it is inherited by reference chain from the root.
+    \item \textbf{Scope statement} $\Sigma_n$: a formal conjunction of permissible action classes that defines the node's authorized operational envelope. The scope is fixed at spawn; it cannot be expanded, contracted, or reinterpreted without creating a new node.
+    \item \textbf{Chain anchor} $h(\Pi_{\alpha(n)})$: the SHA-256 hash of the parent node's \purpose layer. This field creates an immutable, tamper-evident cryptographic link from the child to its parent. Because $\Pi_{\alpha(n)}$ itself contains a chain anchor referencing its own parent, traversing this field recursively reconstructs the full delegation chain to the root.
+    \item \textbf{Termination condition} $\tau_n$: a deterministic predicate evaluated against observable state. When $\tau_n$ evaluates to true, the node transitions to terminal state and must propagate termination to all active children before doing so itself.
+\end{enumerate}
+
+The immutability of $\Pi_n$ means that none of these fields can be altered after spawn. This is not a policy choice but an architectural constraint: there exists no RSP operation, administrative or programmatic, capable of modifying a sealed \purpose layer. Any legitimate change to a node's authorized scope requires the creation of a new node with a new $\Pi_n$, preserving the original as a forensic record. The \purpose layer is therefore a legal instrument that binds the node's operational authority to an accountable principal at spawn time and maintains that binding for the node's entire lifetime.
+
+Within RSP, the critical function of the \purpose layer is its role as the \emph{only} node type at which a delegation chain may legitimately terminate. The chain anchor field ensures that any chain that does not reach a root $\Pi$ with a human principal identity is structurally impossible: the chain anchor field of any child node references a parent \purpose layer, and that parent's field references its own parent, and so on. There is no RSP construct capable of generating a chain that terminates anywhere other than a human principal's $\Pi_0$.
+
+% --------------------------------------------------------
+\subsection{Bounds Engine: Depth and Scope Enforcement}
+% --------------------------------------------------------
+
+The \bounds is the runtime gatekeeper of the \bxthree stack. It evaluates every proposed action against the node's $\Pi_n$ and permits or denies execution before the action reaches the \fact layer. In RSP, the \bounds enforces two structural constraints that jointly bound the node's authorized operational volume:
+
+\begin{enumerate}
+    \setlength\itemsep{0.4em}
+    \item \textbf{Depth constraint:} The spawn depth $d(n)$ of any node must satisfy $d(n) \leq D_{\max}$, where $D_{\max}$ is established at $\Pi_0$ of the root node. The root principal occupies depth $d = 0$. For any node $n$, $d(n) = d(\alpha(n)) + 1$, where $\alpha(n)$ is the immutable parent pointer.
+    \item \textbf{Scope constraint:} Every action $a$ proposed by the node must satisfy $a \in \Sigma_n$. Actions that fail this check are denied, logged as a \bounds violation in the \fact layer, and do not execute.
+\end{enumerate}
+
+The \bounds enforces the depth constraint in two places. At spawn time, it computes $d(\text{child}) = d(\text{parent}) + 1$ and compares against $D_{\max}$, blocking any spawn that would violate the depth bound. At runtime, it exposes a depth query interface that enables external auditors to verify the chain depth of any active node at any time. Critically, depth computation traverses the immutable chain of \purpose layer hash anchors rather than a mutable parent pointer field, ensuring that the depth value is determined by the authorization history and not by the current runtime state.
+
+The scope constraint is the primary defense against scope-creep drift. Because $\Sigma_n$ is sealed in $\Pi_n$ at spawn time, it cannot be expanded unilaterally by the node or by any administrative actor. The \bounds performs this check on every action dispatch, producing a binary permit/deny decision that is recorded in the \fact layer. The combination of mandatory pre-execution scope checking and immutable execution records makes out-of-scope execution both architecturally impossible and forensically detectable.
+
+% --------------------------------------------------------
+\subsection{Fact Layer: Forensic Ledger}
+% --------------------------------------------------------
+
+The \fact is the lowest layer of the \bxthree stack and the only layer permitted to record state. All actions taken by a node -- spawns, scope evaluations, \bounds checks, decisions, and external actuations -- are logged as immutable, append-only entries. Each \fact layer entry contains:
+
+\begin{itemize}
+    \setlength\itemsep{0.3em}
+    \item A canonical timestamp (wall-clock, monotonic, and distributed consensus time where available).
+    \item The canonical node identifier of the acting node.
+    \item The action performed and its parameters.
+    \item The result of the \bounds evaluation (permit or deny).
+    \item The SHA-256 hash of the preceding \fact layer entry, forming a backward hash chain.
+    \item The node's current chain depth and immutable parent pointer at the time of the action.
+\end{itemize}
+
+The \fact layer serves three RSP-critical functions. First, it is the \emph{forensic ledger}: if a node is suspected of drift, an auditor traverses the \fact layer hash chain, verifies each entry's integrity via the chained SHA-256 hashes, and confirms that every action was within $\Sigma_n$ as authorized by $\Pi_n$ at spawn time. Second, the hash chain provides tamper-evident logging: any modification to a historical entry breaks the chain at that point and all subsequent points, making undetected tampering architecturally impossible. Third, the \fact layer records the chain depth at each entry, enabling post-hoc detection of depth anomalies that would indicate a spawn-depth violation.
+
+In RSP specifically, every spawn event records: the spawning node's identifier, the spawn depth of the new node, the SHA-256 hash of the new node's $\Pi$, the immutable parent pointer $\alpha(\text{child}) = \text{parent}$, and the system timestamp. This record is created at the instant of spawn and is architecturally immutable. No subsequent event -- including the termination or compromise of the parent node -- can modify or delete it.
+
+% --------------------------------------------------------
+\subsection{End-to-End Accountability Flow}
+% --------------------------------------------------------
+
+The integration of RSP with the three \bxthree layers produces a unified accountability flow from human principal to operational action:
+
+\begin{enumerate}
+    \setlength\itemsep{0.35em}
+    \item A human principal commissions a root node by authorizing $\Pi_0$ with $d = 0$ and a human principal identity.
+    \item The root node's \bounds evaluates proposed child spawns against $\Sigma_0$. Permitted spawns produce a child $c$ whose $\Pi_c$ contains $h(\Pi_0)$ as its chain anchor and $d(c) = 1$.
+    \item Every action by any node is pre-evaluated by \bounds against $\Pi_n$; permitted actions execute and are logged in the \fact layer; denied actions are logged as violations and do not execute.
+    \item When a node spawns a child, $\alpha(\text{child}) = \text{node}$ is established atomically and is immutable for the lifetime of the child.
+    \item When a node's $\tau_n$ evaluates to true, it issues termination events to all active children before entering terminal state. The \fact layer records the propagation.
+    \item An external auditor can at any time reconstruct the complete authorization chain of any node by traversing $\alpha(\cdot)$ pointers to the root, verifying the $\Pi$ hash chain at each level, and cross-referencing the resulting chain against the \fact layer spawn records.
+\end{enumerate}
+
+This flow ensures that the delegation chain is not a post-hoc reconstruction but a runtime-verified, cryptographically sealed artifact maintained by the system itself.
+
+% ============================================================
+% Section 7: Correctness Properties
+% ============================================================
+
+\section{Correctness Properties}
+\label{sec:correctness}
+
+This section establishes the formal correctness guarantees of RSP with respect to its core design objective: the elimination of autonomous drift. We present three theorems covering drift prevention, chain integrity, and termination, together with the structural invariants that underpin each proof.
+
+% --------------------------------------------------------
+\subsection{Drift Prevention: Proof Sketch}
+% --------------------------------------------------------
+
+\begin{thrm}[Drift Prevention]
+\label{thrm:drift-prevention}
+In any \bxthree system operating under RSP, no active node can be in a drifted state.
+\end{thrm}
+
+\begin{proof}[Proof Sketch]
+The theorem follows from three structural invariants that RSP enforces simultaneously:
+
+\begin{enumerate}
+    \item[$\textbf{Invariance I -- Immutable parent pointer:}$] For every node $n$, the parent pointer $\alpha(n)$ is established atomically at spawn time and is never modified during the node's lifetime. There exists no RSP operation -- administrative, programmatic, or systemic -- capable of altering $\alpha(n)$ after it is set. Consequently, the delegation chain
+    \[
+    C(n) = \langle n_0,\ \alpha(n),\ \alpha^2(n),\ \ldots,\ \alpha^k(n) = n \rangle
+    \]
+    is a static structure determined at spawn time and invariant to all subsequent system events.
+
+    \item[$\textbf{Invariance II -- Forensic ledger completeness:}$] Every entry in the \fact layer is immutable and chained via SHA-256. The ledger records all spawn events, all \bounds evaluations, and all actions taken by any node. Any deviation from authorized scope -- including an out-of-scope action, a \bounds denial, or an unauthorized spawn -- is recorded as a tamper-evident entry that cannot be removed or altered without breaking the hash chain, which is detectable by any auditor.
+
+    \item[$\textbf{Invariance III -- Chain terminates at the Purpose Layer:}$] The delegation chain $C(n)$ terminates at a node $n_0$ whose \purpose layer $\Pi_0$ contains a human principal identity and satisfies $d = 0$. By construction, $\Pi_0$ has no parent and cannot be the child of any other node. There is no RSP construct capable of spawning a node without a valid $\Pi$ containing a chain anchor, and there is no construct capable of skipping past the root $\Pi_0$ to an intermediate node.
+\end{enumerate}
+
+Suppose, for contradiction, that a node $n$ is in a drifted state. By definition, $C(n)$ does not contain a human principal at its origin. This implies one of two cases:
+
+\textbf{Case (a):} $C(n)$ does not terminate at a human principal. This is impossible by Invariance III. The chain anchor field of every \purpose layer references a parent \purpose layer, and this reference chain terminates at $\Pi_0$, which by architectural definition carries a human principal identity. There is no alternative termination point.
+
+\textbf{Case (b):} $C(n)$ terminates at a node whose $\Pi$ does not contain a human principal identity. This is impossible by Invariance II. Every spawn event is recorded in the \fact layer with the spawning node's $\Pi$ hash as the chain anchor. A node whose $\Pi$ lacks a human principal identity could only be created by a spawn event that either (i) has no corresponding \fact layer record (violating Invariance II's completeness requirement) or (ii) has a \fact layer record with a chain anchor that fails SHA-256 verification (violating Invariance III's hash-chain integrity requirement). In either sub-case, the drift is detectable and attributable.
+
+Since both cases lead to contradiction, no drifted node can exist. \qed
+\end{proof}
+
+\begin{rem}
+The proof sketch assumes SHA-256 collision resistance and that the \purpose layer hash is computed over the complete layer contents: principal identity, scope statement, chain anchor, and termination condition. If the hash omits any field, Invariance III must be restated to cover only the fields included in the hash computation.
+\end{rem}
+
+% --------------------------------------------------------
+\subsection{Chain Integrity}
+% --------------------------------------------------------
+
+\begin{thrm}[Chain Integrity]
+\label{thrm:chain-integrity}
+For every node $n$ in a \bxthree system operating under RSP, the delegation chain $C(n)$ is uniquely determined at spawn time and is verifiable against the \fact layer hash chain of every node on the chain.
+\end{thrm}
+
+\begin{proof}
+The immutable parent pointer $\alpha(n)$ is established at spawn time and recorded in two architecturally immutable locations: the node's own \purpose layer (as the chain anchor field) and the parent's \fact layer (as part of the spawn event record). The \purpose layer is immutable by architectural definition; the \fact layer is append-only with SHA-256 chaining, making post-creation modification impossible. Therefore $C(n)$ is frozen at spawn time and cannot be retroactively altered.
+
+To verify chain integrity, an auditor traverses $C(n)$ from $n$ to the root. At each step $i$, the auditor verifies that the \purpose layer hash $h(\Pi_{\alpha^i(n)})$ stored in $\alpha^{i+1}(n)$ matches the \purpose layer hash recorded in $\alpha^i(n)$'s \fact layer spawn event. A mismatch at any step indicates either hash corruption (detectable via the \fact layer hash chain) or a fabricated chain anchor (detectable via SHA-256 collision resistance). The combination of both checks ensures that the chain is both intact and authentic. \qed
+\end{proof}
+
+\begin{prop}[Non-Repudiation of Spawn]
+\label{prop:non-repudiation}
+A spawn event recorded in the \fact layer of the parent node constitutes irrefutable evidence of the child's existence, its spawn parameters, and its delegation chain at the time of spawn.
+\end{prop}
+
+\begin{proof}
+The spawn event is recorded in the parent's \fact layer immediately upon child creation, before the child begins execution. The record is timestamped, SHA-256 hash-chained, and signed by the parent's own \fact layer key material. The parent cannot deny having created the child: the \fact layer entry is immutable and predates any action the child may have taken. The child cannot deny its delegation chain: its \purpose layer chain anchor matches the parent's \fact layer spawn record by construction of the spawn protocol. \qed
+\end{proof}
+
+% --------------------------------------------------------
+\subsection{Termination}
+% --------------------------------------------------------
+
+\begin{thrm}[Termination]
+\label{thrm:termination}
+When any node $p$ enters a terminal state under RSP, all active descendant nodes in its delegation subtree enter a terminal state within a bounded time interval, and no descendant node remains active after the cascade completes.
+\end{thrm}
+
+\begin{proof}
+The termination condition $\tau_p$ is a deterministic predicate evaluated against observable state. When $\tau_p$ evaluates to true, the node transitions to terminal state via the following mandatory sequence: (1) issue a termination event to all active children; (2) flush all pending \fact layer entries; (3) close the \fact layer hash chain; (4) enter terminal state. Steps (1) through (3) are enforced by the \bounds as preconditions for terminal state entry; a node cannot enter terminal state without confirming that all active children have received termination events.
+
+Each child $c$ receiving a termination event performs the same sequence recursively. The delegation tree is a finite directed acyclic graph: bounded depth $D_{\max}$ ensures there are no infinite paths, and the acyclic property follows from the immutability of parent pointers (Invariance I). The recursive cascade therefore terminates after at most $N$ individual termination events, where $N$ is the number of nodes in the subtree. Since $N \leq 2^{D_{\max}}$ for a binary spawn model (and is linear in the number of spawn edges for a general model), the cascade is finite and bounded. No descendant node can remain active after its parent has transitioned to terminal state, because step (1) is a mandatory precondition. \qed
+\end{proof}
+
+\begin{lemm}[Orphan Safety]
+\label{lemm:orphan-safety}
+No node can be orphaned without its parent having entered terminal state.
+\end{lemm}
+
+\begin{proof}
+A node becomes orphaned when its parent transitions to terminal state without issuing a termination event. Under RSP, the transition to terminal state requires, as its first mandatory step, the issuance of termination events to all active children. This step is enforced by the \bounds: a node cannot enter terminal state without a \bounds confirmation that all active children have received termination events. Any parent that exits without this step triggers a \bounds violation recorded in the node's own \fact layer, making the orphaning event detectable by an external auditor. \qed
+\end{proof}
+
+\begin{cor}[No Ghost Authority]
+\label{cor:ghost-authority}
+No node can be active without an authorized delegation chain terminating at a human principal's \purpose layer.
+\end{cor}
+
+\begin{proof}
+Directly from Theorem~\ref{thrm:drift-prevention} and Proposition~\ref{prop:non-repudiation}. If a node could be active without an authorized delegation chain, it would be a drifted node by definition, contradicting Theorem~\ref{thrm:drift-prevention}. \qed
+\end{cor}
+
+% --------------------------------------------------------
+\subsection{Summary of Correctness Guarantees}
+% --------------------------------------------------------
+
+The three properties established above -- drift prevention, chain integrity, and termination -- form a mutually reinforcing system. Drift prevention is a consequence of the simultaneous enforcement of three invariants: immutable parent pointers (which fix the delegation chain at spawn time), forensic ledger completeness (which makes every action auditable against the authorized scope), and chain termination at the \purpose layer (which ensures that every chain reaches a human principal). Chain integrity is a prerequisite for drift prevention: without a verifiable, immutable delegation chain, the forensic ledger cannot reconstruct the authorization history of any node. Termination is a safety property ensuring that the accountability infrastructure does not persist indefinitely after its mission is complete, preventing ghost authority from lingering in dormant but active descendant nodes.
+
+Together, these guarantees establish that RSP achieves its core design objective: under RSP, it is architecturally impossible for a node to operate with no traceable authorization path to a human principal. The delegation chain is not a post-mortem reconstruction -- it is a runtime-verified, cryptographically sealed, immutable artifact maintained by the system itself, with every deviation from authorized scope recorded in a tamper-evident forensic ledger.

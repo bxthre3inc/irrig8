@@ -1,0 +1,314 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview and Design Objectives}
+
+The Bailout Protocol is the exception-escalation mechanism of the BX3 framework. It provides a deterministic, auditable path from any node in a recursive autonomous system to a Human Accountability Anchor, bypassing all intermediate Machine actors. The protocol's function is to ensure that no autonomous event can ever be orphaned from human responsibility: every action that exceeds a node's provisioned resolution authority propagates upward until it reaches a human decision-maker who holds legal and ethical accountability for the outcome.
+
+Unlike static error-handling systems, which encode pre-defined responses to anticipated failure modes, the Bailout Protocol is architecturally universal: it does not require the failure to have been anticipated. Any node that encounters a condition it cannot resolve with certainty — whether the condition is novel, ambiguous, or explicitly prohibited — fires a Cascading Trigger and initiates escalation. This design principle is called the \emph{Verify or Die} standard: the default assumption is that unverified states must escalate, not self-resolve.
+
+The protocol operates within the Training Wheels Protocol framework (see SOUL.md, Principle \#8), which enforces a Human-in-the-Loop (HITL) overlay on all agentic actions by default. The Bailout Protocol is the structural implementation of this principle at the architectural level: it defines the precise mechanism by which a node's uncertainty becomes a human's accountability.
+
+\subsection{State Machine Definition}
+
+The lifecycle of a Bailout event is governed by a deterministic finite state machine (FSM) with six mutually exclusive, collectively exhaustive states. Each state encodes specific obligations about what the node may or may not do, and what conditions must hold for a valid transition to occur.
+
+\bigskip
+\noindent\textbf{States.}
+
+\begin{enumerate}
+
+\item[\textbf{IDLE}] The node is operating within its provisioned capability and safety envelope. No anomalous condition has been detected. The node executes its active Purpose directive normally. No escalation is active.
+
+\item[\textbf{BOUNDED}] A condition has been detected that may require escalation. The node's Bounds Engine is evaluating whether the condition falls within the node's resolution authority. The node has \emph{not yet committed} to firing a Bailout trigger. During BOUNDED, execution may continue under caution or may be paused pending evaluation, depending on the severity of the detected condition.
+
+\item[\textbf{BAIL\_PENDING}] The Bounds Engine has determined that the condition exceeds the node's resolution authority. A Cascading Trigger has been instantiated but not yet transmitted. The trigger package is assembled (event data, node state across all 9 DAP planes, confidence score, proposed resolution) and queued for asynchronous transmission to the node's parent. The node does not execute the contested action during BAIL\_PENDING.
+
+\item[\textbf{ESCALATING}] The trigger package has been transmitted to the parent node. The node is awaiting a resolution directive from higher in the recursive chain. If the parent is a Machine Accountability Anchor, the trigger is propagated further — the Machine actor is excluded from the resolution path (see \S 3.5). The node continues to await unless a timeout fires or the Human Root is reached.
+
+\item[\textbf{HUMAN\_ACKNOWLEDGED}] The trigger has reached a Human Accountability Anchor. The human has received the trigger package in the Root Dashboard and has issued a Purpose directive (authorization, modification, or rejection). The directive is propagating back down the recursive chain. The originating node has received the directive and is preparing to execute or has begun execution.
+
+\item[\textbf{RESOLVED}] The Bailout event is closed. The human directive has been executed, the outcome recorded in the forensic ledger (P7 Outcome Record), and the node has returned to IDLE. A false-positive flag is recorded if the Human Root determined the trigger was unnecessary.
+
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Formal State Encoding.} Let $S \in \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$ be the current state. Let $T = (t_{\text{id}}, t_c, e, \phi, \delta, \chi)$ be a trigger package where:
+
+\begin{itemize}
+    \item $t_{\text{id}}$ is the globally unique trigger identifier,
+    \item $t_c \in \{\text{CAPABILITY\_BOUNDARY}, \text{SAFETY\_ENVELOPE\_PREDICTED}, \text{ACCOUNTABILITY\_BOUNDARY}\}$ is the trigger condition type,
+    \item $e$ is the event payload (sensor reading, request, simulation result),
+    \item $\phi \in [0,1]$ is the confidence score of the originating node,
+    \item $\delta$ is the proposed resolution (if determinable),
+    \item $\chi$ is the propagation chain (ordered list of nodes that have received and escalated the trigger).
+\end{itemize}
+
+The state machine is formally defined as the transition function $T: S \times \Sigma \rightarrow S$, where $\Sigma$ is the event alphabet comprising trigger conditions, parent responses, human directives, and timeout signals.
+
+\subsection{Transition Conditions}
+
+Transitions between states are deterministic, governed by the following conditions:
+
+\bigskip
+\noindent\textbf{IDLE $\rightarrow$ BOUNDED.}
+\begin{equation}
+\text{Transition fires when: } \exists\; \text{condition } c \text{ s.t. } \neg \text{within\_authority}(c, \text{node}) \lor \neg \text{within\_envelope}(c, \text{node})
+\end{equation}
+where $\text{within\_authority}(c, \text{node})$ returns true iff the node holds provisioned decision authority for condition $c$, and $\text{within\_envelope}(c, \text{node})$ returns true iff executing any action in response to $c$ would remain within the node's Safety Envelope parameters (as defined by the Bounds Engine's P6 Projection).
+
+\bigskip
+\noindent\textbf{BOUNDED $\rightarrow$ IDLE.}
+\begin{equation}
+\text{Transition fires when: } \text{BoundsEngine}(c) = \text{RESOLVED} \land \phi < \phi_{\text{bailout}}
+\end{equation}
+The Bounds Engine determines that the condition is within the node's authority and safety envelope. The confidence score $\phi$ must fall below the configurable Bailout threshold $\phi_{\text{bailout}}$ (default: $0.7$). If either condition fails — unresolved or confidence above threshold — the machine proceeds to BAIL\_PENDING.
+
+\bigskip
+\noindent\textbf{BOUNDED $\rightarrow$ BAIL\_PENDING.}
+\begin{equation}
+\text{Transition fires when: } \neg \text{resolved} \lor \phi \geq \phi_{\text{bailout}}
+\end{equation}
+The condition cannot be resolved locally, or the node's confidence that human involvement is required meets or exceeds the Bailout threshold. The trigger package $T$ is instantiated and queued for transmission.
+
+\bigskip
+\noindent\textbf{BAIL\_PENDING $\rightarrow$ ESCALATING.}
+\begin{equation}
+\text{Transition fires when: } \text{delivery\_confirmed}(T, \text{parent}) = \text{TRUE}
+\end{equation}
+The asynchronous trigger transmission to the parent node has been confirmed. The node transitions to ESCALATING and begins awaiting a resolution directive.
+
+\bigskip
+\noindent\textbf{ESCALATING $\rightarrow$ HUMAN\_ACKNOWLEDGED.}
+\begin{equation}
+\text{Transition fires when: } \text{current\_anchor}(T) = \text{HUMAN\_ROOT}
+\end{equation}
+The trigger has propagated up the parent chain and has reached the Human Root. The propagation chain $\chi$ is consulted to determine whether the current anchor is the Human Accountability Anchor. If true, the state transitions to HUMAN\_ACKNOWLEDGED. If the current anchor is a Machine Accountability Anchor, the trigger is not absorbed; it continues upward, and the state does not change — the node remains in ESCALATING.
+
+\bigskip
+\noindent\textbf{ESCALATING $\rightarrow$ ESCALATING (self-loop with propagation).}
+\begin{equation}
+\text{If } \text{current\_anchor}(T) = \text{MACHINE\_ANCHOR} \text{ then: } \text{propagate}(T) \land \text{await}(T)
+\end{equation}
+This self-loop reflects the Machine Actor Exclusion rule: a Machine anchor cannot absorb a Bailout trigger. The trigger must continue propagating upward until the Human Root is reached. The self-loop is not infinite because the recursive chain has a finite depth terminating at the Human Root.
+
+\bigskip
+\noindent\textbf{ESCALATING $\rightarrow$ BOUNDED (timeout recovery).}
+\begin{equation}
+\text{Transition fires when: } \tau_{\text{esc}} \text{ expires } \land \neg \text{delivery\_confirmed}
+\end{equation}
+If the escalation cannot be delivered within the configured timeout $\tau_{\text{esc}}$, the node re-enters BOUNDED and re-evaluates the condition under Local Survivability rules (see \S 3.6).
+
+\bigskip
+\noindent\textbf{HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED.}
+\begin{equation}
+\text{Transition fires when: } \text{directive\_executed}(\text{node}, D) = \text{TRUE}
+\end{equation}
+The human-issued Purpose directive $D$ has been received and executed. The outcome has been recorded in P7 (Outcome Record) and the forensic ledger. The trigger package is closed and the node returns to IDLE.
+
+\bigskip
+\noindent\textbf{Any state $\rightarrow$ RESOLVED (abort).}
+\begin{equation}
+\text{If } D = \text{ABORT} \text{ from Human Root: } \text{close}(T, \text{aborted})
+\end{equation}
+The Human Root may issue an ABORT directive at any point in the escalation chain, terminating the contested action entirely.
+
+\subsection{Bail-Out Trigger Conditions}
+
+A Bailout trigger fires when any of three trigger conditions is met. These conditions are mutually exclusive in their classification but are not mutually exclusive in occurrence — multiple conditions may fire simultaneously.
+
+\bigskip
+\noindent\textbf{Condition TC1 — Capability Boundary.}
+\begin{equation}
+\text{TC1 fires when: } \exists\; e \text{ s.t. } \text{reading}(e) \notin \text{provisioned\_range}(\text{node}) \land \neg \text{computable}(e, \text{BoundsEngine})
+\end{equation}
+The node encounters a sensor reading, calculation result, or execution request that falls outside its provisioned operational range and for which the Bounds Engine cannot compute a resolution. The node lacks the data, authority, or computational model to handle the event.
+
+\textit{Example:} A field Hub's Z-Axis sensor detects soil moisture at 36 inches indicating percolation below the root zone — a condition not present in the node's training data. The Bounds Engine has no model for this event class.
+
+\bigskip
+\noindent\textbf{Condition TC2 — Safety Envelope Violation (Predicted).}
+\begin{equation}
+\text{TC2 fires when: } \exists\; a \text{ s.t. } \text{propose}(a) \land \text{SandboxGate}(\text{simulate}(a)) = \text{VIOLATION}
+\end{equation}
+The Bounds Engine's P6 Projection indicates that a proposed action $a$ would violate a Safety Envelope parameter if executed. The violation is predicted before execution — the trigger fires in the decision-formation phase (P5), not after harm has occurred.
+
+\textit{Example:} A watering request of 145,000 gallons would exceed the applicable water-right allocation of 120,000 gallons (20.8\% overshoot). The Bounds Engine cannot authorize the overshoot and triggers to Human Root.
+
+\bigskip
+\noindent\textbf{Condition TC3 — Accountability Boundary.}
+\begin{equation}
+\text{TC3 fires when: } \exists\; a \text{ s.t. } \text{legal\_implication}(a) > \text{node\_authority\_level}(\text{node})
+\end{equation}
+The node encounters a decision point where the legal or ethical implications of the proposed action exceed the node's provisioned accountability authority, regardless of the action's operational status. This condition is independent of capability — the node may be able to compute the action but cannot legally authorize it.
+
+\textit{Example:} An autonomous actuator proposes to exit its designated spatial boundary, requiring landowner authorization or regulatory permitting that exceeds the node's Accountability Plane (P1/P2) authority.
+
+\bigskip
+The confidence score $\phi \in [0,1]$ associated with each trigger is computed by the originating node as a composite of:
+\begin{equation}
+\phi = w_1 \cdot \phi_{\text{novelty}} + w_2 \cdot \phi_{\text{severity}} + w_3 \cdot \phi_{\text{authority\_gap}}
+\end{equation}
+where $w_1 + w_2 + w_3 = 1$, and each sub-score is computed from the magnitude of deviation from normal operational parameters, the potential harm if the condition is mishandled, and the gap between required and available accountability authority.
+
+\subsection{Escalation Algorithm}
+
+The escalation algorithm defines the propagation behavior of the trigger package $T$ through the recursive parent chain. It is executed at each node in the chain upon receipt of $T$.
+
+\bigskip
+\begin{algorithm}
+\caption{Bailout Escalation Algorithm (executed at each node $N$ in the propagation chain)}
+\label{alg:escalation}
+\begin{algorithmic}[1]
+\Statex
+\Function{ProcessBailoutTrigger}{$T$, $N$}
+    \State $t_{\text{id}}, t_c, e, \phi, \delta, \chi \gets \text{parse}(T)$
+    \State $\chi \gets \chi \cup \{(N, \text{RECEIVED}, \text{now}())\}$
+    \State
+    \State $\text{node\_type} \gets \text{GetAnchorType}(N)$
+    \State
+    \If{$\text{node\_type} = \text{HUMAN\_ANCHOR}$}
+        \State \Comment{Human Root reached — protocol terminates at this node}
+        \State $\text{SurfaceInRootDashboard}(T)$
+        \State $\text{state}(N) \gets \text{HUMAN\_ACKNOWLEDGED}$
+        \State \Return $T$
+    \EndIf
+    \State
+    \If{$\text{node\_type} = \text{MACHINE\_ANCHOR}$}
+        \State \Comment{Machine Actor Exclusion — cannot absorb trigger}
+        \State $\chi \gets \chi \cup \{(N, \text{MACHINE\_EXCLUDED}, \text{now}())\}$
+        \State $P \gets \text{GetParent}(N)$
+        \State \textbf{goto} \Call{PropagateToParent}{$T$, $P$}
+    \EndIf
+    \State
+    \State \Comment{No anchor found — attempt local resolution}
+    \State $\text{resolution} \gets \text{BoundsEngine.Resolve}(e)$
+    \State
+    \If{$\text{resolution} \neq \text{NULL} \land \phi < \phi_{\text{bailout}}$}
+        \State \Comment{Locally resolvable with sufficient confidence}
+        \State $\text{ExecuteAndLog}(\text{resolution}, N)$
+        \State $\chi \gets \chi \cup \{(N, \text{LOCAL\_RESOLUTION}, \text{now}())\}$
+        \State $T.\text{status} \gets \text{CLOSED\_LOCAL}$
+        \State \Return $T$
+    \EndIf
+    \State
+    \State \Comment{Not locally resolvable — propagate upward}
+    \State \Call{PropagateToParent}{$T$, $\text{GetParent}(N)$}
+\Statex
+\Function{PropagateToParent}{$T$, $P$}
+    \State $\chi \gets \chi \cup \{(N, \text{ESCALATED}, \text{now}())\}$
+    \State $\text{delivery} \gets \text{AsyncTransmit}(T, P)$
+    \State \If{$\text{delivery.timeout\_fired}$}{
+        \State $\text{ExecuteLocalSurvivability}(T, N)$}
+    \EndIf
+    \State \Return \text{awaiting\_response}
+\Statex
+\Function{ExecuteLocalSurvivability}{$T$, $N$}
+    \State \Comment{Cloud unreachable — apply last-known-good Worksheet}
+    \State $W \gets \text{GetLastKnownWorksheet}(N)$
+    \State $\text{PauseContestedAction}(e)$
+    \State \text{LogEvent}(N, \text{COMM\_FAILURE\_BAILOUT\_LOCAL})
+    \State $\text{MonitorForReconnection}()$
+    \State \If{$\text{reconnected}$}{
+        \State $\text{TransmitBufferedTriggers}(T)$}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+The algorithm terminates when $T$ reaches a Human Accountability Anchor, which is guaranteed by the finite depth of the recursive tree and the Machine Actor Exclusion property, which prevents any Machine anchor from absorbing the trigger.
+
+\subsection{Bypass Mechanism: Machine Actor Exclusion}
+
+The Bailout Protocol's most structurally significant property is the \textbf{Machine Actor Exclusion} (MAE) rule: a Machine Accountability Anchor cannot absorb a Bailout trigger and cannot serve as a terminal resolution point for any Bailout event.
+
+Formally, let $A_n$ denote the anchor type of node $n$:
+\begin{equation}
+A_n \in \{\text{HUMAN\_ANCHOR}, \text{MACHINE\_ANCHOR}, \text{FACT\_LAYER\_ONLY}\}
+\end{equation}
+The exclusion rule states:
+\begin{equation}
+\forall n \in \text{nodes}: A_n = \text{MACHINE\_ANCHOR} \implies \text{ReceiveBailout}(T, n) \Rightarrow \text{Propagate}(T, \text{parent}(n))
+\end{equation}
+The Machine anchor receives the trigger, logs the receipt, and immediately propagates it upward. It does not attempt resolution. It does not consume the trigger. The trigger passes through it as if it were a relay with no agency.
+
+\bigskip
+\noindent\textbf{Why the bypass is architecturally necessary.} The fundamental threat the Bailout Protocol addresses is not system failure — it is accountability orphaning: the scenario in which an autonomous action occurs without a human who can be held responsible. A Machine Accountability Anchor can participate in the BX3 Loop as a Bounds Engine or Fact Layer actor, but it cannot hold legal or ethical accountability for outcomes. If a Machine anchor could absorb a Bailout trigger, three failure modes become possible:
+
+\begin{enumerate}
+    \item[\textbf{Compromised Bounds Engine:}] A Machine anchor whose reasoning has been corrupted or misconfigured could suppress a legitimate trigger, masking a safety-critical condition from the Human Root indefinitely.
+    \item[\textbf{Misconfigured Safety Envelope:}] A Machine anchor operating with incorrect envelope parameters could absorb a trigger, apply an incorrect resolution, and log that resolution as if it were valid — creating a false audit trail.
+    \item[\textbf{Delegation Authority Confusion:}] A Machine anchor could interpret its operational authority as extending to resolution authority for conditions it was only provisioned to detect and report.
+\end{enumerate}
+
+The MAE rule eliminates all three by structurally excluding Machine actors from the resolution path. The Human Root is the only terminal state for a Bailout trigger. This is the BX3 architectural equivalent of the Human Root Mandate: the Purpose layer must always remain Human-anchored. The MAE rule is the enforcement mechanism that makes this mandate self-defending.
+
+\bigskip
+The Machine Actor Exclusion property distinguishes the Bailout Protocol from conventional escalation systems (which terminate at the nearest available manager, human or machine), and from multi-agent voting schemes (which resolve through machine consensus). Neither alternative provides the structural guarantee that every Bailout trigger terminates at a human.
+
+\subsection{Timeout Handling}
+
+Timeouts are critical to the Bailout Protocol's correctness. Without timeout enforcement, a node in ESCALATING could await a resolution indefinitely, causing the contested action to be suspended indefinitely with no resolution pathway. Timeout handling ensures the protocol remains live under communication failure conditions.
+
+\bigskip
+\noindent\textbf{Escalation Timeout $\tau_{\text{esc}}$.}
+\begin{equation}
+\tau_{\text{esc}} = \tau_{\text{delivery}} + \tau_{\text{parent\_eval}} + \tau_{\text{buffer}}
+\end{equation}
+Where:
+\begin{itemize}
+    \item $\tau_{\text{delivery}}$ is the maximum time for the trigger to be transmitted to and acknowledged by the parent node (default: 30 seconds),
+    \item $\tau_{\text{parent\_eval}}$ is the maximum time the parent may spend evaluating the trigger before propagating or responding (default: 60 seconds),
+    \item $\tau_{\text{buffer}}$ is a buffer for clock skew and network jitter (default: 10 seconds).
+\end{itemize}
+Default total: 100 seconds. These values are configurable per deployment context.
+
+\bigskip
+\noindent\textbf{Timeout expiry in ESCALATING.} When $\tau_{\text{esc}}$ expires before delivery confirmation or parent response:
+\begin{enumerate}
+    \item The node transitions from ESCALATING to BOUNDED.
+    \item The contested action remains suspended (not executed).
+    \item The node activates \textbf{Local Survivability Mode}: it applies the last-known-good Worksheet cached at the node, which encodes the conservative fallback behavior for the detected condition class.
+    \item Trigger packages are buffered locally with timestamp and priority.
+    \item The node monitors for communication restoration.
+    \item Upon reconnection, buffered triggers are transmitted immediately in propagation-chain order.
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Timeout expiry in HUMAN\_ACKNOWLEDGED.} The Human Root is expected to acknowledge within $\tau_{\text{human}}$ (default: 15 minutes for non-safety-critical triggers, 60 seconds for TC2 Safety Envelope triggers). On expiry:
+\begin{enumerate}
+    \item A secondary alert is issued to the Human Root (SMS + dashboard priority escalation).
+    \item If $\tau_{\text{human\_max}}$ (default: 2 hours) expires with no human response, the node enters a \textbf{Lockdown State} — all execution halts, all actuators are placed in safe mode, and the node awaits external human intervention.
+    \item The event is logged with a \texttt{HUMAN\_TIMEOUT} flag in P4 (Reason Log), creating a permanent forensic record of the unacknowledged trigger.
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Timeout state transitions (formal).}
+\begin{align}
+\text{ESCALATING} &\xrightarrow{\tau_{\text{esc}} \text{ expired}} \text{BOUNDED} \quad \text{(Local Survivability activated)} \\
+\text{HUMAN\_ACKNOWLEDGED} &\xrightarrow{\tau_{\text{human}} \text{ expired}} \text{HUMAN\_ACKNOWLEDGED} \quad \text{(escalation alert issued)} \\
+\text{HUMAN\_ACKNOWLEDGED} &\xrightarrow{\tau_{\text{human\_max}} \text{ expired}} \text{LOCKDOWN} \quad \text{(all execution suspended)}
+\end{align}
+
+\subsection{Forensic Integration}
+
+Every state transition, trigger event, propagation step, timeout, and resolution is recorded in the BX3 forensic ledger (9-Plane DAP, P4 Reason Log and P7 Outcome Record). The ledger entry for a Bailout event includes:
+
+\begin{itemize}
+    \item State transitions with timestamps (nanosecond precision),
+    \item Full trigger package contents,
+    \item Propagation chain with each node's action and timestamp,
+    \item Human directive text and issuing timestamp,
+    \item Execution outcome with P7 confirmation,
+    \item Timeout events with recovery actions,
+    \item False-positive classification if applicable.
+\end{itemize}
+
+The forensic ledger is append-only and cryptographically sealed (SHA-256 Forensic Sealing, see Pillar 6). No actor — including the Human Root — can retrospectively modify a Bailout event record. This immutability is what makes the protocol auditor-detectable and legally defensible: every autonomous action that required human authorization is provably traceable to the human who provided it.
+
+\subsection{Interaction with the Training Wheels Protocol}
+
+The Bailout Protocol operates at the architectural level and is complementary to the Training Wheels Protocol (TWP) defined in SOUL.md. The TWP governs which categories of actions require human review before execution. The Bailout Protocol governs what happens when a condition arises that the node cannot handle within its existing authority — regardless of whether the TWP would have required pre-authorization.
+
+In TWP Mode 1 (HITL Active, the default), every outbound action is queued for human review. The Bailout Protocol intercepts at a different layer: it handles the case where the node's own reasoning produces a condition that was not anticipated by the TWP's configured rules. Together, the TWP and the Bailout Protocol ensure that (a) anticipated high-stakes actions require explicit pre-authorization, and (b) unanticipated conditions that exceed the node's authority are never executed autonomously — they escalate to a human.
+
+The protocol is designed to be self-contained and embedding-compatible: every node in a BX3 recursive tree carries an identical copy of the protocol in its Worksheet, requiring no external dependencies, cloud connectivity, or centralized coordination to execute.

@@ -1,0 +1,192 @@
+\section{Guarantees and Correctness Properties}
+\label{sec:guarantees}
+
+The Bailout Protocol, as specified in Sections~\ref{sec:bailout-protocol} and~\ref{sec:bailout-implementation}, makes three non-negotiable guarantees about the behavior of any BX3 node that encounters an unresolvable condition: \textbf{SAFETY} — the node cannot collapse autonomously into uncontrolled action; \textbf{LIVENESS} — the exception condition eventually reaches a human accountability anchor; and \textbf{ACCOUNTABILITY} — the human who receives the exception is always identifiable. These guarantees are not operational policies. They are architectural properties enforced by the layer structure, the deterministic state machine, and the tamper-evident Forensic Ledger. This section establishes each guarantee formally, defines the conditions under which it holds, and provides a proof sketch demonstrating why the design ensures the guarantee is satisfied in all permitted execution paths.
+
+\subsection{Formal Framework for Guarantees}
+
+We work within the formal model established in Sections~\ref{sec:bailout-protocol} and~\ref{sec:bailout-implementation}. Let $\mathcal{B}$ denote the Bailout Protocol state machine for a given Bounds Engine node $B$, with state space $\Sigma = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$. Let $\text{owner}(B)$ denote the designated Purpose Layer human anchor for $B$, and let $h(n)$ denote the immutable human anchor reference stored at node creation. The hard block $\Gamma_B$ is enforced by the Fact Layer as a monotonic constraint: $\Gamma_B(\sigma) = \texttt{block}$ for all $\sigma \in \{\text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}\}$ and $\Gamma_B(\text{RESOLVED}) = \texttt{release}$.
+
+We prove each guarantee by demonstrating that the Bailout Protocol's state machine and layer architecture together eliminate all execution paths that would violate the guarantee.
+
+% -----------------------------------------------------------------------
+\subsection{GUARANTEE 1: Safety — No Autonomous Collapse}
+\label{sec:guarantee-safety}
+
+\bigskip
+
+\begin{minipage}{\textwidth}
+\textbf{Guarantee (Safety).} \textit{When a BailoutTrigger is active at node $B$, no physical actuator command originating from $B$ is forwarded to any actuator until the trigger reaches the RESOLVED state. No machine actor can transition the trigger to RESOLVED.}
+\end{minipage}
+
+\bigskip
+
+The Safety guarantee addresses the core failure mode identified in Section~\ref{sec:bailout-protocol}: autonomous drift, in which a system continues to act without human review because no threshold was crossed and no escalation was triggered. The Bailout Protocol eliminates this failure mode by converting the absence of a machine-resolvable path into a mandatory hard block on all actuator commands, preventing any machine actor from advancing the system state in the affected domain.
+
+\bigskip
+
+\noindent\textbf{Theorem 1 (Safety).}
+\textit{For any node $B$ and any active BailoutTrigger $T$ at $B$, no command issued by $B$ reaches any physical actuator while $T$ is in any state $\sigma \in \{\text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}\}$. Furthermore, no machine actor can produce a state transition from any of these states to RESOLVED.}
+
+\bigskip
+
+\noindent\textit{Proof Sketch.} The proof has two parts.
+
+\bigskip
+
+\noindent\textit{Part (a) — No actuator command propagates during an active trigger.} By Definition~7 (Hard Block), the Fact Layer enforces $\Gamma_B(\sigma) = \texttt{block}$ for all $\sigma \in \{\text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}\}$. The Fact Layer is the sole authority over physical actuator interfaces: no actuator receives any command that has not passed through the Fact Layer's pre-commit hook. When $\Gamma_B$ evaluates to \texttt{block}, the hook refuses to forward the command and logs a \texttt{BLOCKED\_ACTUATOR\_ATTEMPT} event. This enforcement is monotonic: there is no transition in the state machine (Table~\ref{tab:bailout-transitions}) that releases $\Gamma_B$ while $\sigma$ is in the active trigger states. The only release transition is $\delta(\text{HUMAN\_ACKNOWLEDGED}, \texttt{HUMAN\_RESOLUTION\_ISSUED}) = \text{RESOLVED}$, which requires a Purpose Layer authorization payload authored by a human. No machine actor can produce this payload. Therefore, no actuator command from $B$ reaches any actuator while $T$ is active. $\square$
+
+\medskip
+
+\noindent\textit{Part (b) — No machine actor can resolve the trigger.} The state transition $\text{HUMAN\_ACKNOWLEDGED} \rightarrow \text{RESOLVED}$ is defined exclusively by the event $\texttt{HUMAN\_RESOLUTION\_ISSUED}$, which carries a Purpose Layer authorization payload digitally signed by the human anchor. The Fact Layer's authorization ledger gate rejects any transition attempt that does not carry a verified Purpose Layer credential. No Bounds Engine, no parent node, no system administrator, and no external machine actor possesses a valid Purpose Layer credential for $\text{owner}(B)$. The set of actors capable of producing $\texttt{HUMAN\_RESOLUTION\_ISSUED}$ is exactly $\{\text{owner}(B)\}$, a singleton containing one human. Therefore, no machine actor can unilaterally resolve a BailoutTrigger. $\square$
+
+\bigskip
+
+The Safety guarantee holds regardless of the trigger condition class $\kappa \in \mathbb{K}$, the depth of the originating node in the spawning hierarchy, the number of intermediate machine nodes in the propagation chain, or the load or health state of the system. The hard block is enforced by the Fact Layer independently of any reasoning or confidence assessment by any machine actor. The only path out of a safe (blocked) state is through a human-issued resolution, which the Forensic Ledger records as a Purpose Layer authorized entry with the principal identifier of the accountable human.
+
+\begin{invariant}{Safety Invariant}
+\label{inv:safety}
+For all $B$, for all $t$, if a BailoutTrigger $T$ is active at $B$ at time $t$, then $\Gamma_B(\sigma_B(t)) = \texttt{block}$.
+\end{invariant}
+
+Invariant~\ref{inv:safety} is enforced by the Fact Layer pre-commit hook as a first-class constraint. Any attempt to advance the state machine without satisfying this invariant is rejected, and the attempted violation is logged as a \texttt{SAFETY\_CONSTRAINT\_VIOLATION} event in the Forensic Ledger.
+
+% -----------------------------------------------------------------------
+\subsection{GUARANTEE 2: Liveness — Eventual Human Contact}
+\label{sec:guarantee-liveness}
+
+\bigskip
+
+\begin{minipage}{\tmpdimb}
+\textbf{Guarantee (Liveness).} \textit{For every BailoutTrigger $T$ fired at any node $B$ in the spawning hierarchy, if the system hierarchy is structurally sound (i.e., every node has a defined parent or is a Purpose Layer anchor), then $T$ eventually reaches the HUMAN\_ACKNOWLEDGED state, or the system halts with a logged HIERARCHY\_ERROR.}
+\end{minipage}
+
+\bigskip
+
+The Liveness guarantee addresses the concern that an escalation could stall indefinitely — caught in an infinite loop of machine-to-machine propagation, never reaching a human. The Bailout Protocol's liveness property follows from the structure of the spawning hierarchy and the algorithmic constraints on the escalation path.
+
+\bigskip
+
+\noindent\textbf{Theorem 2 (Liveness).}
+\textit{Let $\mathcal{H}$ be the spawning hierarchy rooted at $h$, the top-level Purpose Layer anchor. If every node in $\mathcal{H}$ has a defined parent pointer $P_n$ (or is a Purpose Layer anchor with $P_n = \texttt{null}$), then for any BailoutTrigger $T$ fired at any descendant node $B \in \mathcal{H}$, the escalation algorithm (Algorithm~\ref{alg:escalation}) terminates in at most $d(B)$ iterations, where $d(B)$ is the depth of $B$ in $\mathcal{H}$, and the terminal state is either HUMAN\_ACKNOWLEDGED (if the anchor is reachable) or the algorithm raises HIERARCHY\_ERROR (if the ancestry chain is broken).}
+
+\bigskip
+
+\noindent\textit{Proof Sketch.} The proof relies on two structural properties of the BX3 spawning hierarchy: finite depth, and the non-circularity of parent pointers.
+
+\medskip
+
+\noindent\textit{Property 1 — Finite depth.} The BX3 spawning hierarchy is a rooted tree: each node $n$ has exactly one parent $P_n$, except the root Purpose Layer anchor $h$ which has $P_h = \texttt{null}$. The depth function $d(n)$ is the number of edges from $h$ to $n$, which is well-defined and finite for all nodes in the tree. The BX3 Framework enforces a maximum spawn depth $D_{\max}$ at provisioning time, which provides an additional practical bound on the number of escalation hops.
+
+\medskip
+
+\noindent\textit{Property 2 — Strict ascent.} Algorithm~\ref{alg:escalation} (line 15: $B_{\text{current}} \leftarrow B_{\text{parent}}$) strictly ascends the parent chain on each iteration. A node's parent is always at strictly lower depth: $d(P_n) < d(n)$. Therefore, the parent relation defines a strict well-ordering over the nodes of depth greater than zero.
+
+\medskip
+
+\noindent\textit{Termination argument.} Consider the sequence of nodes visited by Algorithm~\ref{alg:escalation}:
+\[ B = n_0,\quad n_1 = P_{n_0},\quad n_2 = P_{n_1},\quad \ldots \]
+By Property 2, this sequence is strictly ascending in depth: $d(n_0) > d(n_1) > d(n_2) > \cdots$. By Property 1, depth is bounded below by $d(h) = 0$. Therefore, the sequence terminates in at most $d(B)$ steps at some node $n_k$ with $d(n_k) = 0$, which by definition is the root Purpose Layer anchor $h$. The loop cannot diverge, cannot cycle, and cannot stall because each iteration advances to a strictly shallower node and the depth space is finite. $\square$
+
+\medskip
+
+The liveness guarantee depends on one structural condition: that the spawning hierarchy is sound. A broken parent pointer — which could arise from a bug in the spawning implementation or deliberate corruption of the hierarchy — would trigger a HIERARCHY\_ERROR condition, which Algorithm~\ref{alg:escalation} detects, logs explicitly, and surfaces to the next available human in the organizational chain. The error is not silently absorbed. This fallback is the only permitted deviation from the single-anchor rule, and it is triggered only by the absence of a human anchor in the ancestry chain, never by any machine actor's preference.
+
+\begin{invariant}{Escalation Path Existence}
+\label{inv:escalation-path}
+For every node $B$ in the spawning hierarchy, there exists a finite sequence of parent pointers $P_{n_0} = B, P_{n_1}, P_{n_2}, \ldots, P_{n_k} = h$ such that each $P_{n_i}$ is either a Bounds Engine node or a Purpose Layer anchor, and $h$ is a verified human principal.
+\end{invariant}
+
+Invariant~\ref{inv:escalation-path} is established at node provisioning time. When a new node is spawned, the Fact Layer verifies that the parent pointer $P_B$ is defined and points to a valid node in the hierarchy before the spawn is committed. A node with an undefined or invalid parent pointer is not activated. This prevents the introduction of orphaned nodes — nodes with no escalation path — into the operational hierarchy.
+
+% -----------------------------------------------------------------------
+\subsection{GUARANTEE 3: Accountability — Human Always Identifiable}
+\label{sec:guarantee-accountability}
+
+\bigskip
+
+\begin{minipage}{\tmpdimb}
+\textbf{Guarantee (Accountability).} \textit{For every BailoutTrigger $T$ that reaches the RESOLVED state, the Forensic Ledger contains an immutable record identifying the principal of the human anchor who issued the resolving directive. No ledger entry recording a human resolution can be created without the explicit authorization of that human.}
+\end{minipage}
+
+\bigskip
+
+The Accountability guarantee ensures that the Safety and Liveness guarantees have teeth: escalation to a human is not merely achieved but is verifiably attributable to a specific, named human principal. This is what converts the Bailout Protocol from a safety mechanism into an accountability infrastructure — one that can satisfy regulatory requirements for decision attribution.
+
+\bigskip
+
+\noindent\textbf{Theorem 3 (Accountability).}
+\textit{For any BailoutTrigger $T$ that reaches RESOLVED, the Forensic Ledger entry $\mathcal{L}_T$ contains a non-null field $\texttt{principal}$ identifying exactly one human principal $p \in \mathcal{P}$, where $\mathcal{P}$ is the set of authorized Purpose Layer principals in the system. Furthermore, $\mathcal{L}_T$ is timestamped, SHA-256 chain-sealed, and cannot be modified after commitment without breaking the chain.}
+
+\bigskip
+
+\noindent\textit{Proof Sketch.} The proof traces the lifecycle of a BailoutTrigger through the Forensic Ledger and shows that the principal field is both mandatory and authenticated at every step.
+
+\medskip
+
+\noindent\textit{Step 1 — Trigger creation.} When a trigger condition fires at node $B$, the Fact Layer creates a Forensic Ledger entry recording the triggering event. This entry is written by the Fact Layer — the sole write authority for the Forensic Ledger — and includes the originating node $B$, the trigger condition class $\kappa$, the timestamp $\tau$, and the diagnostic context. At this stage, the \texttt{principal} field is \texttt{null} because no human has yet acted.
+
+\medskip
+
+\noindent\textit{Step 2 — Escalation propagation.} As $T$ propagates up the hierarchy (Algorithm~\ref{alg:escalation}), each hop generates a Forensic Ledger entry recording the transit event: the node that forwarded $T$, the timestamp, and the action taken (\texttt{DISPATCHED}). The propagation chain $\phi$ is updated atomically with each hop. No entry in the propagation chain contains a non-null \texttt{principal} field, because all transit nodes are machine actors.
+
+\medskip
+
+\noindent\textit{Step 3 — Human receipt.} When $T$ arrives at the Purpose Layer human anchor $\text{owner}(B)$, the Fact Layer creates a \texttt{HUMAN\_RECEIVED} entry, recording the verified identity of $\text{owner}(B)$. The identity is established by the Fact Layer's verification of the Purpose Layer authentication credential accompanying the receipt acknowledgment. This is the first point at which a human identity is recorded for this trigger.
+
+\medskip
+
+\noindent\textit{Step 4 — Resolution and closure.} When $\text{owner}(B)$ issues a resolution directive, the Fact Layer verifies the Purpose Layer credential, records the directive in the Forensic Ledger, and closes the trigger by creating the RESOLVED entry. The \texttt{principal} field of the RESOLVED entry is set to the verified identity of $\text{owner}(B)$. This field is mandatory: the Fact Layer's authorization ledger gate rejects any RESOLVED transition that does not carry a verified Purpose Layer credential with a non-null principal identifier.
+
+\medskip
+
+\noindent\textit{Step 5 — Chain integrity.} Every entry in the above sequence is SHA-256 chain-sealed at the time of commitment. The \texttt{principal} field is part of the sealed content of the RESOLVED entry. Modifying this field after commitment would change the entry's content hash, breaking the chain at that entry and all subsequent entries. The tamper-evidence property of the Forensic Ledger ensures that any such modification is detectable in O($n$) verification time, requiring no access to internal system state. $\square$
+
+\bigskip
+
+The Accountability guarantee is structurally dependent on two immutable constraints: the immutability of the $h(n)$ anchor reference (which prevents substitution of a different human identity at resolution time), and the Fact Layer's exclusive write authority over the Forensic Ledger (which prevents a compromised Bounds Engine from fabricating a RESOLVED entry with a fabricated principal). Both of these protections are enforced by the BX3 layer separation and are not reliant on any individual component's reliability.
+
+\begin{invariant}{Principal Attribution}
+\label{inv:principal-attribution}
+For every BailoutTrigger $T$ that reaches RESOLVED, the Forensic Ledger entry for $T$ satisfies $\texttt{principal} \neq \texttt{null}$ and $\texttt{principal} \in \mathcal{P}$, where $\mathcal{P}$ is the set of authorized Purpose Layer principals.
+\end{invariant}
+
+% -----------------------------------------------------------------------
+\subsection{Corollaries and Interaction Effects}
+\label{sec:guarantee-corollaries}
+
+The three guarantees are not independent — they interact in ways that strengthen the overall accountability posture.
+
+\bigskip
+
+\noindent\textbf{Corollary 1 (No Silent Override).} Combining Safety and Accountability: because no machine actor can resolve a trigger (Safety, Part b), and every resolution is recorded with a human principal (Accountability), there is no execution path by which a bailout event is resolved without an identifiable human's explicit authorization. The system cannot silently override or absorb a bailout event.
+
+\medskip
+
+\noindent\textbf{Corollary 2 (Complete Escalation Path).} Combining Liveness and Accountability: because every trigger reaches a human (Liveness), and every resolution identifies that human (Accountability), the full escalation path of any bailout event is attributable end-to-end. The system provides a complete, auditable chain from the triggering condition to the human who addressed it.
+
+\medskip
+
+\noindent\textbf{Corollary 3 (No Privilege Elevation).} Combining Safety with the bypass mechanism: because the bypass mechanism prevents machine actors from attempting resolution at any intermediate node (Section~\ref{sec:bypass-mechanism}), and Safety prevents any actuator command from propagating during an active trigger, a compromised or malfunctioning intermediate machine node cannot exploit a bailout event to elevate its own privileges or execute unauthorized actions. The trigger bypasses the node entirely, and the node's actuators remain blocked.
+
+% -----------------------------------------------------------------------
+\subsection{Verification and Audit}
+\label{sec:guarantee-verification}
+
+The three guarantees are independently verifiable by an external auditor without access to internal system state or cryptographic keys. Verification proceeds entirely from the Forensic Ledger.
+
+\medskip
+
+\noindent\textbf{Safety verification.} Retrieve the Forensic Ledger entries for all BailoutTrigger events in a given operational window. For each trigger, confirm that: (a) no \texttt{ActuatorCommand} entry appears in the ledger between the BOUNDED entry and the RESOLVED entry for the same trigger ID; and (b) the RESOLVED entry carries a Purpose Layer credential with a non-null \texttt{principal} field. If condition (a) holds for all triggers, the Safety invariant (Invariant~\ref{inv:safety}) has been upheld for the window. If condition (b) holds for all triggers, the Accountability invariant (Invariant~\ref{inv:principal-attribution}) has been upheld.
+
+\medskip
+
+\noindent\textbf{Liveness verification.} For each trigger in the window, retrieve the propagation chain $\phi$ from the RESOLVED entry. Verify that the chain terminates at a Purpose Layer anchor (i.e., the final entry in $\phi$ has \texttt{HUMAN\_RECEIVED}). Verify that the chain depth is finite and consistent with the known hierarchy depth of the system. Identify any trigger that terminates with HIERARCHY\_ERROR and confirm that the error was surfaced to an operational administrator.
+
+\medskip
+
+\noindent\textbf{Accountability verification.} For each RESOLVED entry, verify: (a) the \texttt{principal} field is non-null and the principal is a member of the registered Purpose Layer principal set $\mathcal{P}$; and (b) the SHA-256 chain integrity holds from the preceding entry through this entry. Perform a full chain verification on the ledger as a whole using the O($n$) forward-pass algorithm.
+
+These verification procedures are entirely retrospective: they require only a copy of the Forensic Ledger and access to the principal registry. No live system access, no debugging interface, and no cooperation from the running system are required. An auditor with appropriate access can determine, in a single deterministic pass, whether the three guarantees held for any operational window.
+
+The combination of architectural enforcement (the state machine, the hard block, the bypass mechanism), tamper-evident logging (the Forensic Ledger), and independent verifiability (the audit procedures above) constitutes the complete accountability guarantee of the Bailout Protocol. The system does not merely claim to maintain human accountability — it produces evidence of that accountability that any authorized party can verify without relying on the system's own self-reporting.

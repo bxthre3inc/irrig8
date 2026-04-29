@@ -1,0 +1,27 @@
+\section{The BX3 Framework: Scope, Purpose, and Contribution}\label{sec:framework-scope}
+
+The \bxthree{} Framework proposes that accountable, safe, and auditable multi-agent AI systems can be constructed through five architectural guarantees, each enforced at the structural level rather than the policy level.  These guarantees are not heuristics or behavioral guidelines --- they are structural requirements whose violation is architecturally impossible within the framework.  The framework organizes every node into three immutable functional layers (\purpose{}, \bounds{}, \fact{}) and provides five named architectural pillars that together constitute the full upstream accountability guarantee: that \bxthree{} systems fail upward into human consciousness, never downward into autonomous chaos.
+
+The five pillars are:
+
+\textbf{Pillar 1: Loop Isolation.}  No two nodes share mutable execution state without mediated communication through the \fact{} layer, preventing state corruption and ensuring that the provenance of every decision is traceable to its originating node.  This isolation is the prerequisite for the Forensic Ledger's ability to record an accurate, complete attribution chain.
+
+\textbf{Pillar 2: Recursive Spawning with Immutable Parent Pointers.}  Every spawned node carries a cryptographically sealed reference to its parent $\alpha(n)$ established at node creation and immutable for the node's lifetime.  The immutable parent chain is the propagation substrate for the Bailout Protocol --- it ensures that exception states have a structurally fixed escalation path that no machine actor can redirect.
+
+\textbf{Pillar 3: Spatial Firewall.}  Nodes operating in distinct domains communicate exclusively through the \fact{} layer, preventing cross-domain state contamination and ensuring that exceptions in one domain cannot silently propagate to others through shared mutable state.  The spatial firewall composes with the parent chain to provide a two-dimensional boundary: horizontal (execution isolation via Loop Isolation) and vertical (domain separation via Spatial Firewall).
+
+\textbf{Pillar 4: Sandbox Gate.}  Untrusted code executes in a bounded execution environment instrumented by the \fact{} layer with pre-commit hooks that enforce resource limits, action visibility, and the deterministic refusal of unmediated privileged operations.  The Sandbox Gate is the enforced execution boundary that makes the \bounds{} layer's operating range enforcement architecturally operative --- not a policy constraint but a structural gate.
+
+\textbf{Pillar 5: Bailout Protocol.}  Any unresolved exception condition in any node must compulsorily escalate to the node's designated human anchor $h(n)$ through the immutable parent chain, bypassing all intermediate machine actors.  No machine actor may serve as a terminal resolution point for an unresolved exception; only $h(n)$ may issue binding resolution directives.  The Bailout Protocol is the runtime expression of the upstream accountability guarantee.
+
+These five pillars are not independent design choices.  They form an interdependent system whose correctness properties require the simultaneous operation of all five.  Loop Isolation (P1) and the immutable parent chain (P2) together provide the propagation substrate for the Bailout Protocol (P5); without P1 and P2, the protocol has no reliable path.  The Spatial Firewall (P3) prevents cross-domain contamination that would make exception state attribution unreliable.  The Sandbox Gate (P4) ensures that the Bounds Engine's operating range enforcement is not bypassed by privileged operations.  The Bailout Protocol (P5) closes the accountability loop for all conditions that exceed the \bounds{} layer's provisioned scope.
+
+The \bxthree{} Framework's contribution is not any single pillar.  It is the structured composition of all five as a unified accountability architecture, with formally specified correctness properties and a directed research agenda that addresses the gaps between current specification and deployment at scale in high-stakes environments.
+
+\subsection{Relationship to the Bailout Protocol Paper}\label{sec:relationship}
+
+The Bailout Protocol paper provides the exhaustive, self-contained specification of Pillar 5.  It is a complete, independently readable treatment of the protocol's formal state machine, trigger condition, escalation algorithm, bypass mechanism, timeout handling, correctness properties (Safety, Liveness, Accountability), limitations, and future work.  That specification is incorporated by reference into the \bxthree{} Framework as Pillar 5 and is not repeated in full here.
+
+This paper provides the complete treatment of the framework itself --- its three-layer model, all five pillars including the Bailout Protocol in summary form, the unified correctness properties across all pillars, related work situating the framework in the broader research landscape, and the limitations and research agenda.  Where this paper references the Bailout Protocol's formal specification, it points to the corresponding section of the standalone paper.  Where this paper describes the pillars in summary, the full specification is in the respective pillar papers.
+
+The separation is intentional: the \bxthree{} Framework paper is a \emph{framework paper}, not a \emph{single-pillar paper}.  It is designed to be read as a coherent architectural treatment, with each pillar's full specification available in its own dedicated paper for readers who need the complete technical detail.

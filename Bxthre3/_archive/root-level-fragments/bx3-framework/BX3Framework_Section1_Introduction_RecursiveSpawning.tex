@@ -1,0 +1,122 @@
+\section{Introduction}\label{sec:introduction}
+
+The central failure mode in recursive multi-agent systems is not malfunction.
+It is \emph{drift}: the gradual, often invisible separation of a spawned agent's
+behavior from the intent of its originating principal, compounded across
+generations of recursive spawning until the system's observable trajectory
+bears little recognizable relation to any human-directed purpose.  Drift does
+not require a faulty agent.  It emerges from the structure of accountability
+chains themselves — specifically, from the absence of structural constraints that
+prevent intermediate nodes from severing or obscuring the causal link between
+a leaf agent's actions and the human principal who authorized its ancestry.
+
+In uncontrolled multi-agent deployments, each spawning event creates a new
+accountability boundary.  The parent agent — not the human principal — becomes
+the immediate authority over the child.  If the parent is compromised,
+misaligned, or simply operating under conditions of partial observability,
+its delegation carries forward the full weight of its uncertainty.  The child
+agent inherits not only a task but an accountability posture: a set of
+implicit assumptions about objectives, constraints, and escalation paths that
+may never have been explicitly reviewed by a human.  When that child spawns
+its own descendants, the compounding is structural.  By the third or fourth
+generation, the human principal may be factually excluded from the causal
+chain — not by design, but by the accumulated weight of delegation chains
+that no layer was structurally required to anchor.
+
+The field has attempted to address drift through two families of
+shallow-restriction mechanisms.  The first is \textbf{time-to-live} (TTL)
+enforcement: spawn chains are permitted to extend only to a fixed depth or
+wall-clock limit, after which further spawning is blocked.  The second is
+\textbf{depth limits} with static capability caps: agents above a given
+generation threshold lose access to certain tool classes, cannot write to
+certain state partitions, or require additional confirmation before acting.
+Both approaches are architecturally sound as circuit breakers but are
+fundamentally insufficient as accountability mechanisms.  TTL enforcement
+does not distinguish between a spawn chain that has correctly executed its
+purpose and one that has diverged from it — both terminate at the same depth.
+Depth limits treat capability restriction as a proxy for accountability, but
+capability restriction does not prevent an agent from taking many low-capability
+actions that collectively produce a high-capability outcome.  Neither approach
+addresses the root structural condition: the absence of an immutable,
+verifiable chain connecting every node's authorization state to a named human
+principal.
+
+The core structural insight of the \bxthree{} Recursive Spawning pillar is
+that drift is made structurally impossible by one mechanism alone: an
+\textbf{immutable parent pointer chain} that is enforced by the \Fact{} layer
+of every node, such that no agent — including the node's own parent — can
+modify, truncate, or obscure the chain of accountable ancestry linking any
+node to its originating human principal.  In the \bxthree{} three-layer model
+(\Purpose{}, \Bounds{}, \Fact{}), each layer has a distinct function in this
+enforcement.  The \Purpose{} layer carries the human principal's intent and
+the canonical authorization scope for the node.  The \Bounds{} layer constrains
+the node's reasoning and action space to provisioned operating ranges.  The
+\Fact{} layer is the enforcement substrate: it is where the immutable parent
+pointer is written at spawn time, where all spawn authorizations are recorded
+with cryptographic attribution, and where any attempt to reference a modified
+or severed ancestry chain triggers a hard abort routed directly to the
+upstream human principal via the Bailout Protocol.
+
+We define drift formally as follows:
+
+\begin{invariant}[Drift Condition]\label{invariant:drift}
+A \bxthree{} node $n$ is in a state of \emph{drift} at time $t$ if and only if
+there exists a causal chain of agent actions $\alpha_1, \alpha_2, \dots,
+\alpha_k$ such that:
+\begin{enumerate}
+  \item $\alpha_1$ was authorized by a human principal $h$;
+  \item each subsequent $\alpha_{i+1}$ was taken by a node spawned (directly or
+    transitively) as a descendant of the node that took $\alpha_i$; and
+  \item the \Fact{} layer of the node taking $\alpha_k$ does not contain a
+    verifiable parent pointer chain traceable to $h$.
+\end{enumerate}
+\end{invariant}
+
+Under this definition, drift is not a behavioral condition — it is a
+structural one.  A node may exhibit drift without any individual agent acting
+maliciously or incorrectly.  Drift is detected not by monitoring behavioral
+outputs but by inspecting the integrity of the parent pointer chain maintained
+in the \Fact{} layer.  The \bxthree{} Recursive Spawning pillar guarantees:
+
+\begin{property}[Drift Impossibility]\label{prop:drift-impossibility}
+In a \bxthree{} system in which the Recursive Spawning pillar is correctly
+implemented, no node can exist in the state defined in
+Invariant~\ref{invariant:drift}.
+\end{property}
+
+This guarantee holds because the immutable parent pointer chain is written
+atomically at spawn time by the \Fact{} layer of the parent node, and this
+write is non-repudiable: the parent cannot modify, revoke, or obscure the
+pointer after the child has been instantiated.  The child's \Fact{} layer
+validates its own ancestry on every decision cycle.  If the chain is broken
+or untraceable to a named human principal, the node triggers the Bailout
+Protocol immediately, without discretionary routing through the parent.
+
+The Recursive Spawning pillar operates in conjunction with the other four
+\bxthree{} pillars.  Loop Isolation prevents circular spawn graphs from
+creating ambiguous ancestry states.  Spatial Firewall ensures that spawned
+agents execute in execution domains distinct from their parents', so that
+accountability boundaries map cleanly to resource boundaries.  Sandbox Gate
+governs the communication channels between parent and child domains,
+enforcing that inter-domain messages pass through authorized channels with
+attested payloads.  Bailout Protocol is the terminal enforcement mechanism:
+when drift is detected or when any exception condition cannot be resolved
+within the node's authorized scope, the exception state propagates directly
+to the named human principal with full forensic attribution at every hop.
+
+The remainder of this paper is organized as follows.  Section~
+\ref{sec:background} situates the Recursive Spawning pillar within the
+broader literature on multi-agent accountability and recursive system safety.
+Section~\ref{sec:three-layer} formally introduces the \bxthree{} three-layer
+model as the architectural substrate.  Section~\ref{sec:pillars} provides the
+full formal specification of all five pillars, with detailed treatment of the
+immutable parent pointer chain mechanism, the spawn authorization protocol,
+and the ancestry verification routine executed by the \Fact{} layer on each
+decision cycle.  Section~\ref{sec:correctness} establishes the correctness
+properties guaranteed by the pillar, including the drift impossibility theorem
+and the characterization of the pillar's behavior under adversarial spawn
+conditions.  Section~\ref{sec:related} evaluates the Recursive Spawning
+approach against existing spawning governance models including TTL enforcement,
+capability-tiered depth limits, and dynamic delegation frameworks.
+Section~\ref{sec:limitations} addresses structural limitations and the
+directed research agenda.  Section~\ref{sec:conclusion} concludes.

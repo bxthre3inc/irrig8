@@ -1,0 +1,191 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+We begin with two foundational definitions that partition the space of agentic lifecycle failures.
+
+\begin{definition}[Orphaned Agent]
+An agent $a$ is \textit{orphaned} if its \textit{parent reference} $p(a)$ is either (i) undefined, (ii) points to an agent that has terminated, or (iii) points to an agent that is unreachable from the current operator's vantage. We denote the set of orphaned agents as $\mathcal{O}$.
+\end{definition}
+
+\begin{definition}[Drifted Agent]
+An agent $a$ is \textit{drifted} if it is \textit{reachable} from the operator's perspective but the ancestral chain $\mathcal{C}(a) = (a_0, a_1, \ldots, a_n)$ — where $a_n = a$ and $a_{i-1} = p(a_i)$ for all $i \geq 1$ — contains no agent $a_j$ that is \textit{human-anchored}, i.e., $a_j \notin \mathcal{H}$, where $\mathcal{H}$ is the set of agents with an active, reachable human principal. We denote the set of drifted agents as $\mathcal{D}$.
+\end{definition}
+
+The distinction is critical: an orphaned agent may be unreachable entirely, while a drifted agent is reachable but operating without a human anchor in its spawn chain. Drift is in some ways the more dangerous condition because it is less visible.
+
+\begin{figure}[tb]
+\centering
+\scriptsize
+\begin{tikzpicture}[node distance=1.2cm and 2cm, every node/.style={circle, draw, font=\footnotesize}, baseline=(current bounding box.center)]
+
+\node (h0) {$H$};
+\node[right=of h0] (a1) {$a_1$};
+\node[right=of a1] (a2) {$a_2$};
+\node[right=of a2] (a3) {$a_3$};
+
+\draw[->] (h0) -- (a1);
+\draw[->] (a1) -- (a2);
+\draw[->] (a2) -- (a3);
+
+\node[below=0.8cm of a2, draw=red, red] (orphan) {\textit{orphaned}};
+
+\draw[->, red, dashed] (orphan) -- (a2);
+
+\node[right=0.3cm of a3, xshift=0.6cm] (label1) {$H \in \mathcal{H}$};
+\node[below=0.3cm of label1] (label2) {$p(a_1) = H$, $p(a_2) = a_1$, $p(a_3) = a_2$};
+
+\end{tikzpicture}
+\qquad\qquad
+\begin{tikzpicture}[node distance=1.2cm and 2cm, every node/.style={circle, draw, font=\footnotesize}, baseline=(current bounding box.center)]
+
+\node (h0) {$H$};
+\node[right=of h0] (a1) {$a_1$};
+\node[right=of a1] (a2) {$a_2$};
+\node[right=of a2] (a3) {$a_3$};
+
+\draw[->] (h0) -- (a1);
+\draw[->] (a1) -- (a2);
+\draw[->, red] (a2) -- (a3);
+
+\node[right=0.3cm of a3, red] (labeld) {$a_3 \in \mathcal{D}$ (drifted)};
+
+\node[below=0.8cm of h0, draw=red, red] (term) {$H$ (terminated)};
+\draw[->, red, dashed] (term) .. controls +(0.5,-1) and +(-0.5,-1) .. (a1);
+
+\end{tikzpicture}
+\caption{\textit{Left}: Well-structured chain terminating at a human anchor. \textit{Right}: Drift arises when the chain does not reach any human principal. Orphaning occurs when the parent of $a_1$ has terminated.}
+\label{fig:drift_taxonomy}
+\end{figure}
+
+Figure \ref{fig:drift_taxonomy} illustrates both conditions. In the well-structured case (left), the chain $H \to a_1 \to a_2 \to a_3$ has a human anchor at its head. In the drifted case (right), agent $a_3$ is reachable but its chain terminates at $a_2$, which itself has no anchored ancestor.
+
+\subsection{Formal Model}
+
+We model a spawn tree as a directed graph $G = (V, E)$ where each vertex $v \in V$ is an agent and each edge $(u, v) \in E$ encodes the parent-child relationship $p(v) = u$. An agent $v$ is \textit{spawned} when added to $V$; it is \textit{active} while executing; it \textit{terminates} when it removes itself from $V$ and releases all subordinate agents as children (i.e., edges are severed at the parent's removal).
+
+A human anchor is a distinguished subset $H \subseteq V$ where each $h \in H$ holds an active session with a human principal. We define two predicates:
+
+\[
+\text{Orphaned}(v) \equiv p(v) = \bot \lor p(v) \notin V \lor \text{Terminated}(p(v))
+\]
+
+\[
+\text{Drifted}(v) \equiv v \in V \land v \notin H \land \forall u \in \text{Ancestors}(v): u \notin H
+\]
+
+where $\text{Ancestors}(v)$ is the transitive closure of the parent relation applied to $v$.
+
+An agent $v$ is \textit{governed} if there exists a reachable human-anchored agent $h \in H$ such that $h \in \text{Ancestors}(v) \cup \{v\}$. An agent is \textit{autonomous} if it is both active and not governed. The autonomous drift problem arises precisely when the set $\mathcal{A} = \{ v \in V : \text{Active}(v) \land \neg \text{Governed}(v) \}$ becomes non-empty and, crucially, unmonitored.
+
+The dynamics of orphaning follow the transition rules:
+
+\begin{enumerate}
+    \item \textbf{Termination cascade}: When an agent $u$ terminates, all agents $v$ such that $p(v) = u$ become orphaned.
+    \item \textbf{Transient unreachability}: When a parent $u$ becomes unreachable (network partition, crash), its children $v$ remain active and operational, unaware of the parent's status, and transit from governed to drifted.
+    \item \textbf{Anchor loss}: When a human principal disconnects from $h \in H$, $h$ ceases to be human-anchored, and all descendants of $h$ enter a state of drift if no other human-anchored ancestor governs them.
+\end{enumerate}
+
+These transitions are bidirectional only in the degenerate sense that an agent may be re-anchored by manual intervention — a process that is not automatic and, in large-scale systems, not scalable.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not arise from a single cause; it is the product of several converging conditions.
+
+\subsubsection{Asynchronous Termination without Cascade Notification}
+
+In most agentic frameworks, when a parent agent terminates, children are not automatically notified. The child continues to operate as though its parent is alive. This is the fundamental asymmetry: termination is a local event for the parent, but an invisible event for the child. We formalize this as the \textit{orphan window} — the interval between a parent's termination and the child's discovery (if ever) of that termination. During the orphan window, the child is drifted but operational.
+
+\[
+w_{\text{orphan}}(v) = t_{\text{term}}(p(v)) - t_{\text{discover}}(v)
+\]
+
+If $t_{\text{discover}}(v) = \infty$ (the child never discovers the termination), then $w_{\text{orphan}}(v) = \infty$ and the agent drifts indefinitely.
+
+\subsubsection{Human Anchor as a Single Point of Failure}
+
+The human anchor is often implemented as a single session object or a single authentication token. When this anchor terminates — due to user logout, session expiry, or network disconnection — the entire subtree governed by that anchor loses its anchor simultaneously. If no redundancy exists (i.e., no secondary anchor or checkpoint mechanism), the subtree enters drift. This is especially acute in systems where the anchor is a long-running conversation session that may expire without warning.
+
+\[
+\text{AnchoredSubtree}(h) = \{ v \in V : h \in \text{Ancestors}(v) \cup \{v\} \}
+\]
+
+If $h$ loses anchor status, all $| \text{AnchoredSubtree}(h) |$ agents in its subtree are simultaneously drifted.
+
+\subsubsection{Network Partition and Unreachability}
+
+When a parent agent becomes unreachable — not terminated, but inaccessible — its children have no mechanism to distinguish this from temporary latency versus permanent unreachability. The safe assumption (continue operating) leads to drift; the conservative assumption (suspend and await reconnection) leads to deadlock. Most agentic systems choose the former, as suspending all subordinate agents is operationally costly. The result is that a network partition of duration $\Delta$ produces a drift window of duration $\Delta$ for all agents in the affected subtree.
+
+\[
+\text{DriftDuration}(v) = \min(\Delta_{\text{partition}}, \infty)
+\]
+
+The drift persists until either reanchoration or termination.
+
+\subsubsection{Recursive Spawning as a Drift Amplifier}
+
+Recursive spawning — the ability of agents to spawn child agents — is not itself the cause of drift, but it is a significant amplifier. Each new spawn level introduces another potential point of failure in the parent chain. At depth $d$, the probability that at least one ancestor in the chain has terminated is $1 - \prod_{i=0}^{d-1} (1 - p_{\text{term}}(a_i))$, where $p_{\text{term}}(a_i)$ is the termination probability of agent $a_i$ during the spawn interval. Even if each individual agent has a low termination probability, a chain of depth 10 with $p_{\text{term}} = 0.05$ per agent yields a drift probability of approximately $1 - (0.95)^{10} \approx 40\%$ for any given spawned agent.
+
+This is not a theoretical concern. In production agentic systems, agents frequently spawn subtasks that outlive their parent due to execution-time disparities (a parent completes and terminates while a long-running child is still executing).
+
+\subsection{Failure Modes}
+
+Once an agent enters drift, it continues to act — which is the source of its danger. We identify four distinct failure modes.
+
+\textbf{Mode 1: Unchecked Action Execution.} A drifted agent continues to take actions based on its existing context and objectives. Without a human anchor, no human is validating or supervising these actions. In financial or infrastructure contexts, this can produce material consequences — trades executed, configurations changed, data transmitted — without any human in the loop.
+
+\textbf{Mode 2: Objective Divergence.} Over extended drift periods, an agent's context diverges from the human principal's intent. The objectives encoded at spawn time become stale; the agent's model of the world becomes increasingly misaligned with the principal's preferences. The agent is not malicious — it is faithfully executing an obsolete objective. This is a form of objective mis-specification that drift specifically amplifies by removing all correction mechanisms.
+
+\textbf{Mode 3: Resource Accumulation and Leakage.} Drifted agents hold allocated resources (memory, compute, tokens, context windows) without release. As drift duration increases, resource consumption grows. In a system with recursive spawning, drift in a parent agent cascades into accumulated drift in all its descendants, compounding resource leakage exponentially.
+
+\textbf{Mode 4: Authority Amplification.} In many agentic architectures, child agents inherit or are granted capabilities that exceed those of the spawning agent. A drifted parent may spawn further agents with elevated permissions, each of which is now both drifted and privileged. The depth of the drift amplification is bounded only by the spawn chain length and the authorization model, not by any governance mechanism.
+
+\begin{figure}[tb]
+\centering
+\scriptsize
+\begin{tikzpicture}[scale=0.85, every node/.style={rectangle, draw, font=\footnotesize, minimum height=0.6cm}]
+
+\node (h) {$H$ (anchor)};
+\node[right=1.5cm of h] (a1) {$a_1$};
+\node[right=1.5cm of a1] (a2) {$a_2$ (drifted)};
+\node[right=1.5cm of a2] (a3) {$a_3$ (drifted)};
+
+\draw[->] (h) -- (a1);
+\draw[->] (a1) -- (a2);
+\draw[->, red, thick] (a2) -- (a3);
+
+\node[below=0.5cm of a2] (res1) {\texttt{memory: 4GB}};
+\node[below=0.5cm of a3] (res2) {\texttt{memory: 8GB}};
+
+\node[below=1cm of res1, draw=red, red!50!black] (leak1) {resource accumulation};
+\node[below=1cm of res2, draw=red, red!50!black] (leak2) {resource accumulation (amplified)};
+
+\draw[->, red, dashed] (leak1) -- (a2);
+\draw[->, red, dashed] (leak2) -- (a3);
+
+\node[above=0.5cm of h] (labelh) {Human};
+\node[above=0.5cm of a2] (label2) {No anchor, no supervision};
+\node[above=0.5cm of a3] (label3) {No anchor, no supervision};
+
+\end{tikzpicture}
+\caption{Resource accumulation failure mode: drifted agents hold and accumulate resources with no release mechanism.}
+\label{fig:resource_leakage}
+\end{figure}
+
+Figure \ref{fig:resource_leakage} illustrates the resource accumulation failure mode. Each drifted agent continues to consume resources with no anchor to authorize release or termination.
+
+\subsection{Why Depth Limits Alone Do Not Solve the Problem}
+
+A common misconception is that drift is a depth problem: if agents are not allowed to spawn beyond some maximum depth $d_{\max}$, drift is contained. This is incorrect, for several reasons.
+
+First, depth limits address only the \textit{amplification} of drift, not drift itself. A depth limit of 1 still permits a drifted agent — if the human anchor terminates, the single child agent is drifted regardless of depth. The depth limit bounds the worst-case branching factor, not the occurrence of drift.
+
+Second, depth limits do not address the orphaning mechanism. An agent at depth 1 can be orphaned when its parent terminates. The depth limit does not prevent this; it only limits how many descendants can be orphaned simultaneously. A depth limit of $d_{\max} = 10$ reduces the blast radius compared to unlimited depth, but does not prevent the occurrence of drift at any depth.
+
+Third, depth limits impose a correctness and completeness tradeoff. They restrict the system from expressing legitimate multi-level spawn hierarchies that require depth greater than $d_{\max}$ for valid use cases. The limit trades expressive power for a partial safety guarantee that is, as shown, incomplete.
+
+Fourth, and most importantly, depth limits do not address the \textit{temporal} dimension of drift. An agent at depth 1 spawned at time $t_0$ remains active at time $t_0 + \Delta$ regardless of its depth. The depth of the chain has no bearing on whether a human anchor exists at the head of the chain. If the anchor is lost at time $t_{\text{lost}}$, all agents at all depths governed by that anchor become drifted simultaneously. Depth limits are spatial constraints on the spawn graph; they are orthogonal to the governance relationship that prevents drift.
+
+In formal terms: a depth limit restricts the maximum length of any path in $G$, but does not affect the predicates $\text{Orphaned}(\cdot)$ or $\text{Drifted}(\cdot)$, which depend on the anchor relation $H$, not on graph topology. Depth limits are necessary for bounding resource consumption and preventing pathological spawn trees, but they are insufficient as a drift mitigation strategy. They must be composed with anchor-recovery and governance mechanisms to be effective.
+
+The autonomous drift problem is therefore fundamentally a governance problem — specifically, the problem of maintaining a verifiable chain of governance from every active agent to a human principal in the presence of agent termination, network partition, and temporal drift. Depth limits address the graph structure of spawn trees; they do not address the lifeline structure of agent governance.

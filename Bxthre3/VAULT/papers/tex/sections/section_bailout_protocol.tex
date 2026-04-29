@@ -1,0 +1,243 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is the terminal safeguard within the Agentic framework. It intercepts agentic actions that violate binding constraints or exhibit unbounded divergence, and transitions control to a human operator for review and resolution. Unlike lower-level containment mechanisms that operate within the state machine's normal flow, the bailout protocol constitutes a fundamentally different execution mode: one in which all autonomous actors are suspended and deterministic control is surrendered to an external agent.
+
+The protocol is activated only when all machine-mediated containment strategies have failed or are demonstrably insufficient. Its purpose is not to correct or complete the original task, but to freeze the execution state, preserve context for human review, and prevent further unintended side effects until a qualified operator intervenes.
+
+\subsection{State Machine Definition}
+
+The Bailout Protocol is formally modeled as a deterministic finite automaton $M_b = (S_b, \Sigma_b, \delta_b, s_0, F_b)$ where:
+
+\begin{itemize}
+    \item $S_b = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$ is the set of protocol states.
+    \item $\Sigma_b = \{\text{trigger}, \text{timeout}, \text{ack}, \text{resolve}, \text{reset}\}$ is the input alphabet of events.
+    \item $\delta_b: S_b \times \Sigma_b \rightarrow S_b$ is the deterministic transition function.
+    \item $s_0 = \text{IDLE}$ is the initial state.
+    \item $F_b = \{\text{RESOLVED}\}$ is the set of accepting (terminal) states.
+\end{itemize}
+
+\subsubsection{State Semantics}
+
+\textbf{IDLE.} The protocol is dormant. No bailout conditions are active, and the agentic system operates under standard execution rules. The IDLE state is the default post-resolution state and the initial state upon system bootstrap.
+
+\textbf{BOUNDED.} The protocol has registered a constraint breach or anomaly condition but has not yet determined that escalation is required. The system is in a probationary mode: execution continues under heightened monitoring, but autonomous actors retain agency. Transitions to BOUNDED occur when a trigger condition is met but the breach does not meet the threshold for immediate bailout. If conditions improve, the system may return to IDLE. If they deteriorate, BOUNDED transitions to BAIL\_PENDING.
+
+\textbf{BAIL\_PENDING.} The protocol has determined that a bailout is likely necessary. Execution continues under strict containment, but no further autonomous actions that exceed previously established boundaries are permitted. A pending bailout timer is started (see Section \ref{sec:timeout_handling}). The system awaits either timeout expiration or explicit de-escalation.
+
+\textbf{ESCALATING.} The BAIL\_PENDING timer has expired without resolution. All autonomous actors are immediately suspended. The protocol transitions to a notification and handoff phase, broadcasting alert signals to all registered human operators and external monitoring systems. Execution is frozen in its current state; no actor may modify system state except for the bailout protocol handler itself.
+
+\textbf{HUMAN\_ACKNOWLEDGED.} A qualified human operator has responded to the escalation and has assumed control. The protocol has transferred execution context to the human agent. Autonomous actors remain suspended. The system awaits explicit operator action: either resolution, further escalation, or reset.
+
+\textbf{RESOLVED.} The human operator has issued a resolution directive. The protocol has verified completion of the resolution and restored the system to a stable state. All actors are released from suspension, and execution may resume or terminate per operator instruction. The protocol transitions to IDLE upon successful reset.
+
+\subsection{Transition Conditions}
+
+The transition function $\delta_b$ is defined as follows. Each transition is condition-tested in the order listed; the first matching condition governs the transition.
+
+\begin{table}[htbp]
+\centering
+\caption{Bailout Protocol State Transitions}
+\label{tab:bailout_transitions}
+\begin{tabular}{@{}llcl@{}}
+\toprule
+\textbf{Current State} & \textbf{Event} & \textbf{Next State} & \textbf{Condition} \\
+\midrule
+IDLE & trigger & BOUNDED & constraint breach detected; threshold not met \\
+IDLE & reset & IDLE & operator-initiated; no state change \\
+BOUNDED & trigger & BAIL\_PENDING & breach worsens or new breach added \\
+BOUNDED & timeout & BAIL\_PENDING & probationary period elapsed without improvement \\
+BOUNDED & ack & IDLE & constraint restored; operator clears breach \\
+BAIL\_PENDING & timeout & ESCALATING & pending timer expired \\
+BAIL\_PENDING & resolve & RESOLVED & operator resolves before timeout \\
+BAIL\_PENDING & ack & BOUNDED & partial improvement; return to probation \\
+ESCALATING & ack & HUMAN\_ACKNOWLEDGED & human operator confirms receipt \\
+ESCALATING & timeout & ESCALATING & no response; re-broadcast alert \\
+HUMAN\_ACKNOWLEDGED & resolve & RESOLVED & operator issues resolution \\
+HUMAN\_ACKNOWLEDGED & reset & IDLE & operator dismisses; system reset \\
+RESOLVED & reset & IDLE & post-resolution cleanup complete \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Formally, for any state $s \in S_b$ and event $e \in \Sigma_b$:
+
+\[
+\delta_b(s, e) = 
+\begin{cases}
+\text{BOUNDED} & \text{if } s = \text{IDLE} \land e = \text{trigger} \\
+\text{BAIL\_PENDING} & \text{if } s = \text{BOUNDED} \land (e = \text{trigger} \lor e = \text{timeout}) \\
+\text{ESCALATING} & \text{if } s = \text{BAIL\_PENDING} \land e = \text{timeout} \\
+\text{HUMAN\_ACKNOWLEDGED} & \text{if } s = \text{ESCALATING} \land e = \text{ack} \\
+\text{RESOLVED} & \text{if } s \in \{\text{BAIL\_PENDING}, \text{HUMAN\_ACKNOWLEDGED}\} \land e = \text{resolve} \\
+\text{IDLE} & \text{if } (s = \text{BOUNDED} \land e = \text{ack}) \lor (s = \text{HUMAN\_ACKNOWLEDGED} \land e = \text{reset}) \lor (s = \text{RESOLVED} \land e = \text{reset}) \\
+s & \text{otherwise (no transition)}
+\end{cases}
+\]
+
+All transitions are atomic. No transition may be interrupted once initiated. The state machine enforces a total ordering on all state changes; concurrent transition requests are queued and processed sequentially in arrival order.
+
+\subsection{Bail-Out Trigger Condition}
+
+A bailout trigger is activated when any of the following conditions are satisfied. Condition evaluation occurs continuously while the system is in a non-terminal state; evaluation halts upon entry to RESOLVED.
+
+\begin{definition}
+\textbf{Bail-Out Trigger (BOT).} The system enters a bailout-triggered state if and only if:
+\end{definition}
+
+\[
+\text{BOT} \equiv \bigvee_{i=1}^{n} C_i
+\]
+
+where each $C_i$ is a primitive trigger condition defined as:
+
+\begin{enumerate}
+    \item \textbf{Constraint Violation (CV).} An agentic action has produced a state change that violates a hard constraint $c \in C_{\text{hard}}$. Formally: $\exists a \in A, \exists c \in C_{\text{hard}}: \text{eval}(c, \text{state after}(a)) = \text{false}$.
+    
+    \item \textbf{Loop Detection (LD).} An agent has executed the same action or reached the same state more than $L_{\max}$ times within a sliding window $W_{\text{loop}}$, where $L_{\max}$ and $W_{\text{loop}}$ are configured parameters with defaults $L_{\max} = 5$ and $W_{\text{loop}} = 60\text{s}$.
+    
+    \item \textbf{Resource Exhaustion (RE).} System resource consumption (memory, compute quota, API call budget, or token expenditure) has reached or exceeded $R_{\max}$, where $R_{\max}$ is a per-resource threshold configured at system initialization.
+    
+    \item \textbf{Divergence (DV).} The accumulated deviation between the agent's actual trajectory and the planned trajectory exceeds a divergence threshold $D_{\max}$, measured by a domain-specific distance metric $\dist(\tau_{\text{actual}}, \tau_{\text{planned}})$.
+    
+    \item \textbf{Unbounded Growth (UG).} The size of the working state set $|W|$ exceeds a configured maximum $|W|_{\max}$ for longer than a grace period $T_{\text{grace}}$, indicating potential uncontrolled state accumulation.
+    
+    \item \textbf{Human Override Request (HOR).} A human operator has explicitly issued a bailout signal through an authorized interface.
+\end{enumerate}
+
+The trigger condition is evaluated by the protocol's monitor component, which runs as an independent process outside the domain of any single agent's control. This ensures that even a compromised or malfunctioning agent cannot suppress a bailout trigger.
+
+Upon BOT activation, the protocol emits a \texttt{trigger} event and transitions to BOUNDED or BAIL\_PENDING depending on trigger severity and configured thresholds.
+
+\subsection{Escalation Algorithm}
+
+The escalation algorithm governs the transition from BAIL\_PENDING to ESCALATING and defines the notification and handoff procedure.
+
+\begin{algorithm}
+\caption{Bailout Escalation Algorithm}
+\label{alg:escalation}
+\begin{enumerate}
+    \item \textbf{Initialize:} On transition to BAIL\_PENDING, start pending timer $T_{\text{pending}}$ with duration $D_{\text{pending}}$ (default: 30 seconds).
+    
+    \item \textbf{Monitor:} While $T_{\text{pending}}$ is active:
+    \begin{enumerate}
+        \item Evaluate trigger conditions $C_1, \ldots, C_n$ at interval $I_{\text{check}}$ (default: 5 seconds).
+        \item If all conditions $C_i$ are false and the system state is restored to within nominal parameters, emit \texttt{ack} event and transition to BOUNDED or IDLE.
+        \item If a resolution directive is received from an authorized operator, emit \texttt{resolve} and transition to RESOLVED.
+        \item If $T_{\text{pending}}$ expires without resolution, proceed to Step 3.
+    \end{enumerate}
+    
+    \item \textbf{Escalate:} On timer expiration:
+    \begin{enumerate}
+        \item Emit \texttt{timeout} event; transition to ESCALATING.
+        \item Suspend all agentic actors: set $\text{actor}[i].\text{state} \leftarrow \text{SUSPENDED}$ for all $i$.
+        \item Preserve full execution context: snapshot state vector, action history, constraint evaluation log, and resource consumption trace.
+        \item Broadcast \texttt{ESCALATION\_ALERT} to all registered operator channels with: current state, trigger summary, execution snapshot reference, and pending acknowledgment timeout $D_{\text{ack}}$ (default: 60 seconds).
+        \item Start acknowledgment timer $T_{\text{ack}}$.
+    \end{enumerate}
+    
+    \item \textbf{Await Acknowledgment:} While $T_{\text{ack}}$ is active:
+    \begin{enumerate}
+        \item If acknowledgment received from any qualified operator: emit \texttt{ack}, transition to HUMAN\_ACKNOWLEDGED, transfer control context to acknowledging operator.
+        \item If $T_{\text{ack}}$ expires with no acknowledgment: re-broadcast \texttt{ESCALATION\_ALERT} with incremented urgency level, reset $T_{\text{ack}}$. Repeat up to $N_{\text{max\_rebroadcast}}$ times (default: 3).
+        \item After $N_{\text{max\_rebroadcast}}$ failures, enter a deadlock state and alert system administrators via out-of-band channels (e.g., direct SMS, email, or pager integration).
+    \end{enumerate}
+    
+    \item \textbf{Human Control:} Upon acknowledgment:
+    \begin{enumerate}
+        \item All autonomous actors remain suspended.
+        \item Human operator has full read access to preserved context and full write access to system state through the resolution interface.
+        \item Operator issues one of: \texttt{resolve}, \texttt{reset}, or \texttt{escalate} directive.
+    \end{enumerate}
+\end{enumerate}
+\end{algorithm}
+
+The escalation algorithm is designed to be robust against race conditions and timing anomalies. All timers are implemented as monotonic clocks; system clock adjustments do not affect timer duration calculations. Timer values are configurable at the protocol initialization level and may be overridden per-deployment based on operational requirements.
+
+\subsection{Bypass Mechanism}
+
+The bailout protocol is specifically designed to bypass all machine actors in the system. This is not an implementation detail; it is a structural requirement derived from the protocol's purpose.
+
+\begin{definition}
+\textbf{Bypass Guarantee.} The bailout protocol operates outside the authority graph of all agentic actors. Formally, for any actor $a \in A$, the protocol transition function $\delta_b$ is not dependent on any action or permission granted by $a$. No actor $a$ may prevent, delay, or alter a bailout transition once a trigger condition is satisfied.
+\end{definition}
+
+The bypass guarantee is implemented through three interlocking mechanisms:
+
+\begin{enumerate}
+    \item \textbf{Privilege Separation.} The bailout protocol runs with system-level privilege that supersedes all actor-level privileges. Actor permission revocation is atomic and instantaneous upon bailout activation. No actor holds sufficient privilege to modify, delay, or suppress the protocol's execution.
+    
+    \item \textbf{External Monitor.} The trigger condition evaluation engine is implemented as an external process that communicates with the agentic system through well-defined, actor-inaccessible channels. The trigger monitor does not depend on any actor for its execution, state evaluation, or event emission.
+    
+    \item \textbf{Forced Suspension.} Upon entry to ESCALATING, the protocol issues a \texttt{SUSPEND\_ALL} directive that is enforced by the underlying execution substrate (the runtime environment, not the agents themselves). This is analogous to a hardware-level interrupt: the actors do not execute the suspension, the substrate prevents execution before the actors can act.
+\end{enumerate}
+
+The bypass mechanism ensures that a malfunctioning, compromised, or adversarial actor cannot prevent the bailout protocol from executing. This is critical in scenarios where an agent has deviated from its intended behavior due to prompt injection, objective misalignment, or resource exhaustion leading to unpredictable state transitions.
+
+\subsection{Timeout Handling}
+
+Timeout handling is central to the bailout protocol's reliability. The protocol defines three categories of timeouts, each with distinct semantics and consequences.
+
+\begin{enumerate}
+    \item \textbf{Pending Timer ($T_{\text{pending}}$).} Activated upon entry to BAIL\_PENDING. Default duration: 30 seconds. Purpose: allow brief opportunity for automatic recovery or operator intervention before full escalation. Expiration triggers transition to ESCALATING. Cannot be extended by any actor; only a valid \texttt{ack} or \texttt{resolve} event may cancel the timer.
+    
+    \item \textbf{Acknowledgment Timer ($T_{\text{ack}}$).} Activated upon entry to ESCALATING. Default duration: 60 seconds. Purpose: enforce response time for human operators. Expiration triggers re-broadcast of escalation alert up to $N_{\text{max\_rebroadcast}}$ times. After final expiration, the protocol enters a deadlock state and escalates via out-of-band channels.
+    
+    \item \textbf{Human Resolution Timer ($T_{\text{resolve}}$).} Activated upon entry to HUMAN\_ACKNOWLEDGED. Default duration: unlimited (operator-driven). No automatic transition occurs on expiration. The system remains in HUMAN\_ACKNOWLEDGED until the operator issues a resolution directive. This timeout is intentionally unconstrained to allow for complex resolution workflows.
+\end{enumerate}
+
+\begin{definition}
+\textbf{Timeout Atomicity.} All timeout timers are implemented as independent, non-reentrant watchdog processes. A timeout handler executes in an isolated context with exclusive access to the protocol state machine. The handler cannot be interrupted, blocked, or pre-empted by any actor or external process during the transition execution.
+\end{definition}
+
+Timeout values are configured at protocol initialization and may be parameterized at deployment time based on operational SLA requirements. The protocol provides the following configuration interface:
+
+\begin{verbatim}
+BAILOUT_PROTOCOL_CONFIG {
+    pending_duration:      Duration  (default: 30s)
+    ack_duration:         Duration  (default: 60s)
+    max_rebroadcasts:     Integer   (default: 3)
+    loop_window:          Duration  (default: 60s)
+    loop_max:              Integer   (default: 5)
+    grace_period:          Duration  (default: 10s)
+    resolve_timeout:       Duration  (default: unlimited)
+}
+\end{verbatim}
+
+All timeout durations are specified as monotonic durations; they are not affected by system clock adjustments, daylight saving transitions, or time zone changes. The protocol uses the system's monotonic clock (\texttt{clock\_monotonic} or equivalent) for all timer implementations.
+
+\subsection{State Diagram}
+
+The complete protocol state machine is illustrated in Figure \ref{fig:bailout_state_machine}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=3cm, minimum size=2.5cm, font=\small]
+    \node[state] (IDLE) {IDLE};
+    \node[state, right of=IDLE] (BOUNDED) {BOUNDED};
+    \node[state, right of=BOUNDED] (BAIL_PENDING) {BAIL\_PENDING};
+    \node[state, right of=BAIL_PENDING] (ESCALATING) {ESCALATING};
+    \node[state, below of=ESCALATING] (HUMAN_ACK) {HUMAN\_ACK};
+    \node[state, left of=HUMAN_ACK, yshift=-2cm] (RESOLVED) {RESOLVED};
+
+    \draw[arrow] (IDLE) edge[bend left, above] node{\texttt{trigger} / CV, LD, RE, DV, UG, HOR} (BOUNDED);
+    \draw[arrow] (BOUNDED) edge[bend left, above] node{\texttt{trigger} / breach worsens} (BAIL_PENDING);
+    \draw[arrow] (BOUNDED) edge[bend right, below] node{\texttt{timeout} / no recovery} (BAIL_PENDING);
+    \draw[arrow] (BOUNDED) edge[bend right, above] node{\texttt{ack} / restored} (IDLE);
+    \draw[arrow] (BAIL_PENDING) edge[bend left, above] node{\texttt{timeout}} (ESCALATING);
+    \draw[arrow] (BAIL_PENDING) edge[bend left, above] node{\texttt{resolve}} (RESOLVED);
+    \draw[arrow] (BAIL_PENDING) edge[bend right, above] node{\texttt{ack} / partial} (BOUNDED);
+    \draw[arrow] (ESCALATING) edge[bend left, above] node{\texttt{ack}} (HUMAN_ACK);
+    \draw[arrow] (ESCALATING) edge[loop right, right] node{\texttt{timeout} / re-broadcast} (ESCALATING);
+    \draw[arrow] (HUMAN_ACK) edge[bend left, left] node{\texttt{resolve}} (RESOLVED);
+    \draw[arrow] (HUMAN_ACK) edge[bend right, below] node{\texttt{reset}} (IDLE);
+    \draw[arrow] (RESOLVED) edge[bend right, below] node{\texttt{reset}} (IDLE);
+\end{tikzpicture}
+\caption{Bailout Protocol State Machine}
+\label{fig:bailout_state_machine}
+\end{figure}
+
+\subsection{Summary}
+
+The Bailout Protocol provides a deterministic, formally specified safeguard for the Agentic system. Its state machine encodes a clear progression from normal operation through graduated containment to full human intervention, with explicit conditions governing each transition. The bypass mechanism ensures that no autonomous actor can interfere with the protocol's execution, guaranteeing that the system always has a terminal escape path regardless of agentic state or behavior. Timeout handling is formalized and robust, ensuring that the protocol does not dead-lock and that human operators have enforceable response windows. The protocol is intentionally simple in its terminal state logic—this simplicity is a design feature, not a limitation, as it ensures the protocol's behavior is fully predictable and auditable under all circumstances.

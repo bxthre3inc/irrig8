@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Hierarchy
+metadata:
+  name: agentic-system-hierarchy
+spec:
+  levels:
+    - name: strategic
+      roles: [manager]
+      responsibilities: [project_oversight, resource_allocation, stakeholder_communication]
+    - name: tactical
+      roles: [researcher, developer, reviewer]
+      responsibilities: [task_execution, quality_assurance, knowledge_management]
+    - name: operational
+      roles: [qa, legal, financial]
+      responsibilities: [final_validation, compliance, financial_operations]
+  reporting_structure:
+    - from: researcher
+      to: manager
+      frequency: daily
+    - from: developer
+      to: reviewer
+      frequency: per_task
+    - from: reviewer
+      to: manager
+      frequency: per_review
+    - from: qa
+      to: manager
+      frequency: per_deployment
+    - from: legal
+      to: manager
+      frequency: per_contract
+    - from: financial
+      to: manager
+      frequency: per_transaction
+  escalation_paths:
+    - issue_type: critical_defect
+      path: [qa → manager → human_override]
+    - issue_type: resource_conflict
+      path: [developer → manager]
+    - issue_type: scope_change
+      path: [researcher → manager → stakeholder]
+    - issue_type: legal_risk
+      path: [legal → manager → legal_team]
+    - issue_type: financial_audit
+      path: [financial → manager → compliance_team]

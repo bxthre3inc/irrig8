@@ -1,0 +1,333 @@
+% ---------------------------------------------------------------
+\section{Guarantees and Correctness Properties}
+\label{sec:guarantees}
+% ---------------------------------------------------------------
+
+This section establishes the three foundational correctness guarantees of the
+Bailout Protocol: \textbf{SAFETY}, \textbf{LIVENESS}, and \textbf{ACCOUNTABILITY}.
+Each guarantee is stated formally, derived from the structural invariants of the
+\bxthree{} Framework, and supported by a proof sketch.  Together they constitute
+the Bailout Protocol's contribution to the upstream accountability theorem: that
+every unresolved exception in a \bxthree{} node reaches a designated human
+principal, that contact occurs in finite time, and that the identity of that
+principal is permanently attributable.
+
+The guarantees depend on four structural invariants established at node
+provisioning and enforced by the \fact{} layer throughout the node's operational
+lifetime~\cite{bailoutprotocol2026}:
+
+\begin{itemize}\itemsep=0pt
+\item[\textbf{I1}] \textbf{Hierarchy Finiteness.}  The spawn tree depth is bounded
+  by $D_{\max}$, a constant established at framework initialization.  Every node
+  $n$ has finite depth $d(n) \leq D_{\max}$.
+
+\item[\textbf{I2}] \textbf{Parent-Pointer Immutability.}  The parent pointer
+  $\alpha(n)$ is established once at node creation and is read-only for the
+  node's entire operational lifetime.  The \fact{} layer's pre-commit hook
+  rejects any write attempt to $\alpha(n)$.
+
+\item[\textbf{I3}] \textbf{Human Anchor Immutability.}  The human anchor
+  $h(n)$ is designated at node provisioning and is never modified during the
+  node's operational lifetime.  No machine actor may redirect the bailout terminus.
+
+\item[\textbf{I4}] \textbf{Forensic Ledger Completeness.}  Every state
+  transition in the Bailout Protocol's state machine produces at least one
+  Forensic Ledger entry before the transition is committed.  Entries are
+  SHA-256 hash-chained and include the identity of every actor that participated
+  in the transition.
+\end{itemize}
+
+These invariants are not operational conventions.  They are enforced by the
+\fact{} layer's deterministic logic below the agent execution level, making them
+independent of any machine actor's behavior or intent.
+
+% ---------------------------------------------------------------
+\subsection{SAFETY: No Autonomous Collapse}
+\label{sec:safety}
+% ---------------------------------------------------------------
+
+\textbf{SAFETY} ensures that the system cannot enter a state in which
+consequential actions proceed without a human principal in the accountability
+chain.  This is the foundational guarantee: if it fails, the other two guarantees
+are irrelevant.
+
+\begin{theorem}[Safety --- No Autonomous Collapse]
+\label{th:safety}
+For any node $n$ in a \bxthree{} spawn tree, the system cannot reach a state
+in which autonomous action proceeds without a human principal in the causal chain
+of authorization.  Formally,
+\[
+\forall n \in V,\ \forall s \in Q,\ \text{state}(n) = s \implies
+\text{active\_bailout}(n) \lor s \in \{\texttt{IDLE},\ \texttt{RESOLVED}\}.
+\]
+No terminal state exists that permits autonomous consequential action in the
+absence of a human principal.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The proof shows that every pathway to autonomous collapse is structurally blocked
+by the conjunction of three mechanisms.
+
+\medskip
+\noindent
+\textit{Pathway 1: Bypass of the trigger condition.}
+The trigger condition TC is evaluated deterministically by the \bounds{} layer
+before any autonomous action may proceed.  TC fires when (a) the proposed action
+falls outside the node's capability set, (b) the Bounds Engine's projection
+forecasts a safety envelope violation above confidence threshold $\tau$, or (c) the
+governance policy classifies the action class as human-required.  No machine actor
+may suppress, override, or delay the evaluation of TC; it is a pre-commit
+condition evaluated by the \fact{} layer before any directive is issued.
+If TC fires, the state machine transitions to \texttt{BOUNDED} and all
+consequential action stalls until the Bailout Protocol completes or times out.
+Autonomous collapse during this interval is blocked.
+
+\medskip
+\noindent
+\textit{Pathway 2: Suppression of the ESCALATING transition.}
+Assume a node reaches \texttt{BAIL\_PENDING} without resolving the trigger.
+By Invariant~I2 and Transition T4 (Section~\ref{sec:bp-state-machine}), the
+transition $\texttt{BAIL\_PENDING} \xrightarrow{\sigma_{\text{timeout}}}
+\texttt{ESCALATING}$ is forced deterministically by the timeout event
+$\sigma_{\text{timeout}}$ with no machine-actor discretion.  The \fact{} layer's
+pre-commit hook enforces this: any attempt by a machine actor to suppress the
+transition or extend the timeout is rejected, the violation is recorded in the
+Forensic Ledger, and the Bailout Protocol continues.  No machine actor can
+prevent the transition to \texttt{ESCALATING}.
+
+\medskip
+\noindent
+\textit{Pathway 3: Resolution by a machine actor.}
+By the Bypass Property (Definition~\ref{def:bypass}), no machine actor (Plane
+P0--P8) can emit the $\sigma_{\text{resolve}}$ event.  The transition
+$\texttt{HUMAN\_ACKNOWLEDGED} \xrightarrow{\sigma_{\text{resolve}}}
+\texttt{RESOLVED}$ requires the resolver's credential $C_{h(n)}$, which is
+provisioned at node creation and stored in the \fact{} layer's credential store.
+The pre-commit hook performs this check before committing the state transition:
+if the presented credential does not match $C_{h(n)}$, the transition is rejected
+and the rejection event is recorded in the Forensic Ledger.  No machine actor
+possesses a credential matching $C_{h(n)}$, so no machine actor can emit
+$\sigma_{\text{resolve}}$ or otherwise resolve a bailout.
+
+\medskip
+\noindent
+\textit{Consequence.}
+The conjunction of the three pathways establishes that there exists no
+sequence of state transitions from \texttt{IDLE} that reaches a state in which
+consequential action proceeds without either (i) an active Bailout Protocol in
+the \texttt{ESCALATING} or \texttt{HUMAN\_ACKNOWLEDGED} state, or (ii) a
+human-authorized \texttt{RESOLVED} state.  $\square$
+\end{proof}
+
+The SAFETY guarantee is enforced at the substrate level, not at the agent level.
+It does not depend on any machine actor choosing to comply; it depends on the
+\fact{} layer's pre-commit hook rejecting any directive that would violate the
+safety property.  This makes the guarantee architecturally non-negotiable.
+
+% ---------------------------------------------------------------
+\subsection{LIVENESS: Eventual Human Contact}
+\label{sec:liveness}
+% ---------------------------------------------------------------
+
+\textbf{LIVENESS} ensures that the Bailout Protocol's escalation path from any
+node reaches the human anchor $h(n)$ in finite time, or records the failure
+attributably if no reachable pathway exists.
+
+\begin{theorem}[Liveness --- Eventual Human Contact]
+\label{th:liveness}
+For any node $n$ and any trigger $t$ that fires at $n$, the Bailout Protocol's
+escalation path $C(n)$ reaches the human anchor $h(n)$ within a bounded number
+of state transitions, or transitions to \texttt{RESOLVED} with a
+\texttt{PATHWAY\_EXHAUSTED} tag within bounded wall-clock time $T_{\max}$.
+Formally,
+\[
+\forall n \in V,\ \forall t \in T(n),\ \exists\ k \leq d(n) \text{ such that }
+\alpha^{(k)}(n) = h(n) \lor \text{state}(n, t) = \texttt{RESOLVED}_{\text{PATHWAY\_EXHAUSTED}}.
+\]
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The proof follows from the finite termination of the parent-pointer chain and the
+deterministic execution of the Escalation Algorithm.
+
+\medskip
+\noindent
+\textit{Step bound.}  The spawn tree depth is bounded by $D_{\max}$ (Invariant~I1).
+The parent-pointer chain from any node $n$ is a strictly ascending sequence in the
+depth ordering: for each iteration $i$, $\text{depth}(\alpha^{(i+1)}(n)) >
+\text{depth}(\alpha^{(i)}(n))$ because $\alpha^{(i+1)}(n) = \alpha(\alpha^{(i)}(n))$
+and $\alpha$ always points to the parent, which has strictly lower depth.  The chain
+cannot cycle because self-referential parentage is prevented at node creation by
+the \fact{} layer's pre-commit hook.  Therefore the chain from $n$ to the root
+terminates in at most $D_{\max}$ steps.
+
+\medskip
+\noindent
+\textit{Escalation loop termination.}  The escalation algorithm executes one
+loop iteration per parent-pointer step.  The loop condition
+$\neg\text{IsAnchor}(n_{\text{current}})$ is false precisely when the current
+node is $h(n)$, which by the step bound occurs within $D_{\max}$ iterations.
+Each iteration writes a \texttt{TRIGGER\_FIRED} or \texttt{ESCALATED} entry to
+the Forensic Ledger, providing evidence of participation for every node on the
+path.
+
+\medskip
+\noindent
+\textit{Pathway degradation.}  If an intermediate node $p$ fails to participate
+in the escalation, the gap is detected by the Bailout Monitor: the propagation
+chain recorded at the anchor will have a missing entry at the expected depth.
+The monitor flags this as a pathway violation and may select an alternative
+pathway from the Pathway Health Registry, which maintains functional alternative
+parent pointers for each node.  The Forensic Ledger records the gap, making the
+failure attributable.
+
+\medskip
+\noindent
+\textit{Terminal failure.}  If all propagation pathways are exhausted (no
+functional parent will forward the trigger), the state machine reaches
+\texttt{PATHWAY\_EXHAUSTED} and transitions to \texttt{RESOLVED}.  The timeout
+event is recorded in the Forensic Ledger with the complete propagation chain
+attempted.  This ensures that even under catastrophic failure conditions, the
+system records the failure rather than silently suppressing it.
+
+Since the chain terminates in finite time and all failure modes are recorded,
+the LIVENESS guarantee holds.  $\square$
+\end{proof}
+
+The LIVENESS guarantee is bounded by wall-clock time $T_{\max}$, which is
+computed from the provisioned timeout parameters at deployment certification
+(Section~\ref{sec:bp-timeouts}).  A deployment that cannot guarantee human
+acknowledgment within the required $T_{\max}$ under all failure scenarios must
+provision additional or higher-bandwidth pathways, or reduce $T_{\text{prop}}$
+and $T_{\text{cap}}$ to bring the worst-case bound within the required limit.
+This analysis is a required part of deployment certification for any \bxthree{}
+system operating in a regulated or safety-critical environment.
+
+% ---------------------------------------------------------------
+\subsection{ACCOUNTABILITY: Human Always Identifiable}
+\label{sec:accountability}
+% ---------------------------------------------------------------
+
+\textbf{ACCOUNTABILITY} ensures that for every \texttt{RESOLVED} state, the
+identity of the resolving human principal is permanently recorded in the Forensic
+Ledger and is non-repudiable.
+
+\begin{theorem}[Accountability --- Human Always Identifiable]
+\label{th:accountability}
+For every trigger $t$ that reaches \texttt{RESOLVED}, the Forensic Ledger
+contains a \texttt{human-directive} entry that (i) identifies the resolver by
+name and role, (ii) is bound to $t$ via the authorization ledger entry hash,
+and (iii) cannot have been produced by any machine actor.  Formally,
+\[
+\forall t \in T,\ \text{state}(t) = \texttt{RESOLVED} \implies
+\exists!\ e \in E.\ e.\text{type} = \texttt{human-directive}
+\land e.\text{trigger\_id} = t \land e.\text{resolver} \neq \varnothing
+\land e.\text{credential\_match} = \texttt{TRUE}.
+\]
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The proof follows from three components acting in sequence.
+
+\medskip
+\noindent
+\textit{Exclusivity of resolution.}  By the Bypass Property
+(Definition~\ref{def:bypass}), no machine actor (Plane P0--P8) can emit the
+$\sigma_{\text{resolve}}$ event.  The transition
+$\texttt{HUMAN\_ACKNOWLEDGED} \xrightarrow{\sigma_{\text{resolve}}}
+\texttt{RESOLVED}$ requires the resolver's credential $C_{h(n)}$, which is
+provisioned at node creation and stored in the \fact{} layer's credential store.
+The pre-commit hook performs this check before committing the state transition:
+if the presented credential does not match $C_{h(n)}$, the transition is rejected
+and the rejection event is recorded in the Forensic Ledger.  No machine actor
+possesses a credential matching $C_{h(n)}$, so no machine actor can emit
+$\sigma_{\text{resolve}}$.
+
+\medskip
+\noindent
+\textit{Forensic Ledger completeness.}  The \fact{} layer enforces
+(Invariant~I4) that every state transition produces at least one Forensic Ledger
+entry before the transition is committed.  The \texttt{RESOLVED} state
+transition therefore necessarily produces a \texttt{human-directive} entry,
+which records the resolver's identity (extracted from the authenticated
+credential), the directive type, the trigger ID, and the authorization ledger
+entry hash that binds the directive to the specific trigger.
+
+\medskip
+\noindent
+\textit{Non-repudiation.}  The credential used to emit $\sigma_{\text{resolve}}$
+is the authoritative credential of $h(n)$, provisioned at node creation and
+never shared with any machine actor.  This means the resolution directive is
+non-repudiable: $h(n)$ cannot credibly claim that a different actor issued the
+directive, because only $h(n)$ possesses the credential required to emit the
+event.  The Forensic Ledger's SHA-256 hash chain ensures that the
+\texttt{human-directive} entry for trigger $t$ cannot be modified, deleted, or
+front-run by a subsequent entry.
+
+Since every \texttt{RESOLVED} state requires a \texttt{human-directive} entry
+containing the resolver's identity, and since that identity is credential-bound
+and cryptographically chained, the ACCOUNTABILITY guarantee holds.  $\square$
+\end{proof}
+
+The ACCOUNTABILITY guarantee extends the upstream accountability theorem beyond
+the structural guarantee that human contact is possible, to the operational
+guarantee that when human contact occurs, the identity of the human is verifiably
+recorded.  This distinction matters in high-stakes deployments: regulators,
+customers, and courts require not only that a human was in the loop, but that
+the specific human who authorized or rejected an action can be identified with
+cryptographic confidence.
+
+% ---------------------------------------------------------------
+\subsection{Correctness Triad: Property Interactions}
+\label{sec:correctness-triad}
+% ---------------------------------------------------------------
+
+The three guarantees interact in essential ways that reinforce the overall
+correctness of the system:
+
+\begin{itemize}
+\item \textbf{SAFETY $\Rightarrow$ ACCOUNTABILITY.}  By preventing autonomous
+  collapse, SAFETY ensures that the attribution chain is always computable ---
+  there is always a last known human principal.  A collapsed system cannot
+  provide accountability because it no longer has a coherent chain of causation.
+
+\item \textbf{LIVENESS $\Rightarrow$ SAFETY.}  By guaranteeing eventual human
+  contact, LIVENESS ensures that the human who can intervene during a SAFETY
+  breach is reachable.  Without LIVENESS, SAFETY could be breached indefinitely
+  before contact is made.
+
+\item \textbf{ACCOUNTABILITY $\Rightarrow$ LIVENESS enforcement.}  Without
+  ACCOUNTABILITY, a malicious or negligent actor could suppress contact signals
+  without consequence.  The tamper-evident log creates a non-repudiation
+  mechanism that disincentivizes suppression.
+\end{itemize}
+
+Together, these three properties form a \textbf{correctness triad} for agentic
+systems: the system is safe because it cannot collapse autonomously; it remains
+responsive because a human will always eventually be notified or the failure is
+recorded; and it remains responsible because every action traces to a person.
+
+\begin{table}[h]
+\caption{Guarantees and Correctness Properties: Summary}
+\label{tab:guarantees-summary}
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Property} & \textbf{Formal Statement} & \textbf{Mechanism} & \textbf{Critical Assumption} \\
+\midrule
+SAFETY & $\forall n.\ \text{state}(n) \neq \text{Collapsed}$ &
+  Pre-commit hook + Bypass Property & Handoff is non-suppressible \\
+LIVENESS & $\exists T_{\max} < \infty.\ \text{contact} \leq T_{\max}$ &
+  Progressive escalation + timeout & $\geq 1$ functional pathway exists \\
+ACCOUNTABILITY & $\forall t.\ \text{state}(t) = \texttt{RESOLVED} \implies
+  \text{resolver}(t) \neq \varnothing$ &
+  Credential-bound resolution + hash-chain log & Authentication layer is non-anonymous \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These properties are not optional enhancements; they are architectural commitments
+that must be upheld by the substrate platform and cannot be overridden by any
+machine actor at runtime.  Table~\ref{tab:guarantees-summary} summarizes the
+three properties, their formal statements, enforcement mechanisms, and critical
+assumptions.

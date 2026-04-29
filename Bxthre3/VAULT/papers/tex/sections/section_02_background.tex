@@ -1,0 +1,157 @@
+\section{Background}
+
+% ============================================================
+% 2.1  Accountability in Multi-Agent AI Systems
+% ============================================================
+Accountability is a foundational requirement for any AI system that
+operates autonomously in high-stakes environments.  In multi-agent
+architectures, accountability is not merely a property of individual
+agents but an emergent property of the interaction protocols,
+authority hierarchies, and logging mechanisms that bind agents into a
+coherent system.  When an autonomous agent takes an action that
+produces a harmful outcome, it must be possible to trace that outcome
+back through the chain of decisions, communications, and dependencies
+that gave rise to it \cite{dijkstra1982}.  This traceability is the
+core of accountability: it closes the gap between action and consequence
+in systems where human oversight is delayed, distributed, or absent.
+
+The challenge of accountability in multi-agent AI is compounded by the
+semantic opacity that emerges when multiple agents share goals but
+pursue them through opaque inference chains.  Unlike in traditional
+software systems where a call stack or transaction log provides a
+faithful record of execution, a multi-agent system may produce
+decisions that cannot be explained by inspecting a single agent's
+internal state.  This has led a growing body of work to emphasize the
+necessity of structured audit trails that are co-designed with the
+agent architecture itself, rather than retrofitted as an after-thought
+\cite{bansal2019}.  Effective accountability mechanisms must record not
+only the final decision of an agent but the inputs it received, the
+alternatives it considered, and the reasoning it applied—regardless of
+whether that reasoning is symbolically expressible.  In short,
+accountability is a design discipline, not a compliance afterthought.
+
+% ============================================================
+% 2.2  Human-in-the-Loop Design
+% ============================================================
+Human-in-the-loop (HITL) design embeds human authority at one or more
+decision boundaries within an autonomous system, ensuring that a human
+retains meaningful oversight of actions that carry material risk.  The
+central insight of HITL is that automation does not eliminate human
+responsibility; it redefines it—shifting the human from an active
+operator to a supervisory referee whose intervention is both possible
+and consequential \cite{wiener1948}.  When designed correctly, HITL
+preserves the throughput advantages of automation while preserving the
+capacity for moral reasoning, contextual judgment, and recourse that
+only humans can provide.
+
+Two dimensions of HITL design are particularly relevant to the
+Bailout Protocol.  The first is the placement of decision authority:
+at what stage of a cascade should a human be empowered to interrupt?
+Prior work has shown that the effectiveness of a human interrupt
+diminishes rapidly once an autonomous process has entered a
+high-rate execution phase, a phenomenon sometimes described as
+\emph{automation bias} \cite{bansal2019}.  Humans who have delegated
+routine decisions to an autonomous system tend to approve rather than
+scrutinize, particularly under time pressure.  This suggests that HITL
+placement must be tied not to the pace of the machine but to the
+consequence class of the action being contemplated.  The second
+dimension is the fidelity of the human's situational awareness at the
+moment of intervention.  A human who is consulted after a cascade has
+already propagated through multiple agents cannot meaningfully assess
+whether any individual decision was sound, because the original
+contexts have been obscured by subsequent processing
+\cite{dijkstra1982}.  HITL mechanisms therefore require rich,
+concise, and human-interpretable state summaries—designed before the
+cascade, not improvised during it.
+
+% ============================================================
+% 2.3  Fail-Safe Design in Safety-Critical Systems
+% ============================================================
+The concept of a fail-safe system predates modern computing by
+decades.  A fail-safe design is one in which the system degrades
+gracefully and predictably when stressed beyond its operational
+envelope, producing outcomes that are less harmful than those that
+would result from continued unattended operation \cite{tristr81}.
+Classically, fail-safe engineering distinguishes between systems that
+fail gracefully (degrading to a lower functionality mode) and systems
+that fail stop (halting completely upon detecting an anomalous
+condition).  The choice between these modes depends on the cost of
+the halt versus the cost of continued operation in a compromised state.
+
+In the context of autonomous agents, fail-safe design takes on new
+complexity.  An agent operating in a dynamic environment may encounter
+conditions that were not anticipated at design time, meaning that a
+static fail-safe threshold is insufficient \cite{bansal2019}.  Rather,
+a robust fail-safe architecture must include mechanisms for the agent
+to recognize that it has entered an unanticipated state, to reduce its
+autonomy in a principled manner, and to communicate its uncertainty
+to external oversight before taking irreversible actions.  Dijkstra's
+observation that programs must be designed to behave correctly not only
+in their intended domain but in the face of all foreseeable errors
+remains the foundational principle \cite{dijkstra1982}.  The novel
+challenge for agentic systems is that the space of foreseeable errors
+is orders of magnitude larger than in traditional software, and the
+errors that arise may be emergent properties of agent interaction
+rather than failures of any individual component.
+
+Modern safety-critical systems, particularly those deployed in
+transportation and industrial automation, have converged on a
+principle of layered defense-in-depth \cite{tristr81}, in which
+multiple independent mechanisms are layered such that the failure of
+any single layer does not result in a catastrophic loss of safety.
+The Bailout Protocol draws on this tradition, treating the bailouts
+not as a single defensive layer but as part of a broader architecture
+in which each layer—task execution, oversight, and governance—can
+independently detect anomalies and initiate protective action.
+
+% ============================================================
+% 2.4  The BX3 Framework: Three-Layer Model
+% ============================================================
+The BX3 Framework organizes an agentic system into three concentric
+layers of increasing abstraction and decreasing autonomy: the
+\textbf{Task Layer}, the \textbf{Oversight Layer}, and the
+\textbf{Governance Layer}.  The Task Layer is the innermost and most
+autonomous: it performs the operational work of the system—planning,
+reasoning, and executing actions in the world.  It is analogous to the
+runtime kernel of a traditional operating system and corresponds to
+what Wiener described as the \emph{executive function} of an automated
+system \cite{wiener1948}.
+
+The Oversight Layer sits above the Task Layer and is responsible for
+monitoring the quality, safety, and alignment of decisions made at the
+Task Layer.  It implements the human-in-the-loop interfaces, audit
+logging, and anomaly detection mechanisms described in Sections 2.2
+and 2.3.  Critically, the Oversight Layer is itself an agentic system:
+it reasons about the behavior of the Task Layer and can initiate
+corrective actions without waiting for a human interrupt.  This
+self-referential structure—agents monitoring agents—is necessary
+because the latency of human supervision is incompatible with the pace
+at which modern agentic systems operate \cite{bansal2019}.  The
+Oversight Layer is thus the primary locus of accountability in the BX3
+Framework.
+
+The Governance Layer is the outermost and slowest-moving layer.  It
+encodes the terminal values, policy constraints, and bailout triggers
+that govern the behavior of the system as a whole.  Unlike the Task
+Layer and Oversight Layer, which are designed to operate at runtime,
+the Governance Layer is primarily a design-time artifact: it is the
+set of constraints that the system cannot recover from autonomously.
+When the Oversight Layer detects a condition that violates aGovernance
+Layer constraint, it must escalate—not to a more capable agent, but
+to a human.  This is the structural basis of the Bailout Protocol:
+the point at which the system exhausts its internal recovery options
+and transfers authority back to human governance \cite{tristr81}.
+
+The three-layer model provides a principled answer to the question of
+where to place accountability: it is distributed across the layers
+according to the nature of the decision.  Operational decisions are
+accountable to the Oversight Layer; safety and alignment decisions
+are accountable to the Governance Layer.  The Bailout Protocol is
+the formal mechanism by which the Governance Layer exercises this
+authority—declaring that a condition has arisen that requires human
+intervention, halting the autonomous cascade, and preserving the
+state necessary for the human to reconstruct, assess, and resolve
+the situation.  This architecture ensures that fail-safe design is
+not an optional enhancement but a structural property of the system,
+enforced by the separation of concerns between layers
+\cite{dijkstra1982}.

@@ -1,0 +1,83 @@
+% -------------------------------------------------------
+\section{Integration with the BX3 Framework}
+\label{sec:bx3-integration}
+
+The Recursive Spawning Protocol is not a standalone mechanism. It is instantiated on top of the BX3 Framework's three-layer architecture, which provides the structural substrate that makes immutable parent pointers enforceable, drift detection deterministic, and chain termination guaranteed. This section specifies precisely how RSP interacts with each of the three BX3 layers and how that interaction produces guarantees that no alternative architecture can provide independently.
+
+% --- 6.1 Purpose Layer as Accountability Anchor -------------
+
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:purpose-layer-anchor}
+
+The BX3 Purpose Layer is the only layer in the architecture that contains human actors. In the RSP context, this has a precise consequence: \textbf{the Purpose Layer is the only node type that can serve as the root of an accountability chain.} Every RSP chain terminates at a Purpose Layer node by construction, because the spawn authorization event (Section~\ref{sec:spawn-authorization}) can only be issued by a Purpose Layer node, and that node becomes the root of the newly spawned subtree.
+
+The Purpose Layer's role is not merely to approve spawns. It is the \textbf{accountability anchor} in the full formal sense: the unique node type that carries human intent, human authorization, and human oversight responsibility. All other nodes in the chain — Bounds Engine nodes and Fact Layer nodes — are machine-interpreted artifacts that implement the human's mandate within bounded scopes. No Fact Layer record, no Bounds Engine constraint, and no operational state can substitute for a human decision at the root.
+
+Concretely, when a parent node $p$ spawns a child $c$, the following Purpose Layer operations occur in sequence:
+
+\begin{enumerate}
+
+\item The parent node's Bounds Engine evaluates whether the spawn request falls within its current authorized scope. If yes, it forwards the spawn authorization request to the parent node's Purpose Layer.
+
+\item The Purpose Layer of $p$ renders the binding decision: authorize or reject. This decision is logged to the forensic ledger as a \texttt{SPAWN\_AUTHORIZATION} event, containing the full chain of prior spawn authorizations leading back to the root Purpose Layer.
+
+\item If authorized, the Purpose Layer physically writes the child's parent pointer to the Fact Layer's Parent Pointer Registry, establishing the immutable relation $\text{ParentPointer}(p, c) = \text{True}$.
+
+\item The child $c$ is provisioned with the authorized scope, inheriting the complete accountability chain as a structural given — not as a convention, not as a policy, but as an immutable physical property of the node.
+
+\end{enumerate}
+
+The critical property is that \textbf{the Purpose Layer's authorization is the only path by which a node can acquire a parent pointer.} There is no fallback path, no dynamic resolution, no runtime redirection. A child node's parent pointer can only be established by a Purpose Layer event at spawn time. This is what makes the chain an accountability architecture and not merely a naming convention.
+
+The Purpose Layer also provides the \textbf{escalation terminus.} When a child node encounters an unresolvable state — \texttt{BOUNDS\_EXCEEDED}, a logical contradiction, a timeout, or an ambiguous instruction — it sends an escalation event carrying its full accountability chain to its parent. The parent propagates upward. Because the chain terminates at the root Purpose Layer, which is a human-anchored node, the escalation reaches a human decision-maker as a structural consequence of chain termination — not as a policy aspiration, not as a best-effort heuristic.
+
+% --- 6.2 Bounds Engine: Depth Enforcement -------------
+
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:bounds-engine-depth}
+
+The Bounds Engine is the decision-making layer of each BX3 node. In the RSP context, it carries two distinct responsibilities: \textbf{scope bounding at spawn} and \textbf{depth enforcement at runtime}. Both are necessary; neither is sufficient alone.
+
+\textbf{Scope bounding at spawn.} When a parent node $p$ requests spawn authorization from its Purpose Layer, the Bounds Engine of $p$ computes the \textbf{authorized scope} for the prospective child. This scope is a bounded mandate: it specifies what actions the child is permitted to take, what resources it may consume, what external services it may access, and what escalation conditions trigger a bailout. The scope is encoded in the Worksheet that the parent provisions for the child and sealed at spawn time. Critically, the scope is bounded relative to the parent's own authorized scope: a child cannot be authorized to act beyond the parent's authority. This is a structural constraint enforced by the Purpose Layer at spawn authorization time. The consequence is that every node in the RSP chain operates within a scope that is a strict subset of its ancestors' scopes. Authority is progressively narrowed as the chain descends, not widened. This inversion is what makes RSP fundamentally different from conventional delegation: a child receives \textbf{less} authority than its parent, not more.
+
+\textbf{Depth enforcement at runtime.} The Bounds Engine enforces depth limits through the \texttt{depth()} function defined in Equation~\ref{eq:depth-function}. When a node receives a spawn request from one of its children, its Bounds Engine checks whether the resulting depth would exceed $D_{\max}$, the system-configured maximum generational depth. If the limit would be exceeded, the Bounds Engine blocks the spawn and logs a \texttt{DEPTH\_LIMIT\_EXCEEDED} event to the forensic ledger. The depth limit is a property of the system, not of any individual node. The Fact Layer maintains system-wide $D_{\max}$ as a configuration constant. Each Bounds Engine queries this constant at spawn time, ensuring that depth enforcement is consistent across all nodes.
+
+Depth enforcement and scope bounding are distinct mechanisms addressing distinct failure modes. Depth enforcement prevents excessive chain length. Scope bounding prevents excessive scope width at any generation. Together, they ensure RSP chains are bounded in both dimensions: they do not grow arbitrarily deep, and they do not grow arbitrarily broad in scope at any depth.
+
+% --- 6.3 Fact Layer: Forensic Ledger and Immutable Enforcement -------------
+
+\subsection{Fact Layer: Forensic Ledger and Immutable Enforcement}
+\label{sec:fact-layer-rsp}
+
+The Fact Layer is the deterministic execution substrate of every BX3 node. In the RSP context, it serves three distinct functions: the \textbf{Parent Pointer Registry (PPR)}, the \textbf{forensic ledger}, and the \textbf{immutability enforcement engine}.
+
+The PPR was defined in Section~\ref{sec:fact-layer-enforcement}. It is the first-class data structure within the Fact Layer that records, for every node $c$, the identity of its parent $p$ and the authorizing Purpose Layer node. The PPR is append-only: the Fact Layer physically does not implement a write path for the \texttt{parent}($c$) field after spawn time. Any attempt to modify this field is logged as a constraint violation and triggers an immediate escalation event to the Purpose Layer.
+
+The forensic ledger records every RSP-relevant event: spawn authorizations, child activations, scope modifications, depth limit checks, escalation events, and bailout resolutions. Each event carries a deterministic timestamp, the actor that triggered it, the full chain context, and the outcome. The forensic ledger is append-only and SHA-256 sealed, providing cryptographic evidence of event ordering that is immutable post-hoc. The ledger is queryable at any future time by any authorized party, independent of the operational state of any node in the chain.
+
+The combination of the PPR and the forensic ledger produces a \textbf{forensically auditable accountability chain.} At any point in time, any authorized party can query the Fact Layer for a node's accountability chain and receive a deterministic, auditable, cryptographically sealed record of every link in the chain from the node to the root Purpose Layer. This is the difference between a \textbf{structural guarantee} and a \textbf{convention}: the chain does not rely on any actor behaving correctly; it relies on the Fact Layer's physical append-only architecture, which does not permit the chain to be falsified or truncated.
+
+The Fact Layer also implements the \textbf{Truth Gate} for RSP events: every spawn authorization, child activation, and escalation event passes through a deterministic validity check before being written to the ledger. Events that fail the Truth Gate are rejected and logged as \texttt{INVALID\_RSP\_EVENT}, ensuring that malformed or unauthorized events cannot contaminate the forensic record. The Truth Gate operates at the Fact Layer write protocol level, before the event reaches the ledger — it is not a filter applied to ledger data post-write.
+
+% --- 6.4 Three-Layer Synthesis -------------
+
+\subsection{Three-Layer Synthesis}
+\label{sec:three-layer-synthesis}
+
+The integration of RSP with the BX3 three-layer architecture produces a unified accountability system in which each layer addresses a distinct threat:
+
+\begin{itemize}
+
+\item \textbf{Purpose Layer} prevents drift by ensuring every node's chain terminates at a human-anchored accountability root, and provides the escalation terminus for every unresolvable state.
+
+\item \textbf{Bounds Engine} prevents scope explosion by bounding each child's authority to a strict subset of its parent's scope, and enforces system-wide depth limits to prevent unbounded chain growth.
+
+\item \textbf{Fact Layer} prevents chain falsification by implementing the PPR as a physically immutable data structure with no write path post-spawn, and provides the forensic ledger that makes every accountability link auditable at any future time.
+
+\end{itemize}
+
+No single layer can provide all three guarantees independently. A system with Purpose Layer accountability but mutable parent pointers is vulnerable to chain hijacking after spawn. A system with immutable parent pointers but no depth limit is vulnerable to unbounded spawn cascades. A system with depth limits but no forensic ledger cannot reconstruct the chain retrospectively after a failure. RSP's integration with BX3 is the \textbf{conjunction} of all three: it is the architecture in which the accountability chain is structurally enforced at spawn time, immutably recorded in the forensic ledger, and guaranteed to terminate at a human by the Purpose Layer's base case.
+
+This three-layer synthesis is what distinguishes the RSP+BX3 architecture from all prior approaches to agent chain accountability. The Human Delegation Provenance (HDP) Protocol~\cite{hdp2026} provides cryptographic chain-of-custody for human-to-agent delegation, but does not address recursive agent spawning. AgentOrchestra~\cite{agentorchestra2025} provides dynamic lifecycle management but does not enforce immutable parent chains. Neither approach provides the conjunction of immutable parent pointers, bounded scope, and forensic ledger that RSP requires — and that the BX3 Framework provides as a native substrate.
+
+\end{document}

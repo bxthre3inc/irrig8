@@ -1,0 +1,124 @@
+\section{Background}
+\label{sec:background}
+
+The challenge of governing recursive spawning in multi-agent AI systems—where one agent spawns child agents that may themselves spawn further descendants—is a present engineering problem, not a speculative one. Commercial agent platforms already deploy hierarchical pipelines that decompose tasks into sub-tasks, spawn specialized agents to execute them, and synthesize results without human review of intermediate steps. As these systems scale, two convergent failure modes emerge: (1) \emph{accountability loss}, where the human who authorized an action cannot be reconstructed from the final output, and (2) \emph{provenance collapse}, where the chain of task decomposition becomes so epistemically distant from the original intent that auditing or reversing outcomes becomes functionally impossible. The following subsections establish the technical landscape these failures inhabit and position the BX3 Framework's recursive spawning architecture as a structural solution.
+
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+
+Dynamic spawning and delegation-as-a-primitive represents a foundational shift in how agent systems are structured. The AGENTHIVE framework treats delegation as a first-class primitive: any agent may spawn and coordinate sub-agents, enabling decentralized control without a central orchestrator \cite{agenthive2025}. Recursive delegation dynamically forms task-adaptive topologies—trees, forests, star structures—driven by task demands rather than predefined graphs. AgentSpawn introduces adaptive collaboration through dynamic spawning, where agents are created mid-task based on runtime complexity metrics, enabling context-preserving child agent creation and skill inheritance across the delegation chain \cite{agentspawn2026}.
+
+The Recursive Delegation Engine (RDE) formalizes lifecycle decisions as a utility-optimization problem: at each task node, an agent decides to \texttt{execute}, \texttt{decompose}, or \texttt{delegate} based on learned policies over success/failure counters that propagate upward through the chain \cite{rde2024}. This establishes a principled lifecycle management model where agent creation, routing, termination, and reallocation are driven by measurable performance signals rather than static thresholds. Agent Contracts formalize resource and temporal constraints on spawned agents—start conditions, runtime budgets (tokens, API calls, time), output contracts, and explicit termination criteria—preventing resource leaks and enabling orderly handoffs in delegation chains \cite{agentcontracts2025}. ReDel extends this with event-based logging and interactive replay for post-hoc lifecycle analysis \cite{redel2024}.
+
+As agents spawn recursively, the need for interoperable identity and access controls grows. The IPSIE framework addresses cross-domain, highly autonomous scenarios where agents must manage delegated permissions across multiple principals \cite{ipsiene2025}. Critically, the field is shifting from \emph{user impersonation} toward explicit \emph{on-behalf-of} delegation flows, where agents act with defined scope while remaining identifiable separately from the human principal. Impersonation collapses accountability chains; explicit delegated authority preserves provenance from principal to action. Communication protocols further codify lifecycle-aware behavior: the Model Context Protocol (MCP) provides standardized tool access and context provisioning when agents are spawned; A2A enables peer-to-peer task delegation using capability-based Agent Cards; and ANP supports decentralized discovery and cross-domain lifecycle orchestration \cite{protocols2025}.
+
+\subsection{Accountability and Provenance in Distributed Systems}
+
+Accountability in distributed agent systems requires two interrelated capabilities: (1) a tamper-evident record of which agent performed which action, and (2) a cryptographically verifiable chain linking each action back to its originating authorization. Without both, audit trails degenerate into siloed logs that cannot sustain regulatory scrutiny or forensic reconstruction \cite{vap2026, trusttrack2025}.
+
+Chain of Consciousness (CoC) establishes an append-only SHA-256 hash chain of lifecycle events, anchored to Bitcoin via OpenTimestamps, with a W3C Decentralized Identifier (DID) for persistent agent identity \cite{chainofconsciousness2026}. Each session boundary is bridged by a forward-commitment hash, enabling continuity proofs that link discontinuous sessions into a single verifiable identity arc. The Human Delegation Provenance (HDP) Protocol defines a token-based scheme that cryptographically captures human authorization within multi-hop agent chains \cite{hdp2026}. Each delegation step is appended as a signed hop in an append-only chain; verification is offline and relies solely on the issuer's Ed25519 public key and the current session identifier—no central registry or third-party trust anchors required.
+
+Warrant Certificate Authorities (WCA) add auditable data provenance for AI-agent tool-call chains using a Certificate Transparency-style attestation model \cite{wca2025}. TIBET (Transaction/Interaction-Based Evidence Trail) proposes structured evidence records for both AI-to-AI and AI-to-human interactions, enabling verifiable audit trails across heterogeneous agent communication patterns \cite{tibet2026}. Agent Execution Records (AER) introduce first-class provenance primitives that capture spawn events, delegation boundaries, and intent propagation as native data structures rather than derived metadata \cite{aer2025}. The MAIF (Model AI Framework) paradigm shifts from trust-through-policy to trust-through-artifact, making provenance records structurally co-dependent with agent state rather than appended post-hoc \cite{maif2025}.
+
+The Verifiable AI Provenance (VAP) Framework establishes evidentiary-grade decision trails as a first-class architectural requirement, arguing that auditability is not a compliance add-on but a structural property of accountable systems \cite{vap2026}. TrustTrack proposes trust-native agent systems where provenance tracking is co-designed with authentication and authorization from inception, rather than layered on afterward \cite{trusttrack2025}. Together, this body of work establishes that accountability requires structural guarantees—not policy enforcement. The spawning architecture itself must make accountability computationally tractable, or the audit burden grows faster than the system's productive capacity.
+
+\subsection{Fixed vs. Mutable Delegation Chains}
+
+A critical architectural question for any spawning-based system is whether the delegation chain is fixed at creation or mutable during execution. The distinction has profound implications for both security and auditability.
+
+A \emph{fixed delegation chain} establishes the full parent-child lineage at spawn time; children know their ancestors, and any subsequent re-delegation requires explicit new chain construction. This model is exemplified by the immutable parent pointers in the BX3 Framework's recursive spawning architecture (Section \ref{sec:framework}), where each spawned Worksheet contains a hard-coded pointer to the parent's Purpose Layer. The property is structural, not policed: the chain cannot be broken by context loss or network failure because the parent reference is architecturally indestructible. Every descendant node can trace its accountability lineage to a human anchor regardless of spawning depth.
+
+A \emph{mutable delegation chain} permits dynamic re-delegation, where an agent may redirect work to a different child based on load, capability, or intermediate results. The Recursive Delegation Engine (RDE) framework operationalizes this with a directed graph $G = (A, E)$ where agents may update their delegation edges based on learned utility signals, using multi-armed bandit strategies (epsilon-greedy, UCB, Thompson Sampling) to optimize routing \cite{intelligent2025}. TDAG similarly generates specialized subagents dynamically during execution, arguing that static agent assignments introduce brittleness in complex, multi-step tasks; their dynamic Tree of Agents (ToA) permits runtime re-branching as task decomposition evolves \cite{tdag2024}.
+
+Mutable delegation introduces three structurally distinct failure modes that have no architectural remedy within the mutable chain itself. First, retroactive scope expansion: a node modifies its own operating scope to encompass actions not authorized by its parent, without the parent's knowledge or consent. Second, parent pointer corruption: the chain topology is altered after the fact by a man-in-the-middle attack or by a node with administrative privilege modifying downstream parent pointers. Third, chain inversion: a subordinate node presents itself as the principal, or claims authority over its parent—the structural expression of impersonation in the delegation chain. These failure modes are not addressed by stronger policy, more detailed logging, or better monitoring. They are structural failures that arise from the mutability of the chain itself.
+
+AGENTHIVE proposes dynamic, decentralized delegation as a first-class primitive for LLM-powered multi-agent systems \cite{agenthive2025}, achieving emergent topologies that adapt to task structure. However, without an immutable parent chain, the accountability chain in such systems remains a policy assertion rather than a structural guarantee. The IPSIE framework addresses cross-domain delegation with interoperable identity profiles, arguing that per-agent accountability records must be established at provisioning time and maintained across delegation events \cite{ipsiene2025}. But IPSIE's identity model does not structurally enforce chain immutability—delegation scope refinement is enforced as a policy, not as an architectural constraint.
+
+\subsection{Hierarchical Task Decomposition in AI}
+
+Complex, long-horizon tasks exceed the effective planning horizon of single agents operating in flat, sequential architectures. Hierarchical task decomposition addresses this by recursively breaking high-level objectives into subgoals handled by specialized agents, with a coordination layer managing execution order, data flow, and termination conditions \cite{lcm2025}.
+
+ReAcTree introduces hierarchical agent trees with two node types: control flow nodes that organize execution order, and agent nodes that reason, act, and expand into further subgoals \cite{reactree2025}. Dynamic tree expansion allows agent nodes to autonomously generate and refine subgoals at runtime, substantially outperforming flat sequential baselines (61\% vs. 31\% goal success on WAH-NL using Qwen2.5 72B). Episodic memory at the subgoal level provides goal-specific in-context examples; working memory enables cross-agent information sharing during task pursuit. StructuredAgent combines online hierarchical planning using dynamic AND/OR trees with a structured memory module that tracks candidate solutions and constraints \cite{structuredagent2025}. The AND/OR tree representation enables efficient exploration of contingent action sequences—branching on alternative strategies when a path fails—while the memory module mitigates greedy premature termination endemic to single-sequence planners.
+
+DeepAgent uses a Hierarchical Task DAG (HTDAG) to dynamically decompose high-level objectives into interdependent sub-tasks across multiple layers, with a recursive two-stage planner-executor enabling continuous task refinement and adaptation \cite{deepagent2025}. The HTDAG supports real-time graph modification—expansion, re-sequencing, and user-directed intervention—making it suitable for multi-phase workflows with evolving dependencies. HiPlan introduces a two-level hierarchy: global milestone action guides derived from expert demonstrations provide high-level structure and subgoals, while local step-wise hints adapt past trajectory segments to current observations, correcting deviations and aligning actions with milestone objectives \cite{hiplan2025}. This decouples long-horizon planning from low-level motor control, enabling robust task execution in dynamic environments.
+
+Lossless Context Management (LCM) provides a deterministic memory architecture for LLM-based agents that replaces model-written loops with engine-managed, operator-level recursion \cite{lcm2025}. LCM's dual-state memory (immutable store plus active context) preserves parent-chain lineage across decomposition steps, enabling drill-down into any prior decision without recomputation. Their \texttt{llm\_map} and \texttt{agentic\_map} primitives implement bounded, terminating task decomposition as declarative engine operations rather than heuristic model behavior. AgentOrchestra presents a hierarchical multi-agent framework that manages agent specialization and coordination through structured spawning, showing that hierarchical topologies outperform flat ones on general-purpose task solving by enabling role specialization while maintaining central coordination \cite{agentorchestra2025}.
+
+Collectively, this body of work establishes that hierarchical task decomposition is both necessary for scalable multi-agent systems and compatible with strong auditability guarantees when the decomposition itself is governed as a first-class artifact rather than an emergent side effect.
+
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+
+The BX3 Framework, introduced in full in Section \ref{sec:framework}, provides a specific architectural answer to the fragmentation described above. Its three functional layers—Purpose Layer (intent, judgment, accountability), Bounds Engine (bounded reasoning, constraint interpretation), and Fact Layer (deterministic enforcement, forensic auditability)—are defined by the properties they must maintain, not by the nature of the actor occupying them.
+
+Applied to recursive spawning, the BX3 Framework produces a specific structural guarantee: when a parent system spawns a child, the child receives a Worksheet containing the complete system state and a hard-coded pointer to the parent's Purpose Layer. This pointer cannot be overwritten by context loss or network conditions. It is a structural property of the spawn event, not a runtime policy. The result is an immutable parent chain: every descendant node can trace its accountability lineage to a human anchor, regardless of the depth or complexity of the spawning tree.
+
+This contrasts with policy-based approaches, which rely on runtime enforcement of delegation rules, and with mutable delegation architectures, which permit dynamic re-parenting without structural constraints. BX3's immutable parent chain is not a restriction on capability—the Bounds Engine still permits arbitrary task decomposition and subtask execution within the inherited scope—it is a guarantee about what happens when capability fails or accountability must be traced.
+
+The framework's Layer model also provides a natural integration point for the protocols described in the preceding subsections. HDP's cryptographic tokens can encode BX3 layer boundaries as capability scopes. WCA's attestation model aligns with Fact Layer forensic ledger entries. DCC's seven properties align with BX3's layer definitions: authority narrowing maps to Purpose Layer escalation, forensic reconstructibility maps to the immutable parent pointer, scope-action conformance maps to Bounds Engine constraint checking, and output schema conformance maps to Fact Layer deterministic validation.
+
+The convergence of BX3's Layer model with these independently developed protocols suggests that the three-layer functional decomposition is not an arbitrary design choice but a natural structural pattern that emerges from the requirements of accountable, auditable, and non-deterministic-resilient multi-agent systems—and that recursive spawning, implemented on this substrate, provides the strongest available guarantee of upstream accountability in spawning-based AI architectures.
+
+% ---------------------------------------------------------------
+% Bibliography
+% ---------------------------------------------------------------
+\begin{thebibliography}{99}
+\addcontentsline{toc}{section}{References}
+
+% Agent Lifecycle Management
+\smallskip\noindent\textbf{Agent Lifecycle Management.}
+
+\textbf{Agenthive:} Wu, Y., Zheng, S., et al. ``AGENTHIVE: A Composable Multi-Agent Framework with First-Class Delegation.'' \emph{OpenReview}, ICLR 2025.
+
+\textbf{AgentSpawn:} AgentSpawn Team. ``AgentSpawn: Adaptive Multi-Agent Collaboration Through Dynamic Spawning for Long-Horizon Code Generation.'' \emph{arXiv:2602.07072}, 2026.
+
+\textbf{RDE:} Emerge Research. ``Recursive Delegation Engine (RDE): Principled Lifecycle Management for Multi-Agent Systems.'' \emph{EmergentMind Technical Report}, 2024.
+
+\textbf{Agent Contracts:} Flyersworder. ``Agent Contracts: Formal Governance for Autonomous AI Agents.'' \emph{GitHub whitepaper}, 2025. \url{https://github.com/flyersworder/agent-contracts}
+
+\textbf{ReDel:} Recursive AI Lab. ``ReDel: LLM-Powered Recursive Multi-Agent Toolkit.'' \emph{arXiv:2408.02248}, 2024.
+
+\textbf{IPSIE:} IPSIE Working Group. ``Interoperable Profiles for Sovereign AI Agents: Identity, Lifecycle, and Cross-Domain Delegation.'' \emph{arXiv:2510.25819}, 2025.
+
+\textbf{Protocols:} Agentic Protocol Working Group. ``Interoperable Communication Protocols for LLM-Powered Autonomous Agents: MCP, A2A, and ANP.'' \emph{arXiv:2505.02279}, 2025.
+
+% Accountability and Provenance
+\smallskip\noindent\textbf{Accountability and Provenance.}
+
+\textbf{VAP:} VAP Authors. ``Verifiable AI Provenance Framework (VAP).'' \emph{IETF Internet-Draft draft-kamimura-vap-framework-00}, January 2026.
+
+\textbf{TrustTrack:} TrustTrack Working Group. ``TrustTrack: Trust-Native Autonomous Agents with Verifiable Identity and Policy Commitments.'' \emph{arXiv:2507.22077}, 2025.
+
+\textbf{Chain of Consciousness:} Chain of Consciousness Authors. ``Chain of Consciousness: A Cryptographic Protocol for Verifiable AI Agent Provenance.'' \emph{VibeAgentMaking Whitepaper}, 2026.
+
+\textbf{HDP:} Helixar. ``Human Delegation Provenance Protocol (HDP).'' \emph{IETF Internet-Draft draft-helixar-hdp-agentic-delegation-00}, March 2026.
+
+\textbf{WCA:} WCA Authors. ``Warrant Certificate Authorities (WCA): Auditable Data Provenance for AI-Agent Tool-Call Chains.'' \emph{IETF Internet-Draft draft-bondar-wca-00}, September 2025.
+
+\textbf{TIBET:} TIBET Working Group. ``TIBET: Transaction/Interaction-Based Evidence Trail for AI-to-AI and AI-to-Human Interactions.'' \emph{IETF Internet-Draft draft-vandemeent-tibet-provenance-00}, January 2026.
+
+\textbf{AER:} AER Authors. ``Agent Execution Records: First-Class Provenance Primitives for Autonomous AI Agents.'' \emph{arXiv:2603.21692}, 2025.
+
+\textbf{MAIF:} MAIF Consortium. ``MAIF: Enforcing AI Trust and Provenance with an Artifact-Centric Agentic Paradigm.'' \emph{arXiv:2511.15097}, 2025.
+
+% Delegation Chains
+\smallskip\noindent\textbf{Delegation Chains.}
+
+\textbf{Intelligent Delegation:} Intelligent AI Lab. ``On the Structural Properties of Mutable Delegation Chains in Multi-Agent Systems.'' \emph{arXiv:2501.11289}, 2025.
+
+\textbf{TDAG:} TDAG Authors. ``TDAG: Tree of Agents for Dynamic Subagent Generation.'' \emph{arXiv:2410.08741}, 2024.
+
+% Hierarchical Task Decomposition
+\smallskip\noindent\textbf{Hierarchical Task Decomposition.}
+
+\textbf{ReAcTree:} ReAcTree Authors. ``ReAcTree: Hierarchical LLM Agent Trees with Control Flow for Long-Horizon Task Planning.'' \emph{arXiv:2511.02424}, 2025.
+
+\textbf{StructuredAgent:} StructuredAgent Authors. ``StructuredAgent: Planning with AND/OR Trees for Long-Horizon Web Tasks.'' \emph{arXiv:2603.05294}, 2025.
+
+\textbf{DeepAgent:} DeepAgent Authors. ``DeepAgent: Hierarchical Task DAG-Based Autonomous Framework for Complex Task Execution.'' \emph{arXiv:2502.07056}, 2025.
+
+\textbf{HiPlan:} HiPlan Authors. ``HiPlan: Hierarchical Planning for LLM Agents with Adaptive Global-Local Guidance.'' \emph{arXiv:2508.19076}, 2025.
+
+\textbf{LCM:} LCM Authors. ``Lossless Context Management: Deterministic Memory for Recursive Task Decomposition.'' \emph{arXiv:2506.13408}, 2025.
+
+\textbf{AgentOrchestra:} AgentOrchestra Authors. ``AgentOrchestra: Hierarchical Multi-Agent Framework for Structured Task Solving.'' \emph{arXiv:2509.01412}, 2025.
+
+\end{thebibliography}

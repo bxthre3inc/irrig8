@@ -1,0 +1,86 @@
+\section{Integration with the BX3 Framework}
+\label{section:integration-with-the-bx3-framework}
+
+Recursive spawning does not operate as an isolated mechanism. It is embedded within the BX3 Framework's three-layer architecture~\cite{bx3framework2026}, which provides the structural guarantees that make spawning a controllable, auditable, and semantically grounded operation. Each layer contributes a distinct enforcement mechanism, and together they ensure that every spawn event is purpose-constrained, depth-bounded, and permanently recorded. This section describes the role of each layer in the spawning protocol, the formal interfaces between them, and how their interaction produces the properties described in Section~\ref{section:correctness-properties}.
+
+\subsection{Purpose Layer as Accountability Anchor}
+
+The Purpose Layer serves as the \textit{accountability anchor} for the entire spawn tree. Every spawned agent inherits a purpose reference that traces its mandate back to an explicit declaration at the Purpose Layer. This reference is immutable — it cannot be overwritten by the agent itself, nor by any downstream spawning operation.
+
+When an agent spawns a child, the child's purpose is derived from the parent's purpose via a constrained projection function $f_{\text{derive}}: \text{Purpose} \times \mathbb{N} \rightarrow \text{Purpose}$. This function ensures that child purposes are stricter or equal in scope relative to the parent — never broader. The projection is enforced by the Bounds Engine (Section~\ref{subsection:bounds-engine-depth-enforcement}) and logged in the Fact Layer. The root agent's purpose declaration at the Purpose Layer thus functions as a \textit{genesis constraint}: all descendants are bound by it indirectly.
+
+Accountability is maintained through a chain of \textit{attribution certificates}, each linking a spawn event to a declared purpose at the originating layer. These certificates are structurally enforced by the framework's execution model — they are not advisory annotations. An agent whose purpose reference resolves to a Purpose Layer declaration that has been revoked or altered triggers an automatic suspension cascade, halting all descendant agents until the discrepancy is resolved. This mechanism ensures that no agent can operate under a purpose that does not trace back to a live, authorized declaration.
+
+The Purpose Layer also defines the \texttt{HUMAN\_ORIGIN\_ID} constant, which is the sole primordial root of every spawn chain. This anchor is the only node in the architecture that is not itself an agent; it is bound to a verified human principal credential. No agent can claim \texttt{HUMAN\_ORIGIN\_ID} as its own parent. The chain-of-custody terminates at this anchor, making human accountability a structural property rather than a policy assumption.
+
+\subsection{Bounds Engine Depth Enforcement}
+\label{subsection:bounds-engine-depth-enforcement}
+
+The Bounds Engine constrains the \textit{structural depth} of the spawn tree through a depth-bounded recursion model. Each spawn event is tagged with a \texttt{max-depth} parameter $d_{\max}$, initialized at the root and decremented on each recursive call. A spawn attempt where the current depth $d_{\text{cur}} \geq d_{\max}$ is rejected by the Bounds Engine and logged as a constraint violation in the Fact Layer.
+
+The depth parameter is not advisory; it is a \textit{structural guard} implemented at the framework level. Formally, the spawn authorization function $a_{\text{spawn}}: \text{Agent} \times \mathbb{N} \rightarrow \{\text{allow}, \text{deny}\}$ is defined as:
+
+\begin{equation}
+a_{\text{spawn}}(A, d_{\text{cur}}) =
+\begin{cases}
+\text{allow} & \text{if } d_{\text{cur}} < d_{\max}(A) \\
+\text{deny} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+where $d_{\max}(A)$ is the maximum authorized depth for agent $A$, inherited from its parent at spawn time and stored as an immutable attribute. Rejected spawns produce a \texttt{SpawnDepthExceeded} exception, which propagates to the parent agent and is recorded in the Fact Layer as a structured event.
+
+The Bounds Engine additionally enforces two orthogonal constraints that prevent resource exhaustion even within depth-permitted spawns:
+
+\begin{itemize}
+    \item \textbf{Per-agent child quota.} A maximum number of direct children $c_{\max}(A)$ is enforced per agent. Even if depth remains available, a spawn request that would exceed $c_{\max}(A)$ is rejected.
+    \item \textbf{Spawn credit budget.} Each agent holds a finite pool of spawn credits, consumed on spawn and returned on child termination. An agent with zero available credits cannot spawn regardless of remaining depth.
+\end{itemize}
+
+Together, depth bounds and child quotas ensure that both vertical (depth) and horizontal (branching factor) growth are bounded, making the total number of agents in any spawn tree provably finite.
+
+The Bounds Engine also governs convergence: the conditions under which a spawn tree is considered complete and eligible for pruning. Convergence requires that (a) the root task has been fully decomposed and assigned to terminal agents, (b) all terminal agents have entered a terminal state, (c) no pending spawn requests remain, and (d) the chain-of-custody audit confirms zero orphaned agents. Only upon satisfaction of all four conditions does the Bounding Oracle issue a \texttt{CONVERGENCE\_CONFIRMED} signal, permitting the forensic ledger to be sealed for the associated task tree.
+
+\subsection{Fact Layer as Forensic Ledger}
+
+Every spawn event, boundary crossing, purpose derivation, and depth enforcement action is recorded in the Fact Layer, which functions as a \textit{forensic ledger} for the entire spawn tree. The Fact Layer is append-only and cryptographically chained: each entry contains a SHA-256 hash of the previous entry, forming an immutable hash chain that makes retrospective tampering detectable.
+
+A spawn event record contains the following fields:
+
+\begin{itemize}
+    \item \texttt{spawner}: ID of the parent agent
+    \item \texttt{child}: ID of the newly spawned agent
+    \item \texttt{timestamp}: monotonic clock value at spawn time
+    \item \texttt{purpose-derivation}: the projection function output used to derive the child's purpose
+    \item \texttt{depth}: the depth value assigned at spawn time
+    \item \texttt{bounds-check}: output of the Bounds Engine authorization ($a_{\text{spawn}}$ result)
+    \item \texttt{parent-pointer-hash}: SHA-256 hash of the parent's immutable parent pointer at spawn time
+\end{itemize}
+
+Failed or refused spawns are also recorded, tagged with specific fault codes (\texttt{PURPOSE\_MISALIGNMENT}, \texttt{SPAWN\_CREDIT\_EXHAUSTED}, \texttt{DEPTH\_LIMIT\_EXCEEDED}). The ledger is never deleted and never modified. It is the ground truth source for chain-of-custody verification.
+
+The Fact Layer also issues \texttt{ACTIVATION\_AUTHORIZED} tokens to child agents upon successful passage through all five activation checks: pointer integrity, parent existence, purpose chain validation, depth consistency, and ledger linkage. A child agent cannot execute any action — including tool access, state mutation, or further spawning — until it holds a valid activation token. Attempting to spawn without a valid activation token produces a \texttt{UNAUTHORIZED\_SPAWN} fault, which is logged to the Fact Layer.
+
+This structured logging enables post-hoc reconstruction of the entire spawn tree, verification of depth compliance, and detection of any attempts to spoof parent pointers or falsify purpose derivations. The Fact Layer also supports branching queries: given any agent ID, one can traverse backwards through the forensic ledger to reconstruct the full ancestral chain with cryptographic integrity guarantees.
+
+\subsection{Inter-Layer Communication and Failure Modes}
+
+The three layers communicate through a state-machine protocol over the lifecycle of a spawn event. Valid states include \texttt{SPAWN\_REQUESTED}, \texttt{PURPOSE\_VALIDATED}, \texttt{DEPTH\_CHECKED}, \texttt{POINTER\_CREATED}, \texttt{CHILD\_ACTIVATED}, and \texttt{CONVERGED}. Fault transitions produce \texttt{SPAWN\_REFUSED}, \texttt{ACTIVATION\_DENIED}, and \texttt{CHAIN\_BREACH\_DETECTED}. Upon any fault state, the affected spawn tree segment is suspended and the forensic ledger entry is tagged with the appropriate fault code.
+
+Each state transition is monotonically enforced: once a transition is complete, it cannot be reversed. There is no mechanism by which an agent can skip, mock, or bypass a required stage. The protocol's monotonically enforcing state machine ensures that the spawn protocol's guarantees hold even under adversarial conditions within the spawn tree.
+
+The three-layer integration is summarized in Table~\ref{tab:bx3-spawn-layers}.
+
+\begin{table}[ht]
+\centering
+\caption{BX3 Layer Contributions to Recursive Spawning}
+\label{tab:bx3-spawn-layers}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Layer} & \textbf{Function in Spawning} \\ \midrule
+Purpose Layer & Accountability anchor; purpose derivation root; revocation cascade; human origin \\
+Bounds Engine & Depth enforcement; per-agent quotas; spawn credit budget; convergence gate \\
+Fact Layer & Forensic ledger; append-only event log; hash chain integrity; activation token issuance \\
+\bottomrule
+\end{tabular}
+\end{table}

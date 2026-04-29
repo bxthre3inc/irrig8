@@ -1,0 +1,73 @@
+% ============================================================
+% Section 6: Integration with the BX3 Framework
+% ============================================================
+\section{Integration with the BX3 Framework}
+\label{sec:rs-integration}
+
+The Recursive Spawning Protocol is a \emph{structural instantiation} of the BX3 three-layer accountability architecture — not a module composed alongside it. Every RSP mechanism maps onto exactly one BX3 layer, and each such mapping is \emph{structurally necessary}. No layer in RSP is advisory, redundant, or replaceable by organizational convention. The three mappings are: Purpose Layer as accountability anchor, Bounds Engine as depth enforcement, and Fact Layer as forensic ledger. Together they form the complete enforcement substrate; no proper subset achieves the same guarantees.
+
+% ----------------------------------------------------------
+\subsection{Purpose Layer: Accountability Anchor}
+\label{sec:rs-purpose-anchor}
+
+The Purpose Layer occupies two structurally exclusive roles in the Recursive Spawning Protocol. Neither role can be performed by any other layer.
+
+\medskip
+\noindent\textbf{Exclusive origin of spawn authorization.} At root provisioning, the Purpose Layer defines and records the spawn authorization policy $P_{\mathrm{spawn}}$ in the Fact Layer authorization ledger. $P_{\mathrm{spawn}}$ mandates two conditions for any valid child spawn: (i) $R(n_{i+1}) \subset R(n_i)$ — strict scope refinement — and (ii) operational necessity that cannot be met within the parent's scope. No machine actor may issue a spawn warrant in the absence of a matching Purpose Layer authorization record. The Bounds Engine evaluates against $P_{\mathrm{spawn}}$; the Fact Layer enforces it; neither originates it.
+
+\medskip
+\noindent\textbf{Exclusive terminus of escalation.} When a chain reaches $D_{\mathrm{ESCALATE}}$, the protocol compulsory-escalates to $h(n)$. This terminus is non-collapsing: for any $n_i \in C$, $h(n_i) = h(n_0)$. The human anchor does not migrate down the chain as depth increases. The human issues one of $\{\texttt{ACK}, \texttt{RESOLVE}, \texttt{REJECT}\}$; no machine actor may issue any of these. If any machine actor could absorb an exception or issue a terminal directive, the chain would terminate at that actor rather than at a human — defeating the upstream BX3 accountability guarantee. The Purpose Layer's exclusivity here is not a design preference; it is the load-bearing constraint that makes the guarantee structurally operative.
+
+% ----------------------------------------------------------
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:rs-bounds}
+
+The Bounds Engine enforces constrained execution evaluation: it evaluates proposed actions against the operating range defined by the Purpose Layer and enforces the depth constraint that prevents unbounded chain growth. The Bounds Engine cannot exceed its constraints under any operational circumstance.
+
+\medskip
+\noindent\textbf{Depth evaluation at spawn.} At each spawn event, the Bounds Engine evaluates current chain depth $|C|$ against $D_{\mathrm{max}}$ (anchored in the Fact Layer authorization ledger). If $|C| \geq D_{\mathrm{max}}$, the spawn is not executed. The Bounds Engine transitions to \texttt{ESCALATING} and initiates the Bailout Protocol. This enforcement is deterministic: no discretion to exceed $D_{\mathrm{max}}$ regardless of urgency or operational exigency. The depth constraint is not a heuristic — it is a hard architectural boundary.
+
+\medskip
+\noindent\textbf{Fact Layer pre-commit reinforcement.} The Bounds Engine's depth evaluation is structurally reinforced by the Fact Layer pre-commit hook. Before any spawn is recorded, the Fact Layer verifies: (1) $R(n_{i+1}) \subseteq R(n_i)$, and (2) $\mathrm{depth}(n_{i+1}) \leq D_{\mathrm{max}}$. Rejected spawns are logged; the Bounds Engine does not execute them; \texttt{ESCALATING} is triggered if the unmet condition persists. The pre-commit hook makes both the depth bound and the scope refinement \emph{structural invariants} — not policy conventions overridable in exigent circumstances.
+
+The structural necessity of the Bounds Engine follows from the depth-limit insufficiency theorem: depth limits alone cannot prevent scope creep drift. The Bounds Engine enforces the depth constraint; the Fact Layer enforces scope refinement; together they enforce both conjuncts of the drift prevention condition. Neither layer alone is sufficient.
+
+% ----------------------------------------------------------
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:rs-fact-ledger}
+
+The Fact Layer provides deterministic enforcement and forensic auditability. It maintains the append-only ledger that makes the RSP chain auditable at any future time and enforces the write protocol that makes RSP tamper-evident.
+
+\medskip
+\noindent\textbf{Append-only forensic ledger.} The Fact Layer records every spawn event, every state transition, every Purpose Layer directive, and every unresolved exception. Each entry is timestamped, attributed to the originating node, and hash-chained to its predecessor. Hash-chaining ensures no entry can be inserted, deleted, reordered, or altered after recording: any tampering breaks hash continuity and is detectable by any observer with ledger read access. The ledger is the runtime artifact that distinguishes RSP chains from conventional delegation chains, which exist only as forensic reconstructions attempted after the fact.
+
+\medskip
+\noindent\textbf{Immutable parent pointer.} Once $\alpha(n)$ is established at node provisioning, no actor — including the Purpose Layer post-provisioning — may modify it. The Fact Layer write protocol rejects any attempt to overwrite $\alpha(n)$. Chain topology changes occur only through authorized spawn operations recorded in the ledger; no mechanism for retroactive pointer manipulation exists. The parent pointer is not merely access-controlled — it is structurally immutable by protocol definition.
+
+\medskip
+\noindent\textbf{Pre-commit hook.} At every spawn event, the Fact Layer pre-commit hook verifies conditions (a) $R(n_{i+1}) \subseteq R(n_i)$ and (b) $\mathrm{depth}(n_{i+1}) \leq D_{\mathrm{max}}$ \emph{before} the spawn is recorded. Rejected spawns are logged; the Bounds Engine may not execute them; \texttt{ESCALATING} is entered if the unmet condition persists. The pre-commit hook operates identically on all machine actors; no privileged actor capable of bypassing it exists.
+
+The structural necessity of the Fact Layer is established by the immutable-parent-pointer requirement: without the Fact Layer write protocol, immutability is a promise rather than a constraint. A mutable parent pointer enables all four drift failure modes; without the pre-commit hook, scope refinement and depth bounds are policy documentation — enforceable until an actor with sufficient privilege decides they are inconvenient. The Fact Layer is the structural enforcement layer that makes policy effective.
+
+% ----------------------------------------------------------
+\subsection{Structural Minimality}
+\label{sec:rs-minimality}
+
+The three-layer mapping is minimal-sufficient. Removing any layer causes the corresponding guarantee to fail.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{3.0cm} p{5.2cm}}
+\toprule
+\textbf{Removed layer} & \textbf{Guarantee that fails} \\
+\midrule
+Purpose Layer        & Exclusive human terminus eliminated; chain can terminate in machine actors \\
+Bounds Engine        & No layer evaluates spawn necessity between pre-commit approve/reject and mandatory escalation \\
+Fact Layer           & Immutable parent pointer eliminated; retroactive chain manipulation possible; depth bound and scope refinement become conventions \\
+\bottomrule
+\end{tabular}
+\caption{Layer removal consequences for RSP correctness properties.}
+\label{tab:layer-minimality}
+\end{table}
+
+No subset of layers achieves the same guarantees. The three-layer architecture is the minimal structure that makes RSP's correctness properties unconditionally guaranteed rather than conditionally expected.

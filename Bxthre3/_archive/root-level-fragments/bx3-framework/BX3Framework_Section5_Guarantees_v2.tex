@@ -1,0 +1,220 @@
+\section{Guarantees and Correctness Properties}\label{sec:properties}
+
+The Bailout Protocol is constrained by three correctness properties that jointly establish the upstream accountability guarantee of the \bxthree{} Framework: \SAFETY{}, \LIVENESS{}, and \ACCOUNTABILITY{}. These are not empirical claims about system behavior — they are formal theorems derived from the protocol's deterministic state machine specification, the bypass mechanism, and the timeout architecture. We state each property formally, give the structural assumptions under which it holds, and provide a constructive proof sketch.
+
+% --------------------------------------------------------------
+\subsection{Formal Correctness Properties}
+% --------------------------------------------------------------
+
+\begin{enumerate}
+\item[\textbf{SAFETY.}] No \bxthree{} node may remain in autonomous operation after entering the Bailout Protocol. Entry to \texttt{ESCALATING} is atomic and irreversible by any machine actor; the protocol terminates only at the designated human anchor $h(n)$.
+
+\item[\textbf{LIVENESS.}]\relax Every exception satisfying the trigger condition (TC) reaches $h(n)$ within a bounded wall-clock time $T_{\max}$, provided the deployment satisfies its provisioned timeout assumptions. No execution path permits permanent suppression of an unresolvable exception.
+
+\item[\textbf{ACCOUNTABILITY.}]\relax Every directive recorded at \texttt{RESOLVED} is attributable to a named human principal. No machine actor can issue, simulate, or substitute a binding directive at the terminal state.
+\end{enumerate}
+
+These three properties are mutually independent but jointly sufficient: \SAFETY{} constrains the termination set of the protocol run; \LIVENESS{} constrains the time bound to reach that termination; \ACCOUNTABILITY{} constrains the identity of the actor at the terminus. Together they eliminate the three structural failure modes identified in \S~\ref{sec:bailout}: autonomous absorption, silent suppression, and anonymous delegation.
+
+% --------------------------------------------------------------
+\subsection{SAFETY: No Autonomous Collapse}
+% --------------------------------------------------------------
+
+\subsubsection{Formal Statement.}
+
+\begin{bluebox}
+\textbf{Theorem (Safety).} Under Assumptions (A1)--(A5), for every node $n \in \text{nodes}$ and every reachable state $q$ of the protocol state machine $\mathcal{B}$:
+
+\[
+\forall n \in \text{nodes},\; \forall q \in Q,\;
+q = \text{ESCALATING} \;\implies\; \text{terminus}(q) = \{h(n)\}.
+\tag{SAFETY}
+\]
+
+Equivalently: no \bxthree{} node in \texttt{ESCALATING} state may transition to a state whose termination set contains any machine actor. The protocol has no machine-actor terminal state.
+\end{bluebox}
+
+\subsubsection{Structural Assumptions.}
+
+\begin{enumerate}
+\item[(A1)] The parent pointer $\alpha(n)$ and human-root identifier $h(n)$ are immutable at the machine-actor level; they are stored in \fact-layer-managed memory and cannot be modified by any machine actor at runtime.
+\item[(A2)] The \fact{} layer pre-commit hook rejects any ledger entry that would retroactively authorize a resolution after $T_{\text{bounds}}$ has expired without a prior \fact-layer-approved resolution.
+\item[(A3)] The state transition relation $\rightarrow$ is deterministic: for every $(q, \sigma) \in Q \times \Sigma$, at most one $q' \in Q$ satisfies $(q, \sigma, q') \in \rightarrow$.
+\item[(A4)] Entry to \texttt{ESCALATING} is atomic: the \fact{} layer executes \texttt{SendToParent} immediately upon the T4 transition, with no intervening machine-actor decision step.
+\item[(A5)] The set of terminal accepting states $Q_F = \{\text{RESOLVED}\}$ contains no state that permits autonomous continuation.
+\end{enumerate}
+
+\subsubsection{Proof Sketch.}
+
+The argument proceeds by structural induction over the state machine's transition relation.
+
+\medskip
+\noindent\textbf{Step 1: Characterize terminal states of $\mathcal{B}$.} By definition, $Q_F = \{\text{RESOLVED}\}$. The state definition (\S~\ref{sec:state-machine}) establishes that \texttt{RESOLVED} is reached only upon receipt of a directive $d \in \{\texttt{ACK},\;\texttt{RESOLVE},\;\texttt{REJECT}\}$ issued by $h(n)$. No machine actor may issue any of these directives by architectural constraint of the bypass mechanism (BP, \S~\ref{sec:bypass}). Hence any path to \texttt{RESOLVED} necessarily passes through $h(n)$.
+
+\medskip
+\noindent\textbf{Step 2: \texttt{ESCALATING} has no machine-actor outgoing transition.} The transition table (Table~\ref{tab:bailout-transition}) defines the outgoing transitions from \texttt{ESCALATING} as:
+\begin{itemize}
+  \item $e_{\text{auth}}$ (T6): transitions to \texttt{HUMAN\_ACKNOWLEDGED}. This event is issued by the \fact{} layer upon cryptographic verification that the acknowledgment originated from $h(n)$.
+  \item $e_{\text{ack}}$ (T5): transitions to \texttt{IDLE} (human determines no further action is required).
+  \item $e_{\text{resolve}}$ or $e_{\text{reject}}$ (T7): transitions to \texttt{RESOLVED} upon a binding directive from $h(n)$.
+\end{itemize}
+No transition from \texttt{ESCALATING} is triggered by any machine-actor event. All possible destinations require human-actor involvement.
+
+\medskip
+\noindent\textbf{Step 3: Atomicity of entry to \texttt{ESCALATING}.} By (A4) and the T4 transition definition (\S~\ref{sec:transitions}), entry to \texttt{ESCALATING} occurs via an immediate atomic transition from \texttt{BAIL\_PENDING} upon the compounded timeout signal $(T_{\text{bounds}}, T_{\text{prop}})$. The \fact{} layer executes \texttt{SendToParent} directly; no machine-actor decision gate exists between \texttt{BAIL\_PENDING} and \texttt{ESCALATING}. By INV-2 (\S~\ref{sec:state-machine}), this transition is the \emph{only} permissible transition from \texttt{BAIL\_PENDING}. No machine actor can suppress, delay, or redirect it.
+
+\medskip
+\noindent\textbf{Step 4: Bypass mechanism enforces human-only terminus.} By (A1) and the bypass mechanism (\S~\ref{sec:bypass}), the communication path from \texttt{ESCALATING} to $h(n)$ contains no machine actor in the termination set. The \texttt{SendToParent} call routes directly to the human anchor via the provisioned pathway; intermediate machine nodes forward without attempting local resolution. By BP, $\text{terminus}(\text{ESCALATING}(n)) = \{h(n)\}$.
+
+\medskip
+\noindent\textbf{Conclusion.} Combining Steps 1--4, any node that enters \texttt{ESCALATING} must reach \texttt{RESOLVED}, and any path to \texttt{RESOLVED} requires a directive from $h(n)$. No machine actor can absorb, redirect, or suppress the escalation. $\square$
+
+% --------------------------------------------------------------
+\subsection{LIVENESS: Eventual Human Contact}
+% --------------------------------------------------------------
+
+\subsubsection{Formal Statement.}
+
+\begin{bluebox}
+\textbf{Theorem (Liveness).} Under Assumptions (L1)--(L3), for every node $n \in \text{nodes}$ and every exception $x$ satisfying $\text{TRIGGER}(n, x)$, the protocol run from T1 firing reaches $h(n)$ within bounded wall-clock time $T_{\max}$:
+
+\[
+\forall n \in \text{nodes},\; \forall x,\;
+\text{TRIGGER}(n, x) \;\implies\;
+\exists t \leq T_{\max}:\; \text{received}(h(n), e, t).
+\tag{LIVENESS}
+\]
+
+where $T_{\max} = T_{\text{bounds}} + N_{\max} \cdot T_{\text{cap}} + T_{\text{human}}$.
+\end{bluebox}
+
+\subsubsection{Structural Assumptions.}
+
+\begin{enumerate}
+\item[(L1)] The Pathway Health Registry reports at least one functional communication pathway to $h(n)$ within any sliding window of duration $T_{\text{prop}}$.
+\item[(L2)] $h(n)$ is provisioned with at least one communication pathway and responds to \texttt{ACK} or directive messages within $T_{\text{human}}$ with probability $1$.
+\item[(L3)] The escalation algorithm retries at most $N_{\max}$ times, each retry bounded by $T_{\text{cap}}$; after $N_{\max}$ retries the protocol reaches \texttt{RESOLVED} with \texttt{PATHWAY\_EXHAUSTED}.
+\end{enumerate}
+
+Assumption (L1) is a deployment requirement — the deploying organization must provision sufficient communication redundancy. Assumptions (L2) and (L3) are protocol invariants enforced by the \fact{} layer.
+
+\subsubsection{Proof Sketch.}
+
+The liveness proof is a bounded case analysis over the escalation algorithm's execution paths.
+
+\medskip
+\noindent\textbf{Step 1: Trigger to \texttt{ESCALATING} is bounded.} By T1, the trigger condition causes an immediate transition to \texttt{BOUNDED}. By T3, if no \fact-layer-approved resolution arrives within $T_{\text{bounds}}$, the machine transitions to \texttt{BAIL\_PENDING}. By T4, entry to \texttt{ESCALATING} is atomic and immediate upon the compounded timeout signal. Elapsed time from T1 to \texttt{ESCALATING} entry is exactly $T_{\text{bounds}}$.
+
+\medskip
+\noindent\textbf{Step 2: Each retry iteration is bounded by $T_{\text{cap}}$.} The escalation loop executes:
+
+\begin{trivlist}\itemsep=0pt
+\item[]\textbf{while} $retry\_count < N_{\max}$ \textbf{do}
+\item[]\hspace{1em}$ack\_received \leftarrow \texttt{SendToParent}(n, e, C, pathway, T_{\text{current}})$
+\item[]\hspace{1em}\textbf{if} $ack\_received$ \textbf{then return}
+\item[]\hspace{1em}$retry\_count \leftarrow retry\_count + 1$
+\item[]\hspace{1em}$T_{\text{current}} \leftarrow \min(2 \cdot T_{\text{current}},\; T_{\text{cap}})$
+\end{trivlist}
+
+Each \texttt{SendToParent} invocation waits at most its allocated $T_{\text{current}}$, which starts at $T_{\text{prop}}$ and doubles on each retry until capped at $T_{\text{cap}}$. Since $T_{\text{current}}$ is monotonically non-decreasing and bounded above by $T_{\text{cap}}$, each iteration completes within at most $T_{\text{cap}}$ wall-clock time. The loop executes at most $N_{\max}$ times, yielding a total elapsed time of at most $N_{\max} \cdot T_{\text{cap}}$.
+
+\medskip
+\noindent\textbf{Step 3: Human acknowledgment is bounded by $T_{\text{human}}$.} Upon the first successful \texttt{SendToParent} delivery to $h(n)$, the state machine transitions to \texttt{HUMAN\_ACKNOWLEDGED} via T6. By (L2), $h(n)$ issues a directive within $T_{\text{human}}$, producing either T5 (return to \texttt{IDLE}) or T9 (enter \texttt{RESOLVED}) — both terminal for the protocol run.
+
+\medskip
+\noindent\textbf{Step 4: Pathway exhaustion is terminal but recorded.} If all $N_{\max}$ retries fail to deliver to $h(n)$, the algorithm exits the loop and fires \texttt{PATHWAY\_EXHAUSTED}. The protocol transitions to \texttt{RESOLVED} with this tag. The tag is a signal to the deploying organization that human re-engagement is required; the protocol has reached a terminal state with a Forensic Ledger record.
+
+\medskip
+\noindent\textbf{Step 5: Combine the bounds.} The total elapsed wall-clock time from T1 firing to terminal state is:
+
+\[
+T_{\text{bounds}} + N_{\max} \cdot T_{\text{cap}} + T_{\text{human}} = T_{\max}.
+\]
+
+This bound is tight for all execution paths: (a) the trigger-to-escalation path is fixed at $T_{\text{bounds}}$; (b) the retry loop is bounded by $N_{\max} \cdot T_{\text{cap}}$ by construction; (c) the human response is bounded by $T_{\text{human}}$ by (L2). No execution path can exceed $T_{\max}$. $\square$
+
+\medskip
+\noindent\textbf{Remark.} $T_{\max}$ is a deployment parameter, not a protocol constant. Deployments in high-latency environments must provision timeouts accordingly and certify that $T_{\max}$ remains within the safety threshold for the node's operational domain.
+
+% --------------------------------------------------------------
+\subsection{ACCOUNTABILITY: Human Always Identifiable}
+% --------------------------------------------------------------
+
+\subsubsection{Formal Statement.}
+
+\begin{bluebox}
+\textbf{Theorem (Accountability).} Under Assumptions (C1)--(C4), for every terminal protocol run reaching \texttt{RESOLVED}, the Forensic Ledger entry contains a non-anonymous reference to a named human principal $h(n)$ who issued the binding directive:
+
+\[
+\forall n \in \text{nodes},\; \forall \text{run}_\rho \text{ of } \mathcal{B},\;
+\text{state}(\text{run}_\rho) = \text{RESOLVED}
+\;\implies\;
+\exists!\; h(n) \in \text{HumanPrincipals}:\;
+\text{directive}(\text{run}_\rho) \in \text{Directives}(h(n)).
+\tag{ACCOUNTABILITY}
+\]
+
+Furthermore, no machine actor may appear in the attribution chain between the originating node and $h(n)$.
+\end{bluebox}
+
+\subsubsection{Structural Assumptions.}
+
+\begin{enumerate}
+\item[(C1)] Every human principal $h(n)$ is identified by a unique, non-repudiable credential established at node provisioning. This credential is stored in the Fact Layer authorization ledger and cannot be altered at runtime.
+\item[(C2)] The \fact{} layer verifies the provenance of every directive at \texttt{RESOLVED} by cryptographic attestation of $h(n)$'s credential. A directive that cannot be attributed to a verified human principal is rejected and logged as a protocol violation.
+\item[(C3)] The \purpose{} layer is non-delegable as an exception terminus: no machine actor may receive an exception and issue a binding directive that substitutes for a human directive.
+\item[(C4)] The Forensic Ledger is append-only and tamper-evident: any attempt to modify or delete a \texttt{RESOLVED} entry after the fact is detectable by the integrity hash chain.
+\end{enumerate}
+
+\subsubsection{Proof Sketch.}
+
+The accountability proof has two components: (a) identification — $h(n)$ is the only entity capable of issuing the terminal directive; (b) attribution — the directive is recorded with $h(n)$'s non-repudiable credential in the Forensic Ledger.
+
+\medskip
+\noindent\textbf{Step 1: Uniqueness of the exception terminus.} By BP (\S~\ref{sec:bypass}), $\text{terminus}(\text{ESCALATING}(n)) = \{h(n)\}$. This is an architectural constraint, not a routing choice. The escalation payload reaches exactly one entity: the human principal designated at node provisioning. No machine actor may appear in the termination set.
+
+\medskip
+\noindent\textbf{Step 2: Binding directives are human-issued only.} The state definitions (\S~\ref{sec:state-machine}) establish that \texttt{RESOLVED} is entered only upon issuance of $d \in \{\texttt{ACK},\;\texttt{RESOLVE},\;\texttt{REJECT}\}$ by $h(n)$. By (C3), no machine actor may issue any of these directives. The \fact{} layer pre-commit hook for the \texttt{RESOLVED} transition verifies the directive's provenance: it checks the cryptographic attestation of $h(n)$'s credential before committing the ledger entry. An unattributed directive cannot enter the ledger.
+
+\medskip
+\noindent\textbf{Step 3: Attribution is immutable and non-repudiable.} By (C1), $h(n)$'s credential is established at provisioning and is non-repudiable — the human principal cannot later deny having issued the directive. By (C2), the \fact{} layer records this credential with every directive. By (C4), the Forensic Ledger entry is append-only and tamper-evident: the hash chain ensures that any retrospective alteration is computationally detectable.
+
+\medskip
+\noindent\textbf{Step 4: The accountability chain is linear and complete.} For any node $n$, the accountability chain for a protocol run is:
+
+\[
+n \;\xrightarrow{\text{escalation}}\,
+h(n) \;\xrightarrow{\text{directive}}\,
+\text{Fact Layer ledger} \;\xrightarrow{\text{hash chain}}\,
+\text{immutable record}.
+\]
+
+Every hop in this chain is deterministic and auditable. The chain contains exactly one human principal at the terminus and exactly one machine actor at the origin. There is no branch point, no alternative terminus, and no intermediate machine-actor absorber.
+
+\medskip
+\noindent\textbf{Conclusion.} Every \texttt{RESOLVED} state in every protocol run is attributable to exactly one named human principal, and no machine actor can issue, simulate, or substitute this attribution. $\square$
+
+% --------------------------------------------------------------
+\subsection{Corollary: Upstream Accountability as Formal Invariant}
+% --------------------------------------------------------------
+
+The three theorems jointly establish the upstream accountability guarantee as a formal invariant of the \bxthree{} Framework:
+
+\begin{bluebox}
+\textbf{Corollary (Upstream Accountability).} Under the union of assumptions (A1)--(A5), (L1)--(L3), and (C1)--(C4), for every \bxthree{} node $n$ and every exception condition $x$ satisfying $\text{TRIGGER}(n, x)$:
+
+\[
+\text{ESCALATING}(n, x)
+\;\implies\;
+\bigl(\text{terminus} = \{h(n)\}\bigr)
+\;\land\;
+\bigl(\text{reachability}(h(n),\, t \leq T_{\max})\bigr)
+\;\land\;
+\bigl(\text{directive attributed to } h(n)\bigr).
+\tag{UPSTREAM-GUARANTEE}
+\]
+
+In plain terms: every unresolvable exception in any \bxthree{} node \emph{must} propagate to a named human principal, \emph{must} do so within a bounded time, and \emph{must} be recorded as a binding human decision. The guarantee is unconditional — it does not depend on machine-actor cooperation, on the availability of particular resolution pathways, or on the absence of faults in the agent population. It is a structural property of the protocol's architecture.
+\end{bluebox}
+
+This corollary is the formal expression of the operational commitment stated informally in \S~\ref{sec:bailout}: that \bxthree{} systems \emph{fail upward into human consciousness, never downward into autonomous chaos}.

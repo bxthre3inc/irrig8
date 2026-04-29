@@ -1,0 +1,149 @@
+\section{Guarantees and Correctness Properties}\label{sec:properties}
+
+The Bailout Protocol, as specified in Section~\ref{sec:bailout} and realized within the \bxthree{} three-layer architecture in Section~\ref{sec:implementation}, satisfies three correctness properties that together define its behavioral guarantees. These are not empirical observations about system behavior under typical conditions; they are formal claims about what the protocol guarantees under all execution conditions, including partial node failure, network partition, adversarial machine-actor behavior, and concurrent escalation load. We prove each property via a structured argument tracing the protocol's enforcement mechanisms from their architectural foundations to their runtime instantiation.
+
+% ---------------------------------------------------------------
+\subsection{GUARANTEE 1: Safety — No Autonomous Collapse}\label{sec:safety}
+
+\bigskip
+\begin{minipage}{\textwidth}
+\textbf{Guarantee (Safety).} \textit{For every node $n$ in any \bxthree{} deployment, when a BailoutTrigger is active at $n$, no physical actuator command originating from $n$ is forwarded to any actuator until the trigger reaches the \texttt{RESOLVED} state. No machine actor can unilaterally transition the trigger to \texttt{RESOLVED}.}
+\end{minipage}
+\bigskip
+
+\textbf{Intuition.} Safety addresses the core failure mode the Bailout Protocol was designed to eliminate: autonomous drift, in which a system continues to act without human review because no threshold was crossed and no escalation was triggered. The protocol converts the absence of a machine-resolvable path into a mandatory hard block on all actuator commands, preventing any machine actor from advancing the system state in the affected domain while human oversight is outstanding.
+
+\bigskip
+\noindent\textbf{Theorem 1 (Safety).}
+\textit{For any node $n$ and any active BailoutTrigger $T$ at $n$, no command issued by $n$ reaches any physical actuator while $T$ is in any state $\sigma \in \{\texttt{BOUNDED}, \texttt{BAIL\_PENDING}, \texttt{ESCALATING}, \texttt{HUMAN\_ACKNOWLEDGED}\}$. Furthermore, no machine actor can produce a state transition from any of these states to \texttt{RESOLVED}.}
+
+\bigskip
+\noindent\textit{Proof Sketch.} The proof has three parts.
+
+\medskip
+\noindent\textit{Part (a) — Compulsory trigger firing.} The trigger condition $\text{TRIGGER}(n, x)$ (Equation~\ref{eq:trigger-condition}) fires on any condition $x \notin R(n)$ where $\text{confidence}(n, x) < \tau$. The evaluation of $\text{TRIGGER}(n, x)$ is driven by the Fact Layer's pre-commit hook with no intervening machine-actor discretion (see \S\ref{sec:bounds-trigger}). A machine actor cannot suppress the trigger by reclassifying $x$ as within $R(n)$: $R(n)$ is defined at node provisioning in the authorization ledger and is not writable at runtime by any machine actor. Therefore, for any $x$ satisfying TC, the state machine transitions to \texttt{BOUNDED} via T1, and this transition is compulsory.
+
+\medskip
+\noindent\textit{Part (b) — Atomic escalation with no interposition.} From \texttt{BOUNDED}, either the Bounds Engine produces a Fact-Layer-approved resolution within $T_{\text{bounds}}$ (T2: return to \texttt{IDLE}), or the state machine advances through \texttt{BAIL\_PENDING} to \texttt{ESCALATING} via T3 and T4 with no dwell time and no machine-actor intervention permitted. The atomic transition from \texttt{BAIL\_PENDING} to \texttt{ESCALATING} (T4) is enforced by the Fact Layer's pre-commit hook, not by agent-level code. There exists no architectural point at which a machine actor can interpose and suppress the escalation: the escalation is compulsory once $T_{\text{bounds}}$ expires without resolution.
+
+\medskip
+\noindent\textit{Part (c) — Bypass enforcement at the terminus.} The parent-chain bypass property $\text{BYPASS}(n)$ (Equation~\ref{eq:bypass-property}) requires that no machine actor $m \in \text{MachineActors} \setminus \{h(n)\}$ appears in the terminus of the \texttt{ESCALATING} state for any node $n$. The bypass is enforced by two cooperating mechanisms: the Fact Layer gate, which rejects any authorization ledger entry that purports to close a protocol run without a \purpose-layer-authorized directive, and the immutable parent-pointer and human-root architecture, which prevents any machine actor from modifying the propagation path at runtime. Together, these mechanisms ensure that the \texttt{ESCALATING} state can only terminate at $h(n)$. No machine actor can absorb the exception, redirect the propagation chain, or fabricate a resolution.
+
+\medskip
+\noindent\textit{Combining Parts (a)–(c).} For any exception condition $x$ satisfying TC, the protocol compulsorily enters \texttt{ESCALATING}, the \texttt{ESCALATING} state cannot terminate at any machine actor, and the state must terminate at $h(n)$. Moreover, by Part (b) the only release transition from \texttt{HUMAN\_ACKNOWLEDGED} to \texttt{RESOLVED} requires $\texttt{HUMAN\_RESOLUTION\_ISSUED}$, which carries a \purpose-layer authorization payload digitally signed by $h(n)$. No machine actor possesses a valid credential for $h(n)$. Therefore, no actuator command from $n$ reaches any actuator while $T$ is active, and no machine actor can unilaterally resolve $T$. $\square$
+
+\bigskip
+\begin{invariant}{Safety Invariant}\label{inv:safety}
+For all $n$, for all $t$, if a BailoutTrigger $T$ is active at $n$ at time $t$, then $\Gamma_n(\sigma_n(t)) = \texttt{block}$.
+\end{invariant}
+
+Invariant~\ref{inv:safety} is enforced by the Fact Layer pre-commit hook as a first-class architectural constraint. Any attempt to advance the state machine without satisfying this invariant is rejected, and the attempted violation is logged as a \texttt{SAFETY\_CONSTRAINT\_VIOLATION} event in the Forensic Ledger.
+
+% ---------------------------------------------------------------
+\subsection{GUARANTEE 2: Liveness — Eventual Human Contact}\label{sec:liveness}
+
+\bigskip
+\begin{minipage}{\linewidth}
+\textbf{Guarantee (Liveness).} \textit{For every node $n$ and for every exception condition $x$ that triggers the Bailout Protocol at $n$, the protocol guarantees that $h(n)$ receives the exception notification within a bounded, finite time $T_{\max}$, regardless of parent-node unavailability, pathway degradation, or concurrent escalation load, provided the deployment satisfies its provisioned pathway and timeout requirements.}
+\end{minipage}
+\bigskip
+
+\textbf{Intuition.} Safety alone does not guarantee that human contact actually occurs in finite time. A protocol that compels escalation but can stall indefinitely if a parent node is unreachable — or if all communication pathways fail — does not satisfy liveness. Liveness requires that the escalation path be reliable enough to deliver the exception to the human anchor within a bounded time under all failure conditions that a compliant deployment must handle.
+
+\bigskip
+\noindent\textbf{Theorem 2 (Liveness).}
+\textit{Let $\mathcal{H}$ be the spawning hierarchy rooted at $h$, the top-level Purpose Layer anchor. If every node in $\mathcal{H}$ has a defined parent pointer $P_n$ (or is a Purpose Layer anchor with $P_n = \texttt{null}$), then for any BailoutTrigger $T$ fired at any descendant node $B \in \mathcal{H}$, the escalation algorithm terminates in at most $d(B)$ iterations, where $d(B)$ is the depth of $B$ in $\mathcal{H}$, and the terminal state is either $\texttt{HUMAN\_ACKNOWLEDGED}$ (if the anchor is reachable) or $\texttt{PATHWAY\_EXHAUSTED}$ (if all provisioned pathways fail). In the latter case, a \texttt{HIERARCHY\_ERROR} is logged and the exception is surfaced to the next available human in the organizational fallback chain.}
+
+\bigskip
+\noindent\textit{Proof Sketch.} The proof relies on two structural properties of the \bxthree{} spawning hierarchy and the algorithmic constraints on the escalation path.
+
+\medskip
+\noindent\textit{Property 1 — Finite depth with strict ascent.} The \bxthree{} spawning hierarchy is a rooted tree: each node $n$ has exactly one parent $P_n$, except the root Purpose Layer anchor $h$ which has $P_h = \texttt{null}$. The depth function $d(n)$ is well-defined and finite for all nodes in the tree, bounded by $D_{\max}$ at provisioning. The \texttt{Escalate} algorithm (Algorithm~\ref{alg:escalation}, line 15: $B_{\text{current}} \leftarrow B_{\text{parent}}$) strictly ascends the parent chain on each iteration: a node's parent is always at strictly lower depth, so $d(P_n) < d(n)$. The parent relation therefore defines a strict well-ordering.
+
+Consider the sequence of nodes visited: $B = n_0, n_1 = P_{n_0}, n_2 = P_{n_1}, \ldots$. By strict ascent, $d(n_0) > d(n_1) > d(n_2) > \cdots$. Since depth is bounded below by $d(h) = 0$, the sequence terminates in at most $d(B)$ steps at a node $n_k$ with $d(n_k) = 0$, which by definition is $h$. The loop cannot diverge, cannot cycle, and cannot stall.
+
+\medskip
+\noindent\textit{Property 2 — Pathway diversity and bounded retry.} The Pathway Health Registry (PHR) maintains at least two functionally independent communication pathways to $h(n)$ for every node. At each hop, \texttt{SelectPathway} queries the PHR and selects the pathway with the lowest estimated latency among currently functional pathways. If no ACK is received within $T_{\text{prop}}$, the algorithm retries with exponential backoff: $T_{\text{prop}} \leftarrow \min(2 \cdot T_{\text{prop}}, T_{\text{cap}})$. After $N_{\max}$ consecutive retries at $T_{\text{cap}}$ without ACK, the algorithm fires a \texttt{parent\_unreachable} timeout event and falls back to the next available functional pathway. With $P \geq 2$ independent pathways, the maximum number of pathway fallbacks before successful delivery or exhaustion is $P - 1$.
+
+The worst-case propagation time is therefore:
+\begin{equation}
+T_{\max} \leq d(n, h(n)) \cdot N_{\max} \cdot T_{\text{cap}} \cdot P. \tag{LT}
+\end{equation}
+This bound is deployment-defined but protocol-enforced. A deployment that cannot satisfy $T_{\max}$ under all failure scenarios must provision additional pathways or reduce $T_{\text{prop}}$ and $T_{\text{cap}}$.
+
+\medskip
+\noindent\textit{Property 3 — Acknowledgment timeout and finite termination.} Upon reaching $h(n)$, the state machine enters \texttt{HUMAN\_ACKNOWLEDGED} and awaits a directive. If $T_{\text{human}}$ expires without a directive, the protocol transitions to \texttt{RESOLVED} with an \texttt{unresolved} tag, logs the expiration, and triggers a reminder notification. Critically, the protocol does not attempt automatic re-escalation, preventing a denial-of-service condition against the human anchor. The upper bound on time from trigger firing to resolution is $T_{\max} + T_{\text{human}}$.
+
+\medskip
+\noindent\textit{Combining Properties 1–3.} The composition of bounded per-hop propagation (Property 1), pathway diversity with bounded retry (Property 2), and the human acknowledgment timeout (Property 3) establishes that the Bailout Protocol guarantees eventual human contact within a bounded, finite time for every triggering exception. The bound is deployment-defined but protocol-enforced. $\square$
+
+% ---------------------------------------------------------------
+\subsection{GUARANTEE 3: Accountability — Human Always Identifiable}\label{sec:accountability}
+
+\bigskip
+\begin{minipage}{\linewidth}
+\textbf{Guarantee (Accountability).} \textit{For every protocol run of the Bailout Protocol, there exists a unique, identifiable human principal who is the authoritative terminus of the accountability chain. This principal's identity is immutably recorded in the Forensic Ledger at node provisioning, never modified for the node's operational lifetime, and confirmed by every protocol event along the propagation path. No machine actor can obscure, transfer, or disclaim this accountability.}
+\end{minipage}
+\bigskip
+
+\textbf{Intuition.} Accountability requires more than human contact; it requires that the specific human who is accountable for each decision can be uniquely identified, that this identification is immutable and verifiable after the fact, and that no machine actor can obscure or disclaim the human's accountability. The accountability property ensures that every escalation carries a complete, tamper-evident provenance record enabling post-hoc attribution with cryptographic confidence.
+
+\bigskip
+\noindent\textbf{Theorem 3 (Accountability).}
+\textit{For any node $n$ and any protocol run $\rho$ originating at $n$, the accountable human principal is uniquely and immutably identified as $h(n)$. The Forensic Ledger contains an unbroken, hash-chained record of every protocol event in $\rho$, including the human principal's directive, timestamped and attributed with the principal's explicit authorization signature. No machine actor can appear as the authoritative terminus of $\rho$, and no ledger entry recording a human resolution can be created without the explicit authorization of $h(n)$.}
+
+\bigskip
+\noindent\textit{Proof Sketch.} The proof has four parts.
+
+\medskip
+\noindent\textit{Part 1 — Immutable anchor assignment at provisioning.} At node initialization, the \purpose{} layer registers $h(n)$ with the Fact Layer's Pathway Registry and records the anchor assignment in the authorization ledger (see \S\ref{sec:purpose-layer}). This entry constitutes the human principal's explicit acceptance of accountability for node $n$'s operational scope. The anchor is non-negotiable and non-migratory: $h(n)$ is immutable for the node's operational lifetime, and no machine actor — including the node's own Bounds Engine, any parent node, or any recursively spawned subordinate — may modify $h(n)$ without explicit human authorization recorded as a ledger entry.
+
+\medskip
+\noindent\textit{Part 2 — Forensic Ledger non-repudiation.} Every protocol event — trigger evaluations, state transitions, pathway selections, acknowledgments, directives, and timeout conditions — is committed to the Forensic Ledger as an append-only entry. Each entry is timestamped, attributed to the originating node, and linked to its predecessor by a SHA-256 hash chain (see \S\ref{sec:forensic-ledger}). The human principal's directive — $\texttt{ACK}$, $\texttt{RESOLVE}$, or $\texttt{REJECT}$ — is immutably recorded as a \purpose-layer-authorized ledger entry bearing the principal's explicit authorization signature. This signature constitutes non-repudiation: the principal cannot credibly deny having issued the directive, and the system cannot fabricate a directive that was not issued.
+
+\medskip
+\noindent\textit{Part 3 — Propagation chain integrity.} During escalation, each intermediate node appends its diagnostic context to the propagation chain (see the \texttt{Escalate} algorithm, \S\ref{sec:escalation-algorithm}). This context includes the trigger condition, the proposed resolution attempt, the Bounds Engine's confidence level at time of firing, and the node's identity. The complete propagation chain, preserved in the Forensic Ledger, establishes the provenance of the exception: it shows every node the exception traversed, the state of each node at traversal time, and the diagnostic context accumulated at each hop. The hash-chain integrity mechanism makes retrospective tampering computationally detectable.
+
+\medskip
+\noindent\textit{Part 4 — Unique terminus identification via bypass.} The $\text{BYPASS}(n)$ property (Equation~\ref{eq:bypass-property}) establishes that no machine actor may appear in the terminus of the \texttt{ESCALATING} state for any node $n$. The human anchor $h(n)$ is the only permissible terminus. The anchor's identity is established at provisioning (Part 1) and is never modified. Every protocol event that propagates through the chain records $h(n)$ as the destination. Therefore, for any protocol run, the accountable human principal is uniquely and immutably identified as $h(n)$.
+
+\medskip
+\noindent\textit{Combining Parts 1–4.} The combination of immutable anchor assignment at provisioning (Part 1), non-repudiable directive recording in the Forensic Ledger (Part 2), propagation chain integrity maintained through every escalation step (Part 3), and unique terminus identification enforced by the bypass property (Part 4) establishes that the Bailout Protocol guarantees human accountability for every protocol run. The accountable human is identifiable uniquely, immutably, and verifiably. No machine actor can transfer, obscure, or disclaim this accountability. $\square$
+
+% ---------------------------------------------------------------
+\subsection{Relationship Between Properties}\label{sec:property-relationships}
+
+The three guarantees are not independent; they form a structured hierarchy in which each property depends on the others for its full operational meaning.
+
+\medskip
+\noindent\textbf{Safety $\Rightarrow$ Accountability.} Safety ensures that no machine actor can permanently bypass human oversight. Accountability ensures that when human oversight is reached, the specific human is uniquely and immutably identified. Without Safety, Accountability is hollow: a system that reaches a human but then permits machine actors to continue operating autonomously without constraint has surfaced exceptions to a human but has not established accountability for subsequent behavior. The Bailout Protocol's Safety property ensures that human oversight is not merely reached but is the \emph{exclusive} terminus of the escalation chain.
+
+\medskip
+\noindent\textbf{Liveness $\Rightarrow$ Safety.} A protocol that compels escalation but cannot guarantee that escalation completes in finite time permits indefinite autonomous operation during stalled propagation. This is a Safety violation: the system enters a state in which human oversight has been structurally compelled but is not actually present, and machine actors continue operating with unobserved exceptions. Liveness closes this gap by bounding the time to human contact, ensuring that the Safety guarantee is not merely structural but also timely.
+
+\medskip
+\noindent\textbf{Accountability $\Rightarrow$ Liveness.} A protocol that reaches a human but cannot identify which human is accountable permits accountability diffusion: the human who receives the exception can defer to a different human anchor, and if that anchor is unreachable, the protocol stalls indefinitely. Accountability eliminates this deferral option by uniquely identifying the accountable human at every step of the propagation chain, removing any legitimate basis for deferral.
+
+\medskip
+\noindent Together, the three properties constitute the complete correctness specification for the Bailout Protocol: every exception reaches exactly one identifiable human (Accountability), in bounded finite time (Liveness), and no machine actor can prevent, redirect, or absorb this escalation (Safety). The protocol's five-state deterministic state machine, its compulsory trigger condition, its parent-chain bypass mechanism, and its timeout and pathway-health management are the enforcement substrate that makes these properties structurally operative at runtime.
+
+% ---------------------------------------------------------------
+\subsection{Architectural Enforcement Summary}\label{sec:enforcement-summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{2.4cm}p{3.0cm}p{6.4cm}}
+\hline
+\textbf{Guarantee} & \textbf{Core Property} & \textbf{Primary Enforcement Mechanism} \\
+\hline
+SAFETY & No unauthorized irreversible action & Fact Layer hard block $\Gamma_n(\sigma)$ applied to all actuator interfaces during active trigger states; compulsory atomic transition T4 enforced by pre-commit hook \\
+LIVENESS & Bounded human contact time & Strict parent-chain ascent (finite depth $d(n)$); Pathway Health Registry with $P \geq 2$ independent routes; exponential backoff with $T_{\text{cap}}$ cap; human acknowledgment timeout $T_{\text{human}}$ \\
+ACCOUNTABILITY & Human identity unique and immutable & Immutable $h(n)$ established at provisioning; append-only SHA-256 hash-chained Forensic Ledger; non-repudiable \purpose-layer authorization signature on every directive \\
+\hline
+\end{tabular}
+\caption{Bailout Protocol: Guarantee Enforcement Mechanisms}
+\label{tab:guarantee-enforcement}
+\end{table}
+
+\medskip
+\noindent\textbf{Scope and assumptions.} These guarantees hold under the following structural assumptions: (1) the Human Accountability Anchor $h(n)$ is non-null at system initialization; (2) parent pointers in the spawning hierarchy are immutable and acyclic; (3) the SHA-256 implementation used for Forensic Sealing is correctly implemented and not compromised; (4) the provisioned pathway count $P \geq 2$ and timeout values $T_{\text{prop}}, T_{\text{cap}}, T_{\text{human}}$ satisfy the deployment-defined bound $T_{\max}$ under all failure scenarios. Violation of any assumption invalidates the corresponding guarantee and triggers a system-level \texttt{LOCKDOWN} condition under the Training Wheels Protocol. The Bailout Protocol does not assume perfect or always-available humans; it assumes bounded, identifiable humans whose decisions are permanently recorded and auditable — which is precisely what regulatory and operational accountability requires.

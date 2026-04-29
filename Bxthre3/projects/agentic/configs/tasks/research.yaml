@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Task
+metadata:
+  name: research
+  description: "Research task for gathering and analyzing information"
+spec:
+  role: researcher
+  inputs:
+    - research_question
+    - scope
+    - sources
+  outputs:
+    - research_report
+    - knowledge_graph
+    - citations
+  steps:
+    - name: gather_information
+      description: "Collect relevant information from specified sources"
+      tools:
+        - web_search
+        - document_retrieval
+      parameters:
+        max_results: 50
+        time_range: "last 5 years"
+    - name: analyze_information
+      description: "Process and analyze collected information"
+      tools:
+        - nlp_analysis
+        - data_synthesis
+      parameters:
+        analysis_depth: 3
+    - name: generate_report
+      description: "Create comprehensive research report"
+      tools:
+        - report_generator
+      parameters:
+        format: markdown
+        include_citations: true
+  validation:
+    - name: completeness_check
+      description: "Verify all research questions are addressed"
+      threshold: 0.95
+    - name: accuracy_check
+      description: "Validate information against trusted sources"
+      threshold: 0.90

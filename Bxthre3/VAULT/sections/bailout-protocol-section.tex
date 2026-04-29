@@ -1,0 +1,234 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+The Bailout Protocol is a deterministic crisis-resolution mechanism embedded within AgentOS. It provides a provably correct, auditable escape path when the agent runtime enters a state from which autonomous recovery is impossible or unsafe. The protocol operates as a state machine over agent tasks, enforcing bounded resource consumption, structured escalation, and mandatory human acknowledgment before any task can be marked resolved.
+
+The protocol exists because autonomous agents can reach states where continued execution risks resource exhaustion, data corruption, or unsafe downstream actions — conditions no algorithmic recovery path can resolve without external intervention. The Bailout Protocol does not prevent failure; it guarantees that failure is always bounded, always visible, and never permanent.
+
+\subsection{State Machine Definition}
+
+\subsubsection{State Vocabulary}
+Let $\mathcal{A}$ denote the set of all agent tasks managed by AgentOS. Each task $a \in \mathcal{A}$ is a 4-tuple:
+\[
+a = (\text{id}, \text{type}, \text{resource\_budget}, \text{owner})
+\]
+where \texttt{id} is a unique task identifier, \texttt{type} $\in \{\text{orchestrated}, \text{autonomous}, \text{daemon}\}$, \texttt{resource\_budget} is a positive real defining maximum compute units allocated, and \texttt{owner} is the principal (human or agent) accountable for the task.
+
+Each task $a$ progresses through the finite state machine defined below.
+
+\subsubsection{States}
+The state machine for the Bailout Protocol defines six mutually exclusive and collectively exhaustive states:
+
+\begin{enumerate}
+\item \textbf{IDLE} — The task is registered but not yet executing. No compute budget has been consumed. The task awaits a trigger event or scheduling dispatch.
+
+\item \textbf{BOUNDED} — The task is executing within its allocated resource budget. Runtime monitoring is active. Exit conditions are evaluated continuously.
+
+\item \textbf{BAIL\_PENDING} — A bail-out trigger condition has fired. The task is not deadlocked or crashed — it continues to execute — but AgentOS has marked it for potential termination. No new child tasks may be spawned. Existing child tasks receive a termination signal.
+
+\item \textbf{ESCALATING} — The task has been in \texttt{BAIL\_PENDING} beyond its configured timeout without self-resolution. All agents with awareness of this task are notified. The human-in-the-loop (HITL) acknowledgment window opens.
+
+\item \textbf{HUMAN\_ACKNOWLEDGED} — A human owner has received the escalation alert and has explicitly acknowledged it. The task is suspended (not terminated). The human has the full context log and decision authority.
+
+\item \textbf{RESOLVED} — The task has reached a terminal state through one of three paths: (a) natural completion during \texttt{BOUNDED}, (b) forced termination after human acknowledgment, or (c) timeout expiry without acknowledgment, triggering automatic forced termination.
+\end{enumerate}
+
+Formally, the state space is:
+\[
+S = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}
+\]
+with the transition relation $T: \mathcal{A} \times S \times S$ defined in Section 3.2.
+
+\subsection{Transition Conditions}
+
+Transitions between states are driven by boolean conditions evaluated at runtime by the AgentOS kernel. Each condition is a predicate over the task's observable runtime state.
+
+\subsubsection{Formal Transition Relation}
+The transition relation $T$ is defined as the disjunction of the following transition rules. All transitions are instantaneous and atomic from the perspective of the kernel scheduler.
+
+\medskip\noindent\textbf{T1: IDLE $\rightarrow$ BOUNDED}
+\[
+T(a, \text{IDLE}, \text{BOUNDED}) \iff \text{dispatched}(a) = \text{true}
+\]
+The task transitions to \texttt{BOUNDED} when the scheduler marks it as dispatched for execution. No other condition applies.
+
+\medskip\noindent\textbf{T2: BOUNDED $\rightarrow$ BAIL\_PENDING}
+\[
+T(a, \text{BOUNDED}, \text{BAIL\_PENDING}) \iff \psi(a) = \text{true}
+\]
+where $\psi(a)$ is the \textbf{bail-out trigger condition} (defined in Section 3.3). When $\psi$ evaluates to \texttt{true}, the task transitions immediately to \texttt{BAIL\_PENDING}.
+
+\medskip\noindent\textbf{T3: BAIL\_PENDING $\rightarrow$ ESCALATING}
+\[
+T(a, \text{BAIL\_PENDING}, \text{ESCALATING}) \iff \tau_\text{bail}(a) > T_\text{escape}
+\]
+The task has been in \texttt{BAIL\_PENDING} longer than the configured escape threshold $T_\text{escape}$. No self-resolution occurred during the grace window. The transition to \texttt{ESCALATING} opens the mandatory human-in-the-loop window.
+
+\medskip\noindent\textbf{T4: ESCALATING $\rightarrow$ HUMAN\_ACKNOWLEDGED}
+\[
+T(a, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}) \iff \text{ack}(a, \text{owner}(a)) = \text{true}
+\]
+The human owner explicitly acknowledges the escalation. Acknowledgment is recorded with a timestamp, creating an auditable log entry. No autonomous agent can substitute for the human in this transition.
+
+\medskip\noindent\textbf{T5: BAIL\_PENDING $\rightarrow$ BOUNDED (Self-Resolution)}
+\[
+T(a, \text{BAIL\_PENDING}, \text{BOUNDED}) \iff \neg\psi(a) \land \phi(a) = \text{true}
+\]
+The bail-out trigger condition $\psi$ has cleared and the task's dependency graph $\phi(a)$ reports all blocking conditions resolved. The task self-corrects and returns to \texttt{BOUNDED}. This is the only backward transition in the machine.
+
+\medskip\noindent\textbf{T6: HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED}
+\[
+T(a, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}) \iff \text{resolve}(a, \text{action}) \neq \varnothing
+\]
+The human has issued a \texttt{resolve} directive with an explicit action: \texttt{TERMINATE}, \texttt{SUSPEND}, or \texttt{CONTINUE}. The chosen action is logged and executed. Terminal state \texttt{RESOLVED} is reached.
+
+\medskip\noindent\textbf{T7: ESCALATING $\rightarrow$ RESOLVED (Timeout Auto-Termination)}
+\[
+T(a, \text{ESCALATING}, \text{RESOLVED}) \iff \tau_\text{esc}(a) > T_\text{max}
+\]
+The escalation window has expired ($T_\text{max}$) without human acknowledgment. The task is forcibly terminated. A timeout log entry is written to the forensic ledger. This is the only transition where resolution occurs without human action.
+
+\medskip\noindent\textbf{T8: BOUNDED $\rightarrow$ RESOLVED (Natural Completion)}
+\[
+T(a, \text{BOUNDED}, \text{RESOLVED}) \iff \text{completed}(a) = \text{true}
+\]
+The task finished execution normally within its resource budget. No bail-out was ever triggered.
+
+\subsection{Bail-Out Trigger Condition}
+
+The bail-out trigger condition $\psi(a)$ is the central hazard-detection predicate. It evaluates to \texttt{true} when the task exhibits one or more of the following conditions:
+
+\medskip
+\textbf{Definition.} For a task $a \in \mathcal{A}$, the bail-out trigger condition $\psi(a)$ is defined as the disjunction:
+\[
+\psi(a) = \rho_\text{resource}(a) \lor \rho_\text{deadlock}(a) \lor \rho_\text{loop}(a) \lor \rho_\text{trust}(a) \lor \rho_\text{scope}(a)
+\]
+where each sub-predicate is defined as follows:
+
+\begin{itemize}
+\item \textbf{Resource Exhaustion} $\rho_\text{resource}$:
+\[
+\rho_\text{resource}(a) \iff \text{compute\_used}(a) > \text{resource\_budget}(a) \cdot \theta_\text{threshold}
+\]
+The task has consumed more than $\theta_\text{threshold} \times 100\%$ of its allocated compute budget. Default $\theta_\text{threshold} = 1.0$ (100\%).
+
+\item \textbf{Deadlock Detection} $\rho_\text{deadlock}$:
+\[
+\rho_\text{deadlock}(a) \iff \exists g \in \text{dependencies}(a) : \text{blocked}(g) \land \tau_\text{block}(g) > T_\text{deadlock}
+\]
+A dependency in the task's dependency graph has been blocked for longer than the deadlock threshold $T_\text{deadlock}$. This includes mutex deadlocks, I/O waits with no progress, and circular dependency chains.
+
+\item \textbf{Loop Detection} $\rho_\text{loop}$:
+\[
+\rho_\text{loop}(a) \iff \exists \text{instruction } i : \text{exec\_count}(i) > \theta_\text{loop}
+\]
+An instruction within the task's execution trace has been evaluated more than $\theta_\text{loop}$ times without the program counter advancing. Default $\theta_\text{loop} = 10{,}000$.
+
+\item \textbf{Trust Boundary Violation} $\rho_\text{trust}$:
+\[
+\rho_\text{trust}(a) \iff \text{trust\_score}(a) < \theta_\text{trust}
+\]
+The task's trust score (computed by the Trust Evaluation sub-system) has fallen below the minimum threshold. This occurs when the task attempts actions outside its declared capability boundary.
+
+\item \textbf{Scope Creep} $\rho_\text{scope}$:
+\[
+\rho_\text{scope}(a) \iff |\text{objects\_accessed}(a)| > |\text{objects\_declared}(a)| \cdot \theta_\text{scope}
+\]
+The task has accessed more object references than declared in its original execution manifest, indicating potential scope drift or adversarial tooling injection.
+\end{itemize}
+
+The bail-out trigger is evaluated at every kernel scheduling tick. Evaluation is deterministic and side-effect-free. The result is written to the task's runtime state and broadcast to the AgentOS event bus.
+
+\subsection{Escalation Algorithm}
+
+When a task transitions to \texttt{ESCALATING}, the AgentOS kernel executes the following escalation algorithm:
+
+\begin{algorithm}
+\caption{Escalation Algorithm}
+\begin{algorithmic}
+\State $\text{task} \leftarrow a$
+\State $\text{ctx} \leftarrow \text{serialize\_runtime\_context}(a)$
+\State $\text{log\_entry} \leftarrow \text{create\_ledger\_entry}(\text{task}, \text{ctx}, \text{timestamp})$
+\State $\text{append\_to\_ledger}(\text{log\_entry})$
+\State $\text{notify\_all\_aware\_agents}(a)$
+\State $\text{send\_escalation\_alert}(\text{owner}(a), \text{ctx})$
+\State $\text{open\_acknowledgment\_window}(a, T_\text{max})$
+\State $\text{monitor\_ack\_deadline}(a)$
+\Statex
+\Procedure{monitor\_ack\_deadline}{$a$}
+\While{$\text{state}(a) = \text{ESCALATING}$}
+\If{$\text{elapsed}(a) > T_\text{max}$}
+\State $\text{transition}(a, \text{ESCALATING}, \text{RESOLVED})$
+\State $\text{forcibly\_terminate}(a)$
+\State $\text{log\_timeout\_auto\_terminate}(a)$
+\State \Break
+\ElsIf{$\text{ack}(a, \text{owner}(a))$}
+\State $\text{transition}(a, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED})$
+\State \Break
+\EndIf
+\State $\text{sleep}(\Delta_\text{tick})$
+\EndWhile
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm serializes the full runtime context of the task — including the call stack, resource consumption trace, object access log, and the specific sub-predicate of $\psi$ that fired — and sends it to the task owner. This ensures the human has complete situational awareness before making any decision.
+
+\subsection{Bypass Mechanism}
+
+The Bailout Protocol \texttt{BAIL\_PENDING} and \texttt{ESCALATING} states are \textbf{binding on all machine actors}. No agent — including agents with elevated trust scores, orchestration agents, or meta-agents — can override, bypass, or suppress a bail-out flag. This is a deliberate architectural constraint.
+
+\medskip\noindent\textbf{Theorem (Bypass Resistance).} Let $a \in \mathcal{A}$ be any task and let $\psi(a) = \text{true}$. Then for any agent $m$ operating within AgentOS, the transition $T(a, \text{BAIL\_PENDING}, \text{BOUNDED})$ induced by $m$ is prohibited unless $\neg\psi(a) \land \phi(a) = \text{true}$ (self-resolution per T5).
+
+\medskip\noindent\textit{Proof.} The Bailout Protocol is enforced at the kernel level, below the agent runtime. The transition relation $T$ is evaluated by the kernel scheduler, not by any agent. No agent holds the authority to write to the task state vector directly. An agent may attempt to execute a self-resolution check (T5), but if $\psi(a)$ remains \texttt{true} or the dependency graph $\phi(a)$ reports unresolved blocking conditions, the kernel refuses the transition. Agent privilege level does not grant write access to the state machine. $\square$
+
+The architectural rationale: agents that malfunction often do so because they have accumulated internal state that is no longer consistent with the actual runtime environment. Allowing those same agents to decide whether a bail-out applies would defeat the purpose. The kernel enforces the protocol regardless of what the affected agent reports.
+
+Concretely, the bypass resistance property is implemented by:
+\begin{enumerate}
+\item Isolating the state machine in the AgentOS kernel. No agent process has direct memory or state-vector access to another task's \texttt{state} field.
+\item Making the transition relation $T$ read-only at the agent level. Agents can observe $\psi$, but cannot write the task state.
+\item Logging all transition attempts — successful and unsuccessful — to the forensic ledger. Unauthorized transition attempts are flagged as security events.
+\item Routing the escalation alert through a channel independent of the affected task's communication stack. If the malfunctioning task has corrupted its own messaging, the alert is still sent via the kernel's direct notification channel.
+\end{enumerate}
+
+\subsection{Timeout Handling}
+
+Timeouts are the backbone of the Bailout Protocol's liveness guarantees. Without timeouts, a task in \texttt{BAIL\_PENDING} could remain in that state indefinitely if the self-resolution condition never materializes. The protocol defines three distinct timeout parameters:
+
+\begin{itemize}
+\item \textbf{$T_\text{bail}$} — Maximum elapsed time a task may remain in \texttt{BAIL\_PENDING} before forced escalation. This is the grace window during which the task may self-resolve. Default: 300 seconds (5 minutes).
+
+\item \textbf{$T_\text{escape}$} — Alias for $T_\text{bail}$ used in the T3 transition condition. Included as a named parameter for clarity in configuration. $T_\text{escape} \equiv T_\text{bail}$.
+
+\item \textbf{$T_\text{max}$} — Maximum elapsed time in \texttt{ESCALATING} before automatic forced termination. This is the human acknowledgment window. Default: 3600 seconds (1 hour). After this window, the kernel forcibly terminates the task and logs the auto-termination event.
+
+\item \textbf{$\Delta_\text{tick}$} — The kernel scheduling tick interval at which timeout conditions are re-evaluated. Default: 1 second. Smaller values increase responsiveness but increase kernel scheduling overhead.
+\end{itemize}
+
+Timeout handling is implemented as follows:
+\begin{enumerate}
+\item Each task $a$ maintains a monotonically increasing elapsed-time counter $\tau(a)$ initialized to zero at state entry.
+\item The kernel tick handler evaluates all active timeout conditions on every tick. If $\tau(a) > T_\text{escape}$ for a task in \texttt{BAIL\_PENDING}, the kernel executes T3 immediately.
+\item The $\tau$ counter is stored in the forensic ledger at each state transition, enabling post-hoc reconstruction of the exact timing of events.
+\item If the kernel restarts while a task is in \texttt{BAIL\_PENDING} or \texttt{ESCALATING}, the persisted $\tau$ value is loaded and the timeout countdown resumes from the last recorded position. No time is gifted on kernel restart.
+\item If a task is forcibly terminated due to timeout expiry, the termination reason \texttt{TIMEOUT\_AUTO\_TERMINATE} is written to the forensic ledger with full context. This entry is admissible as evidence of protocol compliance.
+\end{enumerate}
+
+\subsection{Formal Properties}
+
+The Bailout Protocol satisfies the following formal properties:
+
+\medskip\noindent\textbf{Property 1 (Determinism).} The transition relation $T$ is a deterministic function: for any task $a$ in state $s$, there is exactly one $s' \in S$ such that $T(a, s, s')$ evaluates to \texttt{true}, or no transition fires if the task is in a terminal state ($\text{RESOLVED}$).
+
+\medskip\noindent\textbf{Property 2 (Boundedness).} No task can remain in state \texttt{BAIL\_PENDING} or \texttt{ESCALATING} indefinitely. Formally: $\forall a \in \mathcal{A}, \forall s \in \{\text{BAIL\_PENDING}, \text{ESCALATING}\}, \exists t \in \mathbb{N} : \tau(a) > t \implies \text{transition fires}$.
+
+\medskip\noindent\textbf{Property 3 (Human Override).} The transition from \texttt{ESCALATING} to \texttt{RESOLVED} via T7 (auto-termination) can be preempted by the human owner at any time prior to $T_\text{max}$ expiry. Once \texttt{ack}$(a, \text{owner}(a))$ is recorded, T7 is rendered inapplicable.
+
+\medskip\noindent\textbf{Property 4 (Auditability).} Every state transition, timeout event, and resolution action is logged to the forensic ledger with a timestamp, task identifier, pre-state, post-state, and the triggering condition. No transition is silently dropped.
+
+\medskip\noindent\textbf{Property 5 (Non-Interference).} No task $a'$ can induce a transition for task $a$ unless $a'$ is the AgentOS kernel. Agents operating at user level or elevated privilege level are subject to the same transition constraints as unprivileged tasks.
+
+\subsection{Summary}
+
+The Bailout Protocol provides AgentOS with a cryptographically auditable, formally defined escape path from autonomous execution states that cannot safely self-resolve. Its state machine is deterministic and bounded. Transition conditions are evaluated by the kernel, not by the affected task, ensuring that malfunctioning agents cannot suppress or bypass escalation. The protocol mandates human acknowledgment before final resolution, while enforcing strict timeout bounds that prevent indefinite suspension. The forensic ledger ensures that every decision — including the decision to take no action — is recorded and attributable.

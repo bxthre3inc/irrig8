@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-config
+  namespace: agent-system
+data:
+  ROLE_CONFIG: |
+    roles:
+      - name: worker
+        max_replicas: 100
+        min_replicas: 2
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+      - name: supervisor
+        max_replicas: 5
+        min_replicas: 1
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+version: 1.0.0
+version: 1.0.0

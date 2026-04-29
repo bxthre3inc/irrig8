@@ -1,0 +1,61 @@
+\section{Conclusion}\label{sec:conclusion}
+
+The \bxthree{} Framework advances a single, architecturally precise claim: that
+autonomous systems must propagate every unresolved exception state to a named
+human principal, bypassing all intermediate machine actors, as a compulsory
+structural requirement rather than a runtime choice.  This mandatory bailout
+property is not a feature that can be retrofitted to an existing agentic
+architecture through better error handling, improved escalation heuristics, or
+more comprehensive monitoring dashboards.  It is a structural property that
+follows, as a matter of architectural necessity, from the functional separation
+between Purpose, Bounds, and Fact layers --- and the Bailout Protocol is the
+mechanism by which that consequence is made operative at runtime.
+
+The framework's five named architectural pillars are co-equal and mutually
+reinforcing.  Loop Isolation ensures that the spawn graph is a rooted directed
+acyclic graph and that accountability attribution is never ambiguous.
+Recursive Spawning fixes the accountability chain at the architectural level
+and renders it immutable.  Spatial Firewall contains sub-agent failures within
+execution domains and prevents lateral state corruption.  Sandbox Gate provides
+the sole permitted cross-domain communication channel with mandatory authorization
+verification.  The Bailout Protocol compels the final escalation for any
+condition not resolved by the preceding four pillars, including conditions not
+anticipated at design time --- the protocol's most critical property is that it
+operates on exceptions the designers did not foresee, because those are the
+exceptions that matter most.
+
+The theoretical contribution of this paper is that the upstream accountability
+guarantee --- that \bxthree{} systems \emph{fail upward into human consciousness,
+never downward into autonomous chaos} --- is not a design choice but a logical
+consequence of the three-layer architecture.  The practical contribution is
+equally clear: that autonomous systems operating without such a mechanism are
+structurally exposed to failure modes --- invisible exception absorption,
+contingent escalation, and irreversible drift --- that cannot be eliminated by
+incremental improvement to existing escalation heuristics.  They require a new
+architectural primitive.  The \bxthree{} Framework is that primitive, and the
+Bailout Protocol is the mechanism by which it is enforced.
+
+The limitations analysis identifies the boundaries of this primitive as currently
+specified.  Human response latency introduces a structural floor on exception
+resolution time that constrains the framework's applicability to high-velocity
+operational domains.  Adversarial substrate conditions introduce attack surfaces
+that the framework cannot defend without a substrate integrity layer that falls
+outside its current scope.  Scalability is bounded by the 1:1 anchor model, which
+requires the anchor pool extension before the framework can operate in enterprise
+multi-agent deployments.  Strategic misclassification by the Bounds Engine
+creates an exploitation pathway that the framework's trigger-condition architecture
+does not yet close.  Each of these limitations is addressed by a specific directed
+research agenda --- formal verification, adaptive timeout mechanisms, distributed
+anchor pools, and exploitation-resistant trigger conditions --- that constitutes
+the most immediate extensions of this work.
+
+The core claim of the \bxthree{} Framework --- that the upstream accountability
+guarantee requires mandatory human escalation for all unresolved exception states,
+enforced architecturally rather than by policy --- is not contingent on the
+resolution of these open questions.  It is established by the structural
+necessity of the three-layer architecture, and it holds whether or not the
+directed research agenda is pursued.  What the open questions determine is
+whether the framework's guarantees can be extended to high-stakes, high-velocity,
+large-scale, and adversarial deployment contexts --- and the research program
+delineated here maps a principled path from the current specification toward
+that goal.

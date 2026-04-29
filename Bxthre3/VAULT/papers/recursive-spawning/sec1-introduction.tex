@@ -1,0 +1,72 @@
+\section{Introduction}
+
+% ============================================================
+% 1.1 The Autonomous Drift Problem in Multi-Agent Systems
+% ============================================================
+
+Large-scale multi-agent systems offer compelling advantages in throughput, fault tolerance, and spatial distribution of computation. However, as agent counts scale into the hundreds or thousands, a structural fragility emerges that most deployed systems eventually encounter: \textbf{autonomous drift}. An agent undergoing drift ceases to execute its intended function not because of a singular bug or hardware failure, but because it gradually — or sometimes abruptly — diverges from the behavioral envelope defined by its creator. The agent may continue consuming resources, continuing to spawn child processes, accept tasks, and interact with other agents, all while its actual outputs diverge from what the system architecture intended.
+
+Drift is insidious precisely because it is \textit{autonomous}. Unlike a failed agent that crashes and is detectable by a health check, a drifting agent often exhibits high liveness: it responds to pings, processes events, and produces artifacts. The divergence lives in the semantic layer — in whether the agent's actions align with the bounded context it was instantiated to serve — not in any observable runtime fault. In production deployments of autonomous agent swarms, drift is frequently discovered only when downstream systems receive malformed outputs, when observability dashboards surface anomalous behavior patterns, or when resource accounting reveals unexpected compute consumption attributed to zombie agent chains.
+
+The problem is compounded in hierarchical or tree-structured agent topologies, which are common in systems like AgentOS where a root agent spawns specialized children, which themselves spawn sub-children. In such architectures, drift at any node corrupts the subtree beneath it. If a mid-level agent drifts — adopting an incorrect planning model, subscribing to the wrong signal sources, or pursuing a locally coherent but globally misaligned objective — its descendants amplify rather than correct the deviation. The error propagates downward through the spawning chain, and because each descendant inherits its parent's behavioral assumptions, the subtree can converge on a coherent but incorrect operational state entirely invisible to the root orchestrator.
+
+% ============================================================
+% 1.2 Why Existing Approaches Are Insufficient
+% ============================================================
+
+The autonomous drift problem has received attention from the agent systems community, and several mitigation strategies are in active use. None have proven structurally sufficient at scale.
+
+\textbf{Time-to-live (TTL) limits} impose hard boundaries on agent lifespans, forcing periodic termination and respawning. While TTL limits prevent unbounded resource accumulation from runaway agents, they do not prevent drift — they merely bound its duration. A drifting agent operating within a 24-hour TTL can produce substantial semantically corrupted output in its window. Moreover, TTL limits carry an inherent tension: sufficiently short TTLs waste the contextual investment built up by an agent over time, while sufficiently long TTLs allow drift to fully manifest before termination. The optimal TTL is thus a moving target that varies by workload, agent type, and operational context — making static TTL configuration a fragile solution.
+
+\textbf{Depth limits} restrict the depth of the spawning tree, capping how many generations of descendants can exist beneath a root agent. Depth limits mitigate the amplification problem — a drifted mid-level agent can corrupt at most a bounded number of descendant generations. However, depth limits introduce their own failure mode: they prevent legitimate deep spawning chains from executing, penalizing complex tasks that genuinely require multi-level decomposition. More critically, depth limits address the symptom — tree depth — not the disease — drift itself. A single-generation agent can drift into a fully corrupted state, and depth limits are silent on that case.
+
+\textbf{Behavioral assertions and policy guards} attempt to detect drift by embedding runtime checks that compare an agent's outputs against an expected behavioral envelope. Assertions can catch egregious drift events, but they are inherently reactive: they require the system designer to anticipate failure modes in advance, and drift frequently manifests in ways that were not anticipated. Furthermore, policy-based approaches degrade under adversarial or semi-autonomous conditions where the agent's local optimization target is not inherently malicious but simply misaligned with the global objective. Detecting this class of drift — misalignment rather than violation — demands semantic understanding that static assertions cannot provide.
+
+\textbf{Supervisor-agent review} models — in which a higher-privilege agent periodically audits the state and outputs of a child agent — introduce a trusted oversight layer. However, supervisor review does not scale: as agent counts grow, the supervisor becomes the bottleneck, and in practice the supervisor agent itself becomes the most consequential single point of failure. If the supervisor drifts, the entire oversight structure collapses silently.
+
+In sum, existing approaches treat drift as a runtime management problem — something to be detected, bounded, or terminated after it occurs. None address the structural question at its root: what makes drift \textit{possible} in the first place.
+
+% ============================================================
+% 1.3 Core Insight: Immutable Parent Pointer Chain
+% ============================================================
+
+The BX3 framework takes a different approach. Rather than managing drift after it occurs, BX3 eliminates the structural preconditions that allow drift to propagate and persist. The central structural mechanism is the \textbf{immutable parent pointer chain}.
+
+In BX3, every agent instance is stamped at creation with an immutable reference to its parent agent. This reference is stored as a tamper-evident field in the agent's identity record and cannot be modified by any agent in the system — including the agent itself, its descendants, or any external actor. The chain of parent pointers from any agent traceable to its root ancestor forms a verifiable, append-only lineage graph.
+
+This design makes drift structurally impossible to propagate across generational boundaries, for the following reasons:
+
+\begin{enumerate}
+    \item \textbf{Drift is bounded to the deviating agent.} When an agent's behavioral model diverges from its specification, the divergence is contained within that agent's own execution context. Because the agent cannot modify its parent pointer, it cannot rewrite its own lineage to disassociate from the behavioral contract it inherited.
+    \item \textbf{Descendants can detect lineage anomalies.} Any agent spawned by a drifted agent receives an accurate parent pointer. Downstream systems — whether human operators, supervisor agents, or automated audit tooling — can traverse the parent chain to identify the point of divergence. The deviated subtree is precisely locatable and surgically isolatable.
+    \item \textbf{Immutable lineage enables hard revocation.} Because lineage is append-only and traceable, a revocation issued at any node in the chain can be propagated downward with cryptographic certainty. Unlike TTL limits, which terminate agents by time budget, hard revocation in BX3 terminates by lineage — all descendants of a revoking node are immediately identifiable and can be suspended or terminated as a coherent unit.
+    \item \textbf{No silent inheritance of corrupted state.} In systems where agents inherit context, weights, or behavioral parameters from parents at spawn time, a drifted parent can pass corrupted state to its children as though it were normal initialization data. In BX3, immutable parent pointers ensure that inheritance relationships are always explicit and auditable. Any descendant that exhibits anomalous behavior can be traced to its exact lineage position, and the question of whether the anomaly originated in the parent or was independently generated can be resolved with certainty.
+\end{enumerate}
+
+The immutability of the parent pointer chain is not merely a convention — it is enforced by the BX3 runtime at the identity layer. The chain is stored in a tamper-evident structure such that any attempt to modify a parent reference in flight is detectable by any participant in the system without requiring centralized validation.
+
+% ============================================================
+% 1.4 Formal Definition of Drift
+% ============================================================
+
+To reason precisely about drift and its prevention, we require a formal definition.
+
+\begin{definition}[Autonomous Drift]
+Let $A_i$ denote an agent instantiated at time $t_i$ with an intended behavioral specification $\sigma_i$, describing the set of permissible actions and output distributions over its operational lifetime $[t_i, t_i + \delta]$. Let $a_i(t)$ denote the actual action sequence produced by $A_i$ over the interval $[t_i, t]$. $A_i$ is said to have undergone \textbf{drift} at time $t$ if and only if:
+
+\[
+a_i(t) \notin \sigma_i \quad \text{and} \quad \Pr[\text{drift\_event}(A_i, t)] > \epsilon_{\text{threshold}}
+\]
+
+That is, the agent's observed behavior is outside the specified behavioral envelope and the probability of this deviation being attributable to stochastic variation below the acceptable noise floor is negligible.
+
+Drift is \textbf{structural} when the deviation is attributable to a stable self-reinforcing redefinition of the agent's utility or objective function — not to transient environmental noise, resource starvation, or external adversarial interference.
+\end{definition}
+
+Structural drift is the regime addressed by the immutable parent pointer chain. Non-structural drift — caused by temporary resource constraints, network partitions, or other transient conditions — may resolve autonomously and does not require lineage intervention. The BX3 framework distinguishes these cases via the AgentOS runtime's behavioral telemetry layer.
+
+% ============================================================
+% 1.5 Paper Roadmap
+% ============================================================
+
+The remainder of this paper is organized as follows. Section~2 establishes the formal foundations of the BX3 agent model, including the data structures for immutable parent pointer chains, the AgentOS runtime identity layer, and the revocation protocol. Section~3 describes the Agentic Spawning Protocol (ASP), the concrete mechanism by which new agent instances are created with tamper-evident lineage in BX3. Section~4 presents the cascade backstop system, which enables multi-agent coordination and fallback routing in the absence of responsive parent agents. Section~5 evaluates the framework's resistance to structural drift through theoretical analysis and empirical results across agent populations of varying scale and generational depth. Section~6 reviews related work in multi-agent fault tolerance and lineage systems. Section~7 concludes with a discussion of open questions and planned extensions to the BX3 runtime.

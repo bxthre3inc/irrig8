@@ -1,0 +1,346 @@
+% ---------------------------------------------------------------
+% Section 6: Integration with the BX3 Framework
+% ---------------------------------------------------------------
+\section{Integration with the BX3 Framework}
+\label{sec:bx3-integration}
+
+The Recursive Spawning protocol gains its formal structure and
+correctness guarantees through deep integration with the BX3 Framework.
+BX3 supplies the three-tier epistemic architecture --- Purpose Layer,
+Fact Layer, and Projection Layer --- that anchors spawning decisions,
+enforces depth bounds, and maintains a forensic ledger of every
+spawning event. This section details how each layer participates in
+the protocol and how the Bounds Engine operates within this framework.
+
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:purpose-layer-anchor}
+
+The \textbf{Purpose Layer} is the single source of truth from which all
+spawned agents derive their legitimate scope of action. When a spawning
+event occurs, the parent agent records the originating purpose
+identifier (PID) alongside the spawn request. The child agent inherits this
+PID as a non-transferable attribute encoded in its header and verifiable
+against the Purpose Layer at any point during execution.
+
+This inheritance model has three consequences for spawning behavior:
+
+\begin{enumerate}
+  \item \textbf{Scope monotonicity:} The child's admissible action set is
+        a subset of the parent's admissible set, as constrained by the
+        PID hierarchy. No spawned agent may expand scope beyond the
+        purpose that justified its creation.
+  \item \textbf{Accountability traceability:} Every action taken by a
+        spawned agent traces back through its chain of parent PIDs to a
+        single root purpose at the time of top-level initialization. The
+        Purpose Layer provides an O(1) lookup for the chain root given any
+        descendant PID.
+  \item \textbf{Cascade termination anchor:} The Purpose Layer enforces
+        a special \texttt{TERMINATE} status for PIDs whose associated
+        purpose has been fulfilled, invalidated, or revoked. When a PID
+        enters \texttt{TERMINATE} state, no further spawning is permitted
+        from any agent holding that PID or any of its descendants. This
+        prevents orphaned cascades from continuing beyond their
+        productive horizon.
+\end{enumerate}
+
+In the Recursive Spawning protocol, the Purpose Layer is queried at
+spawn initiation (\S\ref{sec:spawn-initiation}) and at every subsequent
+depth-bounded iteration via the \texttt{check\_purpose\_validity(p)}
+primitive. This primitive returns \texttt{true} only if the PID is in
+an \texttt{ACTIVE} state and its depth constraint has not been violated.
+
+\subsection{Bounds Engine and Depth Enforcement}
+\label{sec:bounds-engine}
+
+The \textbf{Bounds Engine} is the run-time component responsible for
+enforcing the spawning depth constraint $D_{\max}$ defined in the
+protocol parameters. It operates as a layer-local service within the
+BX3 Framework and maintains the following state:
+
+\begin{itemize}
+  \item $\texttt{current\_depth}(p)$: the number of generations from
+        the root PID to agent $p$.
+  \item $\texttt{budget}(p)$: the remaining spawn budget available to
+        agent $p$, initialized to $B$ at each root spawn and decremented
+        at each successful child creation.
+  \item $\texttt{path\_signature}(p)$: an immutable cryptographic hash
+        chain linking $p$ to its chain root, used to detect depth frauds.
+\end{itemize}
+
+The Bounds Engine exposes two primitives to the spawning protocol:
+
+\begin{enumerate}
+  \item $\texttt{check\_depth\_validity}(p)$: returns \texttt{true} if
+        $\texttt{current\_depth}(p) < D_{\max}$ and $\texttt{budget}(p) > 0$.
+  \item $\texttt{record\_spawn}(p_{\text{parent}}, p_{\text{child}})$:
+        atomically increments the depth of the child, decrements the
+        parent's budget, and extends the path signature chain with the
+        child's PID.
+\end{enumerate}
+
+Both primitives are implemented as atomic transactions against the BX3
+Framework's shared state store. The depth validity check is performed
+before any spawning fork is committed, ensuring that a spawn request
+with $\texttt{current\_depth}(p_{\text{parent}}) \geq D_{\max}$ is
+rejected at the Purpose Layer without requiring a full forensic ledger
+write. This early-exit optimization prevents wasted computational
+resources on malformed spawns.
+
+The Bounds Engine also enforces the branching factor constraint $B$,
+which bounds the number of direct children any agent may spawn. When
+$\texttt{budget}(p) = 0$, the agent may not spawn additional children
+regardless of remaining depth capacity. This dual-constraint model
+($D_{\max}$ and $B$) ensures that the total number of agents in any
+chain is bounded by $O(B^{D_{\max}})$, enabling finite-space reasoning
+about termination and safety properties.
+
+\subsection{Fact Layer as Forensic Ledger}
+\label{sec:fact-layer}
+
+The \textbf{Fact Layer} serves as the immutable, append-only forensic
+ledger of all spawning events in the BX3 Framework. Every spawn
+initiation, depth rejection, purpose revocation, or cascade termination
+event is recorded in the Fact Layer as a \texttt{spawn\_record} with the
+following schema:
+
+\begin{verbatim}
+spawn_record {
+    event_id     : UUIDv7
+    timestamp    : ISO-8601(μs)
+    parent_pid   : PID
+    child_pid    : PID | null
+    event_type   : INITIATED | COMMITTED | REJECTED_DEPTH
+                   | REJECTED_PURPOSE | TERMINATED
+    depth        : nat
+    purpose_hash : H(purpose_context)
+    parent_ref   : H(parent_record)  // immutable parent pointer
+}
+\end{verbatim}
+
+The \texttt{parent\_ref} field encodes the hash pointer to the parent's
+spawn record, forming an immutable chain that is cryptographically
+self-certifying. This design ensures that no agent can fabricate a
+spawn history: any modification to a historical record breaks the hash
+chain, detectable by any auditor with read access to the Fact Layer.
+
+The forensic ledger serves three critical roles in the Recursive
+Spawning protocol:
+
+\begin{enumerate}
+  \item \textbf{Drift detection:} By comparing the on-chain parent
+        pointer of an agent against the expected parent derived from its
+        current spawning context, the protocol detects and blocks
+        spawned agents that have been redirected or ``drifted'' from
+        their original chain of custody.
+  \item \textbf{Integrity verification:} The Fact Layer provides a
+        verifiable sequence of all spawning events, enabling post-hoc
+        auditing of any agent's origin, purpose, and chain of ancestors.
+  \item \textbf{Non-repudiation:} Because spawn records are
+        append-only and hash-chained, no agent can deny its participation
+        in a spawning event after the record has been committed.
+\end{enumerate}
+
+The Fact Layer is queried during the initialization phase of any agent
+that requires verification of its chain integrity, particularly when
+an agent re-enters the system after a suspension or a distributed
+checkpoint/restoration event. The integrity check reconstructs the full
+ancestry chain from the Fact Layer and verifies that each successive
+parent pointer is consistent with the recorded history.
+
+\subsection{Combined Protocol Flow}
+\label{sec:combined-flow}
+
+When the three layers operate in concert, the Recursive Spawning
+protocol follows the following sequence for each spawn event:
+
+\begin{enumerate}
+  \item The parent agent calls \texttt{spawn(child\_purpose)} against
+        the BX3 Framework interface.
+  \item The Purpose Layer resolves the parent's PID and verifies it is in
+        \texttt{ACTIVE} state.
+  \item The Bounds Engine evaluates $\texttt{check\_depth\_validity}(p)$.
+        If depth or budget constraints are violated, a
+        \texttt{REJECTED\_DEPTH} record is written to the Fact Layer and
+        the spawn is aborted.
+  \item If depth validity holds, the child PID is allocated and the
+        \texttt{record\_spawn} primitive extends the path signature chain.
+  \item A \texttt{COMMITTED} spawn record is written to the Fact Layer,
+        linking the child's PID to the parent's via an immutable hash
+        pointer.
+  \item The child agent initializes with the inherited PID, depth
+        incremented by one, and budget set to $B$.
+\end{enumerate}
+
+This sequence ensures that every spawning event is simultaneously
+authorized by the Purpose Layer, constrained by the Bounds Engine, and
+recorded immutably in the Fact Layer. The three-layer architecture thus
+provides a complete formal foundation for the Recursive Spawning
+protocol's correctness guarantees.
+
+% ---------------------------------------------------------------
+% Section 7: Correctness Properties
+% ---------------------------------------------------------------
+\section{Correctness Properties}
+\label{sec:correctness}
+
+This section establishes the formal correctness guarantees provided by
+the Recursive Spawning protocol under the BX3 Framework. We prove three
+central properties: (1) the prevention of agent drift, (2) the integrity
+of the spawn chain, and (3) the guaranteed termination of all spawn
+chains within bounded depth. Together, these properties ensure that
+the protocol behaves as a safe, predictable, and auditable mechanism
+for recursive agent creation.
+
+\subsection{Drift Prevention}
+\label{sec:drift-prevention}
+
+\begin{definition}[Drift]
+An agent $a$ is said to have \textbf{drifted} if its current parent
+pointer $p_a$ does not equal the authentic parent derived from the
+immutable forensic ledger of spawn records $\mathcal{F}$.
+\end{definition}
+
+Drift can occur when a malicious or faulty intermediate agent redirects
+a spawned child to a different parent than the one recorded at spawn
+commitment. The Recursive Spawning protocol prevents drift through the
+interaction of three mechanisms:
+
+\begin{enumerate}
+  \item \textbf{Immutable parent pointer:} At spawn commitment, the
+        child's record in the Fact Layer is written with the hash of the
+        parent's record as \texttt{parent\_ref}. This pointer is
+        cryptographically immutable: modifying the parent's record breaks
+        the hash chain, making the drift immediately detectable.
+  \item \textbf{Forensic ledger verification:} During any agent
+        initialization or re-entry, the protocol queries the Fact Layer
+        for the agent's \texttt{parent\_ref} and compares it against the
+        claimed parent's record hash. A mismatch triggers a
+        \texttt{DRIFT\_DETECTED} exception and halts the agent's
+        execution.
+  \item \textbf{Purpose Layer chain termination:} The Purpose Layer
+        enforces that every agent's PID is linked to a chain root in an
+        \texttt{ACTIVE} state. An agent whose parent chain has been
+        broken cannot re-validate its PID against the Purpose Layer,
+        and therefore cannot continue execution.
+\end{enumerate}
+
+\begin{Theorem}[Drift Prevention]
+No agent spawned under the Recursive Spawning protocol can exhibit
+drift.
+\end{Theorem}
+
+\begin{Proof}
+Consider an agent $a$ spawned with parent $p$. At spawn commitment,
+the Fact Layer records \texttt{parent\_ref}($a$) = $H(\text{record}(p))$.
+By construction of the hash chain, $H(\text{record}(p))$ is a function of
+the complete contents of $p$'s spawn record, including all prior
+parent pointers in its own chain. Any modification to $p$'s record
+changes $H(\text{record}(p))$ and invalidates the chain.
+
+Assume, for contradiction, that $a$ drifts. Then there exists an
+intermediate agent $m$ that, after the spawn of $a$, changes the
+recorded parent of $a$ to a different agent $p' \neq p$. For this to
+occur, $m$ must modify the Fact Layer record of $a$, which is append-only;
+modification would break the hash chain of any agent that subsequently
+reads $a$'s record. The forensic ledger's immutability property is
+guaranteed by the BX3 Framework's append-only store, which rejects
+in-place updates to committed records. Therefore, no drift can be
+committed without detection.
+
+Furthermore, the Purpose Layer authorization performed at every spawn
+event validates that the parent PID is in an \texttt{ACTIVE} state before
+committing the spawn record. This prevents drift via ``ghost parents''
+(PIDs that do not correspond to live agents). ∎
+\end{Proof}
+
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+
+\begin{definition}[Spawn Chain Integrity]
+A spawn chain $C = (a_0, a_1, \dots, a_n)$ satisfies \textbf{chain
+integrity} if for every $i \in \{1, \dots, n\}$, the parent pointer of
+$a_i$ in the Fact Layer resolves to $a_{i-1}$.
+\end{definition}
+
+Chain integrity ensures that ancestry records in the Fact Layer correctly
+reflect the true genealogical structure of the spawn graph, without
+gaps, loops, or broken links.
+
+\begin{Theorem}[Chain Integrity Invariant]
+At all times during protocol execution, the spawn chain of any agent
+satisfies chain integrity.
+\end{Theorem}
+
+\begin{Proof}
+The invariant holds vacuously at initialization: the root agent $a_0$
+has no parent, and its chain consists of a single element.
+
+Assume the invariant holds for a chain of length $k$. Consider the
+spawning of $a_{k+1}$ from $a_k$. The spawn protocol requires:
+
+\begin{enumerate}
+  \item Purpose Layer validation that $\text{PID}(a_k)$ is \texttt{ACTIVE}.
+  \item Bounds Engine confirmation that $\text{depth}(a_k) < D_{\max}$.
+  \item Atomic execution of $\texttt{record\_spawn}(a_k, a_{k+1})$,
+        which writes \texttt{parent\_ref}($a_{k+1}$) = $H(\text{record}(a_k))$.
+\end{enumerate}
+
+Step 3 atomically establishes the parent link in the Fact Layer.
+Because the write is atomic and the Fact Layer is append-only, the
+parent pointer of $a_{k+1}$ is guaranteed to resolve to $a_k$ in the
+ledger. Since the prior chain of length $k$ satisfies the invariant by
+the inductive hypothesis, the extended chain of length $k+1$ also
+satisfies it. ∎
+
+The chain integrity invariant is preserved under agent suspension and
+restoration: upon re-entry, an agent's ancestry is reconstructed from
+the Fact Layer and verified against the chain integrity invariant before
+execution resumes. If the invariant is violated (e.g., due to a node
+failure during an atomic write), the agent enters a \texttt{INVALID\_CHAIN}
+state and awaits manual resolution.
+
+\subsection{Termination}
+\label{sec:termination}
+
+\begin{Theorem}[Bounded Termination]
+Every spawn chain initiated under the Recursive Spawning protocol
+terminates within at most $D_{\max}$ generations.
+\end{Theorem}
+
+\begin{Proof}
+Each agent $a$ at depth $d$ satisfies $d < D_{\max}$ to be permitted
+to spawn. By the $\texttt{check\_depth\_validity}$ primitive, an agent
+at depth $d = D_{\max} - 1$ may spawn one final generation of children,
+each at depth $D_{\max}$. Agents at depth $D_{\max}$ are subject to the
+following constraints:
+
+\begin{enumerate}
+  \item $\texttt{check\_depth\_validity}(a)$ returns \texttt{false},
+        preventing further spawning by the Bounds Engine.
+  \item The Purpose Layer enforces that the PID of any agent at depth
+        $D_{\max}$ remains in \texttt{ACTIVE} state (the Purpose Layer
+        does not terminate agents based on depth alone), but no further
+        spawn operations are actionable from depth $D_{\max}$.
+  \item The branching factor bound $B$ ensures that even at depth
+        $D_{\max} - 1$, at most $B$ children are generated, capping the
+        total number of agents in any chain at $B^{D_{\max}}$.
+\end{enumerate}
+
+Therefore, after at most $D_{\max}$ generations, no agent in the chain
+can invoke the spawn primitive successfully. The chain reaches a
+natural termination state where all agents have exhausted both their
+depth budget and their branching budget. ∎
+\end{Proof}
+
+The termination theorem guarantees that the Recursive Spawning protocol
+does not admit infinite descent. This property is critical for any
+practical deployment: without a depth bound, the protocol would be
+capable of generating unbounded numbers of agents in finite time, which
+would violate resource-bounded execution guarantees required in any
+real compute environment.
+
+Together, drift prevention, chain integrity, and bounded termination
+constitute the core correctness guarantees of the Recursive Spawning
+protocol under the BX3 Framework. These properties ensure that spawning
+behaves as a safe, accountable, and predictable primitive suitable for
+use in production agentic systems.

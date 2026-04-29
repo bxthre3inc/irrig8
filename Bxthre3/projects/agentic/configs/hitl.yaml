@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: HITL
+metadata:
+  name: agentic-hitl-system
+spec:
+  intervention_points:
+    - name: critical_decision
+      description: "Human approval required for high-impact decisions"
+      trigger:
+        decision_impact: high
+        uncertainty: ">0.7"
+      response_time: 1h
+      notification:
+        - email
+        - dashboard_alert
+    - name: quality_gate
+      description: "Human review of quality-critical work products"
+      trigger:
+        work_product: release_candidate
+        risk_level: ">0.5"
+      response_time: 4h
+      notification:
+        - dashboard
+        - slack
+    - name: exception_handling
+      description: "Human intervention for system exceptions"
+      trigger:
+        error_type: unhandled
+        error_frequency: ">3"
+      response_time: 30m
+      notification:
+        - pager
+        - sms
+    - name: legal_review
+      description: "Legal review for contracts and IP"
+      trigger:
+        document_type: contract
+        value: ">10000"
+      response_time: 24h
+      notification:
+        - email
+    - name: financial_approval
+      description: "Dual approval for financial transactions"
+      trigger:
+        transaction_type: transfer
+        amount: ">1000"
+      response_time: 4h
+      notification:
+        - dashboard
+  human_roles:
+    - name: product_owner
+      responsibilities: [scope_approval, priority_setting]
+      access_level: full
+    - name: tech_lead
+      responsibilities: [technical_oversight, architecture_approval]
+      access_level: technical
+    - name: qa_manager
+      responsibilities: [quality_approval, test_strategy]
+      access_level: qa
+    - name: legal_team
+      responsibilities: [contract_review, ip_protection]
+      access_level: legal
+    - name: finance_team
+      responsibilities: [budget_approval, transaction_approval]
+      access_level: financial
+  workflow:
+    - step: agent_request
+      action: notify_human
+      timeout: 30m
+    - step: human_response
+      action: process_decision
+      timeout: 2h
+    - step: implementation
+      action: execute_decision
+      timeout: 1h
+    - step: verification
+      action: confirm_execution
+      timeout: 30m

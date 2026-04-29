@@ -1,0 +1,66 @@
+\section{Integration with the BX3 Framework}
+\label{sec:rs-integration}
+
+The Recursive Spawning Protocol is not a module composed with the BX3 Framework as a separate component. It is a structural instantiation of the BX3 three-layer accountability architecture: every RSP mechanism maps onto exactly one BX3 layer, and that mapping is minimal and structurally necessary. The immutable parent pointer, the depth bound, the escalation path, and the forensic ledger are not independent design choices — each is the direct operationalization of a capability that belongs exclusively to one layer. This section specifies the three mappings, demonstrates why each is exclusive to its layer, and proves the minimal-sufficiency claim.
+
+% -------------------------------------------------------
+\subsection{Purpose Layer: Accountability Anchor}
+\label{sec:rs-purpose-anchor}
+
+The Purpose Layer serves two structurally singular roles in RSP: it is the exclusive origin of authorized spawn policy, and it is the exclusive terminus of all escalation paths. Neither role can be delegated to, replicated by, or approximated by any machine actor.
+
+\medskip
+\noindent\textbf{Authorized spawn policy.} At root provisioning, the Purpose Layer defines and records the spawn authorization policy $P_{\text{spawn}}$ in the Fact Layer authorization ledger. $P_{\text{spawn}}$ specifies the conditions under which any node in the chain may spawn a child: the child scope must be a strict subset of the parent scope ($R(n_{i+1}) \subset R(n_i)$), and the spawn must be justified by operational necessity that cannot be met within the parent's scope. The policy originates exclusively at the Purpose Layer; the Bounds Engine evaluates proposed spawns against $P_{\text{spawn}}$ but does not define it. No machine actor may issue a spawn warrant without a matching Purpose Layer authorization record.
+
+\medskip
+\noindent\textbf{Exclusive escalation terminus.} When the chain reaches $D_{\text{ESCALATE}}$, the protocol compulsory-escalates to $h(n)$ — the human anchor established at root provisioning. The human anchor is non-collapsing: for all nodes $n_i$ in chain $C$, $h(n_i) = h(n_0)$. The anchor does not change as the chain deepens. The human issues one of three directives — \texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT} — and no machine actor may issue any of these directives. The chain terminates in human judgment, never in autonomous resolution. This is the architectural expression of the upstream BX3 guarantee: systems built on the BX3 Framework fail upward into human consciousness, never downward into autonomous chaos.
+
+\medskip
+The structural necessity of the Purpose Layer's exclusive terminus role is direct: if any machine actor could absorb an exception or issue a terminal directive, the accountability chain would terminate at that actor rather than at a human. The system would compound failure instead of surfacing it. The Purpose Layer's exclusivity is not a design preference — it is the enforcement mechanism that makes the upstream guarantee structurally operative.
+
+% -------------------------------------------------------
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:rs-bounds-depth}
+
+The Bounds Engine provides constrained execution: it evaluates proposed actions against the operating range defined by the Purpose Layer and enforces the depth constraints that prevent unbounded chain growth. The Bounds Engine cannot bypass these constraints under any operational circumstances.
+
+\medskip
+\noindent\textbf{Depth evaluation at spawn.} At each spawn event, the Bounds Engine evaluates current chain depth $|C|$ against the Purpose-Layer-defined maximum $D_{\text{max}}$, both recorded in the Fact Layer authorization ledger. If $|C| \geq D_{\text{max}}$, the Bounds Engine does not execute the spawn. It transitions to \texttt{ESCALATING} state and initiates the Bailout Protocol, propagating the exception upward to $h(n)$. This enforcement is deterministic: the Bounds Engine has no discretion to exceed $D_{\text{max}}$ regardless of urgency, operational exigency, or the importance of the unmet condition. The depth constraint is not a heuristic — it is a hard architectural boundary.
+
+\medskip
+\noindent\textbf{Fact Layer pre-commit enforcement.} The Bounds Engine's depth evaluation is structurally enforced by the Fact Layer pre-commit hook. Before any spawn operation is recorded, the Fact Layer verifies that the proposed spawn satisfies both constraints from Equation~\ref{eq:scope-refinement}: $R(n_{i+1}) \subseteq R(n_i)$ and $\text{depth}(n_{i+1}) \leq D_{\text{max}}$. The Fact Layer rejects any spawn operation that violates either constraint. The Bounds Engine cannot execute a rejected spawn; it may only transition to \texttt{ESCALATING} state. The pre-commit hook makes the depth bound and the scope refinement constraint structural invariants — not policy conventions that can be overridden in exigent circumstances.
+
+\medskip
+The structural necessity of the Bounds Engine's depth enforcement is established by the depth-limit insufficiency theorem (Section~\ref{sec:drift-depth-limits}): depth limits alone cannot prevent scope creep drift. The Bounds Engine enforces the depth constraint; the Fact Layer enforces the scope refinement constraint; together they enforce both conjuncts of the drift prevention condition. Removing the Bounds Engine would eliminate the runtime evaluation layer; removing the Fact Layer pre-commit hook would eliminate the structural enforcement mechanism. Neither layer alone is sufficient.
+
+% -------------------------------------------------------
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:rs-fact-ledger}
+
+The Fact Layer provides deterministic enforcement and forensic auditability. It maintains the append-only ledger that makes RSP auditable and enforces the write protocol constraints that make RSP structurally tamper-evident.
+
+\medskip
+\noindent\textbf{Append-only forensic ledger.} The Fact Layer records every spawn event, every state transition, every Purpose Layer directive received, and every unresolved exception state. Each ledger entry is timestamped, attributed to the node that generated it, and hash-chained to the preceding entry. Hash-chaining ensures that no entry can be inserted, deleted, reordered, or altered after the fact: any tampering with the chain breaks hash continuity and is detectable by any observer with ledger read access. The ledger is the single source of truth for all authorized chain state — it is the runtime artifact that distinguishes RSP chains from conventional delegation chains, which exist only as forensic reconstructions.
+
+\medskip
+\noindent\textbf{Immutable parent pointer.} Once $\alpha(n)$ is established at node provisioning, no actor — including the Purpose Layer after provisioning — may modify it. The Fact Layer write protocol rejects any attempt to overwrite $\alpha(n)$. Chain topology changes occur only through authorized spawn operations recorded in the ledger; there is no mechanism for retroactive pointer manipulation. The parent pointer is not merely protected by access control — it is structurally immutable by protocol definition.
+
+\medskip
+\noindent\textbf{Pre-commit hook.} The pre-commit hook is the enforcement mechanism that makes all other RSP constraints structural rather than conventional. At every spawn event, the hook verifies two conditions before the spawn is recorded: (1) the scope subset relationship $R(n_{i+1}) \subseteq R(n_i)$ holds, and (2) the resulting depth $\text{depth}(n_{i+1}) \leq D_{\text{max}}$. Rejected spawns are logged; the Bounds Engine does not execute them; the protocol may transition to \texttt{ESCALATING} if the unmet condition persists. The pre-commit hook operates identically on all machine actors; there is no privileged actor capable of bypassing it.
+
+\medskip
+The structural necessity of the Fact Layer is established by the immutable-parent-pointer requirement: without the Fact Layer write protocol, immutability is a promise rather than a constraint. A mutable parent pointer enables all four drift failure modes (Section~\ref{sec:drift-failure-modes}): silent orphaning, scope creep drift, re-parenting drift, and ghost authority. Without the Fact Layer pre-commit hook, the scope refinement constraint and depth bound are policy documentation — enforceable until an actor with sufficient privilege decides they are inconvenient. The Fact Layer is the structural enforcement mechanism that makes the policy effective.
+
+% -------------------------------------------------------
+\subsection{Structural Minimality}
+\label{sec:rs-minimality}
+
+The mapping between RSP components and BX3 layers is not a recommended design pattern — it is a minimal sufficient structure. Each layer provides a capability that no other layer can provide, and the absence of any layer causes the corresponding guarantee to fail.
+
+Removing the Purpose Layer eliminates the exclusive human terminus and the exclusive source of spawn authorization policy: the chain could terminate in machine actors rather than in human judgment, and spawn could be authorized by machine actors rather than by a Purpose Layer record. The chain might still grow and halt, but without connection to a named human decision-maker.
+
+Removing the Bounds Engine eliminates the constrained execution evaluation: a machine actor could rationalize exceeding $D_{\text{max}}$ as operationally necessary, relying on the Fact Layer alone to block the spawn — but without the Bounds Engine to evaluate operational necessity and transition to \texttt{ESCALATING} state, the protocol would lack a decision-making layer for the cases between the pre-commit hook's binary approve/reject and full mandatory escalation.
+
+Removing the Fact Layer eliminates both the immutable parent pointer and the forensic ledger. The parent pointer becomes mutable, enabling retroactive chain manipulation. The depth bound and scope refinement constraint become policy conventions rather than structural invariants. The drift prevention and chain integrity properties are advisory rather than guaranteed.
+
+The three-layer architecture is the minimal structure that makes RSP's correctness properties unconditionally guaranteed rather than conventionally expected.

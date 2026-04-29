@@ -1,0 +1,433 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is the terminal recovery mechanism of the Agentic runtime.
+It is invoked when all lower-level error-recovery pathways have been exhausted and
+the system faces a condition from which autonomous recovery is either impossible or
+unsafe.  The protocol defines a state machine that coordinates controlled shutdown,
+escalation, and eventual resolution of in-flight work, ensuring that no agent task
+terminates silently, that all side-effects are auditable, and that a human operator
+is brought into the loop before any irreversible action is taken.
+
+\bigskip
+
+\noindent\textbf{Design goals:}
+
+\begin{itemize}
+  \itemsep0pt
+  \item \textbf{Determinism.}  Every transition is triggered by an explicit,
+    verifiable condition; no silent or probabilistic state changes occur.
+  \item \textbf{Inviolability of human oversight.}  A human is always placed in
+    the loop before any state carrying irreversible consequences is entered.
+  \item \textbf{Bounded autonomy.}  The system may act autonomously only within
+    a pre-defined execution envelope; the Bailout Protocol defines the boundary.
+  \item \textbf{Composability.}  The protocol is orthogonal to individual agent
+    logic and applies uniformly across all agent types, skill taxonomies, and
+    runtime environments.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{Governing principle.}  Any autonomous agent action whose
+reversal is computationally intractable or economically infeasible must be
+classified as a terminal state and routed through the Bailout Protocol before
+execution proceeds.
+
+% ---------------------------------------------------------------- %
+% 3.1  State Machine Definition
+% ---------------------------------------------------------------- %
+\subsection{State Machine Definition}
+
+The protocol is formally specified as a deterministic finite automaton
+$\mathcal{B} = (Q, \Sigma, \delta, q_0, F)$, where:
+
+\begin{itemize}
+  \item $Q = \{\,\text{IDLE},\ \text{BOUNDED},\ \text{BAIL\_PENDING},\ \text{ESCALATING},\ \text{HUMAN\_ACKNOWLEDGED},\ \text{RESOLVED}\,\}$
+  \item $\Sigma$ is the finite alphabet of transition events (defined in \S3.2)
+  \item $\delta: Q \times \Sigma \rightarrow Q$ is the total transition function
+  \item $q_0 = \text{IDLE}$ is the initial state
+  \item $F = \{\text{RESOLVED}\}$ is the set of terminal accept states
+\end{itemize}
+
+\bigskip
+
+\begin{center}
+\begin{tabular}{|l|l|p{6.5cm}|}
+\hline
+\textbf{State} &
+\textbf{Type} &
+\textbf{Semantic meaning} \\ \hline
+IDLE & Initial / Idle & The agent is operational; no error conditions are active. \\ \hline
+BOUNDED & Working & A non-fatal error condition has been detected; the agent is
+constrained to a reduced action envelope. \\ \hline
+BAIL\_PENDING & Waiting & The error condition cannot be autonomously resolved;
+the system is preparing to halt and awaits an external trigger. \\ \hline
+ESCALATING & Escalating & The condition has triggered the escalation algorithm;
+a human operator has been notified and is awaited. \\ \hline
+HUMAN\_ACKNOWLEDGED & Paused & A human operator has responded; the agent awaits
+resolution instructions before proceeding. \\ \hline
+RESOLVED & Terminal & The situation has been resolved; the agent is returning to
+IDLE or initiating a clean shutdown. \\ \hline
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{State invariant.}  The machine is always in exactly one state in
+$Q$.  All transitions preserve this invariant.  Transitions labeled with the
+symbol $\bot$ are infeasible and constitute a violation of the protocol if
+attempted.
+
+% ---------------------------------------------------------------- %
+% 3.2  Transition Events and Conditions
+% ---------------------------------------------------------------- %
+\subsection{Transition Events and Conditions}
+
+The event alphabet $\Sigma$ is partitioned into four classes:
+monitoring events ($\mathcal{M}$), error events ($\mathcal{E}$), human events
+($\mathcal{H}$), and timeout events ($\mathcal{T}$).
+
+\[
+\Sigma = \mathcal{M} \cup \mathcal{E} \cup \mathcal{H} \cup \mathcal{T}
+\]
+
+\bigskip
+
+\begin{center}
+\begin{tabular}{|p{3.2cm}|p{2.8cm}|p{6.5cm}|}
+\hline
+\textbf{Event ($e$)} & \textbf{Class} & \textbf{Condition (formal)} \\ \hline
+$e_\text{nominal}$ & $\mathcal{M}$ & Agent heartbeat confirmed within $T_\text{heartbeat}$ \\ \hline
+$e_\text{boundary\_violation}$ & $\mathcal{E}$ & $\exists\, a \in A: \text{constraint}(a, t) > \text{budget}(a)$ \\ \hline
+$e_\text{recovery\_exhausted}$ & $\mathcal{E}$ & $\text{retry\_count}(t) \geq N_\text{max\_retries}$ \\ \hline
+$e_\text{unsafe\_action}$ & $\mathcal{E}$ & $\Delta_\text{risk}(a_t) > \theta_\text{critical}$ \\ \hline
+$e_\text{bypass\_triggered}$ & $\mathcal{E}$ & $b_\text{flag} = \text{TRUE}$ (see \S3.6) \\ \hline
+$e_\text{escalation\_sent}$ & $\mathcal{M}$ & Notification dispatched to human operator \\ \hline
+$e_\text{human\_ack}$ & $\mathcal{H}$ & Operator acknowledgement received \\ \hline
+$e_\text{human\_resolve}$ & $\mathcal{H}$ & Operator issues resolution instruction $i$ \\ \hline
+$e_\text{timeout\_bounded}$ & $\mathcal{T}$ & $t - t_\text{bound\_enter} \geq T_\text{bounded}$ \\ \hline
+$e_\text{timeout\_escalation}$ & $\mathcal{T}$ & $t - t_\text{escalate\_enter} \geq T_\text{escalate}$ \\ \hline
+$e_\text{timeout\_human}$ & $\mathcal{T}$ & $t - t_\text{human\_ack\_enter} \geq T_\text{human}$ \\ \hline
+$e_\text{resolved}$ & $\mathcal{M}$ & $\phi_\text{resolved}(s_t) = \text{TRUE}$ \\ \hline
+\end{tabular}
+\end{center}
+
+\bigskip
+
+The complete transition function $\delta$ is defined as follows.
+
+\begin{center}
+\begin{tabular}{|p{3.5cm}|p{3.5cm}|p{2.5cm}|p{4cm}|}
+\hline
+\textbf{From} & \textbf{Event} & \textbf{To} & \textbf{Guard / Action} \\ \hline
+IDLE & $e_\text{boundary\_violation}$ & BOUNDED & $\text{log}(e, \text{timestamp})$ \\ \hline
+IDLE & $e_\text{bypass\_triggered}$ & ESCALATING & $\text{activate\_bypass}(t)$ \\ \hline
+BOUNDED & $e_\text{nominal}$ & IDLE & $\text{clear\_constraints}()$ \\ \hline
+BOUNDED & $e_\text{timeout\_bounded}$ & BAIL\_PENDING & $\text{enter\_bail\_pending}()$ \\ \hline
+BOUNDED & $e_\text{recovery\_exhausted}$ & BAIL\_PENDING & $\text{enter\_bail\_pending}()$ \\ \hline
+BOUNDED & $e_\text{unsafe\_action}$ & BAIL\_PENDING & $\text{enter\_bail\_pending}()$ \\ \hline
+BAIL\_PENDING & $e_\text{escalation\_sent}$ & ESCALATING & $\text{dispatch\_escalation}()$ \\ \hline
+ESCALATING & $e_\text{timeout\_escalation}$ & ESCALATING & $\text{re-dispatch\_escalation}()$ \\ \hline
+ESCALATING & $e_\text{human\_ack}$ & HUMAN\_ACKNOWLEDGED & $\text{log\_ack}(t)$ \\ \hline
+HUMAN\_ACKNOWLEDGED & $e_\text{human\_resolve}$ & RESOLVED & $\text{apply\_resolution}(i)$ \\ \hline
+HUMAN\_ACKNOWLEDGED & $e_\text{timeout\_human}$ & RESOLVED & $\text{apply\_timeout\_default}()$ \\ \hline
+RESOLVED & $e_\text{resolved}$ & IDLE & $\text{reset\_agent}()$ \\ \hline
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Transition notation.}  All guards are evaluated against the
+current agent state snapshot $s_t$.  No transition is pre-empted by a higher-priority
+event unless explicitly ordered.  When multiple events qualify simultaneously,
+the priority ordering is $\mathcal{E} > \mathcal{T} > \mathcal{H} > \mathcal{M}$.
+
+% ---------------------------------------------------------------- %
+% 3.3  Bail-Out Trigger Condition
+% ---------------------------------------------------------------- %
+\subsection{Bail-Out Trigger Condition}
+
+The system enters the Bailout Protocol when the \textbf{bail-out trigger}
+$\Psi$ evaluates to TRUE.  $\Psi$ is a disjunction over three terminal conditions:
+
+\begin{equation}
+\Psi \;=\; \underbrace{\phi_\text{retry}(t)}_{\text{(a)}} \;\lor\;
+         \underbrace{\phi_\text{risk}(a_t)}_{\text{(b)}} \;\lor\;
+         \underbrace{b_\text{flag}}_{\text{(c)}}
+\end{equation}
+
+\bigskip
+
+\noindent where:
+
+\begin{enumerate}
+  \itemsep0pt
+  \item \textbf{Retry exhaustion} $\phi_\text{retry}(t) \;=\;
+    \bigl(\text{retry\_count}(t) \geq N_\text{max\_retries}\bigr) \;\land\;
+    \bigl(\text{last\_error}(t) \neq \emptyset\bigr)$
+
+  \item \textbf{Critical risk threshold} $\phi_\text{risk}(a_t) \;=\;
+    \bigl(\Delta_\text{risk}(a_t) > \theta_\text{critical}\bigr) \;\land\;
+    \bigl(\text{safety\_check}(a_t) = \text{FAIL}\bigr)$
+
+  \item \textbf{Bypass flag} $b_\text{flag}$ is set by the bypass mechanism
+    described in \S3.6.
+\end{enumerate}
+
+\bigskip
+
+\noindent\textbf{Evaluation.}  $\Psi$ is evaluated on every agent cycle
+$[\,t, t + \Delta t\,]$.  The first sub-condition to evaluate to TRUE
+immediately triggers the transition IDLE $\rightarrow$ BOUNDED or
+IDLE $\rightarrow$ ESCALATING (in the case of (c)).  The triggering sub-condition
+and the full state snapshot at time $t$ are logged to the agent's audit trail
+before the transition is recorded.
+
+% ---------------------------------------------------------------- %
+% 3.4  Escalation Algorithm
+% ---------------------------------------------------------------- %
+\subsection{Escalation Algorithm}
+
+When the machine enters \texttt{BAIL\_PENDING}, the escalation algorithm
+$\Alpha$ is invoked.  $\Alpha$ is executed in three sequential stages:
+
+\bigskip
+
+\begin{algorithm}[H]
+\caption{Escalation Algorithm $\Alpha$}
+\label{alg:escalation}
+
+\begin{enumerate}
+  \item \textbf{Snapshot.}  Capture a complete state snapshot:
+    \begin{itemize}
+      \itemsep0pt
+      \item Current agent ID, skill taxonomy, and workspace context
+      \item In-flight task queue with status and resource estimates
+      \item Last $K$ error events from the agent log
+      \item Full constraint state (resource budgets, action envelopes)
+      \item Retry count, last error message, and error category
+      \item Human-readable summary of the triggering condition
+    \end{itemize}
+
+  \item \textbf{Notify.}  Dispatch notification via all configured channels
+    in priority order $\mathcal{C} = [\text{SMS}, \text{Discord DM}, \text{Email}]$.
+    \begin{itemize}
+      \itemsep0pt
+      \item SMS: single-message alert with $\leq 160$ characters: agent ID,
+        state, and a one-line action directive
+      \item Discord DM: rich embed with the full snapshot payload
+      \item Email: full snapshot as a formatted message with a direct reply link
+        to \texttt{brodiblanco@zo.computer}
+    \end{itemize}
+    All dispatch attempts are logged with timestamp, channel, and delivery
+    status.  The notification includes a cryptographic commitment to the full
+    snapshot so the operator can verify integrity.
+
+  \item \textbf{Wait.}  Enter \texttt{ESCALATING} state and await human response.
+    The system enters a holding pattern; no new agent tasks are initiated.
+    Existing tasks are suspended at safe checkpoints (no mid-transaction writes
+    are permitted in \texttt{ESCALATING} state).
+
+  \item \textbf{Acknowledge.}  Upon receipt of operator acknowledgement
+    $e_\text{human\_ack}$, record the operator's identity and the acknowledgement
+    timestamp.  Transition to \texttt{HUMAN\_ACKNOWLEDGED}.
+
+  \item \textbf{Execute resolution.}  Receive resolution instruction $i$.
+    Validate $i$ against the protocol's action whitelist (see \S3.5).
+    If valid, apply the resolution and transition to \texttt{RESOLVED}.
+    If invalid, re-enter \texttt{ESCALATING} with an error notice.
+\end{enumerate}
+
+\bigskip
+
+\begin{note}
+\textbf{Idempotency.}  The escalation algorithm is idempotent.  Re-triggering
+$\Alpha$ for the same agent incident while the agent is already in
+\texttt{ESCALATING} state does not generate duplicate notifications.
+A deduplication key (agent ID $\oplus$ incident hash) is checked before dispatch.
+\end{note}
+
+% ---------------------------------------------------------------- %
+% 3.5  Bypass Mechanism
+% ---------------------------------------------------------------- %
+\subsection{Bypass Mechanism}
+
+The bypass mechanism exists to accommodate operator overrides and emergency
+conditions where waiting for the standard state machine would cause material
+harm.  When $b_\text{flag} = \text{TRUE}$, the machine bypasses all intermediate
+states and transitions directly from the current state to \texttt{ESCALATING}:
+
+\[
+\delta(q, e_\text{bypass\_triggered}) =
+\begin{cases}
+\text{ESCALATING} & \text{if } b_\text{flag} = \text{TRUE} \\
+\delta_\text{normal}(q, e) & \text{otherwise}
+\end{cases}
+\]
+
+\bigskip
+
+\noindent\textbf{Bypass rationale.}  The bypass is justified by the following
+operational theorem:
+
+\bigskip
+
+\begin{samepage}
+\begin{center}
+\fbox{
+\parbox{0.92\linewidth}{
+\textbf{Bypass Theorem.}  Let $q$ be any state in $Q \setminus
+\{\text{RESOLVED}\}$.  Let $e_\text{bypass\_triggered}$ be raised at time $t$.
+Then there exists an operator intent $O$ such that the cost of
+executing $\delta(q, e_\text{bypass\_triggered})$ is strictly less than the
+cost of executing the full sequence
+$\delta(q, e_1) \circ \delta(q_1, e_2) \circ \cdots \circ \delta(q_{n-1}, e_n)$
+to reach \texttt{ESCALATING} via the normal transition path.
+
+\textit{Proof sketch.}  The bypass is activated only when either (i) the
+operator has directly set $b_\text{flag}$, in which case $O$ is the operator's
+intent and the bypass cost equals the operator's decision overhead, or
+(ii) a structural invariant violation has been detected in the state machine
+itself (an internal consistency failure), in which case no valid transition
+sequence exists in the normal path and the bypass is the unique path to
+human oversight.  In both cases, the bypass transition dominates by
+strict lexical ordering.  $\square$
+}}
+\end{center}
+\end{samepage}
+
+\bigskip
+
+\noindent\textbf{Bypass activation methods (in priority order):}
+
+\begin{enumerate}
+  \itemsep0pt
+  \item Direct human override via operator command ``\texttt{/bypass}''
+     in the agent control channel
+  \item Systemic invariant violation detected by the runtime consistency
+     checker (internal flag \texttt{CONSISTENCY\_FAIL})
+  \item External kill signal received on the agent supervision port
+  \item Thermal or hardware-failure signal from the host environment
+\end{enumerate}
+
+\bigskip
+
+\noindent\textbf{Bypass bypasses all machine actors.}  The bypass is defined
+to override the entire state machine's authority delegation.  When active,
+no agent actor---including the orchestrator, any spawned sub-agent, or the
+skill executor---may execute a new action.  The only actors permitted to act
+during a bypass are: the escalation dispatcher (to notify the human),
+the audit logger (to record the bypass event), and the human operator themselves.
+This ensures that the bypass cannot be exploited to execute unauthorized work
+while a human is supposedly overseeing the situation.
+
+% ---------------------------------------------------------------- %
+% 3.6  Timeout Handling
+% ---------------------------------------------------------------- %
+\subsection{Timeout Handling}
+
+Timeouts are treated as first-class transition events in $\mathcal{T}$.  Each
+state $q$ that involves waiting has an associated timeout parameter
+$T(q)$.  The runtime maintains a monotonic clock; timeout events are
+generated by the clock service and injected into the state machine as
+regular transition events.
+
+\bigskip
+
+\begin{center}
+\begin{tabular}{|l|c|p{6cm}|}
+\hline
+\textbf{State} & \textbf{Timeout ($T$)} & \textbf{Expiry action} \\ \hline
+BOUNDED & $T_\text{bounded}$ & Enter BAIL\_PENDING; log duration exceeded event \\ \hline
+BAIL\_PENDING & $T_\text{bail\_pending}$ & Re-evaluate $\Psi$; if TRUE, re-enter BAIL\_PENDING
+with incremented counter; else return to BOUNDED \\ \hline
+ESCALATING & $T_\text{escalate}$ & Re-dispatch escalation notification;
+increment re-dispatch counter; log timeout \\ \hline
+HUMAN\_ACKNOWLEDGED & $T_\text{human}$ & Apply \textbf{timeout default resolution}:
+suspend all pending tasks, persist full state to checkpoint, transition to RESOLVED \\ \hline
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\bigskip
+
+\begin{center}
+\fbox{
+\parbox{0.92\linewidth}{
+\textbf{Timeout Default Resolution Policy.}  When $e_\text{timeout\_human}$ fires
+without a prior $e_\text{human\_resolve}$, the system applies the following
+resolution in order:
+
+\begin{enumerate}
+  \itemsep0pt
+  \item Mark all in-flight tasks as \texttt{SUSPENDED\_TIMEOUT}.
+  \item Serialize the complete agent state to the checkpoint store.
+  \item Cancel all pending non-idempotent side-effects (network writes, external
+    API calls) within a grace window of $T_\text{grace} = 30$ seconds.
+  \item Transition to \texttt{RESOLVED} and log the timeout event with full context.
+  \item Notify the operator via all channels that the timeout default has been
+    applied and that manual recovery is required.
+\end{enumerate}
+}}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Clock monotonicity.}  All timeout timers are sourced from a
+single monotonic clock.  Clock adjustment or backwards jumps do not affect
+active timers; timers track elapsed real time, not logical time.  Clock
+synchronization with an NTP source occurs only in \texttt{IDLE} state and does
+not interfere with active protocol operations.
+
+\bigskip
+
+\begin{note}
+\textbf{Timeout invariants.}
+\begin{itemize}
+  \itemsep0pt
+  \item $T_\text{human} > T_\text{escalate} > T_\text{bounded}$
+  \item $T_\text{grace} \geq 30\text{s}$ and $T_\text{grace} < T_\text{human}$
+  \item No timeout can fire while the agent is in \texttt{RESOLVED} state
+  \item Timeout counters are reset on every transition to \texttt{IDLE}
+\end{itemize}
+\end{note}
+
+% ---------------------------------------------------------------- %
+% 3.7  Audit Trail and Compliance
+% ---------------------------------------------------------------- %
+\subsection{Audit Trail and Compliance}
+
+Every state transition, event injection, timeout firing, bypass activation,
+human acknowledgement, and resolution instruction is recorded in the
+agent's audit log.  The log entry format for a transition event is:
+
+\[
+\text{log entry} \;=\;
+\bigl(t, \text{agent\_id}, q_\text{from}, q_\text{to}, e, \text{snapshot\_hash}, \text{operator\_id}\bigr)
+\]
+
+\bigskip
+
+\noindent The snapshot hash is computed over the full state snapshot at the
+time of transition using SHA-256.  This enables the operator and any
+post-incident review to verify that the logged snapshot matches the actual
+system state at the moment of transition.
+
+The audit log is immutable and append-only.  It is stored in the agent's
+workspace at \texttt{data/agentic/audit/} and is synchronized to durable
+storage on every entry.  No state transition may occur if the audit log
+write fails; the machine is design to halt in place rather than proceed
+without a record.
+
+\bigskip
+
+\begin{note}
+\textbf{Compliance statement.}  The Bailout Protocol, as specified in this
+section, constitutes the complete and authoritative specification of the
+agent shutdown and escalation procedure for the Agentic runtime.  Any
+implementation that deviates from this specification is non-compliant
+and must be classified as a separate, operator-approved protocol with its
+own state machine definition.
+\end{note}

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Role
+metadata:
+  name: reviewer
+  description: "Quality assurance agent for reviewing work products"
+spec:
+  capabilities:
+    - code_review
+    - security_audit
+    - performance_analysis
+    - compliance_check
+    - documentation_review
+  constraints:
+    - review_depth: full
+    - false_positive_rate: "<0.01"
+    - critical_issue_escalation: immediate
+  permissions:
+    - read: all_work_products
+    - write: review_comments
+    - execute: testing_tools
+  performance_metrics:
+    - review_thoroughness: 0.98
+    - issue_detection_rate: 0.95
+    - review_time: "<2h"

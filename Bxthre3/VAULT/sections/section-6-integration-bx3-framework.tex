@@ -1,0 +1,98 @@
+% ============================================================
+% Section 6: Integration with the BX3 Framework
+% Requires: \usepackage{tcolorbox} in the main document
+% ============================================================
+\section{Integration with the BX3 Framework}
+\label{sec:rs-bx3-integration}
+
+The Recursive Spawning Protocol is not an isolated mechanism --- it is structurally dependent on the three immutable functional layers defined in the \bxthree{} Framework, and its guarantees are operative only insofar as those layers enforce their defined properties. This section specifies exactly how each layer participates in RSP, how the layers interact to produce the RSP's correctness guarantees, and what fails --- and how --- if any layer's properties are relaxed.
+
+% ------------------------------------------------------------------
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:rs-purpose-anchor}
+
+The Purpose Layer provides RSP with its exclusive authorization origin and its human terminus. Both roles are structurally enforced, not administratively configured.
+
+\medskip
+\noindent\textbf{Authorization origin.} Every spawn event requires a Purpose Layer warrant $w_i$ (Equation~\ref{eq:spawn-warrant}) before the Fact Layer will execute the provisioning write. The warrant is the sole authorized precondition for chain growth. This exclusivity means that no machine actor in the chain --- at any depth, under any operational circumstance --- can initiate a child spawn by its own authority. The Purpose Layer is the only valid spawn initiator by structural constraint. If the Purpose Layer is occupied by a human principal (which it must be at the root), the warrant reflects genuine human intent. If the Purpose Layer is occupied by a software system operating under human-delegated authority, the warrant reflects the boundaries of that delegation. In neither case can a machine actor self-authorize chain growth.
+
+\medskip
+\noindent\textbf{Human terminus.} The chain terminates at a Purpose Layer entity designated as a human principal, which is established at root provisioning ($h(n_0) = h$, $\alpha(n_0) = \bot$) and preserved invariant through all subsequent spawn events. The human anchor property $h(n_j) = h(n_0) = h$ propagates through the chain without modification. This ensures that accountability attribution is never ambiguous: for any node $n_k$ in any RSP chain, $h(n_k) = h$ uniquely identifies the human principal who authorized the root node. No machine actor can serve as a chain terminus by construction --- the Purpose Layer entity at the root must have a human principal designation or the chain is architecturally invalid.
+
+The Purpose Layer's role in RSP therefore has two distinct expressions:
+
+\begin{enumerate}
+    \item[(PLA1)] \textbf{Exclusive spawn authorization.} The Purpose Layer issues every warrant. No other layer or actor can authorize chain growth.
+    \item[(PLA2)] \textbf{Non-collapsing human anchor.} The Purpose Layer records the human principal at the root and preserves this designation through all descendants. The anchor is non-transferable and non-delegable to any machine actor.
+\end{enumerate}
+
+These two properties together ensure that RSP chains never grow without human authorization and never terminate at a machine actor.
+
+% ------------------------------------------------------------------
+\subsection{Bounds Engine Depth Enforcement}
+\label{sec:rs-bounds-depth}
+
+The Bounds Engine provides RSP with its depth management infrastructure: it tracks the depth of every active node, enforces the $D_{\max}$ constraint at every spawn event, and triggers the Bailout Protocol when the spawn refusal condition is reached.
+
+\medskip
+\noindent\textbf{Depth tracking as a structural invariant.} The depth counter maintained by the Bounds Engine is not a soft statistic --- it is a first-class structural property written atomically to the Fact Layer forensic ledger at each spawn event. The depth of node $n_i$ is defined recursively by Equation~\ref{eq:depth-definition} and is enforced against the bound in Equation~\ref{eq:depth-bound} at every spawn step. The Bounds Engine's enforcement is independent of the Fact Layer's pre-commit hook: the Bounds Engine performs its check before the atomic provisioning write is initiated, and the Fact Layer independently re-verifies the depth constraint before committing the write. This dual-enforcement architecture means that a depth violation requires simultaneous failure of two independent enforcement points, which is structurally harder than failure of either alone.
+
+\medskip
+\noindent\textbf{Spawn refusal as deterministic behavior.} The spawn refusal condition --- when $\text{depth}(n_i) + 1 > D_{\max}$ --- produces a deterministic state transition to \texttt{ESCALATING} and a mandatory Bailout Protocol trigger. The Bounds Engine does not make decisions about whether to refuse; it applies the constraint and records the result. There is no discretionary authority to exceed $D_{\max}$ for any reason. This distinguishes the Bounds Engine's depth enforcement from conventional access-control systems, where privilege escalation can override constraints under sufficient authorization. In RSP's Bounds Engine, the depth constraint is a physical Fact Layer invariant --- it is enforced by the protocol, not by policy.
+
+\medskip
+\noindent\textbf{Escalation path integrity.} The escalation path from a node at depth $d$ to the human anchor requires exactly $d$ applications of $\alpha$, bounded above by $D_{\max}$. This constant-time path is guaranteed by the immutable parent pointer and the acyclic tree structure of the delegation chain. No machine actor can intercept or redirect the escalation path, because the path is determined by the chain structure recorded in the forensic ledger, not by routing decisions made at runtime. The human anchor receives the full diagnostic context from the Fact Layer forensic ledger without interpretation or filtering by intermediate machine actors.
+
+The Bounds Engine's role in RSP:
+
+\begin{enumerate}
+    \item[(BDE1)] \textbf{Depth tracking.} Maintains $\text{depth}(n)$ for every active node, written atomically to the forensic ledger.
+    \item[(BDE2)] \textbf{Structural enforcement.} Enforces $\text{depth}(n_i) + 1 \leq D_{\max}$ at every spawn step as a deterministic protocol rule.
+    \item[(BDE3)] \textbf{Refusal and escalation.} Transitions the node to \texttt{ESCALATING} and triggers the Bailout Protocol when the spawn refusal condition is reached.
+    \item[(BDE4)] \textbf{Convergence assessment.} Evaluates convergence criteria (C1)--(C4) at each state transition event.
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\subsection{Fact Layer Forensic Ledger}
+\label{sec:rs-fact-ledger}
+
+The Fact Layer provides RSP with its immutability guarantees and its tamper-evident accountability record. Every structural guarantee in RSP depends on the Fact Layer's ability to maintain a forensic ledger in which no entry can be inserted, deleted, reordered, or altered after the fact.
+
+\medskip
+\noindent\textbf{Immutable parent pointer.} The parent pointer $\alpha(n_{i+1}) = n_i$ is established by the Fact Layer atomic provisioning write (operations A1--A5) and is thereafter structurally permanent. The Fact Layer write protocol defines exactly one valid write operation for $\alpha$: the initial provisioning write at child activation. The protocol defines \emph{no valid write operations} for modifying $\alpha(n)$ after provisioning. This immutability is protocol-enforced at the Fact Layer write protocol level --- it holds regardless of privilege elevation, credential compromise, software vulnerability, or operational urgency. No administrative override, emergency bypass, or privileged actor can alter the chain after provisioning.
+
+\medskip
+\noindent\textbf{Hash-chain continuity.} The forensic ledger $\mathcal{L}$ maintains hash-chain continuity through the $\text{hash}(\ell_{j-1})$ component of each ledger entry (Equation~\ref{eq:ledger-entry}). Each entry's hash includes the previous entry's hash, creating a chain in which any insertion, deletion, reordering, or modification of an entry breaks the chain at the point of tampering. The break is detectable by any observer with ledger read access through a simple re-computation of the chain hashes. This property makes the ledger a self-certifying data structure: no external timestamp authority or notary service is required to detect tampering.
+
+\medskip
+\noindent\textbf{Pre-commit hook enforcement.} The Fact Layer pre-commit hook independently enforces scope refinement (FC1: $R(n_{i+1}) \subseteq R(n_i)$) and depth constraint (FC2: $\text{depth}(n_{i+1}) \leq D_{\max}$) before any spawn event is recorded. These checks run in addition to the Bounds Engine's checks, providing a second independent enforcement point. The pre-commit hook is a Fact Layer mechanism --- it cannot be bypassed by the Bounds Engine, cannot be overridden by the Purpose Layer, and cannot be silenced by any machine actor. If either condition fails, the spawn is rejected and the rejection is logged as a ledger entry with full diagnostic context.
+
+\medskip
+\noindent\textbf{Atomicity and the all-or-nothing guarantee.} The atomic provisioning write (operations A1--A5) ensures that there is no temporal window in which the child exists without a valid parent pointer, or in which a Purpose Layer warrant exists without a corresponding child node record. The atomicity is guaranteed by the Fact Layer write protocol: if any operation in the sequence fails, all five operations are rolled back and the spawn attempt is logged as a failed event with full context. This prevents partial state from persisting in the forensic ledger, which is critical for maintaining the ledger's integrity as a complete and accurate record of all spawn events.
+
+The Fact Layer's role in RSP:
+
+\begin{enumerate}
+    \item[(FLR1)] \textbf{Immutable parent pointer.} Establishes $\alpha(n_{i+1}) = n_i$ as a structurally permanent Fact Layer property.
+    \item[(FLR2)] \textbf{Forensic ledger.} Maintains an append-only, hash-chained ledger of all authorized spawn events and state transitions.
+    \item[(FLR3)] \textbf{Pre-commit enforcement.} Independently enforces scope refinement and depth constraints before any spawn is recorded.
+    \item[(FLR4)] \textbf{Sealed memory envelope.} Protects the parent pointer and authorized scope from exposure to the Bounds Engine or child node code.
+    \item[(FLR5)] \textbf{Atomic provisioning.} Commits all spawn event data atomically as a single indivisible ledger entry.
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\subsection{Layer Interdependence and Failure Modes}
+\label{sec:rs-layer-failure}
+
+RSP's correctness guarantees are jointly produced by the three layers acting in concert. If any layer's defined properties are relaxed, the corresponding guarantee degrades or fails. This section specifies the failure modes for each layer compromise.
+
+\medskip
+\noindent\textbf{Purpose Layer compromise.} If the Purpose Layer's exclusive authorization role is circumvented --- allowing spawn without a matching warrant --- the structural guarantee of human authorization is lost. A machine actor could spawn children by self-authorization, and the chain would grow without human oversight. The forensic ledger would record these events as authorized spawns (since the Fact Layer pre-commit hook cannot detect a missing warrant if the Purpose Layer is bypassed), and the chain would appear valid to Chain-Verify. The drift prevention guarantee (Theorem~\ref{th:drift-prevention} in Section~\ref{sec:rs-correctness}) would fail.
+
+\medskip
+\noindent\textbf{Bounds Engine compromise.} If the Bounds Engine's depth enforcement is disabled or overridden, the depth constraint (Equation~\ref{eq:depth-bound}) is no longer enforced at spawn time. A node could spawn beyond $D_{\max}$, and the chain depth would exceed the architectural bound. The escalation path length would become unbounded, violating the constant-time guarantee and creating the conditions for deep chains that exceed human cognitive reachability within operational time constraints.
+
+\medskip
+\noindent\textbf{Fact Layer compromise.} If the Fact Layer's write protocol is modified to permit mutable parent pointers, the immutable parent pointer property (FLR1) is lost. A drifted or compromised node could redirect its parent pointer to a different ancestor or to a purpose-engineered node, breaking the chain's acyclic structure and enabling chain loops or accountability laundering. The forensic ledger's hash-chain continuity would be broken, invalidating the tamper-evidence property and making post-hoc tampering undetectable.
+
+These failure modes confirm that RSP's correctness guarantees are not achievable through any single layer in isolation --- they require the joint, independent enforcement of the Purpose Layer's exclusive authorization, the Bounds Engine's structural depth constraint, and the Fact Layer's immutable parent pointer and tamper-evident ledger.

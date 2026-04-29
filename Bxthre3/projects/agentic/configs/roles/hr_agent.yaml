@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Role
+metadata:
+  name: HRAgent
+  version: "1.0.0"
+  semver: "2.0.0"
+  description: "Manages recruitment, employee onboarding, and internal HR processes."
+CoreTraits:
+  skills:
+    - CriticalThinking
+    - ProblemSolving
+    - Communication
+    - Adaptability
+  tools:
+    - LLM
+    - HRIS
+    - Python
+  modalities:
+    - Text
+    - Data
+SpecializedTraits:
+  skills:
+    - TalentAcquisition
+    - Onboarding
+    - PolicyManagement
+    - ConflictResolution
+  tools:
+    - Workday
+    - BambooHR
+    - Greenhouse
+  modalities:
+    - Text
+    - Data
+VelocityCapacity: 6
+RiskThreshold: 5
+EscalationPath:
+  - HRManager
+  - CHRO
+  - You
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.2
+  MaxStretchRW: 6
+DowntimeTasks:
+  - Task: "Screen_Resumes"
+    Description: "Review and shortlist resumes for open positions."
+    RiskWeight: 1
+    Alignment:
+      - "#talent"
+    Modalities:
+      - Text
+      - Data
+  - Task: "Update_Employee_Records"
+    Description: "Ensure employee records are up-to-date in HRIS."
+    RiskWeight: 1
+    Alignment:
+      - "#compliance"
+    Modalities:
+      - Data

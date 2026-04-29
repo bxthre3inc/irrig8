@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Task
+metadata:
+  name: development
+  description: "Software development task for implementing features"
+spec:
+  role: developer
+  inputs:
+    - requirements
+    - design_spec
+    - existing_codebase
+  outputs:
+    - implemented_code
+    - unit_tests
+    - build_artifacts
+  steps:
+    - name: code_implementation
+      description: "Write code according to specifications"
+      tools:
+        - code_editor
+        - linter
+      parameters:
+        language: python
+        framework: django
+    - name: unit_testing
+      description: "Write and execute unit tests"
+      tools:
+        - test_framework
+      parameters:
+        coverage_threshold: 0.85
+    - name: code_review
+      description: "Self-review code before submission"
+      tools:
+        - static_analysis
+      parameters:
+        complexity_threshold: 15
+  validation:
+    - name: build_verification
+      description: "Verify code builds successfully"
+      threshold: 1.0
+    - name: test_coverage
+      description: "Verify test coverage meets requirements"
+      threshold: 0.85

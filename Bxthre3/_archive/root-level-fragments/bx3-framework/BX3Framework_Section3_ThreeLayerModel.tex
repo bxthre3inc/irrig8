@@ -1,0 +1,123 @@
+\section{The BX3 Three-Layer Model}\label{sec:three-layer-model}
+
+The \bxthree{} Framework's three-layer model is the architectural substrate
+within which all five pillars operate as mutually reinforcing structural
+necessities.  The model organizes every node into three immutable functional
+layers --- \purpose{}, \bounds{}, and \fact{} --- with strictly defined roles,
+interaction constraints, and enforcement primitives.
+
+This section defines each layer, establishes the functional separation that
+makes the layer roles distinct, and defines the three invariants that govern
+inter-layer interaction.
+
+% --------------------------------------------------------------
+\subsection{Layer Definitions}\label{sec:layer-definitions}
+% --------------------------------------------------------------
+
+The \purpose{} layer carries intent, judgment, and final authority.  It is the
+layer at which the human principal's objectives are translated into operational
+directives, and at which the operating range $R(n)$ for each node $n$ is
+defined.  It is the exclusive terminus for any exception state that exceeds
+machine-actor provisioned authority.  The layer is non-delegable: no machine
+actor possesses the judgment capacity to serve as a substitute terminus for
+exceptions that exceed its own operating range.  This non-delegability is not a
+policy constraint; it is a structural property of the layer's function.  The
+\purpose{} layer carries the principal's intent, and no agent operating under
+delegated authority can possess the principal's intent in sufficient
+completeness to serve as its substitute terminus.
+
+The \bounds{} layer carries bounded reasoning and constrained execution within
+$R(n)$.  It evaluates whether proposed actions fall within the node's delegated
+authority by reference to the authorization ledger maintained by the \fact{}
+layer.  When it encounters a condition outside $R(n)$ that it cannot resolve
+within its own scope, it triggers the Bailout Protocol compulsorily --- the
+trigger is a structural consequence of the bounds check, not a discretionary
+decision by the agent.  The \bounds{} layer cannot choose to absorb the
+exception; the architectural separation between \purpose{} and \bounds{}
+ensures that any condition outside $R(n)$ is, by definition, beyond the
+\bounds{} layer's adjudication authority.
+
+The \fact{} layer carries deterministic enforcement and forensic auditability.
+It maintains the append-only Forensic Ledger recording every protocol event
+with full attribution.  It enforces the transition relations of all pillar
+state machines and has exclusive write authority over the Forensic Ledger.  No
+machine actor may modify, delete, or suppress entries in the Forensic Ledger;
+the layer's function is to enforce the record rather than to interpret it.  It
+is the only layer that may issue a definitive halt to autonomous action, and it
+does so by refusing to approve any proposed action that lacks a valid
+authorization entry in the ledger.
+
+% --------------------------------------------------------------
+\subsection{Functional Separation Invariants}\label{sec:layer-invariants}
+% --------------------------------------------------------------
+
+The three layers are not merely a conceptual taxonomy; they are enforced
+architectural divisions with distinct execution semantics captured in three
+structural invariants.
+
+\begin{invariant}[Purpose-Bounds Separation]\label{inv:pb-sep}
+No machine actor operating in the \bounds{} layer may issue binding resolution
+directives that close a protocol run, define or modify the operating range
+$R(n)$, or commit entries to the authorization ledger bearing a directive from
+the \purpose{} layer.  The \bounds{} layer executes bounded reasoning within
+$R(n)$; it does not carry intent.
+\end{invariant}
+
+\begin{invariant}[Bounds-Fact Separation]\label{inv:bf-sep}
+No node in the \bounds{} layer may modify the transition relations of any
+pillar state machine, alter the authorization ledger, or suppress entries in
+the Forensic Ledger.  The \fact{} layer enforces these relations
+deterministically; the enforcement is independent of the \bounds{} layer's
+operational state.
+\end{invariant}
+
+\begin{invariant}[Fact-Purpose Convergence]\label{inv:fp-converge}
+The \fact{} layer enforces the exclusive authority of the \purpose{} layer
+over binding resolution directives by rejecting any directive whose issuer is
+not verified as $h(n)$.  The \fact{} layer does not carry intent; it carries
+the enforcement mechanism by which the \purpose{} layer's authority is made
+structurally operative.
+\end{invariant}
+
+INV\textsubscript{pb-sep} and INV\textsubscript{bf-sep} together establish the
+layer separation that makes the \purpose{} layer the sole terminus for
+unresolved exceptions: the \bounds{} layer can detect and attempt to resolve
+exceptions but cannot close the protocol; the \fact{} layer can enforce and
+record but cannot adjudicate.  INV\textsubscript{fp-converge} closes the loop
+by ensuring that the \fact{} layer's enforcement is定向 toward the
+\purpose{} layer's authority rather than toward any machine actor's claim.
+
+Together, the three invariants constitute a \emph{separation of mandate}
+property: intent (Purpose), execution (Bounds), and enforcement (Fact) are
+architecturally distinct, and no layer may exercise the mandate of another.
+This separation is what makes the \bxthree{} Framework's accountability
+guarantees structurally operative rather than aspirational.
+
+% --------------------------------------------------------------
+\subsection{The Accountability Chain}\label{sec:accountability-chain}
+% --------------------------------------------------------------
+
+The three-layer model establishes a two-stage accountability chain for every
+\bxthree{} node $n$:
+
+\begin{enumerate}\itemsep=0pt
+\item[(i)] The \purpose{} layer of $n$ defines $R(n)$ and provisions the
+\bounds{} layer with the authorization scope within which $n$ may act
+autonomously.  This provisioning is recorded as an authorization ledger entry
+by the \fact{} layer.
+
+\item[(ii)] If the \bounds{} layer of $n$ encounters a condition outside $R(n)$
+that it cannot resolve, the Bailout Protocol compels propagation of the
+exception to $h(n)$ via the parent chain.  The \purpose{} layer of $h(n)$
+receives the exception and issues a binding directive, which is recorded in
+the Forensic Ledger by the \fact{} layer of the originating node.
+\end{enumerate}
+
+This two-stage chain is the structural mechanism by which the upstream
+accountability guarantee is realized: every consequential decision in any
+\bxthree{} node is either (a) authorized by the \purpose{} layer and enforced
+by the \fact{} layer, or (b) escalated to $h(n)$ through the Bailout
+Protocol when $R(n)$ is exceeded.  No decision proceeds from (b) without a
+binding directive from $h(n)$ recorded in the Forensic Ledger.  The chain
+is append-only and the parent pointer $\alpha(n)$ is immutable, ensuring
+that the chain can be reconstructed at any time for any node.

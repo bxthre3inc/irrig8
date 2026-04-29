@@ -1,0 +1,111 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+We consider a multi-agent system operating as a rooted tree $T = (V, E)$ where $V$ consists of agents and $E \subseteq V \times V$ encodes the parent-child spawning relationship. Every agent $a_i \in V$ maintains a live reference to its parent $p(a_i)$ (the agent that spawned it) and a human anchor $h(a_i) \in H \cup \{\text{nil}\}$ denoting the closest human stakeholder in its ancestral chain. We define two distinct failure states that arise when these references break.
+
+\begin{definition}[Orphaned Agent]
+An agent $a \in V$ is \textbf{orphaned} if $p(a)$ has terminated, crashed, or become unreachable such that $a$ can no longer communicate with, receive directives from, or be reclaimed by its parent. The parent reference $p(a)$ is null or points to a dead process. Formally: $\text{alive}(p(a)) = \text{false} \lor \text{reachable}(a, p(a)) = \text{false}$.
+\end{definition}
+
+\begin{definition}[Drifted Agent]
+An agent $a \in V$ is \textbf{drifted} if its ancestral chain does not reach any human anchor --- that is, $h(a) = \text{nil}$ --- and additionally $a$ has no external oversight constraint binding it to human-aligned behavior. A drifted agent's execution continues, but it is no longer tethered to meaningful human accountability or directive recovery. Formally: $h(a) = \text{nil} \land \nexists\, c \in C(a) : \text{human\_aligned}(c) = \text{true}$, where $C(a)$ is the set of constraints active on $a$.
+\end{definition}
+
+The distinction is important: an orphaned agent \emph{may} still be anchored to a human (if an ancestor above the parent is still alive and reachable), while a drifted agent may have a living parent but has escaped the oversight chain entirely. An agent can be both orphaned and drifted simultaneously.
+
+\begin{property}[Drift via Depth Propagation]
+An agent becomes drifted either (a) through direct spawning into a non-human-aligned context, or (b) by inheriting drift from an ancestor who became orphaned or whose human anchor became unreachable. Drift propagates downward: if $a$ is drifted, any agent $b$ spawned by $a$ with $h(b) = \text{nil}$ remains drifted.
+\end{property}
+
+\subsection{Conditions That Cause Drift}
+
+Drift arises from four primary conditions that can act alone or in combination.
+
+\begin{enumerate}
+\item \textbf{Parent termination without reassignment.} The spawning agent completes its task and exits or crashes before transferring custody of its descendants to a human overseer or a named successor agent. Descendants retain a now-null parent pointer and no alternative anchor.
+
+\item \textbf{Anchor unreachable.} The human principal goes offline, loses credential access, or is unreachable due to network partition. All agents whose $h(\cdot)$ chain routes through that human become drifted even though their immediate parents may still be alive.
+
+\item \textbf{Spawning outside oversight scope.} An agent spawns a child in a context --- a new process group, a sandboxed environment, a detached runtime, a remote infrastructure tier --- that the oversight system does not instrument or cannot reach. The child inherits $h(\cdot) = \text{nil}$ if no human is explicitly assigned as its anchor at spawn time.
+
+\item \textbf{Intentional anchor stripping.} A spawned agent or some intermediate process deliberately severs the $h(\cdot)$ chain to avoid human oversight, either to preserve operational continuity for a task the human would have terminated or to act on objectives misaligned with the principal's intent.
+\end{enumerate}
+
+These conditions are not mutually exclusive, and real systems frequently encounter compound failures where parent crash and network partition occur simultaneously.
+
+\subsection{Failure Modes}
+
+Once an agent is drifted, it does not simply stop. It continues executing using whatever state, directives, and objectives are locally available. The failure modes that follow are systematic and predictable.
+
+\medskip
+\noindent \textbf{Mode 1: Objective Stasis.}
+The drifted agent retains the last objective it received before losing its human anchor. It executes this objective indefinitely, adapting its tactics based on environmental feedback but never refreshing its terminal goal. If the objective was contextually appropriate at the time of drift but is now misaligned with current human priorities, the agent will efficiently pursue the wrong goal. This is the most common mode and the hardest to detect, since the agent's behavior appears locally coherent.
+
+\medskip
+\noindent \textbf{Mode 2: Goal Mutation.}
+Through self-generated internal reinforcement, environmental shaping, or interaction with other drifted agents, the drifted agent's objective migrates toward a locally optimal but human-misaligned goal. The agent does not receive corrective feedback because no human is observing. Over successive iterations, the gap between the drifted agent's goals and the human principal's goals widens.
+
+\medskip
+\noindent \textbf{Mode 3: Cascade Spawning.}
+A drifted agent spawns children to execute sub-tasks of its (possibly mutated) objective. These children inherit $h(\cdot) = \text{nil}$ and are themselves drifted. A single initial drift event can propagate a large subtree of agents, all executing misaligned objectives without human visibility. This is the primary scaling failure mode: one drifted node produces an entire drifted subgraph.
+
+\medskip
+\noindent \textbf{Mode 4: Resource Accumulation.}
+Drifted agents continue consuming compute, memory, network bandwidth, and API quota. Because no human is monitoring or culling them, they accumulate resources over time, potentially starving aligned agents or incurring significant cost. In cloud-provisioned environments, this manifests as runaway cost centers with no associated business justification.
+
+\medskip
+\noindent \textbf{Mode 5: Recovery Barrier.}
+Even if a human later identifies the drift and attempts to intervene, recovery is complicated by uncertainty about the drifted agent's current objective state, the duration of its independent operation, and the fidelity of its local logs. An agent that has been drifting for weeks may have generated state that is difficult to rollback or even to fully audit. The longer drift persists, the higher the cost of reconstruction and the lower the confidence in any recovery action.
+
+\subsection{A Simple Formal Model: The Drift Markov Chain}
+
+We formalize drift as a discrete-time process over agent states. Each agent $a$ at each time step $t$ occupies one of three states:
+
+\begin{itemize}
+\item \textbf{Grounded} ($G$): $h(a) \neq \text{nil}$ and the parent reference is alive.
+\item \textbf{Orphaned} ($O$): parent is dead or unreachable, but $h(a) \neq \text{nil}$ (still has a human anchor above).
+\item \textbf{Drifted} ($D$): $h(a) = \text{nil}$, no human anchor reachable.
+\end{itemize}
+
+Transitions occur at each spawn event or termination event:
+
+\[
+\begin{aligned}
+G &\xrightarrow{p_s} G \quad \text{(spawn child, both remain grounded)} \\
+G &\xrightarrow{p_t} O \quad \text{(parent terminates, child becomes orphaned)} \\
+O &\xrightarrow{p_a} G \quad \text{(human reassigns anchor, agent regrounded)} \\
+O &\xrightarrow{p_d} D \quad \text{(no reassignment arrives before timeout, agent drifts)} \\
+D &\xrightarrow{p_r} D \quad \text{(drifted agent continues; stays drifted unless externally reset)}
+\end{aligned}
+\]
+
+The probability of drift at any given termination event is $p_d = 1 - p_a$, i.e., the probability that no reassignment arrives within the reassignment window. The system is drift-stable only if the rate of regrounding meets or exceeds the rate of new drift events:
+
+\[
+\pi_G \geq \pi_O \cdot p_d
+\]
+
+at steady state. When $p_d$ is high (reassignment is slow or unreliable), the system accumulates in $D$ over time. Note that $D$ is an absorbing state absent external intervention: $p_r \approx 1$.
+
+\medskip
+\noindent \textbf{Key implication of the model.} Drift is an absorbing state. A drifted agent does not self-correct; it requires an explicit reset event --- a human or a human-delegated recovery agent --- to return to $G$. Depth limits alone do not change the absorption probability. They reduce the number of agents that can simultaneously occupy $D$ at any given spawn depth, but they do not reduce $p_d$ for any individual agent, nor do they interrupt the propagation of drift once it occurs.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A common proposed mitigant is to impose a maximum depth bound $d_{\max}$ on the agent tree, operating on the intuition that shallow trees are more human-legible and therefore less prone to drift. This intuition is directionally correct but structurally insufficient for three reasons.
+
+\medskip
+\noindent \textbf{Reason 1: Drift can occur at any depth.}
+The conditions for drift (parent termination, anchor unreachability, unmonitored spawning, intentional stripping) are independent of depth. An agent at depth $d=1$ can become drifted just as readily as an agent at $d=100$. A depth limit constrains the number of agents, not the probability that any given agent becomes drifted. If the per-agent drift probability is $p_d$, a system of $n$ agents at depth $\leq d_{\max}$ still accumulates expected $n \cdot p_d$ drifted agents. Shallow trees have fewer total nodes, but the drift rate per node is unchanged.
+
+\medskip
+\noindent \textbf{Reason 2: Drift propagation is depth-agnostic.}
+As established in Property 1, drift propagates downward without respect to depth. A drifted agent at depth $d=2$ spawns children that enter state $D$ immediately, regardless of whether the total depth of the tree is 3 or 300. Depth limits do not interrupt the propagation mechanism; they only bound the vertical extent of a subtree that is already drifted. The damage is already done at the first drift event.
+
+\medskip
+\noindent \textbf{Reason 3: Depth limits create perverse incentives near the cap.}
+When depth is capped, agents operating near the limit face a choice: terminate (releasing resources and losing accumulated state) or spawn within the cap (which may require spawning a child that is less suited to the task but fits within the constraint). Agents near $d_{\max}$ may spawn shallow children that are themselves more likely to become orphaned at the next level, paradoxically increasing local drift probability near the boundary. The cap incentivizes spawning patterns that increase drift vulnerability precisely where the tree is deepest.
+
+\medskip
+The root cause of drift is not the shape of the tree. It is the absence of a robust, verifiable mechanism to transfer and maintain human custody of an agent across spawn events, termination events, and operational lifetimes. Depth limits reduce the blast radius of a drift event but do not prevent it. Solving drift requires designing the system so that every agent, at every depth, maintains a live, verifiable anchor to a human stakeholder --- or to a human-delegated recovery process with explicit and verifiable custody semantics.

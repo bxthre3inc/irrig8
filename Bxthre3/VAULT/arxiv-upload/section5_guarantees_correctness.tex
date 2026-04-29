@@ -1,0 +1,117 @@
+\section{Guarantees and Correctness Properties}
+\label{sec:correctness-properties}
+
+The preceding sections establish the Bailout Protocol as a formal mechanism: a deterministic state machine, a trigger condition, an escalation algorithm, and a bypass mechanism enforcing the no-machine-actor property. This section formally states the three correctness properties that the protocol is designed to guarantee, identifies the structural assumptions on which each guarantee rests, and provides a proof sketch for each. The proof sketches are argument maps — they show how the protocol's mechanisms chain together to deliver the stated guarantee, identify external dependencies, and demarcate the boundary between what the protocol guarantees structurally and what a deployment must provision externally. All three properties are stated as invariants that must hold across the full state space of the protocol, not merely for a specific execution path.
+
+% ---------------------------------------------------------------
+\subsection{Property 1: Safety — No Autonomous Collapse}
+% ---------------------------------------------------------------
+
+\theorem[Safety (No Autonomous Collapse)]{During any execution of the Bailout Protocol, the system shall not transition to a state in which all pathways to a human principal are permanently disabled without an explicit, recorded human authorization.}
+
+\subparagraph{Formal statement.} Let $\mathcal{B}$ be the Bailout Protocol state machine for a node $n$. Let $P(t)$ denote the set of functional communication pathways to $h(n)$ that are available at time $t$. Safety requires:
+\begin{equation}
+\forall t : |P(t)| = 0 \; \text{state}(n) \neq \text{RESOLVED} \implies \text{state}(n) \in \{\text{IDLE}, \text{HUMAN\_ACKNOWLEDGED}\}
+\end{equation}
+Equivalently: if no pathway to the human anchor is available, the system does not enter a terminal resolving state without human authorization. It stalls in a non-terminal state and awaits human intervention or pathway restoration.
+
+\subparagraph{Assumptions.}
+\begin{enumerate}
+\item[\textbf{A1.1}] The Fact Layer pre-commit hook is operative: any \texttt{UpdateLedger} call is processed atomically and rejects any write that would record a directive issued by a machine actor.
+\item[\textbf{A1.2}] The immutable parent-pointer $\alpha(n)$ and human-root identifier $h(n)$ are established at node provisioning and are not writable by any machine actor at runtime.
+\item[\textbf{A1.3}] At least one functional communication pathway to $h(n)$ is provisioned at node startup. This is a deployment requirement, not a protocol invariant.
+\end{enumerate}
+
+\subparagraph{Proof sketch.} The proof proceeds by contradiction across all reachable states of $\mathcal{B}$.
+
+\begin{itemize}
+\item[\textbf{Step 1.}] The only transitions that enter RESOLVED are T7 and T9 (from ESCALATING and HUMAN\_ACKNOWLEDGED respectively). Both transitions require a directive $d \in \{\texttt{RESOLVE}, \texttt{REJECT}\}$ issued by the human anchor. By INV\_2, the Fact Layer enforces $\text{directive\_issuer}(n) = h(n)$ at the authorization ledger level. Any attempted transition to RESOLVED with a machine-issued directive is rejected by the pre-commit hook and the machine stalls in its current state.
+
+\item[\textbf{Step 2.}] The only non-terminal states from which RESOLVED is reachable are ESCALATING and HUMAN\_ACKNOWLEDGED. Consider each:
+
+\begin{enumerate}
+\item[\textbf{ESCALATING}:] The \texttt{Escalate} algorithm propagates the exception along the parent chain toward $h(n)$ using the Pathway Health Registry to select functional pathways. If all provisioned pathways fail $N_{\max}$ consecutive health checks, the algorithm fires a \texttt{parent\_unreachable} timeout event, which is propagated to $h(n)$ via the next available functional pathway tracked by the PHR. If $|P(t)| = 0$ at time $t$, no propagation can succeed. The algorithm records the failure in the Forensic Ledger and the originating node stalls in ESCALATING. No machine actor can issue a directive from this state by BP (the bypass property, proved in \S\ref{sec:bypass-mechanism}). Therefore RESOLVED cannot be entered without human authorization when all pathways are unavailable.
+
+\item[\textbf{HUMAN\_ACKNOWLEDGED}:] Entry to HUMAN\_ACKNOWLEDGED occurs only via T2 or T6, both of which require a Fact-Layer-recorded human acknowledgment. In this state, only the human anchor may issue a directive. A machine actor cannot issue, simulate, or substitute a directive; the pre-commit hook rejects any ledger entry recording a non-human directive. If the human anchor does not respond before $T_{\text{human}}$ expires, the protocol transitions to RESOLVED with an \texttt{unresolved} tag — a terminal state that does not represent autonomous resolution but rather a stall condition requiring human re-engagement. This outcome does not constitute autonomous collapse; it is a documented, auditable protocol stall.
+\end{enumerate}
+
+\item[\textbf{Step 3.}] The trigger condition TC and the bypass mechanism BP jointly ensure that no state in $Q \setminus \{\text{RESOLVED}\}$ can be reached via a machine-actor-issued directive. The Fact Layer gate rejects any resolution attempt that would bypass the escalation chain. The parent-pointer immutability prevents a compromised node from redirecting its bailout terminus to a machine actor. The conjunction of these three mechanisms makes the following invariant self-evidence: reaching RESOLVED without human authorization would require the Fact Layer to approve a directive from a non-human actor, which violates A1.1. Since A1.1 is a deployment assumption that is outside the protocol's own control, safety holds conditionally on A1.1 being satisfied.
+\end{itemize}
+
+\subparagraph{Discussion.} Safety does not require that a pathway to the human anchor always exists — it requires that the system cannot autonomously collapse (enter RESOLVED without human authorization) regardless of pathway availability. If all pathways fail (A1.3 is violated), the system stalls in ESCALATING or transitions to RESOLVED with an \texttt{unresolved} tag. Neither outcome constitutes autonomous collapse. The system's failure mode is a documented stall, not an unauthorized resolution. This distinction is operationally meaningful: in safety-critical domains, a system that fails by stalling and logging the stall is preferable to one that fails by proceeding on an unauthorized resolution. The safety property guarantees that the Bailout Protocol's failure mode is always the safer one.
+
+% ---------------------------------------------------------------
+\subsection{Property 2: Liveness — Eventual Human Contact}
+% ---------------------------------------------------------------
+
+\theorem[Liveness (Eventual Human Contact)]{During any execution of the Bailout Protocol, if the system enters the BOUNDED state and the Bounds Engine does not produce a Fact-Layer-approved resolution within $T_{\text{bounds}}$, then the protocol must eventually enter either the HUMAN\_ACKNOWLEDGED state or the RESOLVED state (with an \texttt{unresolved} tag), and in either case the human anchor $h(n)$ is contacted within a bounded amount of wall-clock time from the trigger event.}
+
+\subparagraph{Formal statement.} Let $t_0$ be the time at which T1 fires (entry to BOUNDED). Liveness requires:
+\begin{equation}
+\exists t_1 \geq t_0 : t_1 - t_0 \leq T_{\max} \implies \text{state}(n) \in \{\text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}
+\end{equation}
+where $T_{\max}$ is a deployment-specific bound derived from the network topology, the number of hops to $h(n)$, and the provisioned timeout values $T_{\text{bounds}}$, $T_{\text{prop}}$, $T_{\text{cap}}$, and $T_{\text{human}}$. If the human anchor does not respond within $T_{\text{human}}$, the protocol enters RESOLVED with an \texttt{unresolved} tag; this is included in the liveness guarantee because it constitutes human contact (notification was sent and received, as evidenced by the ledger entry).
+
+\subparagraph{Assumptions.}
+\begin{enumerate}
+\item[\textbf{A2.1}] The Pathway Health Registry is operative and updated at intervals $T_{\text{health}}$: at least one functional pathway to $h(n)$ is available at the time of the trigger event, or becomes available before $N_{\max}$ retries are exhausted.
+\item[\textbf{A2.2}] The human anchor $h(n)$ is responsive: if the anchor does not issue a directive within $T_{\text{human}}$, the timeout issues a reminder notification and transitions to RESOLVED with an \texttt{unresolved} tag, which is recorded in the Forensic Ledger as human contact (not human resolution).
+\item[\textbf{A2.3}] The timeout parameters $T_{\text{bounds}}$, $T_{\text{prop}}$, $T_{\text{cap}}$, and $T_{\text{human}}$ are provisioned with finite positive values and are not adjustable by any machine actor at runtime.
+\end{enumerate}
+
+\subparagraph{Proof sketch.} The proof establishes that the protocol always advances from BOUNDED to either HUMAN\_ACKNOWLEDGED or RESOLVED (with \texttt{unresolved}) within a bounded time, by examining each transition path and its timing constraints.
+
+\begin{itemize}
+\item[\textbf{Step 1.}] From BOUNDED, the state machine has exactly two possible exits: T2 (transition to HUMAN\_ACKNOWLEDGED via intra-bounds resolution) or T3 (transition to BAIL\_PENDING $\rightarrow$ ESCALATING upon $T_{\text{bounds}}$ expiration or explicit \texttt{bailout\_signal}). T2 is the fast path; T3 is the guaranteed path. Since $T_{\text{bounds}}$ is a finite provisioned constant (A2.3), T3 must fire within $T_{\text{bounds}}$ if T2 has not fired. This is a hard timeout, not a best-effort estimate: the Fact Layer enforces $T_{\text{bounds}}$ at the pre-commit hook and rejects any resolution attempt that would prevent its expiration.
+
+\item[\textbf{Step 2.}] T4 (BAIL\_PENDING $\rightarrow$ ESCALATING) fires immediately upon entry to BAIL\_PENDING with no dwell time. This is an architectural compulsion, not a configurable delay. Therefore, from the moment T3 fires, the protocol enters ESCALATING within a negligible wall-clock delta (bounded by the atomic state transition latency, which is a deployment constant).
+
+\item[\textbf{Step 3.}] In ESCALATING, the \texttt{Escalate} algorithm executes the propagation loop. Each iteration selects the lowest-latency functional pathway from the PHR and sends the exception to the parent node. If the parent does not acknowledge within $T_{\text{prop}}$, the algorithm retries with exponential backoff capped at $T_{\text{cap}}$. The maximum number of retries $N_{\max}$ is a deployment constant. Therefore, the total propagation time from ESCALATING entry to either successful parent acknowledgment or $N_{\max}$-retry exhaustion is bounded by $N_{\max} \cdot T_{\text{cap}}$ plus the accumulated backoff, which is itself bounded by $N_{\max} \cdot T_{\text{cap}}$.
+
+\item[\textbf{Step 4.}] If the parent is unreachable after $N_{\max}$ retries at $T_{\text{cap}}$, the algorithm fires a \texttt{parent\_unreachable} timeout event (T3 from ESCALATING), which propagates to $h(n)$ via the next available functional pathway in the PHR. This event is treated as a new trigger event with the same diagnostic context and propagation chain. The fallback pathway selection ensures that propagation does not deadlock on a single failed parent; it advances to $h(n)$ via an alternate route.
+
+\item[\textbf{Step 5.}] Upon reaching $h(n)$, the protocol enters HUMAN\_ACKNOWLEDGED (T6). If the human anchor does not issue a directive before $T_{\text{human}}$ expires (A2.2), the protocol transitions to RESOLVED with an \texttt{unresolved} tag (T10), which is recorded in the Forensic Ledger. Both outcomes — human acknowledgment and human timeout with \texttt{unresolved} tag — constitute human contact as defined by the liveness property.
+\end{itemize}
+
+\subparagraph{Combined bound.} The total wall-clock time from $t_0$ (T1 firing) to human contact is bounded by:
+\begin{equation}
+T_{\max} \leq T_{\text{bounds}} + T_{\text{prop}} \cdot N_{\max} + T_{\text{human}}
+\end{equation}
+This bound is a deployment parameter, not a protocol constant. It depends on the network topology (which determines $T_{\text{prop}}$ per hop), the number of hops to $h(n)$, and the provisioned $T_{\text{human}}$. A deployment that cannot satisfy its operational $T_{\max}$ requirement must provision additional pathways, increase $N_{\max}$, or reduce timeout values — but the protocol guarantees that human contact will occur within whatever bound the deployment provisions.
+
+\subparagraph{Discussion.} Liveness is a conditional guarantee: it holds if A2.1 (at least one functional pathway), A2.2 (human responsiveness), and A2.3 (finite timeouts) are satisfied. If the human anchor is permanently unreachable — a deployment failure that violates A2.1 — the protocol cannot establish contact. However, even in this case, the protocol does not enter RESOLVED autonomously: it stalls in ESCALATING and records the failure in the Forensic Ledger. The safety property (above) ensures that pathway failure does not result in autonomous collapse. Liveness and safety together define the protocol's failure semantics: when liveness cannot be achieved because no pathway to the human exists, safety ensures the system fails by stalling rather than by proceeding without authorization.
+
+% ---------------------------------------------------------------
+\subsection{Property 3: Accountability — Human Always Identifiable}
+% ---------------------------------------------------------------
+
+\theorem[Accountability (Human Always Identifiable)]{For every protocol run that produces a directive $d \in \{\texttt{ACK}, \texttt{RESOLVE}, \texttt{REJECT}\}$, the Forensic Ledger entry recording $d$ identifies the human principal who issued it, and no ledger entry records a directive issued by a machine actor.}
+
+\subparagraph{Formal statement.} Let $\mathcal{L}$ be the append-only Forensic Ledger recording all protocol events. Accountability requires:
+\begin{equation}
+\forall \text{ledger entry } \ell \in \mathcal{L} : \ell.\text{event\_type} = \text{human\_directive} \implies \ell.\text{principal\_id} = h(n) \land \text{is\_human}(\ell.\text{principal\_id})
+\end{equation}
+where $h(n)$ is the human accountability anchor of the originating node $n$, and $\text{is\_human}$ is a predicate that returns true only for identifiers that the provisioning authority has classified as human principal identifiers. Equivalently: every directive recorded in the ledger is attributable to a human principal, and no machine-issued directive is recorded as valid.
+
+\subparagraph{Assumptions.}
+\begin{enumerate}
+\item[\textbf{A3.1}] The provisioning authority issues human principal identifiers only to verified natural persons or institutional actors acting with unambiguous human authority. The \text{is\_human} predicate is a deployment-side classification, not a protocol mechanism.
+\item[\textbf{A3.2}] The Fact Layer pre-commit hook is operative and rejects any \texttt{UpdateLedger} call that would record a directive whose \text{principal\_id} field does not satisfy $\text{is\_human}$.
+\item[\textbf{A3.3}] The parent pointer $\alpha(n)$ and human-root identifier $h(n)$ are established at provisioning and are immutable for the node's lifetime. Any attempt to modify them at runtime is rejected by the Fact Layer pre-commit hook and logged as a protocol violation.
+\end{enumerate}
+
+\subparagraph{Proof sketch.} The proof proceeds by structural induction over the set of protocol transitions that can produce a ledger entry, showing that only human-issued directives can produce a valid entry.
+
+\begin{itemize}
+\item[\textbf{Step 1.}] The only protocol transitions that generate a ledger entry with $\text{event\_type} = \text{human\_directive}$ are T6 (ESCALATING $\rightarrow$ HUMAN\_ACKNOWLEDGED upon human ACK), T7 (ESCALATING $\rightarrow$ RESOLVED upon human RESOLVE or REJECT), T9 (HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED upon human RESOLVE or REJECT), and T10 (HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED upon human timeout with \texttt{unresolved} tag). Each of these transitions fires only upon receipt of a directive from $h(n)$, as enforced by the Fact Layer pre-commit hook.
+
+\item[\textbf{Step 2.}] The Fact Layer pre-commit hook is the enforcement point for INV\_2: $\text{state}(n) = \text{HUMAN\_ACKNOWLEDGED} \implies \text{directive\_issuer}(n) = h(n)$. When a directive is received from the human anchor, the Fact Layer verifies the principal identifier against the authorization ledger. If the identifier does not satisfy $\text{is\_human}$ or does not match the $h(n)$ stored for the originating node, the pre-commit hook rejects the directive and logs a protocol violation. This check cannot be bypassed by any machine actor, including the Purpose Layer: the Purpose Layer's role is exclusively receiving exceptions and issuing directives; it cannot authorize ledger entries that would attribute a directive to a non-human actor.
+
+\item[\textbf{Step 3.}] The append-only property of the Forensic Ledger (enforced by the Fact Layer's write protocol) ensures that once a ledger entry is written, it cannot be modified or deleted. Even if a machine actor could produce a directive with a falsified principal identifier, the ledger entry recording that directive is immutable and would carry the falsified identifier — but the Fact Layer's pre-commit check prevents the entry from being written in the first place. The falsification is blocked at the authorization layer, not detected after the fact.
+
+\item[\textbf{Step 4.}] The immutability of $h(n)$ (A3.3) ensures that the accountability anchor for each node is fixed at provisioning and cannot be redirected by a compromised or malfunctioning node at runtime. This prevents a machine actor from substituting its own human anchor for the correct one. The $h(n)$ field is stored in Fact Layer-managed memory and is read-only at the machine-actor level; any attempt to modify it is rejected and logged as an unauthorized modification attempt.
+\end{itemize}
+
+\subparagraph{Discussion.} The accountability property guarantees attribution, not correctness: it guarantees that every directive in the ledger is attributable to a human principal, but it does not guarantee that the human principal made the correct decision. The latter is a separate concern — one of human factors, organizational process, and training — that the protocol cannot address architecturally. What the protocol guarantees architecturally is that no machine actor can issue, simulate, or substitute a directive without this being detectable as a protocol violation. The ledger provides the documentary evidence; the pre-commit hook provides the enforcement. Together, they make accountability non-repudiable in the sense that a human principal cannot later deny issuing a directive that appears in the ledger with their identifier, and a machine actor cannot cause a directive to appear in the ledger under a falsified human identifier.
+
+The three properties are not independent. Safety prevents the system from entering a terminal state without human authorization; liveness ensures the system reaches human contact within a bounded time if a pathway exists; accountability ensures that when human contact occurs, the resulting directive is attributable to a human and not to any machine actor. Safety and liveness together define the protocol's failure semantics: when human contact cannot be achieved because all pathways have failed, safety guarantees the system stalls rather than collapses autonomously, and the Forensic Ledger records the stall as a documented protocol event. Accountability ensures that even this failure mode is auditable — the system failure is recorded with full attribution to the human anchor who would have been the intended recipient.

@@ -7,12 +7,11 @@ use axum::{
 };
 use std::time::Instant;
 
-/// Logging middleware — logs request method, path, and latency.
 pub async fn logging(next: Next) -> Response {
     let method = next.request().method().clone();
     let uri = next.request().uri().clone();
     let start = Instant::now();
-    let response = next.run(next.request).await;
+    let response = next.run().await;
     let elapsed = start.elapsed();
     tracing::info!(
         method = %method,

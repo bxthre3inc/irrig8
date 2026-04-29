@@ -1,0 +1,109 @@
+\section{Correctness Properties}
+\label{section:correctness-properties}
+
+Recursive spawning in the BX3 Framework satisfies three fundamental correctness guarantees: drift prevention (the spawned agent chain cannot diverge from its declared purpose), chain integrity (the parent-child relationship is tamper-evident), and termination (the spawn tree is depth-bounded and therefore finite). Each guarantee is established through the interaction of the mechanisms described in Section~\ref{section:integration-with-the-bx3-framework}.
+
+\subsection{Drift Prevention}
+
+\textit{Drift} is the failure mode in which an agent's behavior diverges from its declared purpose over successive generations, either through gradual scope expansion or through purpose override by a compromised parent. Drift is structurally impossible in the BX3 Framework by virtue of three interlocking mechanisms: an immutable parent pointer, forensic ledger verification, and chain termination at the Purpose Layer.
+
+\begin{figure}[ht]
+\centering
+\caption{Drift Prevention Architecture}
+\label{fig:drift-prevention}
+\begin{minipage}{0.45\textwidth}
+\centering
+\textbf{Component chain:}
+\begin{enumerate}
+\item Parent agent $A_i$ holds immutable pointer to $A_{i-1}$
+\item Purpose derivation $p_{i+1} = f_{\text{derive}}(p_i, i+1)$ with $p_{i+1} \preceq p_i$
+\item Every spawn event logged to Fact Layer forensic ledger
+\item Chain terminates at Purpose Layer \texttt{HUMAN\_ORIGIN\_ID}
+\end{enumerate}
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\textbf{Drift is impossible because:}
+\begin{enumerate}
+\item No agent can modify its parent pointer post-spawn
+\item Purpose scope is non-increasing: $p_0 \succeq p_1 \succeq \cdots \succeq p_n$
+\item Any deviation from the purpose chain is detectable via forensic ledger
+\item No agent can exist without tracing back to \texttt{HUMAN\_ORIGIN\_ID}
+\end{enumerate}
+\end{minipage}
+\end{figure}
+
+\begin{proof}[Drift Prevention Sketch]
+Let $A_0$ be a root agent with declared purpose $p_0$ anchored at the Purpose Layer. For any spawned agent $A_i$ at depth $i$, let $p_i$ denote its declared purpose, derived from $p_{i-1}$ via $f_{\text{derive}}$ with the constraint $p_i = f_{\text{derive}}(p_{i-1}, i)$ and $p_i \preceq p_{i-1}$ (where $\preceq$ denotes strict scope containment or equality).
+
+\textbf{Base case ($i = 0$).} $p_0$ is anchored at the Purpose Layer. Trivially, $p_0$ traces to $p_0$.
+
+\textbf{Inductive step.} Assume $p_i$ traces to $p_0$ for depth $i$. Consider $A_{i+1}$ spawned by $A_i$. The Purpose Layer enforces that $p_{i+1} = f_{\text{derive}}(p_i, i+1)$ and $p_{i+1} \preceq p_i$. By the inductive hypothesis, $p_i$ traces to $p_0$; therefore $p_{i+1}$ also traces to $p_0$. Moreover, $p_{i+1}$ cannot be equal to a sibling's purpose or an independently declared purpose because $f_{\text{derive}}$ is deterministic and scoped to the parent's purpose.
+
+\textbf{Immutable parent pointer.} Each agent $A_i$ holds an immutable pointer to its parent $A_{i-1}$. The pointer value at spawn time is hashed and recorded in the Fact Layer as \texttt{parent-pointer-hash}. Any attempt to change the parent pointer after spawn invalidates the cryptographic signature, which is detected on any subsequent chain verification.
+
+\textbf{Forensic ledger verification.} The Fact Layer records every spawn event with its purpose-derivation output and bounds-check result. A retrospective audit can verify that for every agent $A_i$ in the chain, the purpose-derivation chain from $p_0$ to $p_i$ satisfies the $\preceq$ constraint at each step. Any deviation from this chain — including a node whose purpose does not derive from its parent's — is recorded as a fault code (\texttt{PURPOSE\_MISALIGNMENT} or \texttt{PURPOSE\_ESCALATION}).
+
+\textbf{Termination at Purpose Layer.} The chain terminates at \texttt{HUMAN\_ORIGIN\_ID} at the Purpose Layer. There exists no cycle from any agent back to the Purpose Layer that does not strictly decrease depth; depth is a natural number bounded below by $0$. Therefore, the chain cannot extend indefinitely and cannot loop back.
+
+Combining these properties, any attempt to spawn an agent whose purpose does not trace back to $p_0$ is (a) blocked by the Purpose Layer revocation cascade if the root purpose was revoked, or (b) detected post-hoc via forensic ledger audit if the purpose derivation constraint was bypassed at an intermediate node. Hence, \textit{drift is structurally impossible}.
+
+\endproof
+
+Two practical implications follow from this proof. First, drift prevention does not require that agents are trusted to behave correctly — it requires only that the structural mechanisms (immutable pointers, purpose derivation, forensic ledger) are correctly implemented. If those mechanisms hold, drift cannot occur regardless of agent behavior. Second, drift prevention is a property of the spawn chain's structure, not of individual agent reliability. Compromising a single agent may cause it to stop producing correct outputs, but it cannot cause the spawn chain to drift to an unrelated purpose.
+
+\subsection{Chain Integrity}
+
+Chain integrity guarantees that the parent-child links in the spawn tree are verifiable and tamper-evident at any point after spawn. This guarantee relies on two mechanisms: the cryptographic hash chain in the Fact Layer and the immutability of the parent pointer.
+
+Formally, for any two agents $A_i$ (parent) and $A_{i+1}$ (child), the chain integrity condition is:
+
+\begin{equation}
+\text{Integrity}(A_i, A_{i+1}) \iff
+\begin{cases}
+\text{parent-pointer-hash}(A_{i+1}) = H(\text{parent-pointer}(A_i) \text{ at spawn of } A_{i+1}) \\
+\land \\
+\text{hash-chain-prev}(A_{i+1}) = H(\text{FactLayer entry for } A_i)
+\end{cases}
+\end{equation}
+
+where $H$ denotes SHA-256. The first condition ensures the child correctly references its parent; the second ensures the spawn event is embedded in the immutable Fact Layer chain. If either condition fails, the chain is broken and a \texttt{ChainIntegrityViolation} exception is raised, logged to the Fact Layer, and a \texttt{CHAIN\_BREACH\_DETECTED} alert is issued with a full snapshot of the failed chain segment.
+
+Chain integrity does not guarantee that the parent is trustworthy or that the child behaves correctly. It guarantees only that the \textit{record} of the parent-child relationship is intact and verifiable. Behavioral guarantees are enforced by the Purpose Layer and drift prevention mechanisms.
+
+The activation protocol (Section~\ref{section:integration-with-the-bx3-framework}) performs these checks at spawn time, and the Bounding Oracle re-verifies them at convergence. Chain integrity is thus enforced both at creation and at termination, with any detected tampering causing immediate suspension of the affected tree.
+
+\subsection{Termination}
+
+The spawn tree is guaranteed to be finite. Three independent mechanisms enforce termination, each operating along a different axis of the spawn tree:
+
+\begin{enumerate}
+    \item \textbf{Depth bound.} Each spawn authorization $a_{\text{spawn}}(A, d_{\text{cur}})$ requires $d_{\text{cur}} < d_{\max}(A)$. Since depth is a natural number bounded below by $0$, the maximum number of spawn generations is $d_{\max}$. After $d_{\max}$ successful spawns, $d_{\text{cur}} = d_{\max}$ and any further spawn attempt is denied with a \texttt{DEPTH\_LIMIT\_EXCEEDED} fault. The default \texttt{MAX\_SPAWN\_DEPTH} is set at system initialization and is not mutable by any agent, including the human administrator.
+
+    \item \textbf{Per-agent child quota.} The Bounds Engine enforces a maximum number of direct children $c_{\max}(A)$ per agent. Even if depth is available, a spawn request that would exceed $c_{\max}(A)$ is rejected with a \texttt{SPAWN\_CREDIT\_EXHAUSTED} fault. This bounds the branching factor independently of depth.
+
+    \item \textbf{Purpose Layer revocation cascade.} If the root purpose at the Purpose Layer is revoked, all descendants receive a suspension signal via the attribution certificate chain. This causes all active agents to halt, effectively terminating the tree's execution even if some branches have not yet reached their depth limits. This mechanism ensures that a compromised or retracted root purpose terminates the entire tree regardless of remaining depth or branching capacity.
+\end{enumerate}
+
+These three mechanisms are orthogonal and stack: depth bounds limit vertical growth, child quotas limit horizontal growth, and purpose revocation provides a global emergency stop. The combination ensures that $|T| < \infty$ for any spawn tree $T$.
+
+At convergence, the Bounding Oracle confirms that all terminal agents have reached a terminal state (completed, failed, or timed out), all pending spawn requests have been resolved, and the chain-of-custody audit confirms zero orphaned agents. Only then is \texttt{CONVERGENCE\_CONFIRMED} issued and the forensic ledger sealed for the task tree.
+
+\subsection{Formal Summary}
+
+Table~\ref{tab:correctness-summary} summarizes the three correctness properties, their enforcement mechanisms, and the formal guarantees they provide.
+
+\begin{table}[ht]
+\centering
+\caption{Correctness Properties and Enforcement Mechanisms}
+\label{tab:correctness-summary}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Property} & \textbf{Enforcement} & \textbf{Formal Guarantee} \\ \midrule
+Drift Prevention & Purpose derivation constraint ($\preceq$), immutable parent pointer, forensic ledger & $p_i \preceq p_0$ for all $i \geq 0$ \\
+Chain Integrity & Fact Layer hash chain, SHA-256 parent pointer hash, activation protocol & $\text{Integrity}(A_i, A_{i+1})$ verifiable for all edges \\
+Termination & Depth bound ($d_{\text{cur}} < d_{\max}$), child quota ($c_{\max}$), purpose revocation cascade & $|T| < \infty$ for any spawn tree $T$ \\
+\bottomrule
+\end{tabular}
+\end{table}

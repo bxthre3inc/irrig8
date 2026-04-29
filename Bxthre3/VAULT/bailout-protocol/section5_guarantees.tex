@@ -1,0 +1,152 @@
+\section{Guarantees and Correctness Properties}
+\label{section:guarantees}
+
+The Bailout Protocol is designed to satisfy three independently verifiable correctness properties that together ensure the autonomous system remains under justifiable human control at all times. These properties are not merely design goals but are enforced through formal constraints on the state machine, the audit ledger, and the interaction protocol. This section states each property formally, describes the mechanism that enforces it, and provides a proof sketch.
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{SAFETY: No Autonomous Collapse}
+\label{subsection:safety}
+
+\subsubsection*{Property Statement.}
+\textbf{SAFETY} states that \emph{under no可达 sequence of internal events or external inputs does the Bailout Protocol transition to a state in which the human principal is permanently unidentifiable or unreachable}. In particular, the system cannot enter a mode where it continues to operate, make decisions, or execute actions without any retained reference to a human identity capable of intervening.
+
+Formally, let $S$ be the global state of the system at any time $t$. Let $H(t) \subseteq \mathcal{H}$ denote the set of human identities currently registered and active in the protocol, where $\mathcal{H}$ is the universe of admissible human principals. Let $\perp$ denote the \emph{undefined} identity. SAFETY requires:
+
+\[
+\forall t.\; \text{Valid}(S(t)) \implies H(t) \neq \emptyset \quad \text{and} \quad \nexists\; \text{transition path}\; \tau \suchthat H(\tau_{\text{final}}) = \perp.
+\]
+
+Equivalently: there is no reachable state $S'$ from any valid initial state $S_0$ such that the human identity field is $\perp$ and the mode flag is \texttt{AUTONOMOUS}.
+
+\subsubsection*{Mechanism.}
+SAFETY is enforced through two structural constraints:
+
+\begin{enumerate}
+    \item \textbf{Non-NULLable identity field.} The \texttt{human\_identity} field in the system state record is declared non-nullable at the schema level. Any transaction that attempts to clear, nullify, or delete this field is rejected by the protocol logic before it can be committed to the ledger.
+    \item \textbf{Human presence gate.} Every state transition from \texttt{AUTONOMOUS} mode to any subordinate or successor mode passes through a \texttt{HUMAN\_PRESENT} guard. This guard queries the ledger for the most recent authenticated human contact event with a timestamp $T_{\text{contact}}$ and requires $t_{\text{now}} - T_{\text{contact}} < T_{\max}$, where $T_{\max}$ is the configurable maximum autonomous interval (default: 24 hours). If the condition fails, the transition is blocked and the system enters \texttt{AWAITING\_HUMAN} rather than proceeding.
+\end{enumerate}
+
+Additionally, the protocol mandates that the \texttt{AUTONOMOUS} mode carry an explicit \texttt{principal\_ref} attribute that names the accountable human, and this attribute is cryptographically signed at the time the mode is entered. The signature is stored in the audit ledger and cannot be backdated or altered.
+
+\subsubsection*{Proof Sketch.}
+We prove SAFETY by structural induction over the set of valid transition paths $\mathcal{T}$ from any initial valid state $S_0$.
+
+\begin{itemize}
+    \item \textbf{Base case.} In any initial valid state $S_0$, the protocol requires $H(0) \neq \emptyset$ and $\text{mode}(S_0) \in \{\texttt{HUMAN\_DRIVEN}, \texttt{AWAITING\_HUMAN}\}$. The \texttt{human\_identity} field is populated. Hence SAFETY holds at $t=0$.
+    \item \textbf{Inductive step.} Assume SAFETY holds at all states up to step $k$ (i.e., $H(k) \neq \emptyset$). Consider any transition $\tau: S(k) \to S(k+1)$. There are two relevant cases:
+    \begin{itemize}
+        \item \textbf{Case 1:} $\tau$ is initiated by the human principal. The \texttt{human\_identity} field is authenticated via the session credential, so $H(k+1) \neq \emptyset$ is guaranteed by the authentication layer.
+        \item \textbf{Case 2:} $\tau$ is a time-triggered or event-triggered autonomous transition. The protocol's \texttt{HUMAN\_PRESENT} gate is evaluated before any autonomous transition is committed. If $H(k) = \emptyset$ were possible at this point, it would contradict the inductive hypothesis. The gate additionally checks $T_{\text{contact}}$ freshness, which ensures that even if the human has not acted recently, an affirmative \texttt{HUMAN\_PRESENT} acknowledgment has been recorded. If the gate fails, the transition is redirected to \texttt{AWAITING\_HUMAN}, preserving $H(k+1) \neq \emptyset$.
+    \end{itemize}
+    \item \textbf{Non-collapse argument.} The protocol has no transition that sets \texttt{human\_identity} to $\perp$. All assignment paths to this field are blocked at the schema enforcement layer. Therefore $\nexists\, S'$ reachable from $S_0$ with $H = \perp$ in mode \texttt{AUTONOMOUS}.
+\end{itemize}
+
+\medskip
+\noindent\textbf{Conclusion.} SAFETY holds for all reachable states. $\square$
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{LIVENESS: Eventual Human Contact}
+\label{subsection:liveness}
+
+\subsubsection*{Property Statement.}
+\textbf{LIVENESS} states that \emph{if the system enters the \texttt{AWAITING\_HUMAN} state, it will eventually transition to \texttt{HUMAN\_DRIVEN} or a confirmed human contact is logged, provided the human principal remains physically present and responsive}. LIVENESS is a progress property: it guarantees that under reasonable assumptions about human availability, the system cannot stall indefinitely in an unreached or unresolved waiting state.
+
+Formally, let $\texttt{AWAITING\_HUMAN}[S]$ denote the predicate that the system is currently in the \texttt{AWAITING\_HUMAN} state. LIVENESS requires:
+
+\[
+\forall S.\; \texttt{AWAITING\_HUMAN}(S) \implies \exists\; \delta > 0 \suchthat \text{within time } \delta,\; \left( \text{contact\_logged} \lor \text{mode} = \texttt{HUMAN\_DRIVEN} \right),
+\]
+
+conditioned on the environment assumption that the human principal is \emph{available} (defined as having an authenticated session active within the last $T_{\max}$ period).
+
+\subsubsection*{Mechanism.}
+LIVENESS is enforced through a bounded-wait alert escalation chain:
+
+\begin{enumerate}
+    \item \textbf{Alert escalation.} Upon entering \texttt{AWAITING\_HUMAN}, the protocol initiates a tiered alert sequence. Tier 1 issues a persistent in-system notification and holds for a configurable wait window $W_1$ (default: 15 minutes). If no human contact is logged within $W_1$, Tier 2 activates external channels (configured notification endpoints, email, SMS) and holds for $W_2$ (default: 1 hour). If $W_2$ elapses without contact, Tier 3 triggers a hard hold state that prevents further autonomous action until human acknowledgment is received.
+    \item \textbf{Timeout-derived progress.} Each tier's wait window has a defined maximum duration. The protocol's event loop cannot proceed past a tier boundary without either (a) logging a contact event or (b) exhausting all tiers and entering the hard hold. Because tiers have finite durations and the alert chain is acyclic (no cycle back to \texttt{AWAITING\_HUMAN} from a later tier), the system cannot loop forever.
+    \item \textbf{Contact finality.} A contact event is only considered logged when it is written to the audit ledger with a valid authentication proof. This prevents spurious or automated false-contact events from satisfying the liveliness condition.
+\end{enumerate}
+
+The liveliness guarantee depends on the assumption that the human principal remains available. If the human is genuinely unavailable for a period exceeding the sum of all escalation tiers, the system enters a \emph{constrained halt} rather than an unbounded wait. This is a deliberate design choice: the protocol prioritizes honest acknowledgment of human absence over indefinite waiting.
+
+\subsubsection*{Proof Sketch.}
+We prove LIVENESS by analyzing the alert escalation chain as a finite-state progress automaton.
+
+\begin{itemize}
+    \item \textbf{State space.} The relevant subgraph of the protocol state machine consists of three states: $\texttt{AWAITING\_HUMAN}$, $\texttt{HUMAN\_DRIVEN}$, and the hard-hold state $\texttt{HOLD}$. There are no transitions from $\texttt{AWAITING\_HUMAN}$ back to itself (by construction, the protocol does not allow self-loops in the waiting state; each elapsed window advances to the next tier or to $\texttt{HOLD}$).
+    \item \textbf{Progress condition.} Each tier $i \in \{1, 2, 3\}$ is associated with a strict time bound $W_i$ and a finite set of possible transition outcomes:
+    \begin{itemize}
+        \item Contact logged during $W_i$ $\Rightarrow$ transition to $\texttt{HUMAN\_DRIVEN}$.
+        \item $W_i$ elapsed without contact $\Rightarrow$ transition to tier $i+1$ or to $\texttt{HOLD}$ if $i=3$.
+    \end{itemize}
+    Since $W_i > 0$ and finite for all $i$, the cumulative time before reaching $\texttt{HOLD}$ is $W_1 + W_2 + W_3 < \infty$.
+    \item \textbf{Liveness argument.} Assume a human is available at the moment the system enters $\texttt{AWAITING\_HUMAN}$. An available human will produce a contact event within some finite time $T_{\text{human}} \geq 0$ (the time to respond to an alert). If $T_{\text{human}} < W_1$, the transition to $\texttt{HUMAN\_DRIVEN}$ occurs at $T_{\text{human}}$. If not, the system progresses to Tier 2, where the same argument applies with a larger window. By induction over the finite chain, the system will reach $\texttt{HUMAN\_DRIVEN}$ within $T_{\text{human}} + \sum_{i=1}^{3} W_i$.
+    \item \textbf{If the human is unavailable.} In the limiting case where no contact is forthcoming, the system reaches $\texttt{HOLD}$ after a finite, bounded time. This is not a liveness failure---it is the defined safe outcome when human presence cannot be established. The protocol makes no false claim of progress in this case.
+\end{itemize}
+
+\medskip
+\noindent\textbf{Conclusion.} LIVENESS holds for all executions in which the human principal is available. $\square$
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{ACCOUNTABILITY: Human Always Identifiable}
+\label{subsection:accountability}
+
+\subsubsection*{Property Statement.}
+\textbf{ACCOUNTABILITY} states that \emph{for every autonomous action or decision taken by the system, there exists a cryptographically attributable human principal who authorized or enabled that action, and this attribution is immutable once recorded}. The human principal must be uniquely identifiable from the audit record without ambiguity, and the attribution must resist retroactive modification or repudiation.
+
+Formally, let $\mathcal{A}$ denote the set of all autonomous actions recorded in the audit ledger. For each action $a \in \mathcal{A}$, let $\text{signer}(a) \in \mathcal{H} \cup \{\perp\}$ denote the attributed human principal. ACCOUNTABILITY requires:
+
+\[
+\forall a \in \mathcal{A}.\; \text{signer}(a) \neq \perp \quad \text{and} \quad \text{ledger is append-only with no redaction of } \text{signer}(a).
+\]
+
+Equivalently: every action record in the ledger contains a non-null \texttt{principal\_ref} that resolves to exactly one human identity, and the ledger's hash chain ensures that modifying the \texttt{principal\_ref} field of any historical record is computationally infeasible.
+
+\subsubsection*{Mechanism.}
+ACCOUNTABILITY is enforced through a three-layer attribution architecture:
+
+\begin{enumerate}
+    \item \textbf{Signature at mode entry.} When the system transitions from \texttt{HUMAN\_DRIVEN} to \texttt{AUTONOMOUS}, the human principal must explicitly authorize the transition. This authorization is a cryptographic signature over the current system state hash, the requested autonomous interval, and the principal's identity. The signature is written to the ledger as part of the transition record.
+    \item \textbf{Hash-chain ledger.} The audit ledger is structured as an append-only hash chain (similar to a blockchain). Each new entry contains the hash of the previous entry, forming an immutable chain. Modifying any historical entry would break the chain and be detectable by any party with access to the ledger. The hash function $H(\cdot)$ used is collision-resistant, making retroactive alteration of attribution data computationally hard.
+    \item \textbf{Principal resolution.} The \texttt{principal\_ref} stored in each action record is a resolvable identifier (e.g., a public key or a unique principal ID) that maps through the principal registry to a unique human identity. The registry is maintained separately from the action ledger and is subject to its own access controls, but the mapping itself is append-only: deprecated or rotated principal IDs are marked \texttt{INACTIVE} rather than deleted, preserving the ability to resolve historical action records.
+\end{enumerate}
+
+It is important to note that ACCOUNTABILITY does not require the human principal to personally approve every individual action taken during the autonomous interval. Rather, it requires that the principal authorized the interval and that all actions within it are attributable to that authorization. This is a practical distinction: a human principal may grant a 24-hour autonomous window and be accountable for all 847 actions taken within it, without personally signing each one.
+
+\subsubsection*{Proof Sketch.}
+We prove ACCOUNTABILITY by demonstrating that the attribution chain from any action $a$ to a unique human principal $h \in \mathcal{H}$ is well-defined, immutable, and non-repudiable.
+
+\begin{itemize}
+    \item \textbf{Well-definedness.} Consider any action $a \in \mathcal{A}$. By construction of the protocol, $a$ is recorded in the ledger with a \texttt{principal\_ref} field. This field is populated by the protocol at the time the action is recorded. The only path by which \texttt{principal\_ref} can be populated is through the signature verification at the opening of the autonomous interval that produced $a$. The human principal $h$ who signed the interval-opening transaction is uniquely identified by their public key or principal ID, which is stored in the \texttt{principal\_ref} field. Hence $\text{signer}(a) \neq \perp$.
+    \item \textbf{Non-repudiation.} The interval-opening signature from $h$ is generated using $h$'s private key, which is held exclusively by $h$. The signature is verified before the autonomous interval is opened. Because the signature is stored in the ledger and covers the interval parameters (start time, end time, scope), $h$ cannot credibly deny having authorized the interval that produced $a$ without repudiating their own private key.
+    \item \textbf{Immutability.} Suppose an adversary attempts to modify the \texttt{principal\_ref} of action $a$ from $h$ to $h'$. To do so, the adversary would need to modify the ledger entry for $a$, which changes its content, which in turn changes its hash. This breaks the chain link at the subsequent entry, which contains the hash of the modified entry. Detecting the break requires only comparing chain hashes. To make the chain valid again, the adversary would need to recompute the hash of $a$ and all subsequent entries, which requires breaking the collision resistance of $H$. Therefore, altering the attribution of any action is computationally infeasible under standard cryptographic assumptions.
+\end{itemize}
+
+\medskip
+\noindent\textbf{Conclusion.} ACCOUNTABILITY holds for all recorded actions. $\square$
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{Interdependency of Properties}
+\label{subsection:interdependence}
+
+The three properties are structurally independent but operationally complementary. SAFETY ensures a human is always present in the loop; LIVENESS ensures the loop is not just present but active and responsive; and ACCOUNTABILITY ensures that for any action taken when the human is not directly driving, the chain of responsibility is clear and immutable.
+
+If any one property fails, the failure is detectable through the protocol's own monitoring mechanisms:
+\begin{itemize}
+    \item If SAFETY fails, the \texttt{HUMAN\_PRESENT} gate detects a null identity and blocks the transition.
+    \item If LIVENESS fails (human available but system never reaches \texttt{HUMAN\_DRIVEN}), the escalation chain exhausts and enters \texttt{HOLD}, which is a logged and alertable condition.
+    \item If ACCOUNTABILITY fails (attribution is altered or missing), the hash-chain integrity check detects a broken chain at the next audit.
+\end{itemize}
+
+The combined satisfaction of SAFETY, LIVENESS, and ACCOUNTABILITY provides end-to-end assurance that the autonomous system operates within the bounds of legitimate human authority at all times.
+
+\vfill % pushes following content to bottom if needed

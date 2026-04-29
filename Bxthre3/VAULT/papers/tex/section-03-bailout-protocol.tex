@@ -1,0 +1,194 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is the accountability enforcement mechanism of the \bxthree\ Framework. It is not a recovery procedure --- it is a structural obligation that governs how any agent node handles states that exceed its epistemic or executive boundaries. When an agent node encounters a condition it cannot resolve with certainty, the Bailout Protocol mandates escalation to a Human Accountability Anchor, bypassing all intermediate Machine actors. The protocol operates on a single directional guarantee: \emph{the system fails upward into human consciousness; it never fails downward into algorithmic chaos}.
+
+The Bailout Protocol is embedded identically in the Worksheet of every node in the hierarchy, from leaf sensors to the root enterprise dashboard. It cannot be disabled, delayed, or overridden by any Machine actor. It is the hardest constraint in the \bxthree\ architecture.
+
+\subsection{State Machine Definition}
+
+The lifecycle of a Bailout event is formally modeled as a deterministic finite state machine (FSM). The state machine is tuple:
+
+\[
+\text{BAILOUT\_FSM} = \langle \mathcal{S}, \mathcal{S}_0, \mathcal{F}, \Sigma, \delta, \lambda \rangle
+\]
+
+Where:
+
+\begin{itemize}
+  \item $\mathcal{S} = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$ is the set of states
+  \item $\mathcal{S}_0 = \{\text{IDLE}\}$ is the set of initial states
+  \item $\mathcal{F} = \{\text{RESOLVED}\}$ is the set of terminal/accepting states
+  \item $\Sigma$ is the input alphabet (trigger events and transition signals)
+  \item $\delta: \mathcal{S} \times \Sigma \to \mathcal{S}$ is the total transition function
+  \item $\lambda: \mathcal{S} \times \Sigma \to \{\text{action}\}$ is the emission function describing side-effects
+\end{itemize}
+
+\subsubsection{State Descriptions}
+
+\begin{itemize}
+  \item \textbf{IDLE}: The node is operating within its defined boundaries. No exceptional condition has been detected. The node processes normal workload and monitors its own epistemic horizon.
+  \item \textbf{BOUNDED}: The node has detected a condition that \emph{may} exceed its boundaries. It is in a state of active evaluation. No bail-out has been triggered. The node performs boundary checking against its \purpose\ and \bounds\ layers. This is a stable holding state --- the node does not escalate while in BOUNDED unless it determines that escalation criteria are met.
+  \item \textbf{BAIL\_PENDING}: A valid bail-out trigger condition has been detected. The node has entered the Bailout Protocol. All Machine-actor resolution paths are suspended. The state machine is committed to escalation. The node will not attempt further recovery or delegation at this stage.
+  \item \textbf{ESCALATING}: The bail-out signal is in transit toward the Human Accountability Anchor. This state encompasses all intermediate hops through the parent chain. The signal bypasses all Machine actors; only nodes explicitly marked as Human Anchors may absorb this signal.
+  \item \textbf{HUMAN\_ACKNOWLEDGED}: The Human Accountability Anchor has received and acknowledged the bail-out signal. A human response is in progress. The system awaits human resolution or further instruction. The node maintains full state preservation during this interval.
+  \item \textbf{RESOLVED}: The human has resolved the exceptional condition. The node has received the resolution directive and has resumed normal operation. All state is sealed into the Forensic Ledger.
+\end{itemize}
+
+\subsection{Transition Conditions}
+
+The transition function $\delta$ is defined as a set of guarded transitions. Each transition fires if and only if its guard condition is satisfied. All transitions are deterministic: no two guards may be simultaneously true for a given state.
+
+\[
+\delta(s, \sigma) = 
+\begin{cases}
+\text{BOUNDED} & \text{if } s = \text{IDLE} \land \sigma = \text{EVAL\_CONDITION} \\[6pt]
+\text{BAIL\_PENDING} & \text{if } s = \text{BOUNDED} \land \sigma = \text{TRIGGER\_CONDITION\_MET} \\[6pt]
+\text{ESCALATING} & \text{if } s = \text{BAIL\_PENDING} \land \sigma = \text{ESCALATE\_SIGNAL\_SENT} \\[6pt]
+\text{HUMAN\_ACKNOWLEDGED} & \text{if } s = \text{ESCALATING} \land \sigma = \text{HUMAN\_ACK\_RECEIVED} \\[6pt]
+\text{RESOLVED} & \text{if } s = \text{HUMAN\_ACKNOWLEDGED} \land \sigma = \text{HUMAN\_RESOLUTION\_RECEIVED} \\[6pt]
+\text{IDLE} & \text{if } s = \text{RESOLVED} \land \sigma = \text{RESET\_DIRECTIVE} \\[6pt]
+\text{IDLE} & \text{if } s = \text{BOUNDED} \land \sigma = \text{CONDITION\_CLEARED} \\
+\end{cases}
+\]
+
+The reset transition from RESOLVED to IDLE occurs only after the human resolution has been fully absorbed into the node's operational context and logged to the Forensic Ledger. The node does not self-discharge from HUMAN\_ACKNOWLEDGED; it requires an explicit human resolution signal.
+
+\subsection{Bail-Out Trigger Condition}
+
+The bail-out trigger is not a generic error condition. It is a precisely defined predicate that fires only when a node's state satisfies the formal definition of \emph{escalatable uncertainty}. We define this as a set of necessary and sufficient conditions:
+
+\[
+\text{Trigger}(n, c) \equiv \underbrace{\neg \text{Resolved}(n, c)}_{\text{(i)}} \land \underbrace{\neg \text{Delegable}(n, c)}_{\text{(ii)}} \land \underbrace{\text{Escalatable}(n, c)}_{\text{(iii)}}
+\]
+
+\begin{itemize}
+  \item[\textbf{(i)}] $\neg \text{Resolved}(n, c)$: The condition $c$ has not been resolved within node $n$'s defined operational boundaries. The node has no available action that, with epistemic certainty, eliminates or mitigates $c$.
+  \item[\textbf{(ii)}] $\neg \text{Delegable}(n, c)$: The condition $c$ cannot be validly delegated upward or laterally to another Machine actor. Delegation is invalid if (a) no peer or parent node has the epistemic scope to absorb $c$, (b) delegating would move the condition to a node with less contextual information than $n$, or (c) the time cost of delegation exceeds the \textbf{Safety Envelope} window.
+  \item[\textbf{(iii)}] $\text{Escalatable}(n, c)$: The condition $c$ satisfies at least one of three trigger classes:
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Trigger Class T1 -- Capability Boundary:} The node $n$ has received a request or encountered a condition that falls outside the defined capability surface of its \purpose\ layer. This includes: (a) a request requiring a tool not listed in the node's tool registry, (b) a goal that conflicts with a hard constraint in the \bounds\ layer, or (c) a logical condition whose truth value cannot be derived from the node's local knowledge base.
+
+\medskip
+\noindent\textbf{Trigger Class T2 -- Safety Envelope Violation (predicted or actual):} The node has detected or predicted a deviation from the Safety Envelope defined in its \bounds\ layer. This includes: (a) a parameter trending toward a boundary threshold within the prediction horizon, (b) an action whose second-order effects cannot be predicted with sufficient certainty, or (c) an input pattern that deviates from all distributions seen during training.
+
+\medskip
+\noindent\textbf{Trigger Class T3 -- Accountability Boundary Violation:} The node has been asked to execute an action that would create an accountability gap --- a consequential state change that cannot be attributed to a named human actor. This includes: (a) an autonomous decision that would alter a system state without a corresponding human sign-off, (b) a financial or data transaction that exceeds the node's authorized threshold, or (c) an external communication (email, API call, publication) that was not pre-authorized by the Training Wheels Protocol.
+
+\medskip
+\noindent The trigger evaluation is performed synchronously and without delay. There is no \emph{try-then-bail} sequencing. If Trigger$(n, c)$ evaluates to true, the node transitions to BAIL\_PENDING immediately and suspends all further action on $c$.
+
+\subsection{Escalation Algorithm}
+
+The escalation algorithm governs how a bail-out signal propagates from the originating node to the Human Accountability Anchor. The algorithm is defined as a recursive upward walk over the parent chain, with the following formal specification:
+
+\bigskip
+\noindent\textbf{Algorithm: Escalate$(n, s, t)$}
+
+\medskip
+\noindent\textbf{Input:} $n$ -- originating node; $s$ -- full node state snapshot; $t$ -- trigger class (T1, T2, or T3)
+
+\medskip
+\noindent\textbf{Output:} Termination at Human Accountability Anchor; state sealed in Forensic Ledger
+
+\begin{enumerate}
+  \item \textbf{Validate Anchor Check.} If $n$ is a Human Accountability Anchor (i.e., $n$ has \texttt{is\_human\_anchor = True}), then:
+  \begin{enumerate}
+    \item Record $(n, s, t, \text{timestamp})$ in local Forensic Ledger entry.
+    \item Emit \texttt{HUMAN\_ACK\_REQUIRED} signal to human notification channel.
+    \item Transition node state to \text{HUMAN\_ACKNOWLEDGED}.
+    \item Await \texttt{HUMAN\_RESOLUTION} signal. Enter hold state. Go to step 6.
+  \end{enumerate}
+  \item \textbf{Assert Parent Existence.} Assert that $\text{parent}(n) \neq \text{Null}$. If no parent exists and $n$ is not a human anchor, this is a structural failure: enter \texttt{ORPHAN\_ESCALATION\_FAILURE} state and log to Forensic Ledger with severity \texttt{CRITICAL}.
+  \item \textbf{Prepare Escalation Payload.} Serialize the following into the escalation payload $P$:
+  \begin{itemize}
+    \item Node identifier: $\text{id}(n)$
+    \item State snapshot: $s$ (complete operational context at time of trigger)
+    \item Trigger class: $t$
+    \item Epistemic trace: all observations, intermediate conclusions, and uncertainty bounds accumulated during evaluation
+    \item Timestamp: $\tau_{\text{trigger}}$
+    \item Node's authority boundary at time of trigger: $\text{bounds}(n)$
+  \end{itemize}
+  \item \textbf{Direct Parent Transmission.} Transmit $P$ directly to $\text{parent}(n)$. There is no broadcast, no multicast, and no fan-out. The signal is a point-to-point directed message to the parent node only.
+  \item \textbf{Signal Bypass Confirmation.} Upon successful transmission, transition $n$ to \text{ESCALATING}. All Machine actors in the path between $n$ and the Human Accountability Anchor receive the signal as opaque payload $P$; they do not inspect, filter, modify, or route it based on local policy. Each intermediate node forwards $P$ to its own parent in constant time $O(1)$.
+  \item \textbf{Wait for Human Acknowledgment.} The originating node enters a wait state, holding its full state snapshot $s$. It does not time out on this wait; it waits indefinitely until either \texttt{HUMAN\_ACK\_RECEIVED} or a \texttt{SYSTEM\_OVERRIDE} directive arrives (the latter may only be issued by a human).
+  \item \textbf{Human Resolution Absorption.} Upon receipt of \texttt{HUMAN\_RESOLUTION}, node $n$ transitions to \text{RESOLVED}, seals $(s, t, \tau_{\text{trigger}}, \tau_{\text{resolution}}, \text{HUMAN\_RESOLUTION})$ into the Forensic Ledger, and transitions to IDLE upon successful commit.
+\end{enumerate}
+
+\medskip
+\noindent\textbf{Complexity Analysis:} The algorithm traverses at most $h$ hops, where $h$ is the height of the hierarchy tree. The transmission per hop is $O(1)$ with respect to computation; the cost is dominated by the payload size $O(|s|)$, which is bounded by the node's state snapshot. The algorithm is guaranteed to terminate because the hierarchy is a rooted tree with finite depth and the parent relation has no cycles.
+
+\subsection{Bypass Mechanism: Why All Machine Actors Are Skipped}
+
+The bypass mechanism is the defining architectural property of the Bailout Protocol. It is not a shortest-path heuristic or a performance optimization --- it is a deliberate structural choice required by the protocol's accountability semantics.
+
+\textbf{Definition (Bypass Guarantee):} For any bail-out signal $P$ generated at node $n$ with trigger class $t \in \{T1, T2, T3\}$, and for any node $m$ in the parent chain from $n$ to the Human Accountability Anchor $H$, $m$ satisfies:
+
+\[
+\text{MachineActor}(m) \implies \text{blackbox}(P, m)
+\]
+
+That is: $P$ is transmitted to $m$ as an opaque payload. Node $m$ performs only a forward transmission to $\text{parent}(m)$. It does not: (a) inspect the contents of $P$; (b) evaluate the trigger condition $t$ against local policy; (c) apply local error handling or recovery logic; (d) suppress, duplicate, or redirect $P$; or (e) substitute its own resolution for the human resolution prescribed by the protocol.
+
+The rationale for this bypass is threefold:
+
+\medskip
+\noindent\textbf{Accountability Continuity:} Any Machine actor that intermediate nodes $m$ inserted between $n$ and $H$ to evaluate, filter, or resolve $P$ would create an accountability gap: the signal's provenance would be partitioned between machine processing and human acknowledgment. The bypass ensures the signal travels intact from $n$ to $H$ with no machine actor in the path able to absorb or redirect it.
+
+\medskip
+\noindent\textbf{Prevention of Recursive Delegation:} Without the bypass, intermediate Machine actors could re-delegate the bail-out upward, potentially creating a cycle or a long chain of recursive delegation. The bypass collapses this chain: the signal arrives at $H$ from $n$ directly in terms of provenance, even if it traversed $O(h)$ physical hops.
+
+\medskip
+\noindent\textbf{Architectural Enforceability:} The bypass is implementable as a hard property of the node's Worksheet. The Worksheet carries a write-once flag for bail-out signals: the node may append to its Forensic Ledger but may not edit, delete, or redirect a bail-out payload once emitted. This is enforced at the Worksheet layer, not at the agent layer, making it structurally indestructible.
+
+\medskip
+\noindent The bypass does not imply that intermediate Machine actors are non-functional during escalation. They remain operational on all non-escalated workloads. The bail-out signal is a dedicated, isolated channel that does not consume the node's normal processing bandwidth. The two channels --- normal operation and bail-out --- are orthogonal.
+
+\subsection{Timeout Handling}
+
+The Bailout Protocol distinguishes between two classes of timeouts, each with distinct handling:
+
+\medskip
+\noindent\textbf{Class A -- Response Timeout (Human Acknowledgment):} After a node transitions to \text{ESCALATING} and transmits the bail-out signal, it awaits \texttt{HUMAN\_ACK\_RECEIVED}. This wait has \emph{no hard timeout} because a Human Accountability Anchor may be unavailable for legitimate reasons (offline, in transit, multi-event load). However, the protocol defines a \textbf{Warning Threshold} and a \textbf{Stale Escalation Threshold}:
+
+\begin{itemize}
+  \item \textbf{Warning Threshold} $T_{\text{warn}}$: After $T_{\text{warn}}$ elapsed without acknowledgment, the node emits a second notification to the Human Accountability Anchor and appends a \texttt{ESCALATION\_STALE} flag to the Forensic Ledger entry. This is not a state transition; it is a supplemental alert.
+  \item \textbf{Stale Escalation Threshold} $T_{\text{stale}}$: After $T_{\text{stale}}$ elapsed without acknowledgment (default: $4 \times T_{\text{warn}}$), the node escalates to a \emph{secondary} Human Accountability Anchor if one is defined in the hierarchy. If no secondary anchor exists and the node is operating under the Training Wheels Protocol, the node enters a \textbf{Lockdown} sub-state: it suspends all non-critical operations and awaits human contact. It does not self-resolve.
+\end{itemize}
+
+\medskip
+\noindent\textbf{Class B -- Transition Timeout (State Machine Progression):} These are hard timeouts governing transitions between non-human states:
+
+\begin{itemize}
+  \item IDLE $\rightarrow$ BOUNDED: Evaluated synchronously. No timeout. If EVAL\_CONDITION is not asserted within the node's evaluation cycle, the node remains in IDLE.
+  \item BOUNDED $\rightarrow$ BAIL\_PENDING: This transition fires at the moment Trigger$(n, c)$ evaluates to true. There is no timeout delay. The node does not wait for additional evidence before transitioning. This is by design: conservative escalation is the required behavior.
+  \item BAIL\_PENDING $\rightarrow$ ESCALATING: The signal transmission to parent$(n)$ must complete within $T_{\text{transmit}}$ (defined as a system constant; default: 30 seconds). If transmission fails, the node retries once with exponential backoff capped at $T_{\text{max\_backoff}}$ (default: 5 minutes). After $N_{\text{max\_retries}}$ failed attempts (default: 3), the node transitions to \text{ESCALATION\_FAILURE} and enters the Orphan Escalation Failure handling path (see Step 2 of the Escalation Algorithm).
+  \item Any state $\rightarrow$ IDLE: The reset transition from RESOLVED to IDLE occurs only upon confirmed Forensic Ledger commit, not upon transmission. This prevents state leakage if the Ledger write fails.
+\end{itemize}
+
+\medskip
+\noindent\textbf{Timeout Constants:} All timeout constants ($T_{\text{warn}}$, $T_{\text{stale}}$, $T_{\text{transmit}}$, $T_{\text{max\_backoff}}$, $N_{\text{max\_retries}}$) are defined as system-level parameters in the \bounds\ layer. They are not configurable by any Machine actor. They may only be modified by an explicit human directive issued from a Human Accountability Anchor, which is logged in its entirety to the Forensic Ledger.
+
+\subsection{Formal Properties}
+
+The Bailout Protocol satisfies the following formal properties:
+
+\medskip
+\noindent\textbf{Property 1 (Termination):} The FSM $\langle \mathcal{S}, \mathcal{S}_0, \mathcal{F}, \Sigma, \delta, \lambda \rangle$ is total: for every state $s \in \mathcal{S}$ and every signal $\sigma \in \Sigma$, $\delta(s, \sigma)$ is defined. The FSM cannot reach a dead state.
+
+\medskip
+\noindent\textbf{Property 2 (Progress):} From any state $s \in \mathcal{S}$, there exists a finite sequence of signals that leads to the terminal state RESOLVED, provided the Human Accountability Anchor is reachable and responsive.
+
+\medskip
+\noindent\textbf{Property 3 (Bypass Soundness):} For any bail-out signal $P$ generated at node $n$, and any path from $n$ to a Human Accountability Anchor $H$, the signal arriving at $H$ is bitwise identical to the signal emitted at $n$. No Machine actor in the path may alter, inspect, or suppress $P$.
+
+\medskip
+\noindent\textbf{Property 4 (Trigger Completeness):} If Trigger$(n, c)$ is true for some node $n$ and condition $c$, then the node transitions to BAIL\_PENDING before executing any further action on $c$. The protocol guarantees that no consequential action is taken on an escalatable condition without human notification.
+
+\medskip
+\noindent\textbf{Property 5 (Non-Retroactivity):} The Bailout Protocol cannot be deactivated, postponed, or modified by any Machine actor, including nodes with elevated privileges, admin roles, or override capabilities. This is enforced at the Worksheet layer. Any attempt to modify the protocol is itself a Trigger Class T3 condition and generates a new bail-out signal.
+
+\end{document}

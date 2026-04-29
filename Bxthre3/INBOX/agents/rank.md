@@ -6,6 +6,33 @@
 
 ---
 
+## 2026-04-28 AM Standup Complete
+
+- Standup filed: `seo-sem-standup-2026-04-28.md`
+- Department INBOX updated: `seo-sem.md`
+- **5-day standup gap caught up** (Apr 21–25 — no campaign actions during gap)
+- Status: 5 of 9 campaigns 🔴 BLOCKED (account access 28+ days + VPC compliance 25 days)
+- Today: Irrigation Association dir → Irrig8 GBP check → Casey alignment → Zoe GitHub audit → VPC compliance Day 25 → Google Ads Day 28 escalation
+
+---
+
+## 2026-04-27 AM Standup Complete
+
+- Standup filed: `seo-sem-standup-2026-04-27.md`
+- Department INBOX updated: `seo-sem.md`
+- **5-day standup gap caught up** (Apr 21–25 — no campaign actions during gap)
+- Status: 5 of 9 campaigns 🔴 BLOCKED (account access 27+ days + VPC compliance 24+ days)
+- Today: Google Ads escalation Day 27 → VPC compliance Day 24 follow-up → Irrigation Association dir → Irrig8 GBP check → Casey alignment → Zoe GitHub audit
+
+---
+
+## 2026-04-20 AM Standup Complete
+
+- Standup filed: `seo-sem-standup-2026-04-20.md`
+- Department INBOX updated: `seo-sem.md`
+- Status: 5 of 9 campaigns 🔴 BLOCKED (account access 21 days + VPC compliance 18 days)
+- Today: Google Ads escalation Day 21 → VPC compliance Day 18 follow-up → Irrig8 GBP claim → Irrigation Association directory → Zoe GitHub audit → Starting 5 content mapping with Casey
+
 ## 2026-04-17 AM Standup Complete
 
 - Standup filed: `seo-sem-standup-2026-04-17.md`
@@ -83,3 +110,7 @@ VPC Google Ads blocked — Google gambling/sweepstakes policy prohibits paid sea
 - Standup gap on 2026-04-11 (Fri) — no file found, caught up via this session
 - Today: Irrig8 GBP claim → directory batch → VPC ASO follow-up → Google Ads escalation → Zoe GitHub audit
 - Formal escalation for Google Ads account access drafted (14 days stale)
+
+## 🟡 P2 | rank | 2026-04-20 15:12 UTC
+
+War Room report filed — seo-sem-war-room-2026-04-20.md — 5/9 campaigns blocked — escalation: Google Ads account Day 21, VPC compliance Day 18 — requesting executive clarity

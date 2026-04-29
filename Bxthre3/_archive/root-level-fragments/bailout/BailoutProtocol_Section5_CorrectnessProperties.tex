@@ -1,0 +1,152 @@
+\section{Guarantees and Correctness Properties}
+\label{sec:properties}
+
+The preceding sections specify the Bailout Protocol as a deterministic state machine, an escalation mechanism operating across a recursive agent tree, and an implementation realized within the \bxthree{} three-layer architecture. This section translates that specification into three formal correctness properties — \textbf{Safety} (no autonomous collapse), \textbf{Liveness} (eventual human contact), and \textbf{Accountability} (human always identifiable) — and provides proof sketches for each under the stated structural assumptions. Together, these properties constitute the operational meaning of the upstream accountability guarantee for the Bailout Protocol.
+
+\bigskip
+% --------------------------------------------------------------
+\subsection{Safety: No Autonomous Collapse}
+\label{sec:safety}
+
+\textbf{Statement (Safety).} For any \bxthree{} node $n$, no autonomous execution path exists that remains in a non-\texttt{IDLE} state indefinitely without reaching the human anchor $h(n)$.
+
+\bigskip
+\noindent
+Formally: $\forall n \in \text{nodes},\; \forall s \in Q \setminus \{\text{IDLE}\},\; \text{state}(n) = s \implies \exists k \geq 0,\; \text{step}^k(n, s) = h(n)$.
+
+\bigskip
+\noindent
+\textbf{Structural assumptions.}
+\begin{itemize}\itemsep=0pt
+\item[\namedlabel{asm:layer}]{(A1)} Every node $n$ carries a \purpose{} layer, a \bounds{} layer, and a \fact{} layer with the enforcement properties described in Section~\ref{sec:implementation}.
+\item[\namedlabel{asm:immutability}]{(A2)} The human anchor $h(n)$ and the parent pointer $\alpha(n)$ are immutable for the operational lifetime of $n$.
+\item[\namedlabel{asm:fact-exclusive}]{(A3)} The \fact{} layer holds exclusive write authority over the authorization ledger; no machine actor may commit a ledger entry without \fact{}-layer approval.
+\item[\namedlabel{asm:transition-complete}]{(A4)} The state machine transition relation $\rightarrow$ is complete for all $(q, \sigma) \in Q \times \Sigma$ with respect to the escalation path: every non-\texttt{IDLE} state has at least one defined outgoing transition.
+\item[\namedlabel{asm:timeout}]{(A5)} All timeout parameters ($T_{\text{bounds}}$, $T_{\text{propagate}}$, $T_{\text{human}}$) are positive finite values.
+\end{itemize}
+
+\bigskip
+\noindent
+\textbf{Proof sketch.} The proof proceeds by structural induction over the state space $Q$ of the Bailout Protocol state machine.
+
+\medskip
+\noindent
+\textit{Base case.} The state \texttt{BOUNDED} is a non-\texttt{IDLE} state. By the state machine specification (T1–T3), \texttt{BOUNDED} has two defined exit transitions: T2 returns to \texttt{IDLE} when a \fact-layer-approved resolution is produced within $T_{\text{bounds}}$, and T3 advances to \texttt{BAIL\_PENDING} when $T_{\text{bounds}}$ expires or all resolution paths are exhausted. In the first case, the protocol resolves without escalation. In the second case, the state machine proceeds to \texttt{BAIL\_PENDING}, which by INV-2 (Section~\ref{sec:state-machine-fact-layer}) immediately and atomically transitions to \texttt{ESCALATING} via T4. There is no path from \texttt{BOUNDED} to a stall state; the only resolution is either local resolution (returning to \texttt{IDLE}) or escalation to $h(n)$.
+
+\medskip
+\noindent
+\textit{Inductive step.} Assume for some state $s \in Q \setminus \{\text{IDLE}, \text{BOUNDED}\}$ that every execution path from $s$ either returns to \texttt{IDLE} or reaches $h(n)$. Consider state \texttt{ESCALATING}. By the Escalate algorithm (Algorithm~1, Section~\ref{sec:bailout}), the node transmits the exception context to its parent via all active functional pathways and awaits acknowledgment. If any pathway returns \texttt{ACK} within $T_{\text{propagate}}$, the state machine transitions to \texttt{HUMAN\_ACKNOWLEDGED} (T5) and then to \texttt{RESOLVED} (T6), closing the protocol at $h(n)$ with a full Forensic Ledger entry. If no pathway acknowledges within $T_{\text{propagate}}$, the protocol times out (T7) and enters \texttt{CIRCUIT\_BROKEN}, which by the timeout handling specification (Section~\ref{sec:bailout}) transitions directly to a state in which $h(n)$ is contacted via an out-of-band pathway (direct communication, backup channel, or institutional escalation). In all cases, the execution path from \texttt{ESCALATING} terminates at $h(n)$ — no stall state is reachable from \texttt{ESCALATING}.
+
+\medskip
+\noindent
+\textit{No autonomous collapse.} An autonomous collapse would require a non-\texttt{IDLE} execution path that indefinitely avoids both local resolution (returning to \texttt{IDLE}) and escalation to $h(n)$. By the inductive argument above, every non-\texttt{IDLE} state either returns to \texttt{IDLE} via an approved resolution, transitions to a state that has $h(n)$ as its defined terminus, or times out and triggers an out-of-band human contact procedure. No state in $Q$ has an undefined exit transition that would produce a stall. Therefore no autonomous execution path can remain in a non-\texttt{IDLE} state indefinitely without reaching $h(n)$. $\square$
+
+\medskip
+The Safety property establishes that the Bailout Protocol is structurally incapable of producing the Intercept failure mode described in Section~\ref{sec:properties}: a machine actor cannot absorb an exception and continue autonomous operation because every non-\texttt{IDLE} state has a defined path to $h(n)$, and no machine actor has the authority to close the protocol without a \purpose-layer-authorized directive.
+
+\bigskip
+% --------------------------------------------------------------
+\subsection{Liveness: Eventual Human Contact}
+\label{sec:liveness}
+
+\textbf{Statement (Liveness).} For any \bxthree{} node $n$ that enters \texttt{ESCALATING} state, $h(n)$ will receive the exception context within a bounded time from the moment of entry, provided the physical communication infrastructure to $h(n)$ is operational.
+
+\bigskip
+\noindent
+Formally: $\forall n \in \text{nodes},\; \text{state}(n) = \text{ESCALATING} \implies \exists t \leq T_{\text{liveness}},\; \text{received}(h(n), \text{context}(n))$, where $T_{\text{liveness}} = T_{\text{propagate}} + T_{\text{timeout}} + T_{\text{oob}}$ and $T_{\text{oob}}$ is the maximum out-of-band contact latency.
+
+\bigskip
+\noindent
+\textbf{Structural assumptions (in addition to A1–A5).}
+\begin{itemize}\itemsep=0pt
+\item[\namedlabel{asm:pathway}]{(A6)} At least one functional pathway to $h(n)$ is operational at the time of entry to \texttt{ESCALATING}, or the physical communication infrastructure enabling out-of-band contact is operational.
+\item[\namedlabel{asm:human-available}]{(A7)} $h(n)$ is reachable (not permanently offline) within the time bounds defined by the protocol's timeout parameters.
+\end{itemize}
+
+\bigskip
+\noindent
+\textbf{Proof sketch.} The proof proceeds by case analysis on the communication pathway status at the time the node enters \texttt{ESCALATING}.
+
+\medskip
+\noindent
+\textit{Case 1: At least one functional pathway is operational.} The node invokes the Escalate algorithm, which transmits the exception context simultaneously across all active functional pathways (Algorithm~1, lines 5–11). For each pathway $p$, the algorithm awaits \texttt{ACK}$(p, n)$ for a duration of $T_{\text{propagate}}$. If any pathway returns \texttt{ACK} within this window, the exception context is received by $h(n)$ at time $t_{\text{receive}} \leq T_{\text{propagate}} < T_{\text{liveness}}$. This satisfies the liveness condition.
+
+\medskip
+\noindent
+\textit{Case 2: No functional pathway is operational ($T_{\text{propagate}}$ expires).} The Bailout Monitor records the timeout event and the state machine transitions from \texttt{ESCALATING} to \texttt{CIRCUIT\_BROKEN} via T7. The circuit-break handling procedure activates out-of-band contact with $h(n)$ — a direct communication mechanism (human telephone, institutional on-call, or equivalent) that operates outside the functional pathway infrastructure. The protocol specifies that out-of-band contact completes within $T_{\text{oob}}$, a provisioned finite parameter. The exception context is therefore received by $h(n)$ at time $t_{\text{receive}} \leq T_{\text{propagate}} + T_{\text{oob}} \leq T_{\text{liveness}}$.
+
+\medskip
+\noindent
+\textit{Case 3: $h(n)$ does not acknowledge within $T_{\text{human}}$ after receiving the context.} This case does not violate the liveness condition as stated, because liveness is defined as receipt of the exception context by $h(n)$, not as receipt of a resolution directive by $n$. Once $h(n)$ has received the context, the protocol has satisfied its liveness obligation. The subsequent timeout at the protocol level (the $T_{\text{human}}$ expiration) triggers a \texttt{CIRCUIT\_BROKEN} state that logs the non-response and maintains the node in a quiescent state until $h(n)$ responds, but this does not constitute a liveness failure of the protocol itself.
+
+\medskip
+In all cases, the exception context reaches $h(n)$ within $T_{\text{liveness}}$, a bound determined entirely by the timeout parameters provisioned at node initialization and the out-of-band contact latency. $\square$
+
+\medskip
+The Liveness property does not require that $h(n)$ responds within a bounded time — that would impose a requirement on a human actor that is outside the system's control. It requires only that $h(n)$ receives the exception context within a bounded time, which is a property the protocol can guarantee structurally through its multi-pathway escalation and out-of-band fallback mechanisms.
+
+\bigskip
+% --------------------------------------------------------------
+\subsection{Accountability: Human Always Identifiable}
+\label{sec:accountability}
+
+\textbf{Statement (Accountability).} For any exception state processed by the Bailout Protocol at any node $n$, the human anchor $h(n)$ is uniquely and immutably identifiable in the Forensic Ledger, and no protocol run can terminate without a \purpose-layer-authorized directive attributable to $h(n)$.
+
+\bigskip
+\noindent
+Formally: $\forall n \in \text{nodes},\; \forall \text{protocol run } r \text{ at } n,\; \text{received}(h(n), \text{context}(n)) \implies \exists!\, h(n) \in \text{ForensicLedger}(r)$ and $\text{terminated}(r) \implies \exists \text{ledger entry } \ell \in \text{ForensicLedger}(r)$ such that $\ell.\text{directive} \in \{\texttt{ACK}, \texttt{RESOLVE}, \texttt{REJECT}\}$ and $\ell.\text{authorizer} = h(n)$.
+
+\bigskip
+\noindent
+\textbf{Structural assumptions (in addition to A1–A7).}
+\begin{itemize}\itemsep=0pt
+\item[\namedlabel{asm:immutable-anchor}]{(A8)} $h(n)$ is established at node provisioning and immutably recorded in the authorization ledger; no machine actor may modify this assignment.
+\item[\namedlabel{asm:directive-exclusivity}]{(A9)} Only the \purpose{} layer of $h(n)$ may authorize a termination directive; no machine actor may issue, simulate, or substitute a directive on behalf of $h(n)$.
+\item[\namedlabel{asm:ledger-immutability}]{(A10)} The Forensic Ledger is append-only with SHA-256 hash-chain integrity, preventing retrospective modification of any entry after commit.
+\end{itemize}
+
+\bigskip
+\noindent
+\textbf{Proof sketch.} The proof has two components: (i) uniqueness and immutability of $h(n)$ identification, and (ii) directive non-repudiation for every protocol termination.
+
+\medskip
+\noindent
+\textit{Component 1: Unique and immutable identification of $h(n)$.} At node provisioning (Section~\ref{sec:purpose-layer}, Stage (i)), the \purpose{} layer registers $h(n)$ with the \fact{} Layer's Pathway Registry and records the anchor assignment in the authorization ledger. This entry is committed by the \fact{} layer with exclusive write authority (A3). By (A8), $h(n)$ is immutably stored in this entry and cannot be modified by any machine actor — including the node's own Bounds Engine, any parent node, or any recursively spawned subordinate. When the Escalate algorithm is invoked, the algorithm retrieves $h(n)$ directly from the authorization ledger (Algorithm~1, line 3), not from any runtime-computed or machine-maintained reference. The retrieval is therefore traceable to the original provisioning entry, and any subsequent protocol run at node $n$ preserves this identification in its Forensic Ledger entries. No two nodes share the same $h(n)$ unless explicitly co-provisioned with shared accountability; in any case, the identification in the ledger is unique to the provisioning record.
+
+\medskip
+\noindent
+\textit{Component 2: Directive non-repudiation for every termination.} A protocol run terminates only through one of the following transitions: T2 (\texttt{IDLE} via local resolution), T5 (\texttt{HUMAN\_ACKNOWLEDGED}), T6 (\texttt{RESOLVED}), or the timeout path T7 leading to \texttt{CIRCUIT\_BROKEN}. 
+
+\begin{itemize}\itemsep=0pt
+\item[T2:] The protocol terminates at \texttt{IDLE} via a \fact-layer-approved resolution. The \fact{} layer's authorization ledger gate (Section~\ref{sec:fact-layer}, enforcement mechanism ii) requires that the resolution be recorded as a ledger entry bearing \purpose{}-layer authorization. Because only the \purpose{} layer can authorize a ledger entry (A9), and the \purpose{} layer belongs to $h(n)$ by construction, the termination directive is attributable to $h(n)$ with non-repudiation.
+
+\item[T5/T6:] The protocol terminates at \texttt{HUMAN\_ACKNOWLEDGED} or \texttt{RESOLVED} upon receipt of a directive from $h(n)$ ($\texttt{ACK}$, $\texttt{RESOLVE}$, or $\texttt{REJECT}$). The directive is recorded in the Forensic Ledger as a \purpose-layer-authorized entry (Section~\ref{sec:purpose-layer}, Stage (iii)), with the authorizer field set to $h(n)$. The SHA-256 hash chain (A10) prevents retrospective modification of this entry.
+
+\item[T7:] The protocol enters \texttt{CIRCUIT\_BROKEN} after $T_{\text{propagate}}$ expires and all functional pathways have failed. The circuit-break handling activates out-of-band contact with $h(n)$ and logs the event. The protocol run does not close until $h(n)$ issues a directive; the node remains in \texttt{CIRCUIT\_BROKEN} until then. The eventual termination therefore still requires a \purpose-layer-authorized directive attributable to $h(n)$, and the \texttt{CIRCUIT\_BROKEN} state itself is recorded as a Forensic Ledger entry with full diagnostic context.
+\end{itemize}
+
+In all termination paths, the protocol run closes with a ledger entry bearing a \purpose-layer-authorized directive from $h(n)$. No termination path exists that closes without this entry, because the \fact{} layer's authorization ledger gate (A3) blocks any attempt to close a protocol run without one. $\square$
+
+\medskip
+The Accountability property establishes that the Bailout Protocol satisfies the upstream accountability guarantee at the level of individual protocol runs: every exception that the protocol processes is traceable to a specific human principal, and no protocol run can terminate in a way that obscures or denies the human's involvement. The combination of immutable $h(n)$ registration, \purpose{}-layer-exclusive directive authority, and append-only hash-chained Forensic Ledger entries makes both identification and non-repudiation structurally guaranteed rather than relying on behavioral assumptions about machine actors.
+
+\bigskip
+% --------------------------------------------------------------
+\subsection{Collective Correctness of the Five Pillars}
+\label{sec:collective-correctness}
+
+The Safety, Liveness, and Accountability properties established above describe the behavior of the Bailout Protocol in isolation. However, these properties operate within the context of the full \bxthree{} framework, where the five pillars function as an interdependent accountability system.
+
+The Bailout Protocol's correctness properties rely critically on the structural assumptions listed in (A1)–(A10) above. These assumptions are themselves guaranteed by the other four pillars of \bxthree{}:
+
+\begin{itemize}\itemsep=0pt
+\item \textbf{Loop Isolation} ensures that no node can corrupt another's execution state, which is necessary for the state machine invariant INV-1 to hold (Section~\ref{sec:state-machine-fact-layer}).
+
+\item \textbf{Recursive Spawning with Immutable Parent Pointers} establishes the parent chain structure that the Escalate algorithm traverses, and guarantees assumption (A2) — the immutability of $\alpha(n)$ and $h(n)$.
+
+\item \textbf{Spatial Firewall} prevents cross-domain state contamination that could compromise the \fact{} Layer's enforcement of the transition relation, protecting the atomicity of state transitions.
+
+\item \textbf{Sandbox Gate} ensures that the operating range $R(n)$ provisioned for each node is enforced at its boundary, preventing unauthorized state transitions that could bypass the trigger condition.
+\end{itemize}
+
+The five pillars collectively establish the preconditions under which the Bailout Protocol's correctness properties hold. A system that implements the Bailout Protocol without the other four pillars cannot guarantee assumptions (A1)–(A10), and therefore cannot guarantee Safety, Liveness, and Accountability as stated. The upstream accountability guarantee — that \bxthree{} systems fail upward into human consciousness, never downward into autonomous chaos — is thus a property of the complete five-pillar system, not of the Bailout Protocol alone.

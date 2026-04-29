@@ -1,0 +1,254 @@
+\section{The Bailout Protocol}
+\label{sec:bailout-protocol}
+
+The Bailout Protocol is the BX3 Framework's hard-wired escalation mechanism. It is the operational realization of the upstream accountability guarantee: when any node encounters a state it cannot resolve within its Bounds Engine, accountability must escalate recursively upward through the system hierarchy until it reaches a human anchor. The Bailout Protocol enforces this guarantee architecturally, not procedurally. It is not a recovery strategy or an error-handling heuristic. It is a state machine that governs how unresolved constraint violations propagate upward, when and how human acknowledgment is triggered, and how the system returns to a stable state after a bailout event. This section provides the formal state machine definition, transition conditions, escalation algorithm, bypass rationale, and timeout handling for the Bailout Protocol.
+
+\subsection{Design Purpose}
+
+The Bailout Protocol exists because the Bounds Engine, by design, is a reasoning and proposal layer — not an enforcement layer. It can identify that a constraint has been violated or that a situation lies outside its operational bounds, but it cannot unilaterally execute a resolution that exceeds its authority. The Fact Layer enforces; it does not negotiate. The Purpose Layer authorizes; it does not propose in isolation. When a node's Bounds Engine encounters a condition that (a) violates one or more defined constraints and (b) cannot be resolved by any action available to the node within its current operational scope, the node must not fabricate a resolution, suppress the violation, or proceed as though the constraint does not apply. It must invoke the Bailout Protocol and escalate to a human anchor.
+
+This requirement is unconditional. No machine actor in the chain — whether it is a sibling node, a parent Bounds Engine, a supervisor process, or any other computational entity — has the authority to override or absorb a bailout event on behalf of a human. The protocol is architecturally required to traverse the node hierarchy until it reaches an actor with Purpose Layer properties: accountability, judgment, and the authority to authorize exceptions, accept risk, or modify constraints. The bypass mechanism, described in Section~\ref{sec:bypass-mechanism}, is the formal expression of this constraint.
+
+\subsection{State Machine Definition}
+\label{sec:state-machine-definition}
+
+The Bailout Protocol is formally defined as a deterministic finite state machine $\mathcal{B} = (S, s_0, \Sigma, T, F)$, where:
+
+\begin{itemize}
+    \item $S = \{ \text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED} \}$ is the set of protocol states.
+    \item $s_0 = \text{IDLE}$ is the initial state.
+    \item $\Sigma$ is the input alphabet (events defined in Section~\ref{sec:transition-conditions}).
+    \item $T: S \times \Sigma \rightarrow S$ is the deterministic state transition function.
+    \item $F \subseteq S$ is the set of terminal states; $F = \{ \text{RESOLVED} \}$ in nominal operation.
+\end{itemize}
+
+Each state carries a distinct operational meaning and enforces specific constraints on the actions available to the node:
+
+\begin{definition}[IDLE]
+\label{def:state-idle}
+The protocol is initialized. The node has not yet entered operational engagement. No constraints are active, no escalation is in progress, and no bailout conditions have been evaluated. Transition to BOUNDED occurs upon node activation.
+\end{definition}
+
+\begin{definition}[BOUNDED]
+\label{def:state-bounded}
+The node is operating within its defined operational bounds. The Bounds Engine is active and evaluating all incoming events against the node's constraint set $C$. All constraints are satisfied. No bailout trigger condition has been met. The node may execute actions within its authorized scope. This is the nominal operating state.
+\end{definition}
+
+\begin{definition}[BAIL\_PENDING]
+\label{def:state-bail-pending}
+The node has detected a bailout trigger condition (Section~\ref{sec:bailout-trigger-condition}). The Bounds Engine has entered a suspended state: it may no longer propose or execute actions pending resolution of the bailout event. The node is composing the bailout payload — a complete, self-contained record of the triggering event, the violated constraints, the node's current state snapshot, and the chain of Parent Pointers from the triggering node to the nearest candidate human anchor. The node is prohibited from executing any further Fact Layer actions in the current context. Transition to ESCALATING occurs upon transmission of the bailout payload upward.
+\end{definition}
+
+\begin{definition}[ESCALATING]
+\label{def:state-escalating}
+The bailout payload has been transmitted to the parent node. The node is awaiting an acknowledgment or timeout response from the parent. No local action may be taken. The node monitors the elapsed time against the defined escalation timeout (Section~\ref{sec:timeout-handling}). If the parent fails to respond within the timeout window, the node re-transmits the bailout payload to the next ancestor in the Parent Pointer chain — bypassing any sibling or peer machine actors that are not in the direct ancestral path.
+\end{definition}
+
+\begin{definition}[HUMAN\_ACKNOWLEDGED]
+\label{def:state-human-acknowledged}
+A human anchor has received the bailout payload, recognized the event as requiring human judgment, and issued an acknowledgment. The human has confirmed awareness and is actively working the case. The node is in a held state: it may provide additional context or perform read-only retrieval operations if requested by the human, but may not execute any action that modifies system state without explicit human authorization. The resolution path is now in the human's hands. Transition to RESOLVED occurs when the human issues a resolution directive.
+\end{definition}
+
+\begin{definition}[RESOLVED]
+\label{def:state-resolved}
+The bailout event has been closed. The human has issued a resolution directive — one of: (a) \texttt{APPROVE\_ACTION} — the human authorizes a specific action and the node executes it; (b) \texttt{DISMISS} — the human determines the condition does not require action and the node returns to BOUNDED; (c) \texttt{MODIFY\_CONSTRAINTS} — the human modifies the constraint set $C$ and the node returns to BOUNDED under the new constraint regime; (d) \texttt{ESCALATE\_FURTHER} — the human determines the event requires higher-level attention and manually triggers escalation. The complete resolution record, including the human's directive and any modified constraints, is written to the Forensic Ledger. The protocol returns to IDLE after archival.
+\end{definition}
+
+\subsection{Transition Conditions}
+\label{sec:transition-conditions}
+
+Transitions are triggered by events from the alphabet $\Sigma$. Each transition $T(s, e) = s'$ is deterministic: for a given state $s$ and event $e$, exactly one successor state $s'$ is defined. Undefined transitions (combinations of $s$ and $e$ not in $T$) represent illegal protocol states and trigger a protocol fault:
+
+\begin{equation}
+T(s, e) = 
+\begin{cases}
+\text{BOUNDED} & \text{if } s = \text{IDLE} \land e = \text{ACTIVATE} \\
+\text{BAIL\_PENDING} & \text{if } s = \text{BOUNDED} \land e = \text{BAIL\_TRIGGER} \\
+\text{ESCALATING} & \text{if } s = \text{BAIL\_PENDING} \land e = \text{PAYLOAD\_TRANSMITTED} \\
+\text{HUMAN\_ACKNOWLEDGED} & \text{if } s = \text{ESCALATING} \land e = \text{HUMAN\_ACK} \\
+\text{RESOLVED} & \text{if } s \in \{\text{HUMAN\_ACKNOWLEDGED}, \text{ESCALATING}\} \land e = \text{RESOLUTION} \\
+\text{BOUNDED} & \text{if } s = \text{RESOLVED} \land e = \text{DISMISS} \\
+\text{ESCALATING} & \text{if } s = \text{ESCALATING} \land e = \text{PARENT\_TIMEOUT} \\
+\text{RESOLVED} & \text{if } s = \text{ESCALATING} \land e = \text{HUMAN\_ESCALATION\_DIRECT} \\
+\end{cases}
+\end{equation}
+
+The event set $\Sigma$ is defined as follows:
+
+\begin{itemize}
+    \item \texttt{ACTIVATE}: Node transitions from inactive to active, entering operational scope.
+    \item \texttt{BAIL\_TRIGGER}: The bailout trigger condition is satisfied (Section~\ref{sec:bailout-trigger-condition}).
+    \item \texttt{PAYLOAD\_TRANSMITTED}: The bailout payload has been successfully transmitted to the parent node.
+    \item \texttt{HUMAN\_ACK}: The human anchor has issued an acknowledgment of receipt and intent to act.
+    \item \texttt{RESOLUTION}: The human anchor has issued a resolution directive.
+    \item \texttt{DISMISS}: The human anchor has determined no action is warranted and the event is closed without modification.
+    \item \texttt{PARENT\_TIMEOUT}: The parent node has failed to respond within the escalation timeout window.
+    \item \texttt{HUMAN\_ESCALATION\_DIRECT}: The human anchor has manually escalated the event to a higher authority.
+\end{itemize}
+
+Protocol faults (undefined transitions) are handled by an emergency transition to ESCALATING with the \texttt{PARENT\_TIMEOUT} flag set, transmitting the bailout payload directly to the nearest reachable human anchor. This ensures that any corruption of the state machine — whether through software error, memory corruption, or adversarial interference — does not result in a silent failure to escalate. The system fails upward in every case.
+
+\subsection{Bail-Out Trigger Condition}
+\label{sec:bailout-trigger-condition}
+
+A bailout trigger event is generated when the Bounds Engine evaluates an incoming event $e$ against the node's active constraint set $C$ and the following condition is satisfied:
+
+\begin{equation}
+\exists c \in C \suchthat \big( \text{violated}(c, e) \land \neg\text{resolvable}(c, e, \text{node\_scope}) \big)
+\label{eq:bailout-trigger}
+\end{equation}
+
+Where:
+
+\begin{itemize}
+    \item $\text{violated}(c, e)$ is true when event $e$ causes constraint $c$ to be unsatisfied, evaluated against the current Fact Layer state.
+    \item $\text{resolvable}(c, e, \text{node\_scope})$ is true when the node possesses within its current operational scope at least one action $a$ such that $\text{apply}(a, e)$ would restore $c$ to a satisfied state without violating any other constraint in $C$.
+    \item $\text{node\_scope}$ is the set of actions the node is currently authorized to execute, as determined by the current Purpose Layer authorization context.
+\end{itemize}
+
+If both conditions hold — a constraint is violated \textit{and} the node cannot propose a resolution within its current scope — the bailout trigger condition is satisfied and the node enters BAIL\_PENDING. The node does not attempt to guess a resolution, defer the evaluation, or substitute a heuristic approximation. It halts and escalates.
+
+It is critical to note that the trigger condition does not require certainty about the \textit{correct} resolution. The node need not know what the human should do. It only needs to know that it cannot itself resolve the situation within its authorized bounds. This distinction is important because it prevents nodes from suppressing bailout events by adopting overly broad self-authorization — a node cannot claim an action is ``resolvable'' simply by expanding its own scope without Purpose Layer authorization.
+
+\begin{algorithm}[H]
+\caption{Bailout Trigger Evaluation}
+\label{alg:bailout-trigger}
+\begin{algorithmic}
+\State $\text{triggered} \gets \text{false}$
+\State $\text{violation\_set} \gets \emptyset$
+\ForEach {$c \in C$}
+    \If {$\text{violated}(c, e)$}
+        \State $\text{violation\_set} \gets \text{violation\_set} \cup \{c\}$
+    \EndIf
+\EndFor
+\State $\text{unresolvable\_violations} \gets \emptyset$
+\ForEach {$c \in \text{violation\_set}$}
+    \If {$\neg\text{resolvable}(c, e, \text{node\_scope})$}
+        \State $\text{unresolvable\_violations} \gets \text{unresolvable\_violations} \cup \{c\}$
+    \EndIf
+\EndFor
+\If {$\text{unresolvable\_violations} \neq \emptyset$}
+    \State $\text{triggered} \gets \text{true}$
+\EndIf
+\State \Return $\text{triggered}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Escalation Algorithm}
+\label{sec:escalation-algorithm}
+
+When the protocol enters ESCALATING, the following escalation algorithm governs the traversal of the Parent Pointer chain until a human anchor is reached:
+
+\begin{algorithm}[H]
+\caption{Bailout Escalation Algorithm}
+\label{alg:escalation}
+\begin{algorithmic}
+\Function{$\text{ESCALATE}(\text{node}, \text{payload})$}
+    \State $\text{parent} \gets \text{node}.\text{parent}$
+    \State $\text{depth} \gets 0$
+    \While{$\text{parent} \neq \text{null}$}
+        \State $\text{response} \gets \text{TRANSMIT}(\text{parent}, \text{payload})$
+        \State $\text{start\_time} \gets \text{CLOCK}$
+        \While{$\text{response} = \text{PENDING}$}
+            \If{$\text{CLOCK} - \text{start\_time} > T_{\text{timeout}}$}
+                \State \Return $\text{TIMEOUT}$
+            \EndIf
+            \State $\text{response} \gets \text{CHECK\_ACK}(\text{parent})$
+        \EndWhile
+        \If{$\text{response} = \text{ACK}$}
+            \State \Return $\text{ACK\_RECEIVED}$
+        \EndIf
+        \If{$\text{parent}.\text{is\_human\_anchor}$}
+            \State \Comment{If parent is a human anchor, escalate directly}
+            \State $\text{parent}.\text{deliver}(\text{payload})$
+            \State \Return $\text{HUMAN\_DELIVERED}$
+        \EndIf
+        \State $\text{parent} \gets \text{parent}.\text{parent}$
+        \State $\text{depth} \gets \text{depth} + 1$
+    \EndWhile
+    \State \Comment{No human anchor found in chain — invoke emergency fallback}
+    \State $\text{EMERGENCY\_FALLBACK}(\text{node}, \text{payload})$
+    \State \Return $\text{EMERGENCY\_ESCALATED}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm traverses the Parent Pointer chain upward by one step per iteration. At each level, it checks whether the current parent is a human anchor. If so, it delivers the bailout payload directly and terminates. If the parent is a machine actor, it transmits the payload and waits for acknowledgment up to the defined timeout window. If the timeout expires before acknowledgment is received, the algorithm re-transmits to the next ancestor in the chain — it does \textit{not} retry the same parent, and it does \textit{not} attempt alternative paths around the non-responsive node. The chain is strictly linear and immutable; divergence from the parent chain would break the accountability guarantee.
+
+If the traversal exhausts the parent chain without finding a human anchor — which can occur in shallow or misconfigured hierarchies — the algorithm invokes the emergency fallback (Section~\ref{sec:timeout-handling}), which delivers the payload to a statically registered emergency human anchor.
+
+\subsection{Bypass Mechanism}
+\label{sec:bypass-mechanism}
+
+The Bailout Protocol's most architecturally significant property is its bypass mechanism: when a node transmits a bailout payload upward, it bypasses all machine actors in the chain and delivers directly to the first human anchor encountered, or to the emergency fallback if no human anchor is found.
+
+This bypass is not a heuristic optimization. It is a formal requirement derived from the framework's immutable core properties. The rationale is as follows:
+
+\begin{enumerate}
+    \item \textbf{Machine actors are not accountable in the relevant sense.} Any machine actor in the chain — whether a Bounds Engine node, a supervisor process, or a middleware service — is, by definition, operating within its own constrained scope. When a node escalates a bailout event, it is escalating because it has encountered a condition that exceeds its own scope. A sibling or peer machine actor receiving that escalation faces the same fundamental limitation: it can observe the event, but it cannot authoritatively resolve it within its own constrained scope. If it could, the original node would have resolved it without escalating. Routing a bailout event through machine actors therefore does not advance resolution — it only adds latency and introduces additional failure points.
+
+    \item \textbf{Human accountability is the terminal property.} The Purpose Layer, by definition, is the layer that bears accountability. A human anchor is the only actor in the BX3 hierarchy that can exercise judgment beyond the current constraint set, authorize exceptions, modify constraints, or accept risk on behalf of the system. Every other actor in the chain is bounded. Routing around machine actors to reach a human directly is therefore not circumventing safety mechanisms — it is \textit{directly implementing} the safety guarantee.
+
+    \item \textbf{Bypass prevents accountability absorption.} If machine actors could absorb and resolve bailout events on behalf of humans, the result would be a chain of delegated accountability with no terminal anchor. Each machine actor could defer to the next, and the human might never receive the event that requires their judgment. The bypass mechanism ensures that any unresolved constraint violation reaches a human within a bounded number of steps, regardless of the configuration or depth of the machine actor hierarchy.
+\end{enumerate}
+
+The bypass mechanism is implemented as a first-class property of the escalation algorithm (Algorithm~\ref{alg:escalation}): the traversal checks \texttt{parent.is\_human\_anchor} at each level and terminates immediately upon finding one, without consulting any peer or sibling nodes. The chain is strictly linear and never branches.
+
+\subsection{Timeout Handling}
+\label{sec:timeout-handling}
+
+Timeouts are a first-class concern in the Bailout Protocol because the protocol must guarantee that bailout events do not persist indefinitely in the escalation chain. Three distinct timeout contexts are defined:
+
+\begin{enumerate}
+    \item \textbf{Per-hop acknowledgment timeout.} Each node in the Parent Pointer chain is allotted a maximum waiting time $T_{\text{hop}}$ for acknowledgment. If the parent node fails to respond within $T_{\text{hop}}$, the escalation advances to the next ancestor without retry. The default value of $T_{\text{hop}}$ is a protocol constant; it may be overridden by the Purpose Layer for specific node types or operational contexts.
+
+    \item \textbf{Total escalation timeout.} The total time from bailout trigger to human acknowledgment must not exceed $T_{\text{total}}$. If $T_{\text{total}}$ expires before any human anchor has acknowledged, the protocol enters an emergency state: the node writes a final状态的 snapshot to the Forensic Ledger, marks the bailout event as \texttt{UNRESOLVED\_TIMEOUT}, and triggers the emergency fallback. The emergency fallback delivers the payload to a statically registered emergency human anchor via an out-of-band channel (e.g., direct SMS, email, or頁面通知) that is independent of the node hierarchy.
+
+    \item \textbf{Human response timeout.} After a human anchor has acknowledged (HUMAN\_ACKNOWLEDGED state), the human is expected to issue a resolution within $T_{\text{human}}$. If $T_{\text{human}}$ expires without a resolution directive, the node sends a reminder notification to the human and logs the delay. The protocol does not auto-resolve or escalate further without human action; the timeout is a notification mechanism, not a resolution mechanism. If the human remains unresponsive beyond a configurable threshold (e.g., three consecutive $T_{\text{human}}$ expirations), the node escalates to the next registered human anchor in the emergency contact chain.
+\end{enumerate}
+
+\begin{definition}[Timeout Configuration]
+\label{def:timeout-config}
+Timeout values are defined at the system level and are enforceable by the Fact Layer. They are not configurable by any machine actor. The Purpose Layer may modify timeout values, and such modifications are recorded in the Forensic Ledger. Default values are:
+
+\begin{itemize}
+    \item $T_{\text{hop}} = 30$ seconds
+    \item $T_{\text{total}} = 300$ seconds (5 minutes)
+    \item $T_{\text{human}} = 600$ seconds (10 minutes)
+\end{itemize}
+\end{definition}
+
+Timeouts are evaluated against the system clock maintained by the Fact Layer. Clock skew between nodes does not affect timeout accuracy because time is measured by the escalating node locally from the moment of payload transmission, not by a centralized time service. This design ensures that timeout handling is self-contained and does not introduce additional dependencies on external services during a bailout event.
+
+\subsection{Forensic Ledger Integration}
+\label{sec:forensic-ledger-integration}
+
+Every state transition in the Bailout Protocol is recorded in the Forensic Ledger. The ledger entry for a bailout event includes:
+
+\begin{itemize}
+    \item The triggering event and the specific constraint(s) violated.
+    \item The complete state snapshot of the node at the moment of trigger.
+    \item The full Parent Pointer chain from the triggering node to the human anchor.
+    \item The timestamps for each state transition.
+    \item The human's acknowledgment and resolution directive.
+    \item Any timeout events that occurred during escalation.
+\end{itemize}
+
+The Forensic Ledger entry is written atomically at the point of trigger (BAIL\_PENDING entry) and updated at each subsequent state transition. This ensures that even if the bailout event is never resolved — for example, if the system crashes during escalation — a complete record exists for post-hoc review. The ledger entry is sealed with SHA-256 at the point of RESOLVED, making it tamper-evident. No machine actor may delete, modify, or suppress a Forensic Ledger entry related to a bailout event.
+
+\subsection{Formal Properties}
+\label{sec:bailout-formal-properties}
+
+The Bailout Protocol satisfies the following formal properties by construction:
+
+\begin{enumerate}
+    \item \textbf{Progress.} Every bailout trigger event eventually reaches a human anchor or the emergency fallback, because the parent chain is finite (by the immutability of the Parent Pointer relation, no cycles can exist) and the emergency fallback is reached when the chain is exhausted.
+
+    \item \textbf{Determinism.} The state transition function $T$ is total and deterministic over $S \times \Sigma$. Every valid $(s, e)$ pair maps to exactly one successor state. Undefined pairs trigger a protocol fault that itself transitions to ESCALATING.
+
+    \item \textbf{Non-regression.} The protocol never transitions to a state that represents a lower assurance level than the current state. The only path to a lower-assurance state is through explicit human authorization via HUMAN\_ACKNOWLEDGED.
+
+    \item \textbf{No suppression.} No machine actor may prevent, delay, or absorb a bailout event. The trigger condition (Equation~\ref{eq:bailout-trigger}) is evaluated by the Bounds Engine and is not subject to override by any actor in the hierarchy.
+
+    \item \textbf{Upstream accountability guarantee.} By the bypass mechanism (Section~\ref{sec:bypass-mechanism}), every bailout event reaches a human anchor within at most $n + 1$ steps, where $n$ is the depth of the Parent Pointer chain. The system fails upward into human consciousness — never downward into algorithmic shadow.
+\end{enumerate}

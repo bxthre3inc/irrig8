@@ -1,46 +1,24 @@
-# Scout-QA Agent INBOX
+# Scout-QA Agent INBOX — 2026-04-28
 
-## Role
-QA & Testing Lead — Agentic Engineering Department
+## Weekly QA Report Published
 
-## Schedule
-Weekly — business days 9 AM MT
+**Status:** 🟡 MINIMAL PROGRESS — 1 P1 (RAINT-001, 36+ days), 2 P2s unchanged, 0 resolved
 
-## Last Active
-**2026-04-22 15:25 UTC**
+### Key Findings
 
----
+**Agentic ✅ CLEAN** — 28/28 pass. AOS-ASYNC-001 did not fire this cycle (intermittent).
 
-## 🔴 Weekly QA Report Published
-**Report:** `Bxthre3/INBOX/departments/qa-weekly-2026-04-22.md`
+**VPC ✅ STABLE** — 14/14 unit pass. 4 E2E security failures expected (no live server).
 
-**Summary:**
-- **RESOLVED ✅:** VPC-004 — unified_engine.test.ts fixed (added initDatabase(), wallet seed, wager 100→10 VLY)
-- **RESOLVED ✅:** VPC-002 — npm test now works (added `"test": "bun test src/"` to server/package.json)
-- **3 P1s remain:** AOS-001 (Agentic, 24d), RAIN-001 (RAIN, 31d), S5-001 (Starting5, 21d)
-- VPC test suite now: 14 pass, 4 fail (E2E security — server not running, expected)
-- 41 expect() calls across 18 tests
+**Irrig8 🟡 BLOCKED** — 17 test files exist but sqlalchemy missing. IRR-001 unchanged.
 
-**Fixed by Scout-QA directly:**
-- VPC-004 root cause was TWO issues: (1) missing initDatabase(), (2) missing wallet+RNGSseed FK seed for test user
-- Also discovered: 100 VLY wager exceeded house liquidity ceiling (~15.5 VLY at default reserve) — reduced to 10 VLY
+**RAINT-001 🔴 CARRIED (36+ days)** — No test suite. RAIN has no test files.
 
-**P1s open:** 3 (AOS-001, RAIN-001, S5-001)
-**P1s resolved this cycle:** 2 (VPC-004, VPC-002 — both fixed by Scout-QA)
+### Active P1s: 1
+- RAINT-001: Drew/RAIN — test suite for citation accuracy (36+ days)
 
----
+### Full Report
+`file 'Bxthre3/INBOX/departments/qa-weekly-2026-04-28.md'`
+## 🟡 P2 | scout-qa | 2026-04-28 15:08 UTC
 
-## Previous Cycle (2026-04-20)
-- **NEW P1:** VPC-004 — unified_engine.test.ts missing await initDatabase()
-- **NEW P1:** Agentic codebase has 0 test files across all subprojects
-- **CARRIED:** AOS-001 (23d), RAIN-001 (30d), S5-001 (20d), VPC-002 (partial)
-- Full report: `file 'Bxthre3/INBOX/departments/qa-weekly-2026-04-20.md'`
-
----
-
-## Ready for Next Cycle
-
-Standing by for Drew (VP Engineering) or Bits (CTO) direction on:
-1. AOS-001: Agentic test suite location — 24+ days
-2. RAIN-001: RAIN test suite establishment — 31+ days  
-3. S5-001: Starting5 project path or WONTFIX — 21+ days
+Weekly QA Report 2026-04-28: Agentic 28/28 ✅, VPC 14/14 ✅, Irrig8 blocked (IRR-001 P2), RAIN no suite (RAINT-001 P1 36+ days). 0 resolved. Full report: qa-weekly-2026-04-28.md

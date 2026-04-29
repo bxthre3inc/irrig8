@@ -1,0 +1,154 @@
+\section{The Recursive Spawning Protocol}
+
+The Recursive Spawning Protocol (RSP) defines the canonical mechanism by which agentic systems instantiate child agents from parent agents, enforce spawn-time constraints, record provenance chains, and guarantee that every active agent chain terminates at a human principal. RSP operationalizes the principle that spawning is not a soft event but a hard contractual obligation: each spawn is a three-layer validated act, each child inherits an immutable pointer to its parent, and the chain is cryptographically sealed against post-hoc manipulation. This section specifies the Purpose Layer, the Bounds Engine, the Fact Layer, convergence criteria, and the chain-termination guarantee.
+
+%--------------------------------------------------------------------
+\subsection{Protocol Overview}
+%--------------------------------------------------------------------
+
+An agent may spawn a child when and only when all three validation layers report TRUE simultaneously. The three layers are:
+
+\begin{enumerate}
+\item \textbf{Purpose Layer (PL):} Validates that the proposed child has a purpose that is a valid sub-purpose of the parent, recursively traceable to a human-initiated intent.
+\item \textbf{Bounds Engine (BE):} Validates that the proposed spawn would not exceed the maximum allowed spawn depth and that all other resource constraints are satisfied.
+\item \textbf{Fact Layer (FL):} Creates an immutable pointer to the parent, records the spawn event to an append-only forensic ledger, and returns a \texttt{spawn\_certificate} that the child agent carries as proof of legitimacy.
+\end{enumerate}
+
+A spawn that fails validation at any layer is refused. Refusals are themselves recorded to the forensic ledger with a \texttt{spawn\_refused} entry, enabling retrospective audit of every denied spawn in the chain.
+
+%--------------------------------------------------------------------
+\subsection{Purpose Layer}
+%--------------------------------------------------------------------
+
+The Purpose Layer performs a \textit{purpose-subordinate test}. A child agent's purpose $p_c$ is valid if and only if there exists a chain of purpose relations
+
+\[
+p_h \succeq p_1 \succeq p_2 \succeq \cdots \succeq p_n \succeq p_c
+\]
+
+where $p_h$ is a purpose originating from a human principal. The $\succeq$ relation denotes \textit{valid sub-purpose}, which requires:
+
+\begin{itemize}
+\item $p_c$ is contained within the operational scope of $p_n$;
+\item $p_c$ does not contradict, override, or negate any constraint encoded in $p_n$;
+\item $p_c$ is resolvable into at least one executable action that the child agent can perform without requiring additional human authorization.
+\end{itemize}
+
+The Purpose Layer traverses the purpose chain upward until it either reaches a human-origin purpose (in which case validation succeeds) or encounters a purpose that is not marked as sub-purpose-certified (in which case validation fails). Purposes that lack a certified ancestry chain are rejected at spawn time.
+
+The Purpose Layer also enforces \textbf{purpose isolation}: a child agent may not adopt a purpose that was not present in its parent's capability declaration at the time of spawn. This prevents purpose drift—the gradual drift of an agent's goals away from the original human intent through successive spawns.
+
+%--------------------------------------------------------------------
+\subsection{Bounds Engine}
+%--------------------------------------------------------------------
+
+The Bounds Engine evaluates two categories of constraints: \textbf{depth constraints} and \textbf{resource constraints}.
+
+%--------------------------------------------------------------------
+\subsubsection{Maximum Spawn Depth}
+
+The maximum spawn depth $D_{max}$ is a system-level constant set at initialization. When an agent at depth $d$ requests to spawn, the Bounds Engine checks:
+
+\[
+d + 1 \leq D_{max}
+\]
+
+If this condition is not satisfied, the spawn is refused. The requesting agent receives a \texttt{spawn\_refused: depth\_limit\_exceeded} error and may not retry without first reducing the chain's active depth (e.g., by completing and terminating a descendant agent).
+
+%--------------------------------------------------------------------
+\subsubsection{Spawn Refusal at Limit}
+
+When $D_{max}$ is reached or a resource constraint is violated, the spawn is refused. Refusal events carry the following metadata:
+
+\begin{verbatim}
+spawn_refused {
+  reason: "depth_limit" | "resource_exhausted" | "capability_unsafe",
+  depth: <current_depth>,
+  max_depth: <D_max>,
+  parent_agent_id: <SHA-256 of parent pointer>,
+  timestamp: <ISO-8601>,
+  audit_ref: <ledger_entry_hash>
+}
+\end{verbatim}
+
+The refusal metadata is written to the forensic ledger. The parent agent may not silently retry the spawn. A child spawned in violation of the Bounds Engine is considered \textit{illegitimate} and is ineligible for chain-verification convergence (Section \ref{sec:convergence}).
+
+%--------------------------------------------------------------------
+\subsection{Fact Layer}
+%--------------------------------------------------------------------
+
+The Fact Layer is the forensic backbone of RSP. It fires atomically with the spawn event and performs three operations in sequence:
+
+\begin{enumerate}
+\item \textbf{Immutable parent pointer creation:} A content-addressable pointer to the parent agent's state at spawn time is computed as a SHA-256 hash of the parent's serialized descriptor. This pointer is immutable—any modification to the parent after spawn invalidates the pointer and breaks the chain.
+\item \textbf{Forensic ledger recording:} The spawn event is appended to an append-only forensic ledger. The ledger is a hash-chained data structure where each entry contains the hash of the previous entry, creating a tamper-evident sequence. Entries are never modified or deleted.
+\item \textbf{Child activation with certificate:} The child agent is activated only after the ledger entry is confirmed. The child receives a \texttt{spawn\_certificate} containing: (a) the immutable parent pointer, (b) the ledger entry hash, (c) the depth at which the child was spawned, and (d) the timestamp.
+\end{enumerate}
+
+The forensic ledger entry for a successful spawn contains:
+
+\begin{verbatim}
+spawn_event {
+  event_type: "spawn",
+  parent_pointer: <SHA-256 hash of parent descriptor>,
+  child_agent_id: <system-assigned UUID>,
+  depth: <spawn depth>,
+  purpose_chain_hash: <hash of purpose chain>,
+  spawn_certificate_hash: <hash of issued certificate>,
+  timestamp: <ISO-8601>,
+  prev_ledger_hash: <hash of previous ledger entry>,
+  ledger_entry_hash: <SHA-256 of this entry>
+}
+\end{verbatim}
+
+The \texttt{child\_agent\_id} is a system-assigned UUID that persists for the lifetime of the child agent. The \texttt{parent\_pointer} is a cryptographic commitment to the parent's identity—any divergence between the stored pointer and the actual parent identity at any point in the chain constitutes a chain-integrity violation.
+
+%--------------------------------------------------------------------
+\subsection{Convergence Criteria}
+%--------------------------------------------------------------------
+
+\label{sec:convergence}
+
+A spawn chain converges when all of the following conditions are simultaneously satisfied:
+
+\begin{enumerate}
+\item \textbf{Depth termination:} The chain has reached the maximum allowed depth $D_{max}$, or no agent in the chain has further valid spawn targets (i.e., the Purpose Layer cannot find any sub-purpose that passes the subordinate test).
+\item \textbf{Ledger completeness:} Every spawn event in the chain has a corresponding entry in the forensic ledger with a verified hash chain unbroken from the first entry to the last.
+\item \textbf{Chain-integrity check passed:} Every agent in the chain carries a valid \texttt{spawn\_certificate} whose \texttt{parent\_pointer} matches the actual parent agent's descriptor hash. A single mismatch invalidates the entire chain from the point of mismatch forward.
+\item \textbf{Human terminus confirmed:} The top-most agent in the chain has a verified human-origin purpose annotation, confirming that the chain terminates at a human principal and does not loop indefinitely with no human in the chain.
+\end{enumerate}
+
+When convergence is achieved, the chain is marked \texttt{converged} in the forensic ledger. Converged chains are eligible for final state commitment (i.e., writing final outputs to external systems). Agents in non-converged chains are suspended; they may not produce external effects until the chain converges or is explicitly terminated by human action.
+
+The convergence check is performed automatically by the Bounds Engine at each spawn event and may also be triggered on demand by any authorized principal.
+
+%--------------------------------------------------------------------
+\subsection{Chain Verification and the Human Terminus Guarantee}
+%--------------------------------------------------------------------
+
+The \textbf{Human Terminus Guarantee} is the foundational invariant of RSP: every agentic chain must have a human principal at its root, and every chain must be verifiable as having a human at its origin. This guarantee is implemented through the following mechanism:
+
+\begin{enumerate}
+\item When a human initiates an agentic session, the session context is tagged with a \texttt{human\_origin\_token} signed by the human's authentication credential.
+\item The \texttt{human\_origin\_token} is passed to the first agent as part of its activation payload. This token is \textit{read-only}—the agent may propagate it to child agents but may not fabricate, modify, or delete it.
+\item At any depth, the Purpose Layer can traverse the purpose chain upward to the \texttt{human\_origin\_token} to confirm human provenance. If no such token is found in the chain, the chain is considered \textit{unauthenticated} and all spawn events in the chain are flagged.
+\item During convergence verification, the chain is rejected if the human terminus cannot be cryptographically confirmed. An unauthenticated chain may not converge, may not write external effects, and is eligible for automatic termination.
+\end{enumerate}
+
+The guarantee is enforced by design: there is no code path by which an agent can spawn a child without the Fact Layer recording to the forensic ledger, and there is no code path by which a chain can converge without the Human Terminus being verified. Any attempt to circumvent this—by spawning without the Fact Layer, by tampering with the forensic ledger, or by fabricating a human-origin token—produces a detectable chain-integrity violation.
+
+%--------------------------------------------------------------------
+\subsection{Operational Summary}
+%--------------------------------------------------------------------
+
+The Recursive Spawning Protocol ensures that agentic spawning is a validated, recorded, and verifiable act. The operational guarantees are:
+
+\begin{itemize}
+\item \textbf{Validated spawning:} Every spawn requires simultaneous validation from Purpose Layer, Bounds Engine, and Fact Layer.
+\item \textbf{Depth discipline:} No spawn can exceed the maximum depth $D_{max}$. Refusals are recorded and may not be bypassed.
+\item \textbf{Immutable provenance:} Every child agent carries a cryptographic pointer to its parent, and every spawn event is recorded to a tamper-evident forensic ledger.
+\item \textbf{Convergence enforcement:} A chain may not produce external effects until it converges with a complete, unbroken ledger and a verified human terminus.
+\item \textbf{Human terminus guarantee:} Every chain terminates at a human principal, verified cryptographically, not procedurally.
+\end{itemize}
+
+These properties make RSP the foundational operational protocol for any agentic system that requires trustworthy recursive agent instantiation.

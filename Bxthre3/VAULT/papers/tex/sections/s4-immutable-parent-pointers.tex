@@ -1,0 +1,163 @@
+\section{Immutable Parent Pointers}
+
+The \textbf{Recursive Spawning} model imposes a fundamental constraint on the relationship between a parent agent and its child agents: once a parent pointer is established from a parent \(p\) to a child \(c\), that pointer becomes \textbf{immutable}. This immutability is not a mere operational guideline but a structural invariant enforced at the Fact Layer of the agent runtime. The immutability of parent pointers ensures that the provenance chain of any agent remains traceable, auditable, and tamper-evident throughout its lifecycle, which is essential for accountability, authorization, and the correct operation of recursive spawning semantics.
+
+\subsection{Definition and Assignment Semantics}
+
+We define the parent pointer relation formally as:
+
+\begin{equation}
+\text{ParentPointer}(p, c) : A \times A \to \{\text{true}, \text{false}\}
+\end{equation}
+
+where \(A\) denotes the set of all agents in the system. A parent pointer is established precisely once, at the moment a child agent \(c\) is \textbf{spawned} under the authority of a parent agent \(p\). The assignment operation is:
+
+\begin{equation}
+\text{ParentPointer}(p, c) \gets \text{true} \quad \text{at spawn time } t_{\text{spawn}}
+\end{equation}
+
+Once assigned, the relation \(\text{ParentPointer}(p, c)\) is \textbf{frozen} such that for all subsequent times \(t > t_{\text{spawn}}\):
+
+\begin{equation}
+\neg \exists p' \neq p : \text{ParentPointer}(p', c) = \text{true}
+\end{equation}
+
+In other words, no modification, reassignment, or deletion of the parent pointer from \(p\) to \(c\) is permitted after its initial establishment. The pointer either persists unchanged for the lifetime of \(c\), or it is removed only upon the permanent termination of \(c\)---in which case the termination event is recorded, not the pointer itself modified.
+
+\subsection{The Provenance Chain}
+
+The \textbf{Chain} of an agent \(a\) is defined recursively as the set of all ancestor pointers from \(a\) up to and including the root of the spawning hierarchy. The root human agent in the system has a \textbf{null parent}, representing the terminal case of the recursion:
+
+\begin{equation}
+\text{Chain}(a) = 
+\begin{cases}
+\varnothing & \text{if } \text{parent}(a) = \varnothing \quad \text{(root human)} \\
+\{\text{ParentPointer}(\text{parent}(a), a)\} \cup \text{Chain}(\text{parent}(a)) & \text{otherwise}
+\end{cases}
+\end{equation}
+
+where \(\text{parent}(a)\) denotes the unique parent of \(a\), and \(\varnothing\) denotes the null parent marker indicating that \(a\) is a root human (i.e., a human being who entered the system not via spawning but by autonomous creation or onboarding).
+
+The recursive definition of \(\text{Chain}(a)\) ensures that every agent carries with it the full ancestral lineage, not merely its immediate parent. This structure forms a directed acyclic graph (DAG) rooted at the root human, where edges point from parent to child and are traversed upward during chain traversal.
+
+\textbf{Properties of Chain:}
+
+\begin{itemize}
+    \item \textbf{Uniqueness:} For any agent \(a\), \(\text{Chain}(a)\) is unique and deterministic, computed solely from the immutable parent pointers along the path to the root.
+    \item \textbf{No cycles:} The spawning model guarantees that \(\text{parent}(a) \neq a\) for all agents, and that parent pointers are established only at spawn time. Hence \(\text{Chain}(a)\) is finite and contains no repeated elements.
+    \item \textbf{Extensibility:} A newly spawned agent \(c\) inherits the chain of its parent \(p\), extended by the new pointer \(\text{ParentPointer}(p, c)\). That is: \(\text{Chain}(c) = \text{Chain}(p) \cup \{\text{ParentPointer}(p, c)\}\).
+    \item \textbf{Auditability:} Because each pointer is immutable, the entire chain is permanently traceable. This supports forensic reconstruction of any agent's spawning lineage.
+\end{itemize}
+
+\subsection{Immutability Enforcement at the Fact Layer}
+
+The Fact Layer of the agent runtime is the authoritative registry of all spawning relationships and their associated metadata. It is responsible for recording, indexing, and serving queries about parent-child relationships. Immutability is enforced at this layer through a combination of \textbf{storage-level write protection} and \textbf{operational constraints}.
+
+\subsubsection{Storage-Level Write Protection}
+
+Upon the initial assignment of a \(\text{ParentPointer}(p, c)\) relation, the Fact Layer performs the following operations atomically:
+
+\begin{enumerate}
+    \item \textbf{Insert the pointer record} into the registry as an immutable entry with spawn timestamp \(t_{\text{spawn}}\) and authorized-by reference to the spawning authorization event.
+    \item \textbf{Set the \texttt{frozen} flag} on the pointer record to \(\text{true}\).
+    \item \textbf{Revoke all write permissions} on the record at the storage subsystem level. No subsequent UPDATE or DELETE operations are permitted on this record by any actor, including the Fact Layer's own administrative functions.
+    \item \textbf{Append an append-only audit log entry} recording the pointer creation, referencing the Purpose Layer authorization token that sanctioned the spawn.
+\end{enumerate}
+
+The storage subsystem enforces these constraints transparently. Any attempt by the Purpose Layer, any agent, or an administrative operator to modify or delete a frozen pointer record results in a runtime rejection, an access-violation exception, and a mandatory audit log entry documenting the attempted violation.
+
+\subsubsection{Operational Constraints on the Purpose Layer}
+
+The Purpose Layer, which is responsible for authorizing spawn operations, is itself bound by immutability constraints:
+
+\begin{itemize}
+    \item The Purpose Layer \textbf{may not issue} an authorization to modify an existing parent pointer. Spawn authorization grants permission to \textit{create a new child}, not to alter the lineage of an existing agent.
+    \item A spawn authorization token is \textbf{single-use}: once consumed to create a new parent pointer at spawn time, the token is marked \texttt{consumed} and cannot be replayed to create additional or alternative pointers for the same child.
+    \item The Fact Layer validates every spawn authorization against the immutable registry before committing a new parent pointer, ensuring that no duplicate or conflicting pointers are recorded.
+\end{itemize}
+
+These constraints are enforced by the Fact Layer's authorization validation gate, which must confirm the following before committing a new parent pointer:
+
+\begin{enumerate}
+    \item The proposed child \(c\) does not already have a parent pointer in the registry.
+    \item The spawn authorization token presented by the Purpose Layer is valid, unexpired, and unconsumed.
+    \item The authorizing parent \(p\) is the agent identified in the authorization token.
+\end{enumerate}
+
+If any of these checks fail, the Fact Layer rejects the spawn operation and returns an error to the Purpose Layer. The registry remains unchanged.
+
+\subsection{Spawn Authorization and the Purpose Layer}
+
+The \textbf{Purpose Layer} governs what an agent is permitted to do, including the authorization to spawn child agents. In the Recursive Spawning model, spawn authorization is a specific, deliberate act: the Purpose Layer evaluates a spawn request against the agent's declared purpose, scope, and operational mandate, and if authorized, issues a \textbf{spawn authorization token} to the Fact Layer.
+
+The spawn authorization token carries the following metadata:
+
+\begin{itemize}
+    \item \textbf{Authorizing parent ID (\(p\))}: The identifier of the agent granting the spawn authorization.
+    \item \textbf{Proposed child ID (\(c\))}: The identifier that will be assigned to the newly spawned child.
+    \item \textbf{Purpose scope}: A reference to the purpose or mission context that motivates the spawn.
+    \item \textbf{Timestamp of authorization (\(t_{\text{auth}}\))}: The time at which the Purpose Layer granted authorization.
+    \item \textbf{Token expiration (\(t_{\text{exp}}\))}: A deadline by which the spawn must be completed; if the spawn does not occur before this time, the token becomes invalid.
+    \item \textbf{Single-use flag}: The token is consumed upon successful commit of the parent pointer to the Fact Layer.
+\end{itemize}
+
+The Purpose Layer's role in spawn authorization is critical: it ensures that spawning occurs only in service of a legitimate, declared purpose. This prevents unauthorized replication of agents and enforces purposive chaining. The Fact Layer does not evaluate the purpose of a spawn---it only verifies the token's validity and uniqueness. Separation of concerns is maintained: the Purpose Layer authorizes, and the Fact Layer records and enforces immutability.
+
+\subsection{Chain Traversal Algorithm}
+
+Chain traversal is the process of walking from an agent \(a\) up to the root human by recursively following parent pointers. The algorithm must be efficient, deterministic, and tolerant of large chains. We present the canonical traversal algorithm in procedural form.
+
+\begin{algorithm}
+\caption{ChainTraversal($a$)}
+\begin{algorithmic}
+\Require{Agent identifier $a$}
+\Ensure{Ordered list of agent identifiers from $a$ to root human (inclusive)}
+
+\Function{ChainTraversal}{$a$}
+    \State $\text{result} \gets \text{empty list}$
+    \State $\text{current} \gets a$
+    
+    \While{$\text{current} \neq \varnothing$}
+        \State $\text{ptr} \gets \text{FactLayer.GetParentPointer}(\text{current})$
+        \If{$\text{ptr} = \text{null}$}
+            \Comment{$current$ is the root human; parent field is $\varnothing$}
+            \State $\text{result}$.append($\text{current}$)
+            \State $\textbf{break}$
+        \EndIf
+        \State $\text{parent} \gets \text{ptr.parent}$
+        \State $\text{result}$.append($\text{current}$)
+        \State $\text{current} \gets \text{parent}$
+    \EndWhile
+    
+    \State \Return $\text{result}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Correctness:} The algorithm terminates because each iteration assigns \(\text{current} \gets \text{parent}(\text{current})\), and the parent relation is acyclic (no agent is its own ancestor). The loop terminates when \(\text{parent}(\text{current}) = \varnothing\), corresponding to the root human. The result list is ordered from the target agent \(a\) up to and including the root human.
+
+\textbf{Complexity:} In the worst case, chain traversal is \(O(d)\) where \(d\) is the depth of the spawning chain from \(a\) to the root human. In practice, \(d\) is expected to be small (on the order of 3--10 for typical recursive spawning hierarchies), but the algorithm scales linearly with depth.
+
+\textbf{Query Interface:} The Fact Layer exposes a query operation \(\text{GetChain}(a)\) that returns the full \(\text{Chain}(a)\) as a sorted list of agent identifiers, using the above traversal algorithm internally. This operation is read-only and imposes no side effects.
+
+\textbf{Streaming Variant:} For large chains or interactive exploration, a \textbf{streaming traversal} is available that yields parent identifiers incrementally rather than materializing the full list:
+
+\begin{algorithm}
+\caption{ChainStream($a$)}
+\begin{algorithmic}
+\Require{Agent identifier $a$}
+\Ensure{Generator yielding parent agent IDs in order from $a$ to root}
+
+\Function{ChainStream}{$a$}
+    \State $\text{current} \gets a$
+    
+    \While{$\text{current} \neq \varnothing$}
+        \Yield $\text{current}$
+        \State $\text{ptr} \gets \text{FactLayer.GetParentPointer}(\text{current})$
+        \If{$\text{ptr} = \text{null}$}
+            \State $\textbf{break}$
+        \EndIf
+        \State $\text{current} \gets \text{ptr.parent}$
+    \EndWhile
+\EndFunction
+\end{algorithmic}

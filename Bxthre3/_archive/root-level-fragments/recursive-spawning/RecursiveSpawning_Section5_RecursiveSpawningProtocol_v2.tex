@@ -1,0 +1,101 @@
+\section{The Recursive Spawning Protocol}
+\label{sec:rs-protocol}
+
+The Recursive Spawning Protocol (RSP) is the structural mechanism that makes every agent's delegation chain to a human principal a runtime-verified artifact — immutable, auditable, and architecturally enforced at every spawn event — rather than a forensic reconstruction attempted after the fact. RSP operates across all three \bxthree{} layers in mandatory concert: the Purpose Layer authorizes, the Bounds Engine constrains, and the Fact Layer records and enforces. There are no advisory phases, no configurable bypasses, and no operational circumstances under which any machine actor may circumvent any protocol requirement.
+
+The protocol executes through five mandatory structural phases, each of which must complete successfully before the next begins. Any failure at any phase terminates the spawn attempt. The five phases are: (1) Purpose Layer validation gate, (2) Bounds Engine depth check, (3) Fact Layer immutable pointer creation and forensic ledger recording, (4) child activation with immutable parent, and (5) chain verification that termination is at a human principal.
+
+\subsection{Protocol Overview and Formal Notation}
+
+Let $\mathcal{N}$ be the set of all agent nodes in a \bxthree{} system implementing the Recursive Spawning Protocol. For each node $n \in \mathcal{N}$, let $R(n)$ denote its authorized operating scope (a descendant refinement of its parent's scope, never an expansion), let $h(n)$ denote the human anchor at the root of its delegation chain, and let $D_{\max}$ denote the maximum permitted spawn depth for the chain. The parent pointer is established as a total function $\alpha : \mathcal{N} \to \mathcal{N} \cup \{\bot\}$, where $\alpha(n) = \bot$ if and only if $n$ is the human anchor established at system initialization. The chain terminating at any node $a$ is defined recursively as:
+
+\begin{equation}
+\mathrm{Chain}(a) = 
+\begin{cases}
+\langle a \rangle & \text{if } \alpha(a) = \bot \text{ (base case: human anchor)} \\
+\langle a \rangle \cup \mathrm{Chain}(\alpha(a)) & \text{if } \alpha(a) \in \mathcal{N} \text{ (recursive case)}
+\end{cases}
+\end{equation}
+
+The protocol also introduces a Purpose Layer authorization token $\tau$, issued at the validation gate and recorded as part of the forensic ledger entry for the spawn event. This token carries the Purpose Layer's binding record of why the spawn was authorized — the specific scope refinement and operational rationale — and is immutable once written.
+
+\subsection{Phase 1: Purpose Layer Validation Gate}
+
+Every spawn event begins with a validation request from a spawning node $n_i$ to the Purpose Layer. The request specifies the proposed child node $n_{i+1}$ and its authorized operating scope $R(n_{i+1})$. The Purpose Layer performs the following validation:
+
+\begin{enumerate}
+  \item \textbf{Scope refinement check:} Verify that $R(n_{i+1}) \subseteq R(n_i)$. The child scope must be a descendant refinement of the parent's scope — not an expansion, not a lateral redirection, not a superset. This is the scope refinement condition.
+  \item \textbf{Chain integrity check:} Verify that the chain $\mathrm{Chain}(n_i)$ is intact and that all parent pointers are immutable via the Fact Layer forensic ledger. The Purpose Layer performs this check independently — it does not trust the spawning node's self-reporting of its own chain.
+  \item \textbf{Convergence check:} Evaluate whether the task that motivated the spawn has reached its convergence criterion $\phi$. If $\phi$ is satisfied, the spawn is refused and the chain terminates at $n_i$ rather than extending further.
+  \item \textbf{Authorization:} If all checks pass, issue the authorization token $\tau$ and record the spawn authorization in the Fact Layer.
+\end{enumerate}
+
+If the scope refinement condition fails, the spawn is rejected. If the chain integrity check fails, the spawn is rejected and the inconsistency is logged as a P1 alert. If the convergence criterion is satisfied, the spawn is refused and the chain halts. The Purpose Layer's validation gate is the exclusive origin of chain growth in the RSP — no spawn event may proceed without its authorization. This is not a policy convention; it is an architectural constraint enforced by the Fact Layer pre-commit hook, which refuses to write the parent pointer if the Purpose Layer authorization token is absent.
+
+\subsection{Phase 2: Bounds Engine Depth Check}
+
+Before the Fact Layer write occurs, the Bounds Engine evaluates the depth constraint:
+
+\begin{enumerate}
+  \item Compute the current chain depth $d = |\mathrm{Chain}(n_i)|$.
+  \item Compute the proposed new depth $d' = d + 1$.
+  \item If $d' > D_{\max}$, refuse the spawn and invoke the Bailout Protocol.
+\end{enumerate}
+
+The depth bound $D_{\max}$ is set by the Purpose Layer at chain initialization and applies uniformly to all descendants of the root node. The bound reflects the operational model of the chain: shallow chains for tightly scoped tasks requiring limited refinement, deeper chains for complex multi-step reasoning where task decomposition demands multiple intermediary agents. The Purpose Layer sets $D_{\max}$ based on the task type, the acceptable latency for human review, and the structural properties of the accountability chain. The Bounds Engine enforces $D_{\max}$ as a hard constraint — no machine actor, regardless of operational urgency, may override it.
+
+The Bounds Engine also enforces an optional escalation depth $D_{\mathrm{ESCALATE}} \leq D_{\max}$, set by the Purpose Layer as a shallower threshold at which the chain triggers early human review before the hard depth limit is reached. The convergence criterion $\phi$ encodes the condition under which the chain has achieved its task objective — a precise, Purpose Layer-defined predicate on the agent's state and outputs. When $\phi$ evaluates to true, the chain has reached its intended resolution and spawn terminates. When $D_{\max}$ is reached without $\phi$ being satisfied, the chain terminates at the human anchor via the Bailout Protocol, not at a machine actor.
+
+\subsection{Phase 3: Fact Layer Immutable Pointer and Forensic Ledger}
+
+If the Purpose Layer authorization and the Bounds Engine depth check both succeed, the Fact Layer performs an atomic write that simultaneously establishes the immutable parent pointer and records the forensic ledger entry:
+
+\begin{enumerate}
+  \item Write the parent pointer $\ParentPointer{n_i}{n_{i+1}}$ as an immutable, cryptographically signed Fact Layer record. This write is atomic: if the write fails, the child node is not activated and no chain modification occurs.
+  \item Record the forensic ledger entry containing: the parent pointer, the Purpose Layer authorization token $\tau$, the chain depth at spawn, the authorized operating scope $R(n_{i+1})$, and the timestamp.
+\end{enumerate}
+
+The parent pointer is immutable from the moment of write. No actor — including the Purpose Layer itself, the Bounds Engine, the parent node, or the child node — may modify, overwrite, or delete the pointer after provisioning. This immutability is enforced by the Fact Layer write protocol, which rejects any subsequent write operation targeting an existing parent pointer record. The forensic ledger entry constitutes the complete and authoritative record of the spawn event, independent of any node's self-reported state and verifiable by any authorized reader.
+
+The Fact Layer pre-commit hook enforces the scope refinement condition at write time: a parent pointer may only be written if the proposed child scope $R(n_{i+1})$ is confirmed to be a descendant refinement of the parent scope $R(n_i)$. This check is performed against the forensic ledger, not against the parent node's self-assertion. The check is structural — enforced by the write protocol — not advisory.
+
+\subsection{Phase 4: Child Activation with Immutable Parent}
+
+Upon successful completion of the Fact Layer write, the child node $n_{i+1}$ is activated. Its configuration includes the immutable parent pointer $\ParentPointer{n_i}{n_{i+1}}$, making the parent identity $n_i$ a load-bearing architectural property of the child from the moment of activation. The child has no independent parent identity; it cannot claim an alternate parent, cannot omit its parent from audit reports, and cannot redirect its escalation path to bypass $n_i$. The parent pointer is not a reference that the child may choose to follow or ignore — it is a structural declaration that defines the child's position in the delegation chain.
+
+The child operates within the authorized scope $R(n_{i+1})$ and under the depth constraint $D_{\max}$ that applies to all nodes in the chain. Its event loop, like all \bxthree{} event loops, is subject to the Loop Isolation pillar, the Spatial Firewall, and the Sandbox Gate. Its exception handling is subject to the Bailout Protocol. And its spawn authority — if and when it initiates a spawn event — is subject to the RSP Phase 1 validation gate.
+
+The child is activated with full awareness of its position in the chain: its own depth $d'$, its remaining depth budget $D_{\max} - d'$, and its convergence criterion $\phi$. These are not suggestions — they are the structural constraints under which the child operates. Violations are caught by the Fact Layer pre-commit hook and the Bounds Engine, not by the child's own self-policing.
+
+\subsection{Phase 5: Chain Verification to Human Termination}
+
+Following activation, the Fact Layer performs a post-activation chain verification as a mandatory final step. This verification confirms that the complete chain $\mathrm{Chain}(n_{i+1})$ terminates at a human principal and not at a machine actor:
+
+\begin{enumerate}
+  \item Retrieve the full chain $\mathrm{Chain}(n_{i+1}) = \langle n_0, n_1, \ldots, n_i, n_{i+1} \rangle$ from the forensic ledger.
+  \item Verify that each node in the chain is the immutable child of its recorded parent via the Fact Layer pre-commit hook.
+  \item Verify that the root node $n_0$ carries the human-anchor flag established at system initialization.
+  \item Confirm that $h(n_{i+1}) = n_0$ is a human principal.
+\end{enumerate}
+
+This verification is performed by the Fact Layer against the forensic ledger, not by any node self-reporting its chain position. It confirms that the chain has not been corrupted, that no node in the chain has been reassigned to a different parent, and that the termination point is a human and not a machine actor. If any verification step fails, the child node is placed into a suspended state with no operational authority and the inconsistency is logged as a P0 alert requiring immediate human review.
+
+The termination guarantee established by Phase 5 is a direct consequence of three structural facts: (1) every node has exactly one immutable parent pointer established at provisioning, (2) the root node is a human anchor by architectural designation, and (3) the chain traversal operator has a base case at the human anchor and is defined recursively on the immutable parent relation. Therefore, for every node $n \in \mathcal{N}$, $\mathrm{Chain}(n)$ terminates at a human principal by construction, not by policy.
+
+\subsection{Depth Management}
+
+The Bounds Engine's depth management is the structural mechanism that prevents unbounded chain growth and ensures the RSP's termination guarantee. Depth management in the RSP consists of three interlocking components: the maximum spawn depth constraint, the spawn refusal at the limit, and the convergence criteria.
+
+\textbf{Maximum spawn depth.} The maximum spawn depth $D_{\max}$ is a positive integer set by the Purpose Layer at chain initialization and propagated to all descendant nodes. It defines the hard upper bound on chain length from the human anchor to any descendant. The Purpose Layer sets $D_{\max}$ based on the operational model of the chain and the acceptable latency for human review and escalation. Different chains in the same \bxthree{} system may carry different $D_{\max}$ values reflecting their different operational requirements.
+
+\textbf{Spawn refusal at the limit.} When a spawn event would cause the chain depth to exceed $D_{\max}$, the Bounds Engine refuses the spawn. The refusal is unconditional and non-negotiable: it holds regardless of the operational urgency of the task, the criticality of the function being performed, or the number of prior spawn refusals in the chain. When the spawn is refused, the Bounds Engine invokes the Bailout Protocol, which forces escalation to the human anchor along the immutable parent chain — bypassing all intermediate machine actors.
+
+\textbf{Convergence criteria.} The convergence criterion $\phi$ is a Purpose Layer-defined predicate on the agent's state and outputs. It encodes the condition under which the chain has reached its intended resolution — the task is complete, the answer is authoritative, the refinement has converged. When $\phi$ evaluates to true for a node, the chain halts at that node rather than spawning a child. The convergence criterion prevents unnecessary chain extension and ensures that the chain terminates as soon as the task objective is achieved, well before the depth limit is reached. The combination of $\phi$-based halting and $D_{\max}$-forced termination ensures that the chain always terminates at the human anchor — either because the task is complete (convergence) or because the depth limit has been reached (bailout).
+
+The depth management design reflects a specific philosophical commitment: that the decision to extend a delegation chain is not a mechanical parameter but a Purpose Layer judgment about when task refinement should yield to human judgment. The depth limit exists not because deep chains are inherently dangerous, but because any chain that reaches its maximum depth without converging has exhausted the Purpose Layer's confidence in machine-only resolution and must therefore terminate at a human. The Bailout Protocol ensures that this termination occurs — it cannot be absorbed, deferred, or converted into autonomous resolution by any machine actor.
+
+\subsection{Protocol Guarantees}
+
+The Recursive Spawning Protocol, taken as a whole, provides a single architectural guarantee: that every agent in a multi-agent system operates within a delegation chain that is simultaneously immutable, auditable, scope-refined, depth-bounded, and verified to terminate at a human principal. The guarantee is structural — it holds regardless of the goodness, reliability, or intentions of any machine actor in the chain. This is the operational expression of the upstream \bxthree{} accountability guarantee applied to recursive agent population dynamics.
+
+The guarantee requires all five phases in mandatory sequence. Skipping Phase 1 (Purpose Layer validation) would allow unauthorized chain growth. Skipping Phase 2 (Bounds Engine depth check) would allow unbounded spawn depth. Skipping Phase 3 (Fact Layer immutable pointer) would make the parent pointer mutable and the chain reconstructable but not verifiable. Skipping Phase 4 (child activation) would leave the child without a parent identity. Skipping Phase 5 (chain verification) would leave a gap in the termination guarantee. The protocol's correctness depends on the mandatory execution of all five phases, in order, for every spawn event, without exception.

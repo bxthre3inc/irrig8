@@ -1,0 +1,137 @@
+\section{Immutable Parent Pointers}
+
+The \emph{Recursive Spawning} architecture assigns exactly one immutable parent pointer to each agent at the moment of its creation. This pointer, written \texttt{ParentPointer}$(p, c)$, records the identity of the agent that caused $c$ to exist and cannot be altered after the fact, regardless of privilege level, runtime state, or external request. The immutability of this pointer is not a convention or a courtesy—it is enforced at theFact Layer of the AgentOS stack, making it a structural guarantee rather than an advisory constraint. Together with the derived \texttt{Chain} relation, immutable parent pointers provide the reliable ancestry graph on whichRecursive Spawning depends for authorization, audit, and cascade termination.
+
+\subsection{Formal Definition of \texttt{ParentPointer}}
+
+\begin{definition}[Parent Pointer]
+A parent pointer is an ordered pair $(p, c)$ drawn from the set of all agent identities $\mathcal{A}$, where $p, c \in \mathcal{A}$ and $p \neq c$. The predicate \texttt{ParentPointer}$(p, c)$ holds \textbf{true} if and only if agent $p$ is the soleauthorizing parent of agent $c$ at the moment of $c$'s creation. Once established, the relation is \textbf{immutable}:
+\begin{equation}
+\forall (p, c) \in \mathcal{A} \times \mathcal{A} \;:\; \texttt{ParentPointer}(p, c) \implies \neg \texttt{Modifiable}(\texttt{ParentPointer}(p, c))
+\end{equation}
+No operation in any layer—including the Purpose Layer, the Runtime Layer, or any privileged administrative call—may alter or revoke a parent pointer after its initial assignment.
+\end{definition}
+
+The initial assignment of \texttt{ParentPointer}$(p, c)$ occurs during the \texttt{spawn} workflow, detailed in Section~\ref{sec:spawn-authorization}, and is recorded atomically in the Fact Layer before $c$ receives any executable state. The Fact Layer is the lowest layer of the AgentOS stack capable of recording provenance; it is the layer that \texttt{Chain}$(\cdot)$ queries and that cascade triggers consult. No pointer exists in any provisional or shadow state—it is committed to the Fact Layer as a first act of creation.
+
+The asymmetry of the relation is critical: a spawn event produces exactly one parent and one child. This is not a structural limitation to be worked around; it is the design property that makes ancestry traversal unambiguous and that permits the \texttt{Chain} relation to form a proper tree rather than a general directed acyclic graph. Multi-parentage, if required by a downstream use case, must be represented as a separate relation built atop \texttt{ParentPointer}, not as a modification of it.
+
+\subsection{The \texttt{Chain} Relation}
+
+From the primitive \texttt{ParentPointer} relation, the ancestry chain of any agent is derived recursively. For an agent $a$, its chain is the set containing $a$ itself, its immediate parent, its grandparent, and so on up to and including the root node.
+
+\begin{definition}[Ancestry Chain]
+Define \texttt{Chain}$(a)$ for any agent $a \in \mathcal{A}$ as:
+\begin{equation}
+\texttt{Chain}(a) = \texttt{ParentPointer}(\texttt{parent}(a), a) \; \cup \; \texttt{Chain}(\texttt{parent}(a))
+\end{equation}
+where \texttt{parent}$(a)$ denotes the unique $p$ such that \texttt{ParentPointer}$(p, a)$ holds. The recursion terminates at the root agent $r$, for which \texttt{parent}$(r) = \texttt{null}$ and $\texttt{Chain}(r) = \{\,\texttt{ParentPointer}(\texttt{null}, r)\,\}$.\footnote{The root agent in the AgentOS system is always a human user. Its parent pointer is formally $(\texttt{null}, r)$ by convention, signaling that no authorizing agent precedes it in the chain. This null-parent fact is treated as an immutable fact in the Fact Layer, non-modifiable by any agent or layer.}
+\end{definition}
+
+Equivalently,を展開すると:
+\begin{align}
+\texttt{Chain}(a) &= \{(p_1, a),\; (p_2, p_1),\; (p_3, p_2),\; \ldots,\; (\texttt{null}, r)\} \\
+\text{where } p_1 &= \texttt{parent}(a),\quad p_2 = \texttt{parent}(p_1),\quad \ldots,\; p_k = r
+\end{align}
+
+The chain forms a proper lineage path from $a$ to the root. Because each agent has exactly one parent, no agent can appear twice in any chain, and two distinct agents' chains can only intersect at nodes that are ancestral to both—that intersection is precisely the set of common ancestors. This property is essential for cascade authorization: if an operation requires authorization from all ancestors of an agent, checking against \texttt{Chain}$(a)$ is sufficient and non-redundant.
+
+The root of the chain is always a human. This is a foundational invariant of theRecursive Spawning model: every artificial agent traces its lineage, through a finite chain of parent pointers, back to a human who initiated the topmost spawn event. This human is the \emph{primordial授权者} and is recorded as the terminal element of every chain.
+
+\subsection{Base Case: The Root Human Agent}
+
+The root human agent $r_h \in \mathcal{A}$ is created not by a spawn event but by the system's onboarding process. At the moment of onboarding, the Fact Layer records the null parent pointer $(\texttt{null}, r_h)$ as an immutable fact. This is not a placeholder or a default—it is a deliberate structural choice that establishes a chain terminus and provides the base case for the recursive definition of \texttt{Chain}$(\cdot)$.
+
+This design means that the ancestry chain is well-founded: the recursion \texttt{Chain}$(a) = \texttt{ParentPointer}(\texttt{parent}(a), a) \cup \texttt{Chain}(\texttt{parent}(a))$ always terminates, because the chain length is bounded by the depth of the spawn tree, and that depth is finite for any agent created through theRecursive Spawning mechanism. There is no possibility of infinite regress or cyclic parent pointers, because the spawn authorization process (Section~\ref{sec:spawn-authorization}) rejects any attempt to create an agent whose chain would cycle back on itself.
+
+A human may create additional human accounts through the standard account-provisioning path; these new human accounts are themselves root nodes of independent chains. TheFact Layer records each such new root with its own null-parent fact, ensuring that no two human accounts share an ancestry chain unless a deliberate delegation relationship has been established through a spawn event.
+
+\subsection{Immutability Enforcement at the Fact Layer}
+
+The Fact Layer is the lowest layer of the AgentOS stack at which provenance facts are recorded and queried. It is the layer that guarantees that once a \texttt{ParentPointer} has been committed, it cannot be modified by any operation at any higher layer—not the Runtime Layer, not the Purpose Layer, not any privileged operator or administrative agent. The immutability guarantee is implemented through two complementary mechanisms: a \emph{write-once storage primitive} at the data layer, and a \emph{modification-blocking guard} at the Fact Layer interface.
+
+The write-once storage primitive ensures that theFact Layer's internal store rejects any update operation targeting a \texttt{ParentPointer} record. This is enforced at the storage engine level: \texttt{ParentPointer} records are stored in a ledger structure that accepts inserts but rejects overwrites or deletes. TheFact Layer interface layer additionally inspects every write request and aborts any operation that would modify an existing \texttt{ParentPointer} entry, returning an error to the caller rather than permitting the modification to proceed.
+
+The modification-blocking guard is not bypassed for administrative agents, debug tools, or emergency override procedures. Any attempt to alter a parent pointer—regardless of the caller's identity or privilege level—is treated as a protocol violation and is logged to the audit trail with full provenance: the attempting agent, the attempted operation, the target pointer, and the system timestamp. No mechanism exists within the system to circumvent this guard.
+
+The immutability guarantee is necessary for the correctness of the cascade architecture. Cascade backstop triggers (Section~\ref{sec:backstop-triggers}) are wired to \texttt{Chain}$(\cdot)$ queries; if a parent pointer could be altered after the fact, a cascade trigger that had already fired might fire again, or an agent that had been shielded by a particular chain configuration might suddenly become exposed through a retrospectively altered lineage. By making parent pointers immutable, the system guarantees that cascade behavior is determined solely by the ancestry structure that existed at the time of trigger evaluation—no history can be rewritten.
+
+This immutability guarantee also enables reliable audit. Any agent's complete ancestry can be reconstructed from theFact Layer at any time, and the reconstructed chain will be identical to the chain that existed at every prior moment, because no pointer has ever been changed. This property is essential for compliance contexts, where a regulator or internal auditor may need to reconstruct the authorization chain that permitted a particular agent action, and where any doubt about historical immutability would compromise the audit's evidentiary value.
+
+\subsection{Authorization: The Purpose Layer Role}\label{sec:spawn-authorization}
+
+ThePurpose Layer is the layer of the AgentOS stack that evaluates whether a spawn request should be permitted. While the Fact Layer records the parent pointer after creation, the Purpose Layer evaluates the authorization that precedes and enables creation. ThePurpose Layer's spawn authorization logic is tightly coupled to the immutable parent pointer architecture.
+
+When an agent $p$ issues a spawn request to create a new agent $c$, thePurpose Layer performs the following checks before creating the \texttt{ParentPointer}$(p, c)$ fact:
+
+\begin{enumerate}
+\item \textbf{Purpose fidelity check.} The Purpose Layer verifies that the stated purpose of the spawn request is consistent with $p$'s own authorized scope. If $p$ is authorized to create sub-agents only within a particular domain or capability boundary, the spawn request must fall within that boundary, or it is rejected.
+\item \textbf{Ancestry containment check.} The Purpose Layer queries \texttt{Chain}$(p)$ to verify that $p$ itself has a valid chain terminating at a root human. Agents whose chain is broken or unverified are not permitted to authorize spawns, because their own provenance is insufficient to confer legitimacy on a child.
+\item \textbf{Cycle avoidance check.} The Purpose Layer verifies that $c$ does not already exist in the chain of $p$. A spawn request that would create a cyclic lineage (a would-be ancestor appearing as its own descendant) is rejected as a protocol violation.
+\end{enumerate}
+
+If all three checks pass, the Purpose Layer emits a spawn authorization event. This event is received by theFact Layer, which then creates the immutable \texttt{ParentPointer}$(p, c)$ record. TheFact Layer record is the authoritative, permanent evidence of the parent-child relationship. ThePurpose Layer's authorization is a transient evaluation that precedes creation; once the parent pointer is recorded, the authorization decision cannot be undone or superseded—it is baked into the ancestry graph permanently.
+
+This separation of concerns—Purpose Layer authorizes, Fact Layer commits—ensures that the ancestry graph can be trusted even when higher-layer authorization policies evolve. If the Purpose Layer's policy engine is later updated to enforce stricter criteria, existing parent pointers are unaffected, because they were already committed at theFact Layer before the policy change took effect. The policy change affects only future spawn requests, not the immutable history of past ones.
+
+ThePurpose Layer also supports a \texttt{CanSpawn}$(p, c)$ predicate, which is a boolean query that any agent or external system can use to determine whether $p$ is currently authorized to spawn $c$ without actually executing the spawn. This predicate is evaluated by thePurpose Layer against the current policy state and does not itself create any facts in the Fact Layer. The predicate's answer is not guaranteed to remain stable over time: a spawn that is authorized today might not be authorized tomorrow if the policy tightens. This is by design—thePurpose Layer's role is to evaluate current authorization state, while theFact Layer's role is to record immutable history.
+
+\subsection{Chain Traversal Algorithm}
+
+The ancestry chain of any agent is traversed using an algorithm that leverages the immutability of parent pointers to guarantee termination and correctness. The algorithm is used internally by theFact Layer for \texttt{Chain}$(\cdot)$ computation, by the cascade system for trigger wiring, and by thePurpose Layer during spawn authorization.
+
+\begin{algorithm}[H]
+\caption{Chain Traversal Algorithm}
+\label{algo:chain-traversal}
+\begin{algorithmic}[1]
+\Require An agent $a \in \mathcal{A}$ whose chain is to be computed
+\Ensure The set $\texttt{Chain}(a)$ as defined in Definition 4.2
+
+\Function{ComputeChain}{$a$}
+\State $\text{chain} \gets \emptyset$
+\State $\text{current} \gets a$
+\While{$\text{current} \neq \texttt{null}$}
+\State $\text{parent} \gets \texttt{QueryParent}(\text{current})$
+\State $\text{chain} \gets \text{chain} \cup \{\,\texttt{ParentPointer}(\text{parent}, \text{current})\,\}\}$
+\State $\text{current} \gets \text{parent}$
+\EndWhile
+\State \Return $\text{chain}$
+\EndFunction
+
+\Function{QueryParent}{$c$}
+\State $\text{result} \gets \texttt{FactLayer.Query}(\texttt{ParentPointer}(*, c))$
+\State \Comment{$*$ is a wildcard; Fact Layer resolves the unique parent}
+\If{$\text{result} = \emptyset$}
+\State \Return $\texttt{null}$
+\ElsIf{$\lvert\text{result}\rvert > 1$}
+\State \Comment{Critical invariant: more than one parent is impossible}
+\State \textbf{raise} \texttt{ChainStructureInvariantViolation}
+\Else
+\State \Return $\text{result}_1.\text{parent}$
+\EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm terminates because each iteration moves current from an agent to its parent, and the chain of parents is finite by the well-foundedness invariant (no infinite chains, no cycles). The \texttt{QueryParent} function queries the Fact Layer's immutable record store; by the immutability invariant, the result of this query is stable—it cannot change between calls and it cannot be modified by any caller. If \texttt{QueryParent} returns more than one parent for a given child, the critical invariant that each agent has exactly one parent has been violated, and the algorithm raises a structured exception rather than proceeding with ambiguous data.
+
+The time complexity of chain traversal is $O(d)$, where $d$ is the depth of the chain (the number of generations from the agent to the root human). In typical AgentOS deployments, $d$ is expected to be small—on the order of 3–7 for agents spawned through authorized workflows—because deep chains impose linear costs on cascade traversal and audit reconstruction. The architecture does not impose a hard upper bound on $d$, however; agents spawned through authorized multi-generational delegation may produce longer chains, and the algorithm must remain correct for arbitrarily deep chains up to the practical limits of available computation.
+
+For use cases that require frequent chain queries (e.g., cascade trigger evaluation, which queries chains for many agents), the Fact Layer may maintain a materialized path representation that caches the chain for each agent as a derived fact, updated whenever a new child is spawned. The materialized path is a convenience optimization and is not authoritative; the authoritative chain is always computed from the underlying immutable \texttt{ParentPointer} records. If the materialized path ever diverges from the computed chain—detected via periodic consistency verification—the system discards the materialized path and recomputes from theFact Layer records, which are always trusted as the source of truth.
+
+\subsection{Properties and Invariants}
+
+The combination of immutable parent pointers, the \texttt{Chain} definition, and thePurpose Layer's authorization discipline yields a set of structural properties that theRecursive Spawning architecture depends on:
+
+\begin{itemize}
+\item \textbf{Well-foundedness.} Every chain terminates at a root human. There exists no agent for which the recursive \texttt{Chain} definition does not terminate. This follows directly from the Fact Layer's enforcement of one-parent-per-agent and the cycle-avoidance check at spawn time.
+\item \textbf{Uniqueness of ancestry.} For any agent $a$, \texttt{Chain}$(a)$ is a unique, deterministic set. There is exactly one chain from $a$ to the root human. This makes ancestry-based authorization unambiguous and eliminates the possibility of "split blame" across conflicting lineage claims.
+\item \textbf{Non-corruptibility.} TheFact Layer's immutability guarantee means that no agent's ancestry can be retroactively altered, including by the root human, by system administrators, or by any privileged process. The provenance record is permanent.
+\item \textbf{Audit reliability.} Any historical reconstruction of the chain that authorized a past action will yield the same result as the chain that existed at the time of that action. This is essential for compliance and for trust relationships that depend on verifiable lineage.
+\end{itemize}
+
+These properties are not assumed—they are proven consequences of the definitions and the enforcement mechanisms. The immutability guarantee at theFact Layer is the keystone: if parent pointers could be mutated after creation, well-foundedness and non-corruptibility would be lost, and the cascade architecture would be exposed to lineage-based attacks. TheRecursive Spawning model depends on immutability as a first-class architectural property, not as a side effect of implementation details.
+
+\subsection{Summary}
+
+The immutable parent pointer is the atomic unit of provenance in theRecursive Spawning architecture. \texttt{ParentPointer}$(p, c)$ is assigned exactly once, at the moment of $c$'s creation, and is thereafter unalterable by any means. The \texttt{Chain} relation provides a computable, well-founded view of ancestry derived from these immutable pointers, terminating at the root human agent. Immutability is enforced at theFact Layer through write-once storage and a modification-blocking guard, making it a structural guarantee rather than a policy choice. The Purpose Layer leverages the immutable chain during spawn authorization, checking purpose fidelity, ancestry containment, and cycle avoidance before committing a new parent pointer to theFact Layer. Chain traversal is performed by a simple, terminating algorithm that queries immutable records and is correct by construction. Together, these components provide the reliable, tamper-proof ancestry graph on which all higher-layerRecursive Spawning mechanisms depend.

@@ -1,0 +1,131 @@
+\section{Pillar 2: Recursive Spawning}\label{sec:pillar-recursive-spawning}
+
+\subsection{Conceptual Motivation}
+
+The delegation of complex tasks to multi-agent systems necessarily involves the decomposition of tasks into sub-tasks, and the delegation of sub-tasks to sub-agents. This decomposition is recursive: a sub-agent may itself spawn further sub-agents to handle specialized aspects of its allocated task, and this recursion may continue to arbitrary depth. The result is an accountability tree in which each node represents a delegated decision, and the edges of the tree represent the chain of delegation from the human principal to the leaf nodes that execute actions in the world.
+
+Recursive spawning is both necessary and dangerous. It is necessary because complex tasks cannot be executed by a single agent without overwhelming its reasoning capacity and fragmenting its objective function. It is dangerous because each level of spawning increases the distance between the human principal and the executing node, and with that distance, the accountability gap grows. At depth one, the human principal delegates to an agent with some known scope; at depth ten, the human principal delegates to an agent whose scope is defined by an agent whose scope is defined by an agent whose scope is defined by... and each link in this chain is a machine actor making authority judgments that the human principal cannot observe.
+
+The \bxthree{} framework's approach to recursive spawning is to treat it not as a feature to be managed, but as a structural property that must be constrained by the same architectural guarantees that constrain any other node in the system. The spawning chain must be bounded in depth, must carry an immutable parent-pointer at every node, must be recorded in the Forensic Ledger at every spawn event, and must be recoverable as a complete delegation chain by any auditor. The human anchor $h(n)$ for any node $n$ must be reachable by traversing the parent-pointer chain upward — and this traversal must terminate at a human principal, never at a machine actor.
+
+The upstream accountability guarantee depends critically on recursive spawning constraints. If the spawn tree were unbounded in depth, the Bailout Protocol's escalation path would be unbounded in length, and the Liveness guarantee would be vacuous — human contact would be promised at some finite time but the chain of intermediate nodes might extend beyond any practical bound before reaching a human. If the parent pointer were mutable, the escalation path could be redirected to a machine actor rather than a human. If spawn events were not recorded, the accountability chain would be unrecoverable. Each constraint is a necessary condition for the guarantee to hold.
+
+\subsection{Formal Definition}\label{sec:recursive-spawning-formal}
+
+A \bxthree{} spawn tree is a rooted tree $T = (V, E)$ where each vertex $v \in V$ is a node in the \bxthree{} system, and each edge $(u, v) \in E$ represents a spawn event in which $u$ is the parent of $v$. The spawn relation $\alpha(v) = u$ for $v \neq \text{root}$ denotes the parent of $v$.
+
+Three constraints govern every spawn tree:
+
+\begin{enumerate}\itemsep=0pt
+\item[\textbf{Hierarchy Finiteness.}] The depth $d(v)$ of any node $v$ satisfies $d(v) \leq D_{\max}$, where $d(\text{root}) = 0$ and $d(v) = d(\alpha(v)) + 1$ for all $v \neq \text{root}$. $D_{\max}$ is a deployment constant established at system initialization.
+
+\item[\textbf{Parent-Pointer Immutability.}] For every node $v \neq \text{root}$, $\alpha(v)$ is established at node creation and is not modifiable by any machine actor for the node's operational lifetime. Any attempt to write to $\alpha(v)$ at runtime is intercepted by the \fact{} layer's pre-commit hook and rejected.
+
+\item[\textbf{Delegation Scope Inheritance.}] The operating range of any child node $c$, $R(c)$, must be a strict subset of the parent's operating range $R(\alpha(c))$. Formally: $R(c) \subset R(\alpha(c))$. This ensures that authority is never expanded through spawning — a child node always has less authority than its parent.
+\end{enumerate}
+
+The human anchor for any node $v$, denoted $h(v)$, is the human principal designated at node creation and is immutable for $v$'s lifetime. The accountability chain for $v$ is the sequence:
+
+\[
+v,\; \alpha(v),\; \alpha(\alpha(v)),\; \ldots,\; \alpha^{(k)}(v)
+\]
+
+where $k$ is the smallest integer such that $\alpha^{(k)}(v)$ is a human principal — i.e., $\alpha^{(k)}(v) = h(v)$ and $\alpha^{(k)}(v)$ has no parent in the spawn tree. By the hierarchy finiteness constraint, $k \leq D_{\max}$.
+
+The Bailout Protocol's escalation algorithm traverses this chain to reach the human anchor. The chain is guaranteed to be finite, to terminate at a human, and to be fully recorded in the Forensic Ledger as an atomic append-only log of spawn events.
+
+\subsection{State Machine Formalism}\label{sec:spawn-state-machine}
+
+The recursive spawning mechanism is formally modeled as a deterministic finite state machine embedded in the \fact{} layer of every spawn-capable node:
+
+\[
+\mathcal{S} \;=\; (Q_S,\; q_0^S,\; \Sigma_S,\; \rightarrow_S,\; Q_F^S)
+\]
+
+where:
+
+\begin{itemize}\itemsep=0pt
+\item $Q_S = \{\,\text{CAN\_SPAWN},\; \text{SPAWN\_PENDING},\; \text{CHILD\_PROVISIONED},\; \text{SPAWN\_LOCKED},\; \text{SPAWN\_TERMINATED}\,\}$ is the set of spawn states;
+\item $q_0^S = \text{CAN\_SPAWN}$ is the initial state for any node at startup;
+\item $\Sigma_S$ comprises spawn-request events $e_{\text{spawn}}$, scope-confirmation events $e_{\text{scope-ok}}$, depth-confirmation events $e_{\text{depth-ok}}$, child-provisioned events $e_{\text{child-live}}$, violation events $e_{\text{scope-violation}}$, depth-exceeded events $e_{\text{depth-violation}}$, and human-termination events $e_{\text{terminate}}$;
+\item $\rightarrow_S \subseteq Q_S \times \Sigma_S \times Q_S$ is the deterministic transition relation (Table~\ref{tab:spawn-transition});
+\item $Q_F^S = \{\text{SPAWN\_TERMINATED}\}$ is the terminal accepting state.
+\end{itemize}
+
+\begin{table}[htbp]
+\caption{Recursive Spawning state transition relation $\rightarrow_S \subseteq Q_S \times \Sigma_S \times Q_S$. Rows are current state; columns are input events. Blank cells indicate no defined transition.}
+\label{tab:spawn-transition}
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+ & \multicolumn{7}{c}{Input event} \\
+\cmidrule(l){2-8}
+Current state & $e_{\text{spawn}}$ & $e_{\text{scope-ok}}$ & $e_{\text{depth-ok}}$ & $e_{\text{child-live}}$ & $e_{\text{scope-violation}}$ & $e_{\text{depth-violation}}$ & $e_{\text{terminate}}$ \\
+\midrule
+CAN\_SPAWN & SPAWN\_PENDING & — & — & — & — & — & — \\
+SPAWN\_PENDING & — & SPAWN\_PENDING & SPAWN\_PENDING & CHILD\_PROVISIONED & — & — & — \\
+CHILD\_PROVISIONED & CAN\_SPAWN & — & — & — & — & — & — \\
+SPAWN\_LOCKED & — & — & — & — & — & — & SPAWN\_TERMINATED \\
+SPAWN\_TERMINATED & — & — & — & — & — & — & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subparagraph{State definitions.}
+
+\begin{itemize}\itemsep=0pt
+\item[\textbf{CAN\_SPAWN.}] The node may initiate a spawn event. Both preconditions — scope inheritance and depth bound — are satisfied. The node may propose a child with $R(c) \subset R(n)$ and $d(c) \leq D_{\max}$.
+
+\item[\textbf{SPAWN\_PENDING.}] A spawn request has been initiated and the \bounds{} layer is evaluating the preconditions. Both scope inheritance and depth bound must be confirmed before the spawn can proceed. During this state, the node holds the spawn proposal and no new spawn requests are accepted.
+
+\item[\textbf{CHILD\_PROVISIONED.}] The child node has been successfully created with all structural properties established: $\alpha(c) = n$, $h(c) = h(n)$, $R(c) \subset R(n)$, $d(c) \leq D_{\max}$. The spawn event has been recorded in the Forensic Ledger. The parent node returns to CAN\_SPAWN and may initiate further spawns.
+
+\item[\textbf{SPAWN\_LOCKED.}] A scope-inheritance or depth-bound violation has been detected and the Bailout Protocol has been triggered. No further spawn events may be initiated until the violation is resolved by the human anchor. The \bounds{} layer emits a \texttt{bailout\_signal} and the node transitions to BOUNDED in the Bailout Protocol state machine.
+
+\item[\textbf{SPAWN\_TERMINATED.}] The node has been explicitly terminated by human authorization. All child nodes are recursively terminated. The final spawn tree state is recorded in the Forensic Ledger.
+\end{itemize}
+
+The transition from SPAWN\_PENDING to CHILD\_PROVISIONED requires both $e_{\text{scope-ok}}$ and $e_{\text{depth-ok}}$ — either one alone is insufficient. The Bailout Monitor enforces the AND condition by checking both preconditions before committing the child-provisioned event.
+
+\subparagraph{Precondition evaluation order.} The \bounds{} layer evaluates scope inheritance before depth bound. If the scope-inheritance check fails, the depth check is not performed and the violation event is recorded immediately. This ordering ensures that the recorded violation is the first detected, which matters for the accountability record when the human anchor reviews the failure.
+
+\subsection{Invariants}\label{sec:spawn-invariants}
+
+Two invariants govern the recursive spawning mechanism.
+
+\begin{invariant}[Hierarchy Finiteness Invariant]\label{inv:hierarchy-finiteness}
+For every node $v$ in the spawn tree, the depth $d(v)$ satisfies $d(v) \leq D_{\max}$.
+\end{invariant}
+
+\subparagraph{Enforcement.} The \bounds{} layer evaluates $d(c) = d(p) + 1$ before every spawn event and rejects any spawn that would exceed $D_{\max}$. The evaluation is a deterministic integer comparison — not a judgment call — and is enforced by the \fact{} layer's pre-commit hook. A machine actor cannot inflate $D_{\max}$ to accommodate a non-compliant spawn.
+
+\begin{invariant}[Delegation Scope Inheritance Invariant]\label{inv:scope-inheritance}
+For every spawn event creating child $c$ from parent $p$, $R(c) \subset R(p)$ holds strictly — the child's operating range is a proper subset of the parent's.
+\end{invariant}
+
+\subparagraph{Enforcement.} The \bounds{} layer evaluates the proper subset relation before every spawn event. The evaluation is a deterministic set comparison: the \bounds{} layer checks whether every element of $R(c)$ is also an element of $R(p)$, and whether $R(c) \neq R(p)$. If either condition fails, the spawn is rejected and a \texttt{delegation-scope-inheritance-violation} event is recorded in the Forensic Ledger.
+
+Together, these invariants ensure that the spawn tree is a structurally sound representation of the delegation chain. Every edge represents a genuine, auditable delegation of authority, and the chain from any leaf node to its human anchor is fully recorded, finite in depth, and non-circumventable.
+
+\subsection{Relationship to the Three-Layer Model}\label{sec:spawn-three-layer}
+
+The \purpose{} layer defines the operating range for each node at provisioning and inherits it to child nodes through the spawn directive. The scope inheritance constraint is established as a structural property of the spawn mechanism, not as a policy choice that agents can override.
+
+The \bounds{} layer evaluates whether a proposed spawn event respects the delegation scope inheritance constraint and whether the resulting spawn depth $d(c)$ would exceed $D_{\max}$. These are bounds checks — they evaluate conditions against provisioned parameters, not judgments made by the agent. When the \bounds{} layer detects a proposed spawn that would violate either constraint, it triggers the Bailout Protocol, which escalates to the parent node's \purpose{} layer for adjudication.
+
+The \fact{} layer enforces the spawn state machine's transition relation, records all spawn events in the Forensic Ledger, and maintains the hierarchical parent-pointer structure as an immutable data structure. The layer's pre-commit hook ensures that no spawn event is recorded without full validation of the delegation scope inheritance constraint, the hierarchy finiteness constraint, and the immutability of the parent pointer.
+
+The hierarchical accountability structure maintained by the \fact{} layer ensures that for any node $n$, the chain $\alpha(n), \alpha(\alpha(n)), \alpha(\alpha(\alpha(n))), \ldots$ terminates at a human principal $h(n)$ within at most $D_{\max}$ steps. This is the structural guarantee that enables the Bailout Protocol's escalation algorithm: the escalation path is guaranteed to be finite, to terminate at a human, and to be fully recorded in the Forensic Ledger.
+
+The parent-pointer immutability guarantee is enforced by making the parent-pointer field a read-only property of the node's \fact{} layer worksheet. Any attempt to write to this field is intercepted by the pre-commit hook and rejected. The rejection event is recorded in the Forensic Ledger, and if the attempted write was initiated by a machine actor, the Bailout Protocol is triggered for the node whose layer was the target of the write attempt.
+
+The depth bound $D_{\max}$ is a deployment parameter established at system initialization. For typical deployments, a depth bound of 5 to 8 levels provides sufficient recursion for complex task decomposition while keeping the escalation path short enough for the Bailout Protocol's Liveness guarantee to hold. Deep research or scientific analysis tasks may require higher bounds, but the deployment designer must ensure that the corresponding increase in escalation path length does not cause $T_{\max}$ to exceed the operational requirements of the deployment context.
+
+\subsection{Relationship to the Upstream Accountability Guarantee}\label{sec:spawn-uag}
+
+The upstream accountability guarantee requires that every node in the spawn tree be reachable from a human principal, and that the chain of delegation from that principal to any node be fully auditable. Recursive spawning is the mechanism by which the delegation chain is extended — and it is therefore also the mechanism that must be most carefully constrained to ensure the guarantee holds.
+
+The three properties of recursive spawning — parent-pointer immutability, hierarchy finiteness, and delegation scope inheritance — ensure that the spawn tree is a structurally sound representation of the delegation chain. Every edge in the tree represents a genuine, auditable delegation of authority from a principal (human or machine) to a child node. The chain from any leaf node to its human anchor is fully recorded, finite in depth, and non-circumventable.
+
+The Bailout Protocol's escalation algorithm traverses the parent-pointer chain to reach the human anchor. Without the hierarchy finiteness constraint, this traversal could be infinite — a malicious or misconfigured spawn tree could have unbounded depth, causing the escalation to stall indefinitely. Without the delegation scope inheritance constraint, a child node could receive more authority than its parent holds, breaking the chain of accountable delegation. Without parent-pointer immutability, the chain could be retroactively modified to redirect escalations to machine actors rather than human principals.
+
+Each of these constraints is therefore not an independent design choice but a necessary condition for the upstream accountability guarantee to hold. Recursive spawning, implemented with these constraints, extends the accountability chain without weakening it. The human anchor remains reachable from every node, and the Forensic Ledger provides a complete record of every delegation event, enabling post-hoc reconstruction of the chain for any node at any depth.

@@ -1,0 +1,178 @@
+\section{The Recursive Spawning Protocol}
+\label{sec:recursive-spawning-protocol}
+
+The Recursive Spawning Protocol (RSP) is the operational mechanism by which a BX3 node decomposes its assigned task by provisioning child nodes, while preserving the upstream accountability guarantee across every generation of the spawn tree. RSP is not a spawning algorithm — it is a constrained protocol that determines \textit{whether} a spawn may proceed, \textit{how} the resulting child node is structured, and \textit{what} record is established when the spawn completes. The protocol is embedded in the three-layer architecture and draws its enforcement authority from each layer in sequence: the \purpose{} layer validates the intent and scope of the proposed delegation; the \bounds{} layer confirms depth and scope-inheritance compliance; the \fact{} layer records the immutable parent pointer and commits the spawn event to the Forensic Ledger. A child node is activated only after all three layers have independently confirmed their preconditions.
+
+This section specifies RSP as a four-stage protocol, describes the depth management enforcement mechanism, and proves that the protocol guarantees a chain that terminates at a human principal.
+
+% ---------------------------------------------------------------
+\subsection{Protocol Overview}
+\label{sec:rsp-overview}
+
+RSP executes as a deterministic four-stage sequence triggered by a spawn request event $e_{\text{spawn}}$ issued by a node $p$ in state \texttt{CAN\_SPAWN}. The stages are:
+
+\begin{enumerate}
+\item[\textbf{Stage 1 — Purpose Layer Validation.}] The \purpose{} layer of $p$ evaluates whether the proposed child node's operating range $R(c)$ represents a legitimate decomposition of $p$'s own range $R(p)$. The evaluation is not a policy judgment by the agent — it is a structural check that $R(c)$ is a non-empty, bounded subset of $R(p)$ that can be independently pursued without loss of task coherence. If validation fails, the spawn is refused and a \texttt{purpose-validation-failed} event is recorded. If validation succeeds, the \purpose{} layer emits $e_{\text{purpose-ok}}$ and the protocol advances to Stage 2.
+
+\item[\textbf{Stage 2 — Bounds Engine Depth Check.}] The \bounds{} layer computes the proposed depth of the child node $d(c) = d(p) + 1$ and compares it against the deployment constant $D_{\max}$. If $d(c) > D_{\max}$, the spawn is refused. The node transitions to \texttt{SPAWN\_LOCKED}, a \texttt{depth-violation} event is recorded, and the Bailout Protocol is triggered. If $d(c) \leq D_{\max}$, the \bounds{} layer emits $e_{\text{depth-ok}}$ and the protocol advances to Stage 3.
+
+\item[\textbf{Stage 3 — Fact Layer: Immutable Pointer and Forensic Ledger.}] The \fact{} layer atomically: (a) establishes the parent-pointer $\alpha(c) = p$, (b) inherits the human anchor $h(c) = h(p)$, (c) records $R(c)$ as the child's operating range, and (d) appends a \texttt{spawn-proposed} entry to the Forensic Ledger. The parent-pointer field $\alpha(c)$ is written once, as a read-only property of the child's \fact{} layer worksheet, and is thereafter immutable by any machine actor. The \fact{} layer then emits $e_{\text{fact-commit}}$ and the protocol advances to Stage 4.
+
+\item[\textbf{Stage 4 — Child Activation.} The child node $c$ is activated with its complete structural warrant: $\alpha(c)$, $h(c)$, $R(c)$, and $d(c)$ are all fixed at activation. The child is operational only after the Forensic Ledger entry confirming its provisioning is committed. The parent node $p$ transitions to \texttt{CHILD\_PROVISIONED} and returns to \texttt{CAN\_SPAWN}.
+\end{enumerate}
+
+The protocol is atomic in the sense that no child node is activated without all four stages completing successfully. A failure at any stage prevents activation and triggers the Bailout Protocol. The protocol does not support partial or provisional activation — the spawn tree is always in a consistent state.
+
+% ---------------------------------------------------------------
+\subsection{Purpose Layer Validation}
+\label{sec:rsp-purpose-validation}
+
+Stage 1 is the intent-validation gate. Its function is to ensure that the proposed spawn represents a genuine decomposition of the parent node's assigned task, not an unauthorized expansion or unrelated branching of authority.
+
+The \purpose{} layer of parent $p$ holds the principal's intent as encoded in $R(p)$. When $p$ issues a spawn request, it proposes a child operating range $R(c)$. Stage 1 validates three properties:
+
+\begin{enumerate}
+\item[{(a)}] \textbf{Non-empty range.} $R(c)$ must contain at least one actionable capability. A spawn that produces a child with no independent operating scope is a null operation — it imposes overhead without providing benefit. The \purpose{} layer confirms that $R(c)$ contains at least one well-formed capability statement.
+
+\item[{(b)}] \textbf{Subset integrity.} $R(c) \subset R(p)$ must hold strictly. The child cannot be assigned authority that the parent does not hold. This is the delegation scope inheritance constraint applied at the \purpose{} layer — a constraint that is confirmed again at the \bounds{} layer in Stage 2, but whose first evaluation occurs here.
+
+\item[{(c)}] \textbf{Decomposition coherence.} $R(c)$ must represent a meaningful sub-task of the parent node's assigned mission. The \purpose{} layer confirms that the child's scope is not a tangential or parallel scope that should have been handled by a sibling node rather than a child of $p$.
+\end{enumerate}
+
+If all three properties hold, the \purpose{} layer emits $e_{\text{purpose-ok}}$ and the spawn request advances. If any property fails, the \purpose{} layer records a \texttt{purpose-validation-failed} entry and refuses the spawn. The refusal is escalated to the human anchor $h(p)$ via the Bailout Protocol. The \purpose{} layer does not permit the spawning node to retry or revise $R(c)$ without explicit human authorization — a failed validation requires human adjudication, not machine iteration.
+
+The validation performed at Stage 1 is distinct from the scope-inheritance check enforced at Stage 2. Stage 1 evaluates whether the proposed decomposition is coherent with the principal's intent; Stage 2 evaluates whether the resulting child satisfies the formal subset constraint. A spawn may pass Stage 1 but fail Stage 2 if, for example, the proposed $R(c)$ is a coherent decomposition but the formal subset check encounters a technical boundary issue. Both checks are required; neither alone is sufficient.
+
+% ---------------------------------------------------------------
+\subsection{Bounds Engine: Depth Management}
+\label{sec:rsp-bounds-depth}
+
+Stage 2 enforces the Hierarchy Finiteness Invariant (Invariant~\ref{inv:hierarchy-finiteness}) and is the primary mechanism of RSP's depth management system. The \bounds{} layer evaluates the proposed spawn against two constraints:
+
+\begin{enumerate}
+\item[$\mathbf{D_{\max}\text{ enforcement}.}$] The depth of child $c$ is computed as $d(c) = d(p) + 1$. If $d(c) > D_{\max}$, the spawn is refused. The enforcement is a deterministic integer comparison — no probabilistic reasoning, no model judgment, no exception pathway. The \bounds{} layer emits $e_{\text{depth-violation}}$, transitions the parent to \texttt{SPAWN\_LOCKED}, and triggers the Bailout Protocol.
+
+\item[$\mathbf{Convergence criteria.}$] The \bounds{} layer additionally evaluates whether the proposed child satisfies the convergence criterion — that $R(c)$ represents a terminal or near-terminal decomposition. A child whose operating range does not itself require further spawning is a leaf node; its existence does not extend the spawn tree. The convergence criterion is a check that the spawn is necessary, not merely permissible. Formally: a child node $c$ satisfies convergence if either (i) $R(c)$ contains no capabilities that trigger recursive spawning, or (ii) $d(c) = D_{\max}$ — the child is at the depth ceiling and cannot spawn further regardless of its operating range. If neither condition holds, the child is a branching node and the depth management system tracks it as an active escalation risk.
+\end{enumerate}
+
+\subparagraph{Max spawn depth.} $D_{\max}$ is a deployment constant established at system initialization and is never negotiable at runtime. It is set by the deployment designer based on the operational requirements of the deployment context — specifically, the maximum acceptable escalation path length $T_{\max}$ for the Bailout Protocol's Liveness guarantee. For typical deployments, $D_{\max} \in [5, 8]$ provides sufficient recursion for complex task decomposition while keeping the escalation path short enough for human oversight to remain operationally meaningful. Scientific or research-intensive workloads may require higher bounds, but each increment to $D_{\max}$ extends the worst-case escalation path and must be justified by the deployment designer with explicit reference to $T_{\max}$.
+
+\subparagraph{Spawn refusal at limit.} When $d(c) > D_{\max}$, the spawn is refused and the node enters \texttt{SPAWN\_LOCKED}. The refusal is unconditional — the spawning node cannot override, appeal, or defer the depth check. The Bailout Protocol is triggered automatically, and the human anchor $h(p)$ is notified. The \bounds{} layer records a \texttt{depth-rejected} entry in the Forensic Ledger with the full spawn proposal and the computed depth. The entry is the authoritative record of the refusal and is the basis for any post-hoc review of the escalation.
+
+\subparagraph{Convergence criteria enforcement.} The convergence criterion is evaluated as part of Stage 2 but does not by itself prevent a spawn. A non-convergent child (one that may itself spawn further) is permitted as long as $d(c) \leq D_{\max}$. The convergence criterion serves a different function: it provides the Bailout Protocol with a forward model of the spawn tree's expected depth trajectory. When the \bounds{} layer evaluates a spawn that does not satisfy the convergence criterion, it annotates the Forensic Ledger entry with a \texttt{branching-node} flag. This flag enables the Bailout Protocol to estimate the maximum additional depth that the resulting subtree could extend to, which matters for determining whether the escalation path remains within $T_{\max}$.
+
+The interaction between depth limit and convergence is summarized in Table~\ref{tab:depth-management}.
+
+\begin{table}[htbp]
+\caption{Depth management outcomes in RSP Stage 2.}
+\label{tab:depth-management}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Spawn condition & Outcome & State transition \\
+\midrule
+$d(c) \leq D_{\max}$, convergent & Approved & $\rightarrow$ Stage 3 \\
+$d(c) \leq D_{\max}$, non-convergent & Approved with \texttt{branching-node} flag & $\rightarrow$ Stage 3 \\
+$d(c) > D_{\max}$ & Refused & $\rightarrow$ \texttt{SPAWN\_LOCKED} \\
+\midrule
+\end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{Fact Layer: Immutable Pointer and Forensic Ledger}
+\label{sec:rsp-fact-layer}
+
+Stage 3 is the commitment gate. It is the only stage at which the spawn tree structure is modified, and it is the stage that ensures the spawn tree is forever recoverable as an accountability structure.
+
+The \fact{} layer executes the following atomic operations on a successful Stage 2:
+
+\begin{enumerate}
+\item[{(a)}] \textbf{Immutable parent-pointer creation.} The parent-pointer field $\alpha(c)$ is written exactly once as a read-only property of the child's \fact{} layer worksheet. The write operation is performed by the \fact{} layer's pre-commit hook, which enforces that $\alpha(c) = p$ is established atomically before the child node is considered provisioned. After this write, no machine actor — including the child itself, the parent, or any system-level process — may modify $\alpha(c)$. Any attempt to write to $\alpha(c)$ after provisioning is intercepted by the pre-commit hook and rejected. The rejection event is recorded as a \texttt{parent-pointer-write-denied} entry in the Forensic Ledger, and the Bailout Protocol is triggered if the attempted write was initiated by a machine actor.
+
+\item[{(b)}] \textbf{Human anchor inheritance.} The child inherits the same human anchor as its parent: $h(c) = h(p)$. This inheritance is not a copy operation — it is a structural assertion that the child, regardless of its depth in the spawn tree, has the same human principal accountable for its actions as every other node in the tree. The anchor is established at Stage 3 and is immutable for the child's operational lifetime. No child node can point to a different human principal than its parent; the chain of anchors is a chain of identical references, not a chain of distinct delegations.
+
+\item[{(c)}] \textbf{Forensic Ledger recording.} The \fact{} layer appends a \texttt{child-provisioned} entry to the Forensic Ledger. The entry contains: $p$ (parent node ID), $c$ (child node ID), $\alpha(c) = p$, $h(c) = h(p)$, $R(c)$, $d(c)$, and a SHA-256 hash of the preceding ledger entry. The cryptographic chaining ensures that the ledger is append-only: no entry can be modified, deleted, or inserted without breaking the chain, a condition detectable by any auditor without access to the ledger's contents. The ledger records the complete spawn event, not a summary — it is the authoritative evidence base for reconstructing the spawn tree's state at any point in time.
+\end{enumerate}
+
+The atomicity of Stage 3 is architecturally enforced: the child node does not exist in the spawn tree until Stage 3 completes successfully, and the parent node does not return to \texttt{CAN\_SPAWN} until the Forensic Ledger entry is committed. The protocol does not support a state in which a child is partially provisioned — either the full atomic commit succeeds and the child is operational, or the commit fails and no child exists.
+
+The Forensic Ledger entries generated during RSP execution are:
+
+\begin{itemize}\itemsep=0pt
+\item \texttt{spawn-proposed}$(p, c, R(c), d(c))$ — Stage 1 complete, spawn validated;
+\item \texttt{depth-confirmed}$(c, d(c))$ — Stage 2 depth check passed;
+\item \texttt{scope-confirmed}$(c, R(c) \subset R(p))$ — Stage 2 scope check passed;
+\item \texttt{depth-rejected}$(c, d(c), D_{\max})$ — Stage 2 depth check failed;
+\item \texttt{child-provisioned}$(p, c, \alpha(c) = p, h(c) = h(p))$ — Stage 3 complete, child activated;
+\item \texttt{parent-pointer-write-denied}$(c, \alpha_{\text{attempted}}, \alpha_{\text{actual}})$ — post-activation write attempt intercepted.
+\end{itemize}
+
+These entries are the complete forensic record of every spawn event in the system. They are not conventional audit logs that record actions after execution — they are enforcement records that must be committed before subsequent actions are permitted. The Forensic Ledger is the authoritative source of truth for the runtime state of the spawn tree.
+
+% ---------------------------------------------------------------
+\subsection{Child Activation and Immutable Parent}
+\label{sec:rsp-child-activation}
+
+Stage 4 is the final gate: the child node becomes operational only after Stages 1–3 have all confirmed their preconditions and the Forensic Ledger entry for the spawn event is committed. The child's structural warrant is fully determined at activation and is never modified during the child's operational lifetime.
+
+The structural warrant of child node $c$ consists of:
+
+\begin{itemize}\itemsep=0pt
+\item $\alpha(c) = p$ — immutable parent pointer, established at Stage 3 and never modified;
+\item $h(c) = h(p)$ — human anchor, inherited from parent and never changed;
+\item $R(c)$ — operating range, non-empty subset of $R(p)$, established at Stage 1 and confirmed at Stage 2;
+\item $d(c)$ — spawn depth, computed as $d(p) + 1$, confirmed not to exceed $D_{\max}$ at Stage 2.
+\end{itemize}
+
+The immutability of the parent pointer is the structural property that makes the spawn tree a reliable accountability structure. If $\alpha(c)$ were mutable, the child could be retroactively re-parented to a different node, breaking the accountability chain and potentially redirecting the escalation path to a machine actor rather than a human principal. The \fact{} layer's pre-commit hook enforces immutability by intercepting any write to $\alpha(c)$ after Stage 3 and rejecting it. The rejection cannot be overridden by any machine actor.
+
+The child is activated in state \texttt{CAN\_SPAWN}, meaning it has the capacity to spawn further child nodes subject to the same four-stage protocol. The child's depth $d(c)$ is now a fixed parameter against which all future spawn requests are evaluated. The child cannot exceed $D_{\max}$ in its own spawn operations — the depth check at Stage 2 operates on the computed $d(c) = d(p) + 1$, where $d(p)$ is immutable once $p$ has been provisioned.
+
+The activation sequence also registers the child in the Bailout Protocol's escalation index. The index maps each node to its human anchor and to the full parent-pointer chain from the node to the anchor. This index is maintained by the \fact{} layer and is consulted by the Bailout Protocol's escalation algorithm at runtime.
+
+% ---------------------------------------------------------------
+\subsection{Chain Verification: Termination at Human Principal}
+\label{sec:rsp-chain-verification}
+
+The correctness of RSP depends on a single structural guarantee: for every node $v$ in the spawn tree, the accountability chain $\alpha(v), \alpha(\alpha(v)), \alpha(\alpha(\alpha(v))), \ldots$ terminates at a human principal $h(v)$ within at most $D_{\max}$ steps, and never at a machine actor.
+
+This guarantee is established by construction, not by inference:
+
+\begin{enumerate}
+\item[{(i)}] \textbf{Genesis anchor is human.} The root node $r$ of the spawn tree is provisioned by a human principal $h(r)$ directly. $h(r)$ is not delegated — it is the originating human actor. This is the base case of the chain.
+
+\item[{(ii)}] \textbf{Anchor inheritance.} Every child $c$ spawned from parent $p$ inherits $h(c) = h(p)$ (Stage 3). The anchor is not computed — it is copied. Therefore, $h(c) = h(p) = h(r)$. The human anchor is identical for every node in the spawn tree.
+
+\item[{(iii)}] \textbf{Parent-pointer immutability.} $\alpha(c) = p$ is established once at Stage 3 and is never modified (Fact Layer enforcement). The chain of parent pointers is therefore a fixed, immutable structure from the moment each node is provisioned.
+
+\item[{(iv)}] \textbf{Hierarchy finiteness.} Every spawn event checks $d(c) \leq D_{\max}$ at Stage 2. Therefore, no node exists at depth greater than $D_{\max}$. The parent-pointer chain from any node $v$ traverses at most $D_{\max}$ edges before reaching the root node $r$, whose anchor $h(r)$ is a human principal by (i).
+\end{enumerate}
+
+The chain terminates at a human principal by (ii) and (iv). It never terminates at a machine actor because (ii) guarantees that every node in the chain has the same human anchor $h(r)$, and (i) guarantees that $h(r)$ is a human principal, not a machine actor. The chain is finite by (iv) and immutable by (iii).
+
+The Bailout Protocol's escalation algorithm traverses this chain. Because the chain is guaranteed to terminate at a human within $D_{\max}$ steps, the escalation algorithm is guaranteed to terminate — the Liveness guarantee is non-vacuous. The maximum escalation path length is $D_{\max}$, and the worst-case time to human contact is bounded by $T_{\max}$, which is a function of $D_{\max}$ and the per-hop escalation latency.
+
+\begin{invariant}[RSP Termination Invariant]
+\label{inv:rsp-termination}
+For every node $v$ in a BX3 spawn tree governed by the Recursive Spawning Protocol, the accountability chain
+\[
+v,\ \alpha(v),\ \alpha^{(2)}(v),\ \ldots,\ \alpha^{(k)}(v)
+\]
+satisfies: (i) $k \leq D_{\max}$; (ii) $\alpha^{(k)}(v) = h(v)$ and $h(v)$ is a human principal; and (iii) no $\alpha^{(i)}(v)$ for $0 \leq i \leq k$ is a machine actor.
+\end{invariant}
+
+This invariant is a direct consequence of Stages 1–4 and is enforced by the three-layer architecture in concert. It does not require runtime checking — it is a structural property established at node provisioning and preserved by the \fact{} layer's immutability guarantees.
+
+% ---------------------------------------------------------------
+\subsection{Protocol Summary}
+\label{sec:rsp-summary}
+
+The Recursive Spawning Protocol operationalizes the upstream accountability guarantee for multi-level spawn trees. Its four stages ensure that:
+
+\begin{itemize}\itemsep=0pt
+\item \textbf{Purpose Layer validation} (Stage 1) confirms that the proposed child represents a coherent, authorized decomposition of the parent's assigned task;
+\item \textbf{Bounds Engine depth check} (Stage 2) enforces the Hierarchy Finiteness Invariant and evaluates convergence criteria, refusing spawns that would exceed $D_{\max}$ or extend a non-convergent branch beyond the depth ceiling;
+\item \textbf{Fact Layer immutable pointer and forensic ledger} (Stage 3) atomically establishes the parent-pointer, inherits the human anchor, and records the complete spawn event in a cryptographically chained append-only ledger;
+\item \textbf{Child activation} (Stage 4) activates the node with its full structural warrant, making it operational only after all three layers have confirmed their preconditions.
+\end{itemize}
+
+The protocol guarantees that the accountability chain of any node terminates at a human principal within $D_{\max}$ steps, that the chain is immutable once established, and that the complete spawn history is recoverable from the Forensic Ledger by any auditor. These guarantees are structural, not operational — they are enforced by the architecture of the three layers, not by the correctness of any individual machine actor within the system.

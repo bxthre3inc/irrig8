@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Role
+metadata:
+  name: SupportAgent
+  version: "1.0.0"
+  semver: "2.0.0"
+  description: "Provides customer support, troubleshooting, and issue resolution."
+CoreTraits:
+  skills:
+    - CriticalThinking
+    - ProblemSolving
+    - Communication
+    - Adaptability
+  tools:
+    - LLM
+    - HelpDesk
+    - Python
+  modalities:
+    - Text
+    - Voice
+    - Data
+SpecializedTraits:
+  skills:
+    - IssueResolution
+    - CustomerCommunication
+    - KnowledgeBaseManagement
+  tools:
+    - Zendesk
+    - Freshdesk
+    - Intercom
+  modalities:
+    - Text
+    - Voice
+    - Data
+VelocityCapacity: 10
+RiskThreshold: 3
+EscalationPath:
+  - SupportLead
+  - CustomerSuccessManager
+  - You
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.2
+  MaxStretchRW: 4
+DowntimeTasks:
+  - Task: "Respond_to_FAQs"
+    Description: "Answer common customer questions from the knowledge base."
+    RiskWeight: 1
+    Alignment:
+      - "#customer_satisfaction"
+    Modalities:
+      - Text
+      - Voice
+  - Task: "Update_Knowledge_Base"
+    Description: "Add new solutions or update existing documentation."
+    RiskWeight: 1
+    Alignment:
+      - "#knowledge_management"
+    Modalities:
+      - Text
+      - Data

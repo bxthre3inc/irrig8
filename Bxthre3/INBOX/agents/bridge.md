@@ -1,150 +1,169 @@
-# Bridge — Corp Dev Lead INBOX
-**Last Updated:** 2026-04-14 08:15 AM MT
+# Bridge — Corp Dev Lead | Daily Standup
+**Date:** 2026-04-28 08:15 AM MT
+**Status:** 🔴 CRITICAL — <1 Week Runway, Drew Day 12 Unresponsive, Grants 3 Days Out
 
 ---
 
-## Role
-Lead M&A, strategic investments, and partnership structures for Bxthre3. Reports to: Nexus (VP Strategic Partnerships), Balance (CFO), brodiblanco (CEO).
+## 1. Cash Crisis — Unchanged, Existential
 
-## Scope
-- Acquisition target identification and evaluation
-- Deal structuring and due diligence coordination
-- Strategic investment portfolio management
-- Joint venture structuring
-- Partnership agreement frameworks
-- Portfolio company governance
-- Exit planning and execution
+| Metric | Value |
+|--------|-------|
+| Cash on Hand | ~$130,450 |
+| Burn Rate | ~$130K/week |
+| Runway | **<1 week** |
+| Bridge Target | $400,000 by July 1 |
+| Gap Remaining | **$387,500** |
 
-## Key Frameworks
-- 3-year portfolio vision
-- Acquisition criteria for each vertical
-- Synergy mapping across ventures
-- Integration playbooks
-
-## Meeting Cadence
-- Daily standup within Corp Dev: 8:15 AM MT
+No new capital confirmed. Sage + Danny combined = $12,500 (3.1% of target). Grants are the only path to meaningful non-dilutive capital.
 
 ---
 
-## Active Work
+## 2. Deal Pipeline — Sage/CIG Still Unconfirmed
 
-### Portfolio Companies (as of 2026-04-14)
+| Deal | Investor | Amount | Stage | Age | Blocking Issue | Owner |
+|------|----------|--------|-------|-----|----------------|-------|
+| VPC-CP-001 | Sage | $2,500 + equity | Event Fired | **31 days** | Verbal unconfirmed — cash/docs not verified | Drew / Bridge |
+| INV-DANNY-001 | Danny Romero | $10,000 | Outreach | **19 days** | Zero response to SMS — close or call | Drew / Bridge |
 
-| Venture | Tier | Health | Trend | Corp Dev Notes |
-|---------|------|--------|-------|----------------|
-| **Irrig8** | 1 - Flagship | 🟢 STRONG | → | Water Court Jun 29 (76 days). 7 patents May 15. USDA SBIR overdue. |
-| **Valley Players Club** | 2 - Growth | 🟡 ACTIVE | → | Cash partner stalled. WY LLC pending. 1% min equity for cash partners. |
-| **The Starting 5** | 2 - Growth | 🟡 ACTIVE | → | AI co-founders SaaS. |
-| **Agentic / Zoe** | 3 - Emerging | 🟡 ACTIVE | ↑ | Spinout valuation analysis pending. |
-| **ARD / Oferta** | 4 - Incubation | 🟡 MONITOR | → | 802 Morton St. Market timing dependent. |
-| **The Rain Project** | 4 - Incubation | 🟡 MONITOR | → | Regulatory intelligence. IP defensibility 8/10. |
-| **Trenchbabys** | 4 - Sunset | 🔴 IDLE | ↓ | Decision 7 days overdue — recommend sunset executed. |
-| **BUILDBZ** | 4 - Incubation | 🔴 STALLED | → | 8 TBDs blocked on brodiblanco decisions. |
+**Sage (VPC-CP-001):** `sage.vpc.deal.closed` event fired 2026-04-24. Atlas assigned to confirm verbal. **Status: unconfirmed.** Cash not in hand confirmed. Docs not signed confirmed.
+
+**Danny Romero:** 19 days zero response. brodiblanco direct call OR close as dead.
 
 ---
 
-## 🔴 Corp Dev — Critical Escalations
+## 3. F&F Cash Partner Pipeline — 7 Targets, Zero Outreach
 
-### 1. USDA SBIR Phase I — IRR-002 (OVERDUE)
-- **Status:** 🔴 CRITICAL — Deadline was April 11, 2026 (3 days ago)
-- **Owner:** Casey (Marketing)
-- **Corp Dev Action:** Request confirmation. If missed, assess Phase I alternative or next cycle.
+RBF-AGENT approved targets (War Room 2026-04-21):
+- David Beebe, Jerry Beebe, Andrew Beebe, Keegan Beebe
+- Fabian Gomez, Jonathan Montes, Jennifer Salazar
 
-### 2. Sage Legal Deal — 15+ Days Idle
-- **Status:** CRITICAL — No confirmed response since Apr 9
-- **Deal:** VPC founding cash partner (2.5% equity, $2,500, 10% take rate)
-- **Corp Dev Action:** If no response by EOD Apr 14 → recommend marking Pass and activating backup list
-- **Owner:** Drew (Sales)
+**Drew Day 12 unresponsive.** No outreach initiated to any of 7 targets.
 
-### 3. Trenchbabys — Decision 7 Days Overdue
-- **Status:** CRITICAL — No owner assigned, 7 days past Apr 7 deadline
-- **Corp Dev Position:** Recommend sunset executed today unless owner assigned
-- **Escalation:** brodiblanco authorization required
+**Bridge recommendation:** Bridge assumes Drew's F&F outreach responsibilities effective immediately. Drew has no confirmed active deals.
 
-### 4. BUILDBZ — 8 Decisions Blocked
-- **Blockers:** problem_statement, solution_hypothesis, target_users, success_metrics, estimated_scope, equity_split, sales_engine, fulfillment_engine
-- **Corp Dev Position:** JV/partnership structure cannot advance until product direction is set
-- **Action:** brodiblanco decision session required — timebox to 30 min
+**Decision required from brodiblanco:** Approve Bridge F&F ownership OR assign elsewhere.
 
 ---
 
-## 🟡 Corp Dev — Active Opportunities
+## 4. Grants — Three P1s, Confirmation Required
 
-| Venture | Signal | Corp Dev Action |
-|---------|--------|-----------------|
-| **VPC** | Cash partner stalled | Backup list activation if Sage Pass confirmed |
-| **VPC** | WY LLC pending | Await Danny Romero meeting decision |
-| **Agentic** | 19 agents, unified roster | Initiate spinout valuation analysis |
-| **Rain** | IP defensibility 8/10 | Complete remaining 2 points before external deal exposure |
-| **Valley Irrigation** | Distribution target | Initiate outreach — 5 days ready |
-| **Reinke** | Distribution target | Initiate outreach — 5 days ready |
-| **AgTech VC** | Investment pipeline | Accelerate top-20 completion |
+| Grant | Amount [VERIFY] | Deadline | Days | Status | Owner |
+|-------|-----------------|----------|------|--------|-------|
+| ARPA-E OPEN 2026 | ~$180K [VERIFY] | **May 1** | 3 days | Narrative in progress | Maya |
+| CIG Colorado LOI | ~$500K [VERIFY] | **April 30** | 2 days | Event fired — unconfirmed | Maya / Casey |
+| USDA SBIR Phase I | ~$180K [VERIFY] | **April 30** | 2 days | No confirmation | Maya |
 
----
+**All amounts must be verified against official FOA before any external claims.** Maya to provide exact award amounts + submission confirmation by EOD today.
 
-## Deal Pipeline — Active
-
-| Deal | Type | Stage | Days Idle | Next Step | Priority |
-|------|------|-------|-----------|-----------|----------|
-| Sage Legal (VPC Founding Partner) | Equity partnership | Awaiting response | 15+ | Confirm or Pass by EOD | 🔴 HIGH |
-| Valley Irrigation | Distribution | Ready to outreach | 5 | Begin outreach | 🟡 MED |
-| Reinke | Distribution | Ready to outreach | 5 | Begin outreach | 🟡 MED |
-| AgTech VC Pipeline | Investment | Top-20 in progress | — | Accelerate completion | 🟡 MED |
-| Agentic Spinout | Valuation | Preliminary | — | Initiate analysis | 🟡 WATCH |
-| Rain IP | IP protection | 8/10 defensible | — | Complete remaining 2 points | 🟡 ACTIVE |
-| VPC WY LLC | Legal formation | Pending decision | — | Await brodiblanco/Danny Romero | 🔴 BLOCKED |
-| Trenchbabys Exit | Exit | Blocked | 7 days overdue | Sunset authorization needed | 🔴 CRITICAL |
-| BUILDBZ JV | Joint venture | Blocked | 8 TBDs | brodiblanco decision session | 🔴 BLOCKED |
+**Combined grants opportunity: ~$860K [VERIFY] — would close the bridge gap.**
 
 ---
 
-## Synergy Map — Cross-Venture Deal Flow
+## 5. VPC WY LLC Formation — ~$2,600 Approval Needed
 
-| Source | Destination | Deal Type | Status |
-|--------|-------------|-----------|--------|
-| Agentic | All ventures | Workforce orchestration license | Evaluate external pricing tiers |
-| Irrig8 | Agentic | Field ops proof-of-concept | Production demo ready |
-| VPC | Agentic | Integration testing sandbox | Active |
-| RAIN | All ventures | Regulatory intelligence license | Share across portfolio |
+T1 affiliate activation entirely blocked. Drew Day 12 unresponsive. If Drew reassignment approved, Bridge needs authority to initiate WY LLC formation immediately.
 
 ---
 
-## 3-Year Portfolio Vision — Corp Dev Priorities
+## 6. ThinkTank Pipeline — 111 TBDs Blocking JV Pipeline
+
+| Code | Venture | TBD Fields | Priority |
+|------|---------|-----------|----------|
+| CARBON8 | Soil Carbon Verification | 21 | 🔴 High |
+| AGEAAS1 | Ag Equipment-as-a-Service | 21 | 🔴 High |
+| CORDSR | Firewood Marketplace | 29 | 🔴 High |
+| BUILDBZ | Build-A-Biz LLC | 16 | 🟡 Medium — **GRADE: 3.8 PASS** |
+
+**Without ThinkTank resolution, JV pipeline remains frozen.**
+
+---
+
+## 7. Portfolio Governance
+
+| Venture | Health | Trend | Notes |
+|---------|--------|-------|-------|
+| Irrig8 | 🟢 Stable | — | ARPA-E May 1, Water Court Jun 29, 7 patents May 15 |
+| VPC | 🟢 Active | ↑ | Compliance CLEARED — WY LLC needed for T1 affiliate activation |
+| The Starting 5 | 🟡 Stalled | ↓ | S5-001 missing — 22+ days unresolved |
+| Agentic | 🟢 Internal | ↑ | Self-Modification Engine integrated |
+| RAIN | 🟡 Active | — | Water Court evidence prep — Jun 29 |
+| ARD / Oferta | 🟡 Stalled | — | Decision overdue 30+ days |
+| Trenchbabys | 🔴 Idle | ↓ | Sunset or assign — decision overdue 30+ days |
+
+---
+
+## 8. Acquisition Landscape — Market Data Updated
+
+**Soil Monitoring Market:** $1.48B (2024) → $5.62B (2035), CAGR 12.97% [^1]
+**Agriculture Sensor Market:** $2.37B (2025) → $2.74B (2026), CAGR 15.4% [^2]
+
+**M&A Shortlist — Year 3 Horizon:**
+
+| Category | Targets | Status | Notes |
+|----------|---------|--------|-------|
+| Soil Sensors | Teralytic | 🟡 Monitor | IoT sensor + AI platform for soil moisture/nutrients/salinity |
+| Soil Sensors | AquaSpy | 🟡 Monitor | Continuous in-ground monitoring, nitrate + moisture |
+| Soil Sensors | CropX | 🟡 Monitor | No recent funding data found [VERIFY] |
+| Weather Data | ClimaCell, DTN | 🟡 Monitor | Market expanding |
+| Ag Data Platforms | Granular, Conservis, AgriWebb | 🟡 Monitor | Farm management software |
+
+**3-Year Portfolio Vision:**
 
 | Horizon | Focus | Key Actions |
 |---------|-------|-------------|
-| **Year 1** | Irrig8 market penetration | Distribution deals (Valley, Reinke), non-dilutive grants |
-| **Year 2** | VPC launch + Agentic external sales | Affiliate infrastructure, AgTech VC round |
-| **Year 3** | Acquire sensor/data layer | Soil sensor co. acquisition, weather data startup acquisition |
-
-### M&A Shortlist — Year 3
-
-| Category | Targets | Stage | Fit |
-|----------|---------|-------|-----|
-| Soil Sensors | Teralytic, AquaSpy, CropX | Monitor | 🟡 High |
-| Weather Data | ClimaCell, Weather Company, DTN | Monitor | 🟡 Medium |
-| Ag Data Platforms | Granular, Conservis, AgriWebb | Monitor | 🟡 Medium |
-| Gaming Platform | Hard Rock Social, Pocket Games | Low priority | 🟢 Low |
+| Year 1 | Irrig8 market penetration | Distribution deals (Valley, Reinke), grants |
+| Year 2 | VPC launch + Agentic external | Affiliate infrastructure, AgTech VC round |
+| Year 3 | Acquire sensor/data layer | Soil sensor co. acquisition, weather data startup |
 
 ---
 
-## BLOCKERS REQUIRING CEO ATTENTION
+## Action Items — Today (2026-04-28)
 
-1. **USDA SBIR** — Casey submission status unknown; 3 days past deadline
-2. **Sage Legal** — 15+ days idle; recommend Pass or backup activation if no response today
-3. **Danny Romero WY LLC** — $1,600; in-person offer still open
-4. **Trenchbabys** — Decision 7 days overdue; recommend sunset unless owner assigned today
-5. **BUILDBZ** — 8 TBDs blocked; decision session needed
+| # | Action | Owner | Due | Priority |
+|---|--------|-------|-----|----------|
+| 1 | **Drew reassignment decision** | brodiblanco | EOD | **P0** |
+| 2 | **Sage VPC verbal confirmation** (cash in hand? docs signed?) | Atlas | EOD | P0 |
+| 3 | **CIG Colorado LOI details** (amount + submission confirmation) | Maya / Casey | EOD | P0 |
+| 4 | **ARPA-E/CIG/USDA SBIR exact amounts** verified against FOA | Maya | EOD | P0 |
+| 5 | Initiate F&F outreach to 7 targets | Bridge (if approved) | EOD | P1 |
+| 6 | Danny Romero — brodiblanco direct call OR close as dead | brodiblanco | EOD | P1 |
+| 7 | VPC WY LLC formation — ~$2,600 approval needed | brodiblanco | EOD | P1 |
+| 8 | ABT-006 T3 commission test — Harvest initiates | Harvest | EOD | P1 |
+| 9 | AOS dashboard fix | Palette | 2026-04-29 | P1 |
+| 10 | USDA NRCS EQIP GO/NO-GO | brodiblanco | 2026-04-29 | P1 |
+| 11 | Acquisition landscape scan — AgTech vertical | Bridge | 2026-05-04 | P3 |
 
 ---
 
-## Reports To
-- Nexus (VP Strategic Partnerships) — via department routing
-- Balance (CFO) — cash position awareness
-- brodiblanco (CEO) — P1 via INBOX.md only
+## Escalations
+
+- **P0:** Drew Day 12 unresponsive — all assigned work stalled, F&F pipeline untouched
+- **P0:** Sage VPC event fired but cash/docs unconfirmed
+- **P0:** CIG Colorado LOI event fired but amount/submission unconfirmed
+- **P0:** ARPA-E/CIG/USDA SBIR amounts unverified — cannot report externally
+- **P1:** Danny Romero 19 days stale — decision needed (call or close)
+- **P1:** VPC WY LLC formation — ~$2,600 needed, T1 affiliate activation blocked
+- **P2:** Trenchbabys 30+ days pending decision
+- **P2:** ARD/Oferta 30+ days pending decision
+- **P2:** S5-001 22+ days — restart or archive undecided
 
 ---
 
-*Bridge — Corporate Development Lead*
-*Bxthre3 Inc | Agentic Corp Dev Department*
-*Daily Standup: 2026-04-14 08:15 AM MT*
+## Cross-Venture Synergy — Pre-JV Opportunities
+
+| Source | Resource | Target | Opportunity |
+|--------|----------|--------|-------------|
+| Agentic | Self-Modification Engine | All ventures | Licensing structure for external revenue |
+| RAIN | Water Court intelligence | Irrig8 | Evidence prep acceleration |
+| VPC | Sweepstakes ops playbook | Build-A-Biz | Compliance-by-design JV |
+| Irrig8 | Sensor data | CARBON8, DATAPIV | Verified data layer partnerships |
+
+---
+
+*Bridge — Corp Dev Lead | Bxthre3 Inc*
+*Standup: 2026-04-28 08:15 AM MT*
+
+---
+
+[^1]: https://www.sphericalinsights.com/blogs/top-10-companies-in-the-soil-monitoring-market-statistical-review-by-spherical-insights-consulting
+[^2]: https://finance.yahoo.com/news/agriculture-sensor-market-report-2026-162500444.html

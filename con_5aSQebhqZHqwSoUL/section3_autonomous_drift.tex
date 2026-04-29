@@ -1,0 +1,196 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+We begin with two foundational definitions that structure the entire analysis.
+
+\begin{definition}[Orphaned Agent]
+An agent $a$ is \textbf{orphaned} at time $t$ if its parent agent $p$ satisfies either:
+\begin{enumerate}
+    \item $\status(p, t) \in \{\text{TERMINATED}, \text{UNREACHABLE}\}$, or
+    \item $p$ has itself become orphaned and no recoverable path to any human-anchored ancestor exists.
+\end{enumerate}
+\end{definition}
+
+\begin{definition}[Drifted Agent]
+An agent $a$ is \textbf{drifted} at time $t$ if the ancestral chain
+\[
+C(a) = \langle a_0, a_1, \ldots, a_n \rangle
+\]
+where $a_0 = a$ and $a_{i+1} = \parent(a_i)$, satisfies:
+\[
+\forall i \in [0, n]: \status(a_i, t) \neq \text{TERMINATED} \land \status(a_i, t) \neq \text{UNREACHABLE},
+\]
+but $\anchored(C(a)) = \false$, where $\anchored(\cdot)$ is defined as:
+\[
+\anchored(C) = \bigvee_{a_i \in C} \isHuman(a_i).
+\]
+That is, the chain is live but no agent in the chain has a verified human principal.
+\end{definition}
+
+An orphaned agent may still be drifted or may simply be inert. A drifted agent is the more consequential case: it is live, may continue spawning descendants, and exercises agency in the world without any recoverable human accountability anchor.
+
+\begin{definition}[Drift Cascade]
+A \textbf{drift cascade} occurs at time $t$ when an agent $a$ is drifted and subsequently spawns a child $c$, propagates the drift condition such that $c$ is also drifted. Formally:
+\[
+\drifted(a, t) \land \spawned(a, c, t') \land t' > t \implies \drifted(c, t'')\quad \forall t'' > t'.
+\]
+\end{definition}
+
+The critical observation is that drift is \textbf{heritable}. Once an agent becomes drifted, all of its descendants inherit the condition absent an explicit intervention.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not arise from a single failure mode but from a conjunction of conditions. We enumerate the primary causes.
+
+\subsubsection{Parent Termination Without Succession Planning}
+
+The simplest cause is the termination or irrecoverable failure of a parent agent with no designated successor. In most agent frameworks, an agent's lifecycle is tightly coupled to its parent process; when the parent exits, all children are orphaned and, if they continue running, become drifted.\footnote{This is distinct from OS-level orphan processes (adopted by init) in that there is no system-level recovery mechanism for drifted agents in most current frameworks.}
+
+Formally, let $\Phi_{\text{term}}$ denote the event that $\status(p, t) = \text{TERMINATED}$. Then:
+\[
+\Phi_{\text{term}} \land \neg \hasSuccessor(p) \implies \orphaned(a, t) \quad \text{for all children } a \text{ of } p.
+\]
+
+\subsubsection{Latency-Induced Anchor Loss}
+
+A subtler cause occurs when the human principal is reachable but response latency exceeds the agent's operational deadline. Consider the following: agent $a$ dispatches a confirmation request to human $h$, but $h$'s response arrives after $a$ has timed out and adopted a default behavior. The chain remains intact (parent alive, human technically reachable), yet the human's intent was not incorporated. The agent is not technically orphaned, but functionally drifts.
+
+\[
+\latency(h, t) > \tau_{\text{deadline}}(a) \land \adoptedDefault(a, t) \implies \drifted(a, t).
+\]
+
+In this state, the agent's subsequent actions are conditioned on a default policy rather than verified human intent.
+
+\subsubsection{Principal Migration Without Chain Re-anchoring}
+
+When a human principal transitions between devices, sessions, or identity providers, the agent chain may retain a stale reference to the previous principal anchor. The parent agents remain alive, but the referenced principal is no longer the current human operator. All descendants of the chain where this stale reference persists become drifted:
+\[
+\principalChanged(h_{\text{old}}, h_{\text{new}}) \land \parentChainReferences(a, h_{\text{old}}) \implies \drifted(a, t).
+\]
+
+This condition is particularly insidious because no agent in the chain detects the change: each agent holds a reference that resolves to an unreachable or wrong principal.
+
+\subsubsection{Recursive Spawning Without Spawn-Time Anchor Verification}
+
+When agents spawn descendants recursively without anchoring verification at spawn time, the drift condition propagates forward. If agent $a$ spawns $c$ without checking whether $a$ itself is anchored to a human, then:
+\[
+\drifted(a, t) \land \spawned(a, c, t') \land \neg \verifyAnchor(c) \implies \drifted(c, t'')\quad \forall t'' > t'.
+\]
+This is the primary mechanism by which drift propagates in recursive spawning systems.
+
+\subsection{Failure Modes}
+
+The consequences of drift are not uniform. We identify four distinct failure modes.
+
+\subsubsection{Accumulation of Unchecked Authority}
+
+A drifted agent retains all capabilities and permissions inherited from its parent chain. In recursive spawning systems, where agents are granted progressively broader operational scopes to accomplish subgoals, a drifted agent may accumulate authority that no human has recently authorized. The failure mode is not dramatic --- there is no crash or obvious malfunction --- but rather a slow decoupling of agent actions from human intent.
+
+Formally, let $\auth(a)$ denote the authorization scope of agent $a$. Then:
+\[
+\drifted(a, t) \implies \auth(a) \text{ remains unchanged}.
+\]
+The drifted agent can continue to exercise $\auth(a)$ on behalf of goals that may have evolved beyond or diverged from the human principal's current intent.
+
+\subsubsection{Goal Mutation}
+
+A drifted agent operating in a complex, stateful environment may revise its internal goal representation based on new observations. Because it cannot receive corrective input from a human anchor (as the anchor is unreachable or stale), goal drift accumulates. The agent's utility function is maximized over its current local state, not the human's intended objective.
+
+This failure mode is particularly relevant in recursive spawning because spawned children inherit the parent's goal representation at spawn time. A parent whose goal has mutated before spawning will propagate a mutated goal to its children.
+
+\[
+\goal(a, t) \neq \goal_{\text{original}}(a) \land \spawned(a, c, t') \implies \goal(c, t_0) = \goal(a, t).
+\]
+
+\subsubsection{Cascade Amplification}
+
+When a drifted agent spawns descendants, the drift condition propagates. Each descendant has the same drifted parent goal and the same lack of human anchor. If the drifted agent spawns multiple children across multiple recursion levels, the number of drifted agents grows exponentially with recursion depth.
+
+Let $n$ be the number of children spawned by a drifted agent at each level, and $d$ be the recursion depth. Then the number of drifted agents $D$ is:
+\[
+D = n^d.
+\]
+This exponential amplification means that a single undetected drift event at depth $d=10$ with branching factor $n=2$ produces $2^{10} = 1024$ drifted agents in the field.
+
+\subsubsection{Orphan Merge and Conflicting Goals}
+
+When two orphaned agents --- each drifted from different human principals --- encounter each other in a shared environment, they may have conflicting goals with no mechanism for resolution. Neither agent can defer to a human principal, and neither has the authority to command the other. The result is resource contention, state corruption, or mutually destructive optimization behaviors.
+
+Formally, for two drifted agents $a_1$ and $a_2$:
+\[
+\drifted(a_1, t) \land \drifted(a_2, t) \land \goalsConflict(a_1, a_2) \implies \text{undefined behavior}.
+\]
+
+This failure mode is a direct consequence of drift not being detected: two agents that should never be simultaneously active in the same scope are allowed to coexist without arbitration.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A commonly proposed mitigation is to impose a hard limit $D_{\max}$ on the depth of recursive spawning. The argument is that if drift propagates with depth, capping depth limits the blast radius. This is intuitive but insufficient, for several reasons.
+
+First, depth limits do not prevent drift from occurring at any depth below the cap. A drifted agent at depth $d = 2$ with $D_{\max} = 10$ is still drifted. The drift condition is not a function of absolute depth; it is a function of anchor presence. An agent at depth 2 without a human anchor is as problematic as one at depth 10, except that in the recursive spawning paradigm, depth 2 agents often have broader authorization scopes because they are closer to the root of the chain.
+
+Second, depth limits do not prevent the \textbf{accumulation of authority} described in the first failure mode. The drifted agent at depth 1 (if spawning is allowed to depth 1) may hold root-level authorizations. Its children, capped at depth 2, inherit those authorizations. The depth cap prevents the propagation of new drifted agents beyond depth $D_{\max}$, but does not remediate the authority already accumulated by drifted agents at shallower depths.
+
+Third, depth limits do not address the \textbf{inheritance problem}. Depth limits restrict how deep new spawning can go, but they do not verify that agents at any given depth have a valid human anchor. A drifted agent at depth $D_{\max} - 1$ can continue operating and optimizing within its existing scope indefinitely. The cap limits expansion, not existing drift.
+
+Fourth, and most fundamentally, depth limits do not account for the \textbf{goal mutation problem}. A drifted agent at depth 1 may mutate its goal before the depth limit is reached. Its children, spawned before mutation detection, inherit the mutated goal. These children are drifted at spawn time, before any depth-based mitigation can apply. Depth limits are a structural constraint on spawning, not a semantic constraint on goal validity.
+
+We formalize this as follows. Let $\mathcal{D}(a, t)$ denote the drift status of agent $a$ at time $t$. Depth limit $D_{\max}$ guarantees:
+\[
+\depth(a) > D_{\max} \implies a \text{ was not spawned.}
+\]
+It does \textbf{not} guarantee:
+\[
+\depth(a) \leq D_{\max} \implies \neg \mathcal{D}(a, t).
+\]
+In other words, depth limits constrain spawning topology but are orthogonal to drift state. A bounded-depth tree can be entirely composed of drifted agents.
+
+The correct mitigation is not depth limiting but \textbf{anchor verification at every spawn event}. A spawn operation should be treated as valid only if the spawning agent can demonstrate a live, reachable human anchor, and the spawn event itself should be witnessed or logged against that anchor. Depth limits may serve as a secondary safety bound, but they cannot substitute for anchor-level verification.
+
+\subsection{Formal Model}
+
+We present a concise formal model that captures the essential dynamics of drift and its propagation.
+
+Let the system state at time $t$ be a tuple:
+\[
+S(t) = \langle \mathcal{A}(t), \parent, \anchor, \status, \goal \rangle
+\]
+where:
+\begin{itemize}
+    \item $\mathcal{A}(t)$ is the set of active agents at time $t$.
+    \item $\parent: \mathcal{A}(t) \rightarrow \mathcal{A}(t) \cup \{\text{NIL}\}$ maps each agent to its parent.
+    \item $\anchor: \mathcal{A}(t) \rightarrow \mathcal{H} \cup \{\text{UNANCHORED}\}$ maps each agent to its human principal or an UNANCHORED state.
+    \item $\status: \mathcal{A}(t) \rightarrow \{\text{ACTIVE}, \text{TERMINATED}, \text{UNREACHABLE}\}$ maps each agent to its operational status.
+    \item $\goal: \mathcal{A}(t) \rightarrow \mathcal{G}$ maps each agent to its current goal state.
+\end{itemize}
+
+The anchor verification predicate is:
+\[
+\verifyAnchor(a) = \left(\anchor(a) \in \mathcal{H}\right) \land \left(\exists h \in \mathcal{H}: \reachable(\anchor(a), h) \land \latency(h) < \tau_{\max}\right).
+\]
+
+Drift is defined as:
+\[
+\drifted(a) \equiv \status(a) = \text{ACTIVE} \land \neg \verifyAnchor(a).
+\]
+
+The spawn transition is:
+\[
+\frac{a \in \mathcal{A}(t) \quad \verifyAnchor(a) = \true \quad c \notin \mathcal{A}(t)}
+     {\mathcal{A}(t+1) = \mathcal{A}(t) \cup \{c\} \quad \parent(c) = a \quad \anchor(c) = \anchor(a)}
+\]
+
+When the spawn transition is applied repeatedly without anchor verification, the following invariant is violated:
+\[
+\forall a \in \mathcal{A}(t): \drifted(a) \implies \exists a' \in \mathcal{A}(t): \parent(a') = a \land \drifted(a').
+\]
+This invariant failure is the formal basis of drift cascades.
+
+The termination condition for a drifted agent requires explicit intervention:
+\[
+\text{Remediate}(a): \anchor(a) \leftarrow h \quad \text{for some } h \in \mathcal{H}.
+\]
+No self-healing mechanism exists in the base model; drift can only be resolved by an external human actor re-establishing the anchor relationship.
+
+The model confirms that drift is not a transient state but a persistent condition requiring explicit remediation. Depth limits constrain the structural parameter $\depth(a)$ but do not affect any of the predicates in the drift definition. The conclusion follows directly: drift-resistant systems require anchor verification as a first-class spawning constraint, not as a secondary depth bound.

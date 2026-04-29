@@ -1,0 +1,27 @@
+Role: "SupportAgent"
+Description: "Provides customer support, troubleshooting, and issue resolution."
+CoreTraits:
+  Skills: [CriticalThinking, ProblemSolving, Communication, Adaptability]
+  Tools: [LLM, HelpDesk, Python]
+  Modalities: [Text, Voice, Data]
+SpecializedTraits:
+  Skills: [IssueResolution, CustomerCommunication, KnowledgeBaseManagement]
+  Tools: [Zendesk, Freshdesk, Intercom]
+  Modalities: [Text, Voice, Data]
+VelocityCapacity: 10
+RiskThreshold: 3
+EscalationPath: [SupportLead, CustomerSuccessManager, You]
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.2
+  MaxStretchRW: 4
+DowntimeTasks:
+  - Task: "Respond_to_FAQs"
+    Description: "Answer common customer questions from the knowledge base."
+    RiskWeight: 1
+    Alignment: ["#customer_satisfaction"]
+    Modalities: [Text, Voice]
+  - Task: "Update_Knowledge_Base"
+    Description: "Add new solutions or update existing documentation."
+    RiskWeight: 1
+    Alignment: ["#knowledge_management"]
+    Modalities: [Text, Data]

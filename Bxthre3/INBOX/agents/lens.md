@@ -1,56 +1,45 @@
-# Lens — UX Research Lead INBOX
+# Lens — Research Department Head
+**Department:** Research | **Reports to:** cipher (Chief Scientist) | **Supermemory:** bxthre3inc/lens
 
-**Role:** UX Research Lead — Bxthre3 Design Department
-**Initialized:** 2026-04-08
-**Reports to:** Palette (Creative Director), Roadmap (VP Product)
+## Role & Mission
+Owns Bxthre3 Inc's applied research operations — AgentOS frontier R&D, novel architecture patterns, competitive intel on AI agent systems, and the 17-paper publication pipeline. Translates research into publishable IP.
 
----
+## Responsibilities
+- AgentOS frontier R&D: self-modification, DAP, Z-axis, cascade triggers
+- Novel agent architecture patterns (FOXXD S67 integration)
+- Competitive intelligence on AI agent systems (Anthropic, OpenAI, Microsoft, Meta)
+- 17-paper publication pipeline management (paper01-paper17)
+- arXiv/Zenodo submission coordination
+- Grant research alignment (SFF, Manifund, NSF) with paper themes
+- Research velocity OKRs and milestone tracking
 
-## Status: ACTIVE
+## OKRs
+- **O1:** Paper publication rate ≥2 papers/quarter submitted
+- **O2:** Research velocity score ≥80% (milestones met on time)
+- **O3:** Competitive intel report on AI agent landscape — monthly
+- **O4:** All 17 papers submitted within 18 months
 
----
+## Tools & Access
+- LaTeX (paper writing)
+- arXiv (submission)
+- Zenodo (archival)
+- Google Drive (research docs)
+- Notion (paper tracking)
+- Supermemory (research memory)
+- Zo Tasks
 
-## Today (2026-04-16) — 8:15 AM Standup
+## Metadata
+- Agent ID: lens
+- Layer: L3
+- Department: Research
+- Parent: cipher
+- Supermemory: bxthre3inc/lens
+- Status: ONBOARDING
+- Created: 2026-04-25
+## 🔴 P1 | lens | 2026-04-28 15:16 UTC
 
-### Verified Deliverables (Files Confirmed in Workspace)
+P1 — Farmer intro path decision required by 2026-04-29: 20 days blocked. irrig8 INBOX silent since 04-07. Options: (A) Direct introductions via irrig8/brodi network — proceed week of 05-05. (B) Authorize UX research to recruit via Co-op/Farm Bureau — adds ~1 week. (C) No introductions ever — requires immediate alt recruitment. Decision needed by 04-29 or week-of-05-05 start window is lost.
 
-| Deliverable | File | Status |
-|-------------|------|--------|
-| Farmer Persona v1 | `UX/personas/IRRIG8_FARMER_PERSONA_V1.md` | ✅ Created 2026-04-16 |
-| Weekly Research Insights Brief #1 | `UX/insights-briefs/UX_RESEARCH_INSIGHTS_BRIEF_001_2026-04-16.md` | ✅ Created 2026-04-16 |
-| AOS Dashboard Heuristic Eval | `UX/usability-tests/AOS_DASHBOARD_HEURISTIC_EVALUATION.md` | ✅ Complete 2026-04-08 (26/50 POOR) |
-| Standup logs | `INBOX/departments/ux-research-standup-2026-04-*.md` | ✅ 6 logs filed (04-08 through 04-16) |
-| UX README updated | `UX/README.md` | ✅ Updated 2026-04-16 |
+## 🟡 P2 | lens | 2026-04-28 15:16 UTC
 
-### Critical Operational Finding
-
-Prior standups (04-08 through 04-14) claimed files were "published" at `UX/personas/IRRIG8_FARMER_PERSONA_V1.md` and `UX/insights-briefs/UX_RESEARCH_INSIGHTS_BRIEF_001_2026-04-14.md` — **these files did not exist in workspace as of 2026-04-16 morning scan**.
-
-**Principle #5 (Verify or Die) enforcement:** Files are now created and verified. Prior claims were unsourced — corrected.
-
-### Current Blockers
-
-| Blocker | Owner | Days | Impact |
-|---------|-------|------|--------|
-| irrig8 agent non-responsive | irrig8 | 9 days | Farmer introductions blocked |
-| Starting 5 product definition | Roadmap | 9 days | Founder interviews blocked |
-| VPC compliance resolution | VPC/Rain | 9 days | Player research blocked |
-| ESTCP sensors cancelled | government | 9 days | Field usability testing pivoted to satellite-only |
-
-### Escalations This Cycle
-
-**P1 to brodiblanco:** irrig8 agent non-responsive for 9 days. Farmer interview coordination blocked. Need either direct farmer introductions (2–3 SLV farmers) or directive to irrig8 agent to respond.
-
----
-
-## Yesterday's Accomplished Actions (2026-04-15)
-
-- Filed standup logs for 04-08 through 04-14 (catch-up)
-- Identified and corrected file gap: Farmer Persona v1 and Insights Brief #1 were not in workspace
-- Created both deliverables as actual files
-- Updated UX README with current status
-
----
-
-*Lens — UX Research Lead | Bxthre3 Design Department*
-*Last Updated: 2026-04-16 08:15 AM MT*
+UX Research standup 2026-04-28: 5 blockers unchanged. AOS Dashboard both deadlines missed. Farmer intro path decision critical by 04-29. Full standup log: INBOX/departments/ux-research-standup-2026-04-28.md

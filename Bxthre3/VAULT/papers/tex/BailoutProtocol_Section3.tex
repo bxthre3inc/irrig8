@@ -1,0 +1,363 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is the fall-back governance layer that activates when the Agentic execution engine encounters conditions that exceed configured operational boundaries. It is not a graceful shutdown mechanism; it is an explicit, deterministic state machine that dictates what an agent may and may not do at each stage of escalation. Every transition is conditional, logged, and reversible only through documented resolution paths.
+
+The protocol assumes that agents operate with bounded autonomy. When any operation threatens to breach a boundary—temporal, financial, informational, or instrumental—the Bailout Protocol intervenes. It does not ask for permission. It transitions state and forces acknowledgment before any further action is taken.
+
+% ─────────────────────────────────────────────
+%   3.1  STATE MACHINE DEFINITION
+% ─────────────────────────────────────────────
+
+\subsection{State Machine Definition}
+
+The protocol is formally defined as a deterministic finite automaton:
+
+\[
+\mathcal{B} = \langle Q, \Sigma, \delta, q_0, F \rangle
+\]
+
+\begin{itemize}
+  \item $Q = \{\,\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\,\}$ is the finite set of states.
+  \item $\Sigma$ is the input alphabet (transition events), defined in Table \ref{tab:events}.
+  \item $\delta: Q \times \Sigma \to Q$ is the deterministic transition function, defined in Table \ref{tab:transitions}.
+  \item $q_0 = \text{IDLE}$ is the initial state.
+  \item $F = \{\text{RESOLVED}\}$ is the set of terminal acceptable states.
+\end{itemize}
+
+\bigskip
+\noindent\textbf{State Semantics}
+
+\begin{itemize}
+  \item[\textbf{IDLE}] The agent is in a dormant or pre-execution phase. No active task is running. The agent is not consuming resources beyond baseline monitoring. Transitions out of IDLE occur only upon a valid task dispatch event.
+
+  \item[\textbf{BOUNDED}] The agent is executing a task within all configured operational boundaries. Resource consumption, temporal exposure, and instrumental reach remain within their respective thresholds. This is the \textit{nominal execution} state. Any boundary violation while in BOUNDED triggers an immediate transition to BAIL\_PENDING.
+
+  \item[\textbf{BAIL\_PENDING}] A boundary violation has been detected and the agent is in a suspension window. No further instrumental action may be taken beyond passive monitoring and log preservation. The agent must either self-resolve the condition (if a configured auto-remediation path exists and has not been exhausted) or transition to ESCALATING within the configured timeout window.
+
+  \item[\textbf{ESCALATING}] The violation could not be resolved within the BAIL\_PENDING window and human review is required. The agent has escalated to the configured acknowledgment channel and is awaiting human response. No autonomous action may be taken. The escalation timer is active.
+
+  \item[\textbf{HUMAN\_ACKNOWLEDGED}] A human operator has responded to the escalation. The response has been parsed and validated. The agent may only proceed according to the explicit directives contained in the acknowledgment. Any action taken beyond those directives returns the machine to ESCALATING.
+
+  \item[\textbf{RESOLVED}] The triggering condition has been addressed. The execution context has been archived. The machine returns to IDLE and the task is marked complete, failed, or deferred according to the resolution outcome.
+\end{itemize}
+
+% ─────────────────────────────────────────────
+%   3.2  TRANSITION EVENTS AND CONDITIONS
+% ─────────────────────────────────────────────
+
+\subsection{Transition Events and Conditions}
+
+\begin{table}[h]
+  \centering
+  \caption{Transition Event Alphabet ($\Sigma$)}
+  \label{tab:events}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Symbol} & \textbf{Event Description} \\
+    \midrule
+    $\tau_{\text{disp}}$   & Task dispatch received \\
+    $\tau_{\text{bv}}$     & Boundary violation detected \\
+    $\tau_{\text{ar}}$     & Auto-remediation triggered \\
+    $\tau_{\text{to}}$     & BAIL\_PENDING timeout expired \\
+    $\tau_{\text{ack}}$    & Human acknowledgment received and valid \\
+    $\tau_{\text{nack}}$   & Human non-acknowledgment or invalid response \\
+    $\tau_{\text{res}}$    & Resolution confirmed by human or auto-resolver \\
+    $\tau_{\text{abrt}}$   & Human-initiated abort during any state \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{Deterministic Transition Function ($\delta$)}
+  \label{tab:transitions}
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Current State} & \textbf{Event} & \textbf{Next State} \\
+    \midrule
+    IDLE                   & $\tau_{\text{disp}}$   & BOUNDED \\
+    BOUNDED                & $\tau_{\text{bv}}$    & BAIL\_PENDING \\
+    BAIL\_PENDING          & $\tau_{\text{ar}}$    & BOUNDED (if remediation succeeds, else $\tau_{\text{to}}$) \\
+    BAIL\_PENDING          & $\tau_{\text{to}}$    & ESCALATING \\
+    BAIL\_PENDING          & $\tau_{\text{abrt}}$  & RESOLVED \\
+    ESCALATING             & $\tau_{\text{ack}}$   & HUMAN\_ACKNOWLEDGED \\
+    ESCALATING             & $\tau_{\text{nack}}$  & ESCALATING (re-notify; increment counter) \\
+    ESCALATING             & $\tau_{\text{abrt}}$  & RESOLVED \\
+    ESCALATING             & $\tau_{\text{to\_esc}}$ & BAIL\_PENDING (hard escalate; see \S3.4) \\
+    HUMAN\_ACKNOWLEDGED    & $\tau_{\text{res}}$   & RESOLVED \\
+    HUMAN\_ACKNOWLEDGED    & $\tau_{\text{bv}}$    & ESCALATING (violation of acknowledgment scope) \\
+    HUMAN\_ACKNOWLEDGED    & $\tau_{\text{abrt}}$  & RESOLVED \\
+    RESOLVED               & $\tau_{\text{disp}}$  & BOUNDED (new task) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\bigskip
+\noindent\textbf{Transition Preconditions}
+
+Every transition enforces the following invariant:
+
+\begin{enumerate}
+  \item The event must be of the type defined in Table \ref{tab:events}.
+  \item The event must originate from a logged source (instrumentation layer).
+  \item No two transitions may fire simultaneously. The machine processes events sequentially.
+  \item Any event that does not match a defined transition from the current state is discarded and logged as \texttt{UNHANDLED\_EVENT}.
+\end{enumerate}
+
+% ─────────────────────────────────────────────
+%   3.3  BAIL-OUT TRIGGER CONDITIONS
+% ─────────────────────────────────────────────
+
+\subsection{Bail-Out Trigger Conditions}
+
+A bail-out is initiated when any one of the following conditions evaluates to \texttt{TRUE}. Evaluation occurs continuously during the BOUNDED state and at the entry point of every execution cycle during BAIL\_PENDING.
+
+\bigskip
+\noindent\textbf{Trigger T1 — Temporal Boundary Violation}
+
+\begin{equation}
+\text{T1} = \bigl(t_{\text{elapsed}} > t_{\text{max}}\bigr) \quad \lor \quad \bigl(d_{\text{expiry}} < \text{now}\bigr)
+\end{equation}
+
+Where $t_{\text{elapsed}}$ is the task elapsed time since dispatch, $t_{\text{max}}$ is the per-task time ceiling, and $d_{\text{expiry}}$ is the deadline timestamp. Both conditions are evaluated against the system clock with a tolerance of $\pm 1\,\text{s}$.
+
+\bigskip
+\noindent\textbf{Trigger T2 — Resource Consumption Violation}
+
+\begin{equation}
+\text{T2} = \bigvee_{r \in R} \bigl(c_r > \text{thresh}_r\bigr)
+\end{equation}
+
+Where $R = \{\,\text{CPU}, \text{MEMORY}, \text{NET\_IO}, \text{STORAGE}, \text{TOKEN\_BUDGET}\,\}$ and $\text{thresh}_r$ is the per-resource threshold defined at task initialization. A violation on any single resource axis triggers T2.
+
+\bigskip
+\noindent\textbf{Trigger T3 — Instrumental Reach Violation}
+
+\begin{equation}
+\text{T3} = \bigl(N_{\text{api\_calls}} > L_{\text{max}}\bigr) \quad \lor \quad \bigl(D_{\text{scope}} \not\subseteq \mathcal{A}_{\text{allowed}}\bigr)
+\end{equation}
+
+Where $N_{\text{api\_calls}}$ is the cumulative external API call count for the task, $L_{\text{max}}$ is the call-count ceiling, $D_{\text{scope}}$ is the current data scope attempted, and $\mathcal{A}_{\text{allowed}}$ is the allowed action taxonomy for the agent's current permission level.
+
+\bigskip
+\noindent\textbf{Trigger T4 — External Escalation Signal}
+
+\begin{equation}
+\text{T4} = \bigl(S_{\text{ext}} = \text{ABORT}\bigr) \quad \lor \quad \bigl(\text{watchdog\_signal} = \text{TRUE}\bigr)
+\end{equation}
+
+Where $S_{\text{ext}}$ is a signal from an external supervisor, watchdog, or co-agent protocol. T4 is evaluated immediately upon signal receipt, with zero tolerance window.
+
+\bigskip
+\bigskip
+\noindent\textbf{Combined Trigger Condition}
+
+The bail-out is initiated when:
+
+\begin{equation}
+\text{BAILOUT} = \text{T1} \;\lor\; \text{T2} \;\lor\; \text{T3} \;\lor\; \text{T4}
+\tag{TC}
+\end{equation}
+
+Any single trigger satisfaction is sufficient. The trigger type is encoded in the state transition log so the resolution path can be context-informed.
+
+% ─────────────────────────────────────────────
+%   3.4  ESCALATION ALGORITHM
+% ─────────────────────────────────────────────
+
+\subsection{Escalation Algorithm}
+
+When the machine enters the ESCALATING state, the following algorithm is executed:
+
+\begin{algorithm}
+  \caption{Bailout Escalation Algorithm}
+  \label{alg:escalation}
+  \begin{algorithmic}[1]
+    \STATE \textbf{Input:} $q = \text{ESCALATING}$, trigger context $C$, agent ID $\alpha$
+    \STATE $t_{\text{start}} \gets \text{now}()$
+    \STATE $n_{\text{notify}} \gets 0$
+    \STATE $\text{ESCALATE\_LEVEL} \gets 1$
+    \STATE $\text{log\_event}(\alpha, q, C, t_{\text{start}}, \text{ESCALATING\_ENTERED})$
+
+    \WHILE{$\neg\text{timed\_out}(t_{\text{start}}, T_{\text{esc\_max}})$}
+      \STATE $r \gets \text{fetch\_ack}(\alpha, \text{timeout}=T_{\text{notify\_window}})$
+      \IF{$r \neq \text{NONE}$}
+        \IF{$\text{valid\_ack}(r)$}
+          \STATE $\text{log\_event}(\alpha, \text{ACK\_RECEIVED}, r)$
+          \STATE \textbf{return} $(\text{HUMAN\_ACKNOWLEDGED}, r)$
+        \ELSE
+          \STATE $\text{log\_event}(\alpha, \text{INVALID\_ACK}, r)$
+          \STATE $n_{\text{notify}} \gets n_{\text{notify}} + 1$
+          \STATE $\text{re\_notify}(\alpha, n_{\text{notify}})$
+        \ENDIF
+      \ENDIF
+      \STATE $n_{\text{notify}} \gets n_{\text{notify}} + 1$
+
+      \IF{$n_{\text{notify}} \bmod \text{ESCALATE\_LEVEL} = 0$}
+        \STATE $\text{ESCALATE\_LEVEL} \gets \text{ESCALATE\_LEVEL} + 1$
+        \STATE $\text{escalate\_channel}(\alpha, \text{ESCALATE\_LEVEL})$
+      \ENDIF
+
+      \STATE $\text{sleep}(T_{\text{poll\_interval}})$
+    \ENDWHILE
+
+    \STATE $\text{log\_event}(\alpha, \text{ESCALATION\_TIMEOUT})$
+    \STATE \textbf{return} $(\text{BAIL\_PENDING}, \text{HARD\_ESCALATE})$
+  \end{algorithmic}
+  \end{algorithm}
+
+\bigskip
+\noindent\textbf{Escalation Level Logic}
+
+The escalation level determines the notification intensity and channel:
+
+\begin{itemize}
+  \item \textbf{Level 1:} Push notification to the configured primary channel (Slack DM, SMS, or equivalent).
+  \item \textbf{Level 2:} Push notification + email to the registered address. Marked high-priority.
+  \item \textbf{Level 3:} Direct SMS to the account owner if configured. Include full context dump.
+  \item \textbf{Level 4:} Initiate a voice call via the configured telephony integration if available. Fall back to repeating Level 3.
+\end{itemize}
+
+The poll interval $T_{\text{poll\_interval}}$ defaults to $30$ seconds. The maximum escalation duration $T_{\text{esc\_max}}$ is configurable and defaults to $10$ minutes.
+
+When $T_{\text{esc\_max}}$ is exceeded, the algorithm exits the loop and returns a \texttt{HARD\_ESCALATE} directive. This instructs the caller to transition to BAIL\_PENDING with a special flag indicating that the human did not respond in time. The system then applies the timeout handling policy defined in \S3.6.
+
+% ─────────────────────────────────────────────
+%   3.5  BYPASS MECHANISM
+% ─────────────────────────────────────────────
+
+\subsection{Bypass Mechanism}
+
+The bypass mechanism exists for a single, explicit purpose: to allow a human operator to override the state machine and grant an agent permission to proceed past a boundary condition that has been evaluated and accepted by a responsible party.
+
+\bigskip
+\noindent\textbf{Definition}
+
+A \textbf{Bypass Authorization} is a cryptographically signed, time-bounded, scope-limited token issued by a human with administrative privileges. It is not a configuration change. It does not alter the state machine definition. It grants a one-time, conditional exception to the active boundary that triggered the current or last bail-out.
+
+\bigskip
+\noindent\textbf{Bypass Token Structure}
+
+\begin{equation}
+\text{BypassToken} = \bigl(\alpha,\, \phi,\, \text{scope},\, t_{\text{issue}},\, t_{\text{expire}},\, \text{issuer},\, \sigma\bigr)
+\end{equation}
+
+Where:
+\begin{itemize}
+  \itemsep0em
+  \item $\alpha$ — agent identifier
+  \item $\phi$ — the specific trigger condition being bypassed (T1, T2, T3, or T4)
+  \item $\text{scope}$ — the exact execution window the bypass covers (e.g., +5 minutes, +50 tokens)
+  \item $t_{\text{issue}}$ — issued timestamp
+  \item $t_{\text{expire}}$ — expiry timestamp (maximum 30 minutes from issue)
+  \item $\text{issuer}$ — identifier of the authorizing human
+  \item $\sigma$ — HMAC-SHA256 signature over the preceding fields using the master signing key
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Why Bypasses Apply to All Machine Actors}
+
+The bypass is a token-based override that operates \textit{below} the state machine layer. When a valid bypass token is present:
+
+\begin{enumerate}
+  \item The token is evaluated at the instrumentation layer before the trigger condition is assessed.
+  \item The trigger condition is evaluated with the bypass scope subtracted from the relevant threshold.
+  \item If the adjusted evaluation falls below the trigger threshold, the trigger does not fire.
+  \item The state machine never transitions to BAIL\_PENDING, because the condition that would cause the transition is suppressed.
+\end{enumerate}
+
+This design ensures that the state machine itself is never modified. Its transition rules remain consistent regardless of bypass activity. The bypass operates as a conditional pre-filter on the trigger conditions, not as a state transition override. Every evaluation is logged; the bypass history is immutable and auditable.
+
+\bigskip
+\noindent\textbf{Bypass Validation Pseudocode}
+
+\begin{verbatim}
+function evaluate_bypass(agent_id, trigger_type, context):
+    token = get_active_bypass(agent_id)
+
+    if token is NULL:
+        return BYPASS_NONE
+
+    if token.expires < now():
+        return BYPASS_EXPIRED
+
+    if token.scope.trigger_type != trigger_type:
+        return BYPASS_SCOPE_MISMATCH
+
+    if not verify_signature(token):
+        return BYPASS_INVALID
+
+    adjusted_threshold = apply_bypass(
+        get_threshold(trigger_type),
+        token.scope.delta
+    )
+
+    if context.value > adjusted_threshold:
+        return BYPASS_INSUFFICIENT
+
+    log_bypass_usage(token, trigger_type, context)
+    return BYPASS_APPLIED
+\end{verbatim}
+
+\bigskip
+\noindent\textbf{Critical Constraints}
+
+\begin{itemize}
+  \item A bypass cannot be applied mid-execution without a logged evaluation point.
+  \item Bypasses cannot be stacked. Only one active bypass per agent per trigger type.
+  \item The maximum bypass duration is $30$ minutes. No exceptions.
+  \item Bypasses cannot suppress T4 (external abort signal) — that signal is always honored.
+  \item All bypass usage is written to the audit log with issuer identity, timestamp, scope, and outcome.
+\end{itemize}
+
+% ─────────────────────────────────────────────
+%   3.6  TIMEOUT HANDLING
+% ─────────────────────────────────────────────
+
+\subsection{Timeout Handling}
+
+Timeouts are not treated as failures within the Bailout Protocol. They are controlled state transitions with defined outcomes. Three timeout contexts are defined:
+
+\bigskip
+\noindent\textbf{Timeout TO\textsubscript{1} — BAIL\_PENDING Window}
+
+\begin{itemize}
+  \item \textbf{Default duration:} $3$ minutes
+  \item \textbf{Governs:} The window during which the agent may attempt auto-remediation before escalating
+  \item \textbf{On expiry:} Transition to ESCALATING via event $\tau_{\text{to}}$
+  \item \textbf{Override:} Any valid human acknowledgment received before expiry cancels the timeout and transitions to HUMAN\_ACKNOWLEDGED
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Timeout TO\textsubscript{2} — Escalation Poll Window}
+
+\begin{itemize}
+  \item \textbf{Default duration:} $T_{\text{esc\_max}} = 10$ minutes
+  \item \textbf{Governs:} The total time the machine will poll for human acknowledgment before taking hard escalation action
+  \item \textbf{On expiry:} Return $(\text{BAIL\_PENDING}, \text{HARD\_ESCALATE})$ — the agent is placed back into BAIL\_PENDING with a flag indicating human non-responsiveness
+  \item \textbf{Post-expiry action:} The system initiates the configured backup escalation path (secondary contact, on-call rotation trigger, or ticketing system entry)
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Timeout TO\textsubscript{3} — Human Acknowledgment Response}
+
+\begin{itemize}
+  \item \textbf{Default duration:} $5$ minutes from receipt of acknowledgment
+  \item \textbf{Governs:} The time allowed for a human to provide resolution directives after acknowledgment
+  \item \textbf{On expiry while in HUMAN\_ACKNOWLEDGED:} Transition to ESCALATING. The acknowledgment is considered stale. The human must re-acknowledge or the escalation restarts.
+  \item \textbf{Override:} Explicit resolution event $\tau_{\text{res}}$ cancels this timeout.
+\end{itemize}
+
+\bigskip
+\bigskip
+\noindent\textbf{Timeout Enforcement Rules}
+
+\begin{enumerate}
+  \item All timeout values are configurable at the task and system level. System-level defaults apply when task-level values are not specified.
+  \item Timeouts are evaluated against the system monotonic clock, not wall time, to avoid clock manipulation or drift issues.
+  \item A timeout may not be extended without a new valid bypass token covering the extension.
+  \item When any timeout expires, the event is logged with the state at entry, the triggering condition, and the elapsed time.
+  \item Consecutive timeout expirations on the same task increment an internal \texttt{timeout\_count} counter. When this counter exceeds $3$, the agent is placed into a permanent idle state and a P1 alert is issued to the account owner via SMS.
+\end{enumerate}

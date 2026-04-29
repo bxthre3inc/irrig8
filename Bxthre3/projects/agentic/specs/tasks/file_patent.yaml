@@ -1,0 +1,17 @@
+Task: "File_Patent"
+Description: "File a patent application in the specified jurisdiction."
+Prerequisites:
+  Access: [EUPatentDB]
+  DependsOn: [Analyze_Patent_Cluster]
+  Requires: [LLM, LegalDB]
+VelocityRequirement:
+  Min: 1
+  Stretch: 2
+RiskWeight: 7
+EscalationPath: [You]
+Alignment: ["#IP_protection"]
+Modalities:
+  Input: [Text, Data]
+  Output: [Text, Data]
+CascadingTriggers:
+  - OnComplete: "Notify_You"

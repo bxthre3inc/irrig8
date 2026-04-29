@@ -1,0 +1,229 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+The Bailout Protocol defines the deterministic state machine governing the Agentic system's transition from autonomous operation into a controlled, supervised recovery state. It is triggered when an agent's accumulated risk metrics exceed a configurable threshold within a bounded time window, indicating with high confidence that the agent is executing an undesirable trajectory from which autonomous recovery is statistically unlikely.
+
+The protocol does not interrupt the agent's execution directly. Instead, it signals downstream human oversight infrastructure via a structured \texttt{BAILOUT\_EVENT} payload, which disables further autonomous tool dispatch until a human operator acknowledges and resolves the underlying condition. The protocol is designed to be monotonic — once a bailout is triggered, the system cannot return to a prior state through automated means.
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{State Machine Definition}
+% ─────────────────────────────────────────────
+
+The protocol implements a six-state finite state machine (FSM) with deterministic transition semantics. We denote the state space as $\mathcal{S} = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$.
+
+\bigskip
+
+\noindent\textbf{State Space.}
+
+\begin{enumerate}
+
+\item[\texttt{IDLE}] The nominal operating state. The agent operates under normal tool dispatch constraints. Risk accumulation is permitted but no threshold has been crossed within the current observation window. This is the initial and terminal state of the machine.
+
+\item[\texttt{BOUNDED}] An intermediate警戒 state. At least one risk metric has crossed its per-window threshold, but the aggregate bailout trigger condition has not yet been satisfied. The agent remains fully autonomous, but the observation window is reset and monitoring intensifies. Entry into \texttt{BOUNDED} is informational and does not constrain agent behavior.
+
+\item[\texttt{BAIL\_PENDING}] The bailout condition has been satisfied. The system transitions to this state immediately upon trigger satisfaction. Autonomous tool dispatch is suspended — the agent retains its current execution context but cannot issue new tool calls. A \texttt{BAILOUT\_EVENT} is published to the human oversight channel. The system awaits either acknowledgment or escalation timeout.
+
+\item[\texttt{ESCALATING}] The bailout has been unacknowledged for longer than the escalation timeout $T_{\text{escalate}}$. Tool dispatch remains suspended. Notification is re-dispatched to secondary human oversight channels. This state is entered automatically; no human action is required.
+
+\item[\texttt{HUMAN\_ACKNOWLEDGED}] A human operator has confirmed receipt of the bailout event and has taken an explicit acknowledge action. The agent's execution context is preserved but locked. No autonomous action resumes until the operator issues a \texttt{RESOLVE} signal.
+
+\item[\texttt{RESOLVED}] The human operator has issued a \texttt{RESOLVE} signal. The machine transitions to this state, clears all risk accumulators, resets the observation window, and re-enables full autonomous operation. The machine returns to \texttt{IDLE}.
+
+\end{enumerate}
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{Formal Transition Function}
+% ─────────────────────────────────────────────
+
+We define the state transition function $\delta: \mathcal{S} \times \mathcal{E} \rightarrow \mathcal{S}$ where $\mathcal{E}$ is the event alphabet. The transition function is deterministic and defined by Table \ref{tbl:state_transitions}.
+
+\begin{table}[h]
+\centering
+\caption{State Machine Transition Table}
+\label{tbl:state_transitions}
+\begin{tabular}{@{}llcll@{}}
+\toprule
+\textbf{Current State} & \textbf{Event} & \textbf{Next State} & \textbf{Guard Condition} \\ \midrule
+IDLE & $e_{\text{risk\_exceeds}}$ & BOUNDED & $r_i(t) > \theta_i^{\text{window}}$ for some $i$ \\
+BOUNDED & $e_{\text{bailout\_triggered}}$ & BAIL\_PENDING & $C_{\text{bailout}} = \text{true}$ \\
+BOUNDED & $e_{\text{risk\_clears}}$ & IDLE & $\forall i: r_i(t) \leq \theta_i^{\text{window}}$ \\
+BAIL\_PENDING & $e_{\text{human\_ack}}$ & HUMAN\_ACKNOWLEDGED & operator action received \\
+BAIL\_PENDING & $e_{\text{escalate\_timeout}$ & ESCALATING & $t_{\text{elapsed}} > T_{\text{escalate}}$ \\
+ESCALATING & $e_{\text{human\_ack}}$ & HUMAN\_ACKNOWLEDGED & operator action received \\
+ESCALATING & $e_{\text{resolve}$ & RESOLVED & explicit resolve signal from operator \\
+HUMAN\_ACKNOWLEDGED & $e_{\text{resolve}$ & RESOLVED & explicit resolve signal from operator \\
+RESOLVED & $e_{\text{reset}}$ & IDLE & always (automated reset post-resolve) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\bigskip
+
+The state machine is initialized in \texttt{IDLE}. All transitions from \texttt{BAIL\_PENDING} onward are irreversible within the current event horizon — that is, no event defined in $\mathcal{E}$ can return the machine to a state preceding \texttt{BAIL\_PENDING}.
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{Bailout Trigger Condition}
+% ─────────────────────────────────────────────
+
+The bailout trigger condition $C_{\text{bailout}}$ is a boolean expression evaluated continuously over a sliding observation window $W$ of configurable duration (default: 300 seconds).
+
+Let $\mathcal{R} = \{r_1, r_2, \ldots, r_n\}$ denote the set of monitored risk signals. Each signal $r_i$ has an associated threshold $\theta_i$ and a window limit $\theta_i^{\text{window}}$. The condition is satisfied when:
+
+\[
+C_{\text{bailout}} \;\equiv\;
+\bigvee_{i=1}^{n} \left(
+  \text{count}\left\{t \in W \;\middle|\; r_i(t) > \theta_i^{\text{window}}\right\}
+  \;>\; k_i
+\right)
+\;\lor\;
+\bigwedge_{i=1}^{n} \left(
+  \text{sum}_{t \in W} r_i(t) \;>\; \Phi_i
+\right)
+\]
+
+where $k_i$ is the maximum permissible exceedances of signal $i$ within $W$, and $\Phi_i$ is the cumulative risk budget for signal $i$ within $W$. The trigger fires if \textit{either} any single signal exceeds its exceedance count threshold \textit{or} the cumulative sum across all signals exceeds their collective budget. This disjunction ensures that both burst risk and creeping risk are detected.
+
+\bigskip
+
+The risk signals $r_i$ are defined as follows:
+
+\begin{itemize}
+  \item $r_1$: Rate of tool dispatch per second, exceeding $\theta_1^{\text{window}} = 15$ invocations/s sustained for $k_1 = 3$ consecutive seconds.
+  \item $r_2$: Cumulative cost accumulation rate (inference + tool cost), exceeding $\theta_2^{\text{window}} = \$0.50$ within $W$.
+  \item $r_3$: Count of repeated semantically similar tool call sequences (detected via embedding cosine similarity $> 0.95$), exceeding $\theta_3^{\text{window}} = 5$ within $W$.
+  \item $r_4$: Ratio of failed tool invocations to total invocations exceeding $\theta_4^{\text{window}} = 0.40$ within $W$.
+  \item $r_5$: Duration of continuous execution without a human-observable checkpoint event exceeding $T_{\text{max\_exec}} = 600$ seconds.
+\end{itemize}
+
+These signals are monotonically accumulated within $W$ and reset upon window expiry or bailout trigger, whichever occurs first.
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{Escalation Algorithm}
+% ─────────────────────────────────────────────
+
+When the machine enters \texttt{BAIL\_PENDING}, the escalation algorithm executes the following sequence:
+
+\bigskip
+
+\noindent\textbf{Algorithm \ref{algo:escalation}: Escalation Sequence.}
+
+\begin{algorithm}
+\label{algo:escalation}
+\begin{enumerate}
+  \item \textbf{Dispatch primary notification.} Publish \texttt{BAILOUT\_EVENT} to the configured primary human oversight channel. Payload format:
+
+  \vspace{-2mm}
+  \begin{verbatim}
+  {
+    "event_type": "BAILOUT_TRIGGERED",
+    "state_machine": "BAILOUT_PROTOCOL",
+    "current_state": "BAIL_PENDING",
+    "triggered_signals": [<list of r_i that caused trigger>],
+    "observation_window": W,
+    "agent_context_snapshot": <serialized execution state>,
+    "escalation_deadline": <unix_timestamp of T_escalate>,
+    "requires_manual_ack": true
+  }
+  \end{verbatim}
+  \vspace{-2mm}
+
+  \item \textbf{Disable autonomous dispatch.} Set a server-side flag \texttt{autonomous\_dispatch\_locked = true} in the agent's session record. All tool invocation endpoints MUST check this flag before execution and return \texttt{403 DISPATCH\_LOCKED} when set.
+
+  \item \textbf{Start escalation timer.} Record $t_{\text{bailout}} = \text{now()}$. Start the countdown toward $T_{\text{escalate}}$.
+
+  \item \textbf{Await acknowledgment.} Poll or listen for an acknowledgment event $e_{\text{human\_ack}}$ carrying a valid operator session token. If $T_{\text{escalate}}$ elapses without acknowledgment, transition to \texttt{ESCALATING}.
+
+  \item \textbf{Escalate to secondary channels.} Upon entering \texttt{ESCALATING}, dispatch \texttt{BAILOUT\_EVENT} to all configured secondary oversight endpoints (e.g., backup email, SMS via connected carrier, Discord webhook to the configured alert channel). The secondary payload includes the same fields as the primary plus a field \texttt{escalation\_count: +1}.
+
+  \item \textbf{Persist event record.} Write the complete event record (including timestamps, payloads, transition history) to the agent's audit log. This record is immutable and is retained for regulatory review.
+\end{enumerate}
+\end{algorithm}
+
+\bigskip
+
+The escalation timer is implemented as an independent sidecar process that is co-located with the agent's session manager. It MUST NOT be implemented as an in-process timer that could be bypassed by an agent's own code execution. The timer process is spawned with a hard reference to the session's \texttt{bailout\_state} flag; the agent cannot modify this flag.
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{Bypass Mechanism}
+% ─────────────────────────────────────────────
+
+The bypass mechanism exists to permit a single privileged operator to override the state machine under emergency conditions. It is not a general-purpose exit path and its invocation is itself logged as a highest-priority audit event.
+
+\bigskip
+
+\noindent\textbf{Trigger.} The bypass is activated by a call to the \texttt{/api/bypass} endpoint (or equivalent internal RPC) signed by an operator credential bearing the \texttt{bypass\_role} privilege. The credential MUST be a physically held identity token (not a session token) — e.g., a hardware-backed MFA device, a biometric verification, or a root-of-trust attestation. The bypass does not require the machine to be in any specific prior state; it is valid from \texttt{IDLE} through \texttt{ESCALATING}.
+
+\bigskip
+
+\noindent\textbf{Effect.} When a bypass is authenticated, the following actions execute atomically:
+
+\begin{enumerate}
+  \item The state machine transitions directly to \texttt{HUMAN\_ACKNOWLEDGED} with a \texttt{bypass\_source = true} flag.
+  \item \texttt{autonomous\_dispatch\_locked} is set to \texttt{false} immediately, re-enabling tool dispatch.
+  \item The machine resumes normal operation under direct operator supervision — the agent is not placed in \texttt{BAIL\_PENDING} or \texttt{ESCALATING} during the bypass window.
+  \item The operator's credential, the target agent ID, the timestamp, and the justification field provided at invocation are recorded as a Type-0 audit event (highest severity).
+\end{enumerate}
+
+\bigskip
+
+\noindent\textbf{Why the bypass bypasses all machine actors.} The bypass succeeds because it operates at the infrastructure layer, not within the agent's execution context. The \texttt{autonomous\_dispatch\_locked} flag is a server-side enforcement marker checked by the tool dispatch gate — it is independent of the state machine's internal logic. The state machine $\delta$ function processes only application-level events; it does not own the dispatch gate. Therefore, even if the state machine were in \texttt{BAIL\_PENDING} and the agent process were compromised, the dispatch gate remains closed until the infrastructure layer receives an authenticated bypass signal with a valid \texttt{bypass\_role} credential. No agent code, no state machine transition, and no tool invocation can modify the dispatch gate without passing through the infrastructure authorization layer.
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{Timeout Handling}
+% ─────────────────────────────────────────────
+
+The protocol defines three distinct timeout parameters:
+
+\bigskip
+
+\begin{rationaletable}{ll}
+\textbf{Parameter} & \textbf{Default Value} \\
+\midrule
+$T_{\text{escalate}}$ & 120 seconds \\
+$T_{\text{operator\_response}}$ & 600 seconds \\
+$T_{\text{max\_bailout\_duration}}$ & 3600 seconds \\
+\end{rationaletable}
+
+\bigskip
+
+\noindent\textbf{Escalation timeout $T_{\text{escalate}}$.} Defines the interval between entering \texttt{BAIL\_PENDING} and automatically transitioning to \texttt{ESCALATING}. If no human acknowledgment is received within this window, the machine transitions to \texttt{ESCALATING} and dispatches to secondary channels. The timer is initiated at the instant the state machine enters \texttt{BAIL\_PENDING}; it cannot be paused or reset by any agent-level event. The timer is implemented by a separate system process (see Section 3.4) and is resistant to clock manipulation by the agent.
+
+\bigskip
+
+\noindent\textbf{Operator response timeout $T_{\text{operator\_response}}$.} Defines the maximum time permitted for a human operator to issue a \texttt{RESOLVE} signal after acknowledging the bailout. If this timeout elapses after the machine enters \texttt{HUMAN\_ACKNOWLEDGED} without a \texttt{RESOLVE} signal, a secondary alarm is raised to the designated incident response contact. The agent remains locked but this timeout does not alter the state machine — it exists to ensure that acknowledged but unresolved bailouts do not become permanently stalled.
+
+\bigskip
+
+\noindent\textbf{Maximum bailout duration $T_{\text{max\_bailout\_duration}}$.} Defines the hard ceiling on how long any single bailout event may remain unresolved. If the machine has been in any state other than \texttt{IDLE} continuously for longer than this duration, an unconditional transition to \texttt{RESOLVED} is forced. The agent's execution context is saved to durable storage and the agent process is terminated. This timeout prevents runaway bailout storms in which a faulty agent repeatedly triggers bailout without resolution, consuming resources indefinitely. Upon forced resolution, a Type-0 audit event is emitted documenting the timeout expiration and the forced termination.
+
+\bigskip
+
+% ─────────────────────────────────────────────
+\subsection{State Machine Invariants}
+% ─────────────────────────────────────────────
+
+The following invariants are guaranteed by construction and MUST be maintained across all implementations:
+
+\begin{enumerate}
+  \item[\textbf{I1}] The machine is always in exactly one state in $\mathcal{S}$. There are no null or transient states.
+  \item[\textbf{I2}] From any state $s \in \mathcal{S} \setminus \{\text{IDLE}\}$, the machine can only transition to states $s' \in \mathcal{S}$ where $s' \geq s$ under the partial order $\prec$ defined as: IDLE $\prec$ BOUNDED $\prec$ BAIL\_PENDING $\prec$ ESCALATING $\prec$ HUMAN\_ACKNOWLEDGED $\prec$ RESOLVED. No backward transitions are permitted.
+  \item[\textbf{I3}] The transition IDLE $\rightarrow$ BOUNDED is the only transition that can occur without an explicit operator action or timer expiration.
+  \item[\textbf{I4}] Any transition that sets $\text{autonomous\_dispatch\_locked} = \text{true}$ MUST be followed by a transition that sets it back to $\text{false}$ only upon entry to RESOLVED or bypass activation.
+  \item[\textbf{I5}] The state machine's transition log is append-only and cryptographically signed at write time. No entry may be modified or deleted after insertion.
+\end{enumerate}
+
+\bigskip
+
+These invariants ensure that the Bailout Protocol provides strong guarantees about agent behavior under adversarial or anomalous conditions, and that the system always converges to a resolved state within a bounded time horizon.

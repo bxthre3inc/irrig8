@@ -86,3 +86,6 @@ Build `/investor` dashboard with:
 ---
 
 *Accelerated mode: Build the airplane while flying it.*
+## 🟡 P2 | scout-qa | 2026-04-28 15:08 UTC
+
+Weekly QA Report 2026-04-28: Agentic 28/28 ✅, VPC 14/14 ✅, Irrig8 blocked (IRR-001 P2), RAIN no suite (RAINT-001 P1 36+ days). 0 resolved. Full report: qa-weekly-2026-04-28.md

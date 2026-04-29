@@ -1,0 +1,286 @@
+% ============================================================
+% SECTION 6 — INTEGRATION WITH THE BX3 FRAMEWORK
+% ============================================================
+\section{Integration with the BX3 Framework}
+\label{sec:integration}
+
+Recursive Spawning is not a standalone construct; it is embedded within the
+three-layer accountability architecture defined by the BX3 Framework. Each
+spawning event is choreographed across the Purpose Layer, Bounds Engine,
+and Fact Layer, ensuring that agent lineage remains coherent, constrained,
+and auditable from instantiation through termination.
+
+% --- 6.1 Purpose Layer as Accountability Anchor ---
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:integration:purpose}
+
+The Purpose Layer serves as the \textit{accountability anchor} for every
+spawned agent. Prior to any spawning event, the initiating agent must
+declare the child agent's intent, scope, and success criteria encoded
+as a Purpose Layer record. This record is immutable once written and
+propagates down the chain such that every descendant inherits a
+purpose-subgraph rooted in the original declaration.
+
+Formally, let $p_\text{parent}$ be the purpose record of the spawning agent.
+The spawning event produces a purpose record $p_\text{child}$ such that:
+
+\begin{equation}
+  p_\text{child} = \text{SpawnPurpose}(p_\text{parent}, \delta_\text{scope},
+  \kappa_\text{criteria})
+\end{equation}
+
+where $\delta_\text{scope}$ denotes the intentional deviation (narrowing,
+lateral shift, or extension) from the parent's scope, and
+$\kappa_\text{criteria}$ defines the measurable termination conditions.
+The Purpose Layer stores this record as an append-only entry in the
+agent's purpose ledger. No agent may spawn without a Purpose Layer record;
+the Bounds Engine enforces this prerequisite before granting a spawn
+permit.
+
+The anchor property is transitive: because every agent in the chain holds
+a purpose record that traces, via parent pointers, to a Purpose Layer
+entry at depth zero, the entire lineage is anchored to an authoritative
+intent declaration. This prevents purpose drift by making the original
+intent permanently retrievable and binding on all descendants.
+
+% --- 6.2 Bounds Engine Depth Enforcement ---
+\subsection{Bounds Engine Depth Enforcement}
+\label{sec:integration:bounds}
+
+The Bounds Engine provides the \textit{operational constraints} that keep
+Recursive Spawning within defined limits. At spawn time, the Bounds Engine
+evaluates three constraint categories:
+
+\begin{enumerate}
+  \item \textbf{Depth limit}: The cumulative spawn depth $d_\text{cum}$
+    must satisfy $d_\text{cum} \leq D_\text{max}$, where $D_\text{max}$
+    is a workspace-global constant enforced by the Bounds Engine policy.
+    Violations result in immediate rejection of the spawning event.
+  \item \textbf{Scope aperture}: The child's scope aperture
+    $\alpha_\text{child}$ must be a proper subset of $\alpha_\text{parent}$
+    or a laterally adjacent scope within the same capability manifold.
+    Lateral adjacency is defined by the Bounds Engine's scope adjacency
+    matrix $\mathbf{M}_\text{adj}$.
+  \item \textbf{Resource budget}: Each spawn consumes a configurable
+    resource debit $r_\text{spawn}$ from the parent's allocated budget
+    $B_\text{parent}$. Spawning proceeds only if
+    $B_\text{parent} - r_\text{spawn} \geq 0$.
+\end{enumerate}
+
+These constraints are evaluated atomically at the moment of the spawning
+event. The Bounds Engine issues a signed constraint attestation — a
+cryptographic manifest recording the constraint values at spawn time —
+which is stored alongside the Fact Layer record for the event. This
+ensures that post-hoc forensic analysis can determine the exact constraint
+state that governed any given spawn.
+
+% --- 6.3 Fact Layer Forensic Ledger ---
+\subsection{Fact Layer Forensic Ledger}
+\label{sec:integration:fact}
+
+The Fact Layer functions as the \textit{forensic ledger} for the entire
+spawning chain. Every spawning event, state transition, and termination
+is recorded as an append-only, tamper-evident fact entry. The Fact Layer
+entry for a spawn event contains:
+
+\begin{itemize}
+  \itemsep0em
+  \itemsep0em
+  \itemsep0em
+  \item Spawn timestamp $t_\text{spawn}$ (monotonically increasing)
+  \item Parent agent identifier $\text{ID}_\text{parent}$
+  \item Child agent identifier $\text{ID}_\text{child}$ (assigned by the
+    Fact Layer registrar)
+  \item Purpose Layer record hash $h(p_\text{child})$
+  \item Bounds Engine constraint attestation hash $h(\text{attest})$
+  \item Chain depth $d_\text{child} = d_\text{parent} + 1$
+  \item Immutable parent pointer $P_\text{parent}$ (hash-chained)
+\end{itemize}
+
+The parent pointer $P_\text{parent}$ is itself a Fact Layer entry hash,
+creating a cryptographically chain-linked sequence from any agent back
+to its chain origin. This structure satisfies the requirements of a
+blockchain-style ledger without requiring distributed consensus: the
+Fact Layer is a centralized append-only log with hash-chain integrity
+enforced by the BX3 runtime. Any attempt to alter a historical entry
+breaks the hash chain at that point, making tampering detectable by
+standard chain-integrity verification.
+
+Together, the three layers produce a spawning event in which:
+purpose declares intent, the Bounds Engine permits or denies based on
+operational constraints, and the Fact Layer records the immutable
+deterministic record of what was permitted and why. No layer can
+subvert another without breaking its own integrity guarantees.
+
+
+% ============================================================
+% SECTION 7 — CORRECTNESS PROPERTIES
+% ============================================================
+\section{Correctness Properties}
+\label{sec:correctness}
+
+Recursive Spawning satisfies three correctness properties of primary
+importance to agentic system design: (i) purpose drift is prevented,
+(ii) chain integrity is maintained across the full lineage, and
+(iii) spawning terminates at a defined depth boundary. We formalize
+each property and outline the proof structure.
+
+% --- 7.1 Drift Prevention ---
+\subsection{Drift Prevention}
+\label{sec:correctness:drift}
+
+\textit{Purpose drift} is the failure mode in which an agent's behavior
+deviates from its declared intent over successive spawn generations,
+such that descendants no longer serve the original purpose. Drift can
+arise through scope creep, unbounded lateral expansion, or the gradual
+loss of intent context across spawn links.
+
+\begin{theorem}[Drift Prevention]
+  \label{th:drift}
+  In a Recursive Spawning system governed by the BX3 Framework, no
+  agent in any spawn chain can exhibit purpose drift relative to its
+  chain-origin purpose record.
+\end{theorem}
+
+\begin-proof}
+  We prove Theorem~\ref{th:drift} by demonstrating that the conjunction
+  of three conditions — each guaranteed by a distinct BX3 layer —
+  makes drift structurally impossible.
+
+  \begin{condition}
+    \label{cond:immutable}
+    \textbf{Immutable parent pointer.} The parent pointer $P_\text{parent}$
+    stored in the Fact Layer for any agent is a hash-chained reference
+    to the parent's Fact Layer entry and cannot be altered retroactively
+    without breaking the chain-integrity hash. Therefore, the parentage
+    of any agent is permanently and verifiably recorded.
+  \end{condition}
+
+  \begin{condition}
+    \label{cond:forensic}
+    \textbf{Forensic ledger.} The Fact Layer append-only log records
+    the full spawn event, purpose record, and constraint attestation
+    for every generation. Any deviation from the prescribed purpose is
+    detectable by cross-referencing the agent's executed scope against
+    its declared $p_\text{child}$ scope aperture.
+  \end{condition}
+
+  \begin{condition}
+    \label{cond:terminus}
+    \textbf{Chain terminates at Purpose Layer depth zero.} The spawn chain
+    is anchored at depth zero to a Purpose Layer record with no parent.
+    All descendant purpose records are intentionally derived from this
+    anchor via the SpawnPurpose relation. Because SpawnPurpose always
+    produces a $p_\text{child}$ that is a scoped variant of its parent,
+    and because the Bounds Engine enforces scope-aperture proper-subset
+    or lateral-adjacency constraints, the descendant's scope cannot
+    drift to an unrelated domain.
+  \end{condition}
+
+  \begin{claim}
+    \label{clm:drift-impossible}
+    Drift is impossible under conditions~\ref{cond:immutable},
+    \ref{cond:forensic}, and~\ref{cond:terminus}.
+  \end{claim}
+
+  \begin{subproof}
+    Suppose for contradiction that an agent $A_k$ at depth $k$ exhibits
+    drift: its executed scope $\sigma_k$ is not a scoped variant of the
+    anchor purpose $p_0$. By Condition~\ref{cond:terminus}, $A_k$'s
+    purpose record $p_k$ must be a scoped variant of $p_0$. By
+    Condition~\ref{cond:forensic}, the Fact Layer records the spawn
+    event linking $A_k$ to its parent $A_{k-1}$ and storing $h(p_k)$.
+    The executed scope $\sigma_k$ can be cross-verified against $p_k$
+    at any time using the forensic ledger. If $\sigma_k \not\subseteq
+    \sigma(p_k)$, the drift is detected. Since the Fact Layer is
+    append-only, $p_k$ cannot be retroactively rewritten to conceal
+    the drift (Condition~\ref{cond:immutable}). Therefore no undetected
+    drift can exist; any drift that does occur is immediately surfaced
+    as aFact Layer anomaly. Drift is thus structurally prevented, not
+    merely detected after the fact.
+  \end{subproof}
+\end-proof}
+
+The key structural insight is that drift prevention does not rely on
+runtime monitoring alone. It is guaranteed by the immutable
+parent-pointer chain (Condition~\ref{cond:immutable}), the forensic
+ledger that makes any divergence immediately observable
+(Condition~\ref{cond:forensic}), and the Purpose Layer anchoring that
+constrains the scope-manifold to intentional descendants only
+(Condition~\ref{cond:terminus}).
+
+% --- 7.2 Chain Integrity ---
+\subsection{Chain Integrity}
+\label{sec:correctness:integrity}
+
+\begin{theorem}[Chain Integrity]
+  \label{th:integrity}
+  For any agent $A_k$ in a Recursive Spawning chain, the full lineage
+  $\{A_0, A_1, \dots, A_k\}$ is retrievable, unmodified, and
+  cryptographically verifiable via Fact Layer hash-chain traversal.
+\end{theorem}
+
+\begin-proof}
+  By construction, each Fact Layer entry $e_i$ for $i \geq 1$ contains
+  $P_\text{parent} = h(e_{i-1})$. The chain traversal algorithm
+  $\text{VerifyChain}(A_k)$ proceeds as follows:
+
+  \begin{enumerate}
+    \item Obtain $e_k$ from the Fact Layer registry using
+      $\text{ID}_{A_k}$.
+    \item Compute $\hat{h} = h(e_{k-1})$ from the stored parent pointer
+      $P_\text{parent}$ in $e_k$.
+    \item Compare $\hat{h}$ against the stored hash of $e_{k-1}$. If
+      they differ, the chain is broken and verification fails.
+    \item Recurse to $e_{k-1}$ and repeat until $e_0$ is reached.
+  \end{enumerate}
+
+  Because each entry is append-only and the hash function is
+  collision-resistant, any modification to a historical entry produces
+  a hash mismatch at the point of modification and all subsequent
+  entries. Therefore, successful chain traversal from $A_k$ to $A_0$
+  is both necessary and sufficient for chain integrity. The chain
+  terminates at $A_0$, which is identified by the special marker
+  $P_\text{parent} = \varnothing$, indicating a Purpose Layer
+  depth-zero origin.
+\end-proof}
+
+% --- 7.3 Termination ---
+\subsection{Termination}
+\label{sec:correctness:termination}
+
+\begin{theorem}[Termination]
+  \label{th:termination}
+  Every Recursive Spawning chain terminates: there exists a finite
+  maximum depth $D_\text{max}$ such that no agent may spawn at depth
+  $d > D_\text{max}$. All spawned agents either terminate autonomously
+  upon satisfaction of their $\kappa_\text{criteria}$ or are terminated
+  by the Bounds Engine upon reaching $D_\text{max}$.
+\end{theorem}
+
+\begin-proof}
+  The Bounds Engine enforces the depth constraint
+  $d_\text{cum} \leq D_\text{max}$ as a mandatory precondition for every
+  spawning event (Section~\ref{sec:integration:bounds}). A spawn request
+  for which $d_\text{child} > D_\text{max}$ is rejected atomically
+  before the Fact Layer entry is created. Consequently, no agent can
+  exist at a depth exceeding $D_\text{max}$.
+
+  For any agent $A_i$ at depth $d_i \leq D_\text{max}$, the agent's
+  purpose record $p_i$ encodes termination criteria $\kappa_i$. The
+  Fact Layer records whether $A_i$ reached its $\kappa_i$ milestone or
+  was Bounds-Engine-terminated due to depth exhaustion. In either case,
+  the agent ceases to execute and its spawn budget is zeroed. Since the
+  depth counter is strictly incremented at each spawn and bounded above
+  by $D_\text{max}$, and since each agent terminates in finite time
+  by the BX3 runtime model, the total number of agents in any chain is
+  bounded by $D_\text{max} + 1$, a finite constant. Hence, all chains
+  are finite and termination is guaranteed.
+\end-proof}
+
+These three properties — drift prevention, chain integrity, and
+termination — form the correctness triad of Recursive Spawning under
+the BX3 Framework. Together they ensure that agentic systems built on
+this substrate can spawn complex, multi-generational workflows with
+formal guarantees of intent preservation, auditable lineage, and
+bounded resource consumption.

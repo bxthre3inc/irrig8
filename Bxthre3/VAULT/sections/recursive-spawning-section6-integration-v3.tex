@@ -1,0 +1,186 @@
+\section{Integration with the BX3 Framework}
+\label{sec:rs-integration}
+
+Recursive Spawning does not operate as a standalone delegation mechanism.
+Its correctness guarantees are derived entirely from the structural properties
+enforced by the BX3 three-layer architecture operating in mandatory concert.
+This section specifies the three integration points and establishes the
+unified invariant that downstream correctness proofs depend upon.
+
+% ---------------------------------------------------------------------------
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:rs-purpose-anchor}
+
+Every node $n$ in a BX3 spawn tree carries a human anchor $h(n)$ established
+at node provisioning and structurally non-modifiable for the node's entire
+operational lifetime.  The \Purpose{} layer is the architectural locus of this
+anchor: it encodes the principal's intent, defines the operating range $R(n)$,
+and serves as the final machine layer before the human principal in any
+escalation chain.
+
+Three integration points connect Recursive Spawning to the \Purpose{} layer:
+
+\begin{enumerate}
+  \item[(a)] \textbf{Anchor inheritance at spawn.}  When parent node $p$ spawns
+    child $c$, the spawn directive encodes $h(c) = h(p)$.  The \Purpose{} layer
+    of $c$ inherits the same human anchor as its parent.  This is not a policy
+    decision made by the agent at $p$ — it is a structural constraint enforced
+    by the \Fact{} layer pre-commit hook before the child node is provisioned.
+    The consequence is that \textit{every node in the spawn tree, regardless of
+    depth, points to the same human principal} as its ultimate accountability
+    terminus.
+
+  \item[(b)] \textbf{Escalation terminus.}  The Bailout Protocol traverses the
+    parent-pointer chain $\alpha(n), \alpha(\alpha(n)), \ldots$ until reaching
+    $h(n)$.  Because $h(n)$ is always a human principal and never a machine
+    actor, the escalation path never terminates at an intermediate machine
+    node.  The \Purpose{} layer at each node is the last machine layer before
+    the human anchor — it holds the principal's intent, not a delegated subset
+    of it.  This structural property makes the upstream accountability guarantee
+    non-vacuous: the terminus is defined at the \Purpose{} layer, which cannot
+    be replicated or substituted by any machine actor.
+
+  \item[(c)] \textbf{Scope adjudication.}  When the \Bounds{} layer detects a
+    delegation scope inheritance violation, the exception is escalated to the
+    \Purpose{} layer of the parent node for adjudication.  The \Purpose{} layer
+    alone has authority to redefine $R(p)$ or to authorize an exception to the
+    inheritance constraint on behalf of the human principal.  No machine actor
+    may grant this authorization.
+\end{enumerate}
+
+The combined effect of (a)–(c) is that the \Purpose{} layer serves as a double
+anchor: it anchors the spawn tree's accountability chain at the top (human
+principal $\rightarrow$ root node's \Purpose{} layer), and it anchors every
+escalation path at its terminus ($h(n)$, reached through the parent-pointer
+chain).  The spawn tree is not a tree of autonomous agents — it is a tree of
+accountability structures, each anchored to the same human principal.
+
+% ---------------------------------------------------------------------------
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:rs-bounds-depth}
+
+The \Bounds{} layer enforces the Hierarchy Finiteness Invariant as a
+deterministic pre-commit check on every spawn event.  The enforcement mechanism
+is the depth-evaluation function $\text{depth-ok}(c, p)$ that computes
+$d(c) = d(p) + 1$ and compares the result against the deployment constant
+$D_{\max}$.
+
+When a node in state \texttt{CAN\_SPAWN} receives an $e_{\text{spawn}}$ event,
+it transitions to \texttt{SPAWN\_PENDING} and issues a depth-confirmation
+request to the \Bounds{} layer.  The \Bounds{} layer evaluates
+$\text{depth-ok}(c, p)$; if the check passes, it emits $e_{\text{depth-ok}}$.
+If the check fails, the \Bounds{} layer emits $e_{\text{depth-violation}}$,
+transitions the spawning state machine to \texttt{SPAWN\_LOCKED}, triggers the
+Bailout Protocol, and records the violation event in the Forensic Ledger.
+The depth check is a deterministic integer comparison — no probabilistic
+reasoning, no model judgment, no interpretation.  Either $d(c) \leq D_{\max}$
+or it does not; the \Bounds{} layer enforces the condition without discretion.
+
+The critical property of this integration is that $D_{\max}$ is a deployment
+parameter established at system initialization and is not negotiable at runtime.
+No machine actor, including the \Bounds{} layer itself, may raise $D_{\max}$
+to accommodate a non-compliant spawn.  The deployment designer sets $D_{\max}$
+once based on the operational requirements of the deployment context —
+specifically, the maximum acceptable escalation path length for the Bailout
+Protocol's liveness guarantee.  The \Bounds{} layer's enforcement ensures that
+this contract between deployment designer and runtime system is never violated.
+
+The delegation scope inheritance check is also enforced by the \Bounds{} layer
+as a deterministic set comparison: $R(c) \subset R(p)$.  If the subset relation
+fails, the \Bounds{} layer emits $e_{\text{scope-violation}}$, transitions the
+spawning state machine to \texttt{SPAWN\_LOCKED}, and triggers the Bailout
+Protocol.  The scope-inheritance check and the depth check are evaluated in
+sequence — scope first, then depth — and both must pass before the spawn
+proceeds to \texttt{CHILD\_PROVISIONED}.  This sequencing ensures that the first
+detected violation is the one recorded in the Forensic Ledger, which matters for
+accountability attribution when the human anchor reviews the failure.
+
+% ---------------------------------------------------------------------------
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:rs-fact-fledger}
+
+The \Fact{} layer provides two structural guarantees for Recursive Spawning:
+immutable parent-pointer enforcement and complete, cryptographically chained
+event recording.
+
+\medskip
+\noindent\textbf{Immutable parent pointer.}  The parent-pointer field
+$\alpha(v)$ is a read-only property of the node's \Fact{} layer worksheet.
+Any attempt to write to $\alpha(v)$ at runtime is intercepted by the pre-commit
+hook and rejected.  The rejection event is recorded in the Forensic Ledger as
+a \texttt{parent-pointer-write-denied} entry, and the Bailout Protocol is
+triggered if the attempted write was initiated by a machine actor.  This
+enforcement ensures that the accountability chain is never redirected after node
+creation — the chain that exists at provisioning is the chain that persists
+throughout the node's operational lifetime.
+
+\medskip
+\noindent\textbf{Cryptographically chained forensic record.}  Every spawn event,
+every state transition in the spawning state machine, every depth-confirmation
+result, every scope-inheritance evaluation, and every human directive issued in
+response to a spawn-related exception is recorded as a Forensic Ledger entry.
+Each entry $f$ carries the SHA-256 hash of the preceding entry, forming an
+append-only chain from the genesis entry to the most recent.  The cryptographic
+chaining ensures that no entry can be modified, deleted, or inserted without
+breaking the chain — a condition detectable by any auditor without access to
+the ledger's contents.
+
+The Forensic Ledger entries relevant to Recursive Spawning include:
+\begin{itemize}\itemsep=0pt
+  \item \texttt{spawn-proposed}$(p, c, R(c), d(c))$ — parent $p$ has proposed
+    to spawn child $c$ with operating range $R(c)$ and depth $d(c)$;
+  \item \texttt{depth-confirmed}$(c, d(c))$ — the \Bounds{} layer confirmed
+    $d(c) \leq D_{\max}$;
+  \item \texttt{depth-rejected}$(c, d(c), D_{\max})$ — the depth check failed;
+  \item \texttt{scope-confirmed}$(c, R(c) \subset R(p))$ — the delegation scope
+    inheritance constraint is satisfied;
+  \item \texttt{scope-rejected}$(c, R(c), R(p))$ — the scope-inheritance check
+    failed;
+  \item \texttt{child-provisioned}$(p, c, \alpha(c) = p, h(c) = h(p))$ — child
+    created with immutable parent pointer and inherited human anchor;
+  \item \texttt{parent-pointer-write-denied}$(v, \alpha_{\text{old}},
+    \alpha_{\text{new}})$ — an attempt to modify $\alpha(v)$ was intercepted;
+  \item \texttt{spawn-locked}$(v, \text{violation-type})$ — the spawning state
+    machine entered \texttt{SPAWN\_LOCKED} due to a constraint violation.
+\end{itemize}
+
+The Forensic Ledger is not a conventional audit log that records actions
+after they are taken — it is an enforcement mechanism that queries current
+state before subsequent actions are permitted.  The \Fact{} layer pre-commit hook
+verifies the current state of the spawning state machine before committing any
+spawn event, ensuring that the ledger is the authoritative source of truth for
+the runtime state of the spawn tree.
+
+% ---------------------------------------------------------------------------
+\subsection{Unified Integration Invariant}
+\label{sec:rs-unified-inv}
+
+The three-layer integration described above yields a single structural invariant
+that is the foundation of all downstream correctness guarantees:
+
+\begin{invariant}[Spawn Tree Accountability Invariant]
+\label{inv:spawn-accountability}
+For every node $v$ in a BX3 spawn tree, the accountability chain
+$\alpha^{(k)}(v) = h(v)$ with $k \leq D_{\max}$ is:
+\begin{enumerate}
+  \item[(i)] \textbf{Immutable} — $\alpha(v)$ is never modified after node
+    creation;
+  \item[(ii)] \textbf{Complete} — every spawn event and state transition is
+    recorded in the Forensic Ledger;
+  \item[(iii)] \textbf{Terminating} — the chain terminates at a human
+    principal $h(v)$, never at a machine actor;
+  \item[(iv)] \textbf{Enforceable} — any violation of (i), (ii), or (iii)
+    triggers the Bailout Protocol before the system state advances.
+\end{enumerate}
+\end{invariant}
+
+This invariant is not a policy constraint or an operational guideline.  It is
+a structural property enforced by the pre-commit hooks of all three layers
+operating in concert.  The integration of Recursive Spawning with the three-layer
+architecture is what makes the invariant hold — none of the three layers alone
+is sufficient.  The \Purpose{} layer provides the human anchor; the \Bounds{}
+layer provides depth and scope enforcement; the \Fact{} layer provides the
+immutable parent pointer and the cryptographically chained forensic record.
+Together they enforce Invariant~\ref{inv:spawn-accountability}, and it is this
+invariant that enables the correctness properties established in the next
+section.

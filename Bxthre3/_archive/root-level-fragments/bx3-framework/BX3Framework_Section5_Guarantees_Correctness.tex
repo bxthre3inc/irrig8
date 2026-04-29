@@ -1,0 +1,95 @@
+\section{Guarantees and Correctness Properties}\label{sec:properties}
+
+We establish three correctness properties for the Bailout Protocol: Safety, Liveness, and Accountability. Together, they constitute the protocol's formal correctness claim. Safety prevents autonomous collapse; Liveness guarantees eventual human contact; Accountability ensures the human principal is always identifiable and non-repudiable. Each property is derived from the protocol's state machine specification and enforced by the Fact Layer's pre-commit hook. We provide proof sketches for each.
+
+% ---------------------------------------------------------------
+\subsection{Safety: No Autonomous Collapse}
+% ---------------------------------------------------------------
+
+\textbf{Property S (Safety).} For any node $n$ in a \bxthree{} system, if a bailout is active and has not been resolved by a \purpose-layer-authorized directive, the system cannot execute any action that falls outside $R(n)$ without human authorization.
+
+\medskip
+\noindent\textbf{Proof sketch.} The claim requires that for any state $q \in Q$ with $q \neq \texttt{RESOLVED}$, no transition in $\mathcal{B}$ can produce a state in which the system executes an out-of-range action autonomously.
+
+We prove by case analysis over the state machine's reachable states:
+
+\begin{itemize}
+\item \texttt{IDLE}: No bailout is active (INV-1). The Fact Layer pre-commit hook commits only actions within $R(n)$ per the authorization ledger. Out-of-range actions cannot be committed.
+
+\item \texttt{BOUNDED}: A bailout trigger has fired and the Bounds Engine has entered a bounded-resolution window of duration $T_{\text{bounds}}$. During this window, all resolution paths require \fact-layer approval. The \fact{} layer approves only resolutions that are either within $R(n)$ or that have received \purpose-layer authorization. No autonomous execution of out-of-range actions is possible within $T_{\text{bounds}}$ because the pre-commit hook gates all candidate actions.
+
+\item \texttt{BAIL\_PENDING}: By INV-2, the state machine has an immediate compulsory transition to \texttt{ESCALATING} upon $e_{\text{timeout}}$, with zero dwell time. No machine actor may interpose. The transition is deterministic and atomic; no intermediate state is observable.
+
+\item \texttt{ESCALATING}: The system has entered the propagation phase. The Fact Layer's authorization ledger gate blocks all consequential actions until the \purpose{} layer issues a directive. The escalation path is closed to any machine actor: the parent-chain bypass skips intermediate machine actors, and the human anchor $h(n)$ is the sole destination. No autonomous action is possible.
+
+\item \texttt{HUMAN\_ACKNOWLEDGED}: The system awaits the human principal's directive. No action executes until \texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT} is received and committed to the authorization ledger. The directive is recorded as a \purpose-layer-authorized entry. No machine actor can simulate, substitute, or suppress this directive.
+
+\item \texttt{RESOLVED}: The protocol run has closed. This is the only state in which autonomous execution resumes, and it does so only within the scope of the directive issued by the \purpose{} layer.
+\end{itemize}
+
+Across all reachable states, no execution path exists in which the system can autonomously execute an action outside $R(n)$. The Fact Layer's pre-commit hook, combined with the compulsory transition from \texttt{BAIL\_PENDING} to \texttt{ESCALATING} (T4) and the authorization ledger gate, collectively enforce this property for all nodes. ∎
+
+\medskip
+\noindent\textbf{Discussion.} Property S addresses the \emph{autonomous collapse} failure mode: a system that executes consequential actions outside its provisioned scope without human knowledge or authorization. The Bailout Protocol prevents this by making the transition from \texttt{BAIL\_PENDING} to \texttt{ESCALATING} compulsory and atomic, and by gating all consequential actions behind the authorization ledger. A machine actor cannot interpose, absorb, or suppress the escalation at the moment of greatest temptation — $T_{\text{bounds}}$ expiration — because the transition is enforced directly by the Fact Layer pre-commit hook, bypassing any agent-level code.
+
+% ---------------------------------------------------------------
+\subsection{Liveness: Eventual Human Contact}
+% ---------------------------------------------------------------
+
+\textbf{Property L (Liveness).} For any node $n$ with a reachable human anchor $h(n)$, every active bailout event eventually delivers the exception context to $h(n)$ or records a structural failure in the Forensic Ledger, within a bounded time relative to $T_{\text{escalate}}$.
+
+\medskip
+\noindent\textbf{Proof sketch.} The claim requires that the protocol does not deadlock — that is, for any reachable state $q$ in which a bailout is active, the system eventually reaches either \texttt{HUMAN\_ACKNOWLEDGED} or a terminal error state recorded in the Forensic Ledger, within the time bound defined by the protocol's timeout parameters.
+
+We examine the escalation path defined by the Escalate algorithm:
+
+\begin{enumerate}
+\item The algorithm traverses the parent chain $\alpha(n), \alpha(\alpha(n)), \ldots$ toward $h(n)$. Each step is bounded by $T_{\text{step}}$, a provisioned constant. The chain depth $D$ is finite by the Recursive Spawning Protocol's depth constraint $D_{\text{max}}$, which is enforced by the Fact Layer at spawn time. Therefore, the total traversal time is bounded by $D \cdot T_{\text{step}}$.
+
+\item At each intermediate node, the algorithm checks for a Fact-Layer-approved resolution. If one exists, the bailout terminates at that node and the protocol run closes via T2. This satisfies liveness by early resolution.
+
+\item If no resolution is found at any node, the algorithm proceeds until either (a) it reaches $h(n)$, delivering the exception context and transitioning to \texttt{HUMAN\_ACKNOWLEDGED} (via transition T7), or (b) it exhausts all reachable parent nodes without finding a functional pathway to $h(n)$. In case (b), the algorithm invokes the institutional escalation fallback — a provisioned alternative contact path — within $T_{\text{escalate}}$. If no institutional path is available, the algorithm records a structural failure in the Forensic Ledger and enters a quiescent error state. In all cases, the protocol reaches a defined terminal condition within the timeout bound.
+
+\item Timeout enforcement is mandatory. The $T_{\text{bounds}}$ timeout (T3) and the $T_{\text{escalate}}$ timeout (T5) are both enforced by the Fact Layer's pre-commit hook. Neither timeout can be suppressed or extended by any machine actor. If the human anchor $h(n)$ is unreachable, the protocol does not continue waiting indefinitely — it records the failure and enters the appropriate error state, enabling human operators to diagnose the structural failure via the Forensic Ledger.
+\end{enumerate}
+
+Since the escalation path has bounded depth, bounded step time, and mandatory timeout enforcement, and since every timeout produces a defined state transition (T4, T5, or T6), the protocol cannot deadlock. Every active bailout event either reaches $h(n)$ or produces a recorded structural failure, both within the timeout bound. ∎
+
+\medskip
+\noindent\textbf{Discussion.} Property L is a \emph{liveness} property in the classic sense: it guarantees that something good eventually happens (human contact) or that a failure is formally recorded. It does not guarantee that $h(n)$ is immediately available or responsive — that depends on external factors — but it guarantees that the protocol makes contact within a bounded time or formally records the inability to do so. This distinction is critical for real-world deployments where human principals may be temporarily unavailable: the protocol does not stall indefinitely, and it does not silently escalate to a machine actor as a fallback terminus. The timeout ensures that the system remains in a known, safe state (quiescent or error) until human contact is established.
+
+% ---------------------------------------------------------------
+\subsection{Accountability: Human Always Identifiable}
+% ---------------------------------------------------------------
+
+\textbf{Property A (Accountability).} For every exception state that propagates to a \purpose{} layer, the human principal $h(n)$ is uniquely, immutably, and verifiably identified as the accountable terminus for that exception, and the human principal's directive — \texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT} — is recorded as an immutable, non-repudiable entry in the Forensic Ledger.
+
+\medskip
+\noindent\textbf{Proof sketch.} We establish Accountability in two parts: (A1) the human anchor is uniquely and immutably identified as the terminus, and (A2) the directive is non-repudiable.
+
+\medskip
+\noindent\textbf{(A1) Immutability of the human anchor.} The human anchor $h(n)$ is established at node provisioning time and stored in the node's \purpose{} layer worksheet. This assignment is committed to the authorization ledger as an immutable entry, timestamped and attributed to the provisioning authority. No machine actor — including the node itself, any parent node, or any recursively spawned subordinate — may modify $h(n)$ without an explicit \purpose-layer-authorized ledger entry. This immutability is enforced by the Fact Layer's authorization ledger gate: any attempt to modify $h(n)$ by a machine actor fails the gate and is rejected.
+
+Since the escalation path terminates at the \purpose{} layer of the node carrying $h(n)$, and since no machine actor can substitute a different terminus for $h(n)$, the human principal is the \emph{only} permissible terminus for any exception that propagates beyond the machine-only execution graph. The accountability chain is therefore structurally determined, not contingent on runtime choices.
+
+\medskip
+\noindent\textbf{(A2) Non-repudiation of the directive.} When the \purpose{} layer receives the exception context via the Escalate algorithm, it evaluates the exception and issues one of three directives: \texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT}. Each directive is committed to the Forensic Ledger as an append-only entry, bearing the \purpose{} layer's authorization signature and the timestamp of receipt. The entry is linked to the preceding entry by SHA-256 hash chain, making retrospective modification of the directive's content computationally detectable.
+
+The \purpose{} layer's directive is the sole mechanism capable of closing a protocol run: the Fact Layer's authorization ledger gate blocks any attempt by a machine actor to issue a retroactive resolution that would suppress a warranted escalation. This gate ensures that only a \purpose-layer-authorized directive can transition the state machine from \texttt{HUMAN\_ACKNOWLEDGED} to \texttt{RESOLVED} (T9). A machine actor cannot fabricate, alter, or delete a directive once committed.
+
+The combination of (A1) and (A2) establishes that for every exception that reaches the \purpose{} layer, the accountable human principal is uniquely identified, the directive is immutably recorded, and neither the identity nor the directive is subject to modification by any machine actor. The Forensic Ledger's three accountability planes — Purpose, Bounds, and Fact — provide the complete evidentiary record enabling independent verification by any authorized auditor. ∎
+
+\medskip
+\noindent\textbf{Discussion.} Property A directly addresses the \emph{black box} failure mode that motivates the Bailout Protocol: autonomous actions that cannot be traced to a human principal. The property requires not merely that a human is \emph{available} to receive escalations, but that the human is the \emph{sole and verifiable} terminus for every exception, and that every directive issued by that human is immutably recorded. The SHA-256 hash chain ensures that the record is tamper-evident: any attempt to alter historical entries is computationally detectable. The authorization ledger gate ensures that no machine actor can close a protocol run without a genuine \purpose-layer directive — preventing the fabrication of accountability that has plagued prior escalation architectures.
+
+% ---------------------------------------------------------------
+\subsection{Collective Coverage and the Upstream Accountability Guarantee}
+% ---------------------------------------------------------------
+
+The three properties — Safety, Liveness, and Accountability — are mutually reinforcing and collectively complete with respect to the upstream accountability guarantee. Safety establishes that no autonomous collapse is possible: the system cannot execute out-of-range actions without human authorization, regardless of machine actor preferences or operational urgency. Liveness establishes that human contact is guaranteed within a bounded time: the protocol does not deadlock or silently fall back to a machine actor as a surrogate terminus. Accountability establishes that the human principal is uniquely, immutably, and verifiably identified as the accountable terminus for every exception that exceeds machine scope.
+
+Together, they establish the formal correctness of the Bailout Protocol with respect to its central guarantee: that \bxthree{} systems fail upward into human consciousness, never downward into autonomous chaos. Safety prevents downward failure; Liveness ensures the upward path is always open; Accountability ensures that when the path is traversed, the human at its terminus is identified and their directive is recorded.
+
+These properties hold for any node $n$ in any \bxthree{} system, provided the following structural assumptions are satisfied: (i) the Fact Layer's pre-commit hook is operative and has exclusive authority over state transitions and ledger writes; (ii) the human anchor $h(n)$ is provisioned at node initialization and is immutable thereafter; (iii) the Recursive Spawning Protocol's depth constraint $D_{\text{max}}$ is enforced at spawn time, ensuring that the parent chain has finite depth; and (iv) the Forensic Ledger's append-only integrity mechanism is intact. Violation of any of these assumptions compromises the corresponding property, and the Forensic Ledger's health monitoring provides the detection mechanism for such violations.
+
+\end{document}

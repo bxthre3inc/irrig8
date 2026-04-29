@@ -1,0 +1,69 @@
+\section{Introduction}
+\label{sec:introduction}
+
+The proliferation of recursive AI agent systems has introduced a class of failure that existing infrastructure is structurally unprepared to address: autonomous drift. In a recursive multi-agent architecture, a parent agent delegates a task to a child agent, which may further delegate to a grandchild, and so on, forming a delegation chain of arbitrary depth. When this chain is implemented with mutable parent references — as it is in every major contemporary framework — the chain becomes a liability rather than an accountability asset. A child agent whose parent has been decommissioned, crashed, or redirected may continue to execute, taking actions whose accountability trail leads not to a living principal but to an ancestor that no longer exists. This is drift: the condition in which an agent continues to act without a runtime-verifiable connection to any human principal.
+
+The operational consequences of drift are not theoretical. In financial orchestration, a drifted agent may continue to execute trades beyond its authorized scope with no accountable principal to halt or reverse them. In clinical decision support, a drifted diagnostic agent may continue to issue recommendations based on superseded protocols. In critical infrastructure, a drifted coordination agent may issue commands to systems that require human confirmation. The common thread is not the domain — it is the structural impossibility, under mutable chains, of verifying at any runtime point that every active agent retains a live connection to a human principal who authorized its existence.
+
+% -------------------------------------------------------------------------- %
+\subsection{The Insufficiency of Time-to-Live and Depth Limits}
+\label{sec:ttl-insufficiency}
+
+The conventional response to deep or unbounded delegation chains is to impose a time-to-live (TTL) constraint or a maximum depth limit. TTL limits how long a spawned agent may remain active; depth limits cap the number of permitted spawn generations. These are meaningful mitigations — they bound the blast radius of a drifted agent and reduce the maximum depth at which harm can occur. But they do not address the accountability problem, because they do not address the mutability of the chain itself.
+
+TTL and depth limits are properties of the chain's edges, not of its structure. They constrain how many edges may exist, but they say nothing about whether those edges accurately represent the original authorization topology. An agent spawned at depth 2 with a valid warrant at time $t$ may, at time $t+\Delta$, find its parent pointer redirected to a depth-5 node that was never in its actual ancestry. The depth limit is not violated — the chain is still depth-bounded — but the chain is false. The agent appears to have a valid lineage on paper while operating with a fraudulent one in practice. TTL does not close this gap: a TTL reset at the moment of re-parenting extends the drifted agent's lifetime while erasing the evidence of the re-parenting itself.
+
+More fundamentally, TTL and depth limits address the symptoms of drift — unbounded chain growth, unbounded agent lifetime — without addressing the root cause: the absence of an immutable, runtime-verifiable connection between each agent and the principal who authorized its creation. They are rate-limiters on a leaking vessel. Until the vessel is sealed, adding rate-limiters does not make the contents safe.
+
+% -------------------------------------------------------------------------- %
+\subsection{The Core Insight: Immutable Parent Pointers Eliminate Drift Structurally}
+\label{sec:core-insight}
+
+The Recursive Spawning Protocol (RSP) addresses the root cause of drift through a single architectural constraint: every spawned node maintains an immutable parent pointer $\alpha(n)$ established at provisioning by an atomic Fact Layer write. The parent pointer is not a mutable configuration — it is a structural property of the node itself, sealed at spawn and verifiable at any runtime point. The chain $\Chain{n}$ from any node $n$ to the human anchor $h$ is computed by recursively applying $\alpha$ until a human principal is reached. This chain is deterministic, auditable, and — critically — retroactively corruptible by no actor, including the Purpose Layer, the Bounds Engine, an administrator, or an external adversary.
+
+The key distinction is between policy-enforced immutability and protocol-enforced immutability. Policy-enforced immutability restricts which principals may issue a modification operation; if sufficient privilege is acquired, the modification succeeds. An immutable parent pointer has no defined modification operation at the protocol level: the Fact Layer write protocol specifies exactly one valid write for $\alpha(n)$ — the initial provisioning write at spawn — and specifies zero valid writes for any subsequent modification attempt. The operation is not forbidden by policy; it is malformed by protocol. The request to modify $\alpha(n)$ is rejected before it reaches any evaluation stage, before it reaches the ledger, and before any actor can process it.
+
+This distinction is what makes drift structurally impossible under RSP. Drift requires retroactive manipulation of the chain topology: re-parenting a node, redirecting a pointer, or erasing the evidence of an original spawn event. Each of these manipulations is a modification to $\alpha(n)$ after provisioning. The Fact Layer write protocol defines no valid modification operation for $\alpha(n)$ after provisioning. Therefore these manipulations are not policy violations that require enforcement — they are protocol-malformed requests that cannot be processed regardless of who issued them or what privilege they hold. The immutable parent pointer does not prevent drift; it makes the concept of drift architecturally inapplicable by rendering the operations that constitute drift structurally inexecutable.
+
+The immutable parent pointer also provides what TTL and depth limits cannot: runtime-verifiable chain topology. Because $\alpha(n)$ is immutable and stored in each node's sealed memory envelope, the chain $\Chain{a}$ from any node $a$ to the human anchor $h$ is computable at any runtime point by recursively applying $\alpha$. The chain is not reconstructed from mutable logs — it is a direct property of each node's sealed state. Chain-Verify confirms at any time that the chain terminates at a human principal, that every spawn event had a Purpose Layer warrant, and that the depth bound was respected throughout. A drifted node cannot pass Chain-Verify, because drift requires the same modification to $\alpha(n)$ that the protocol makes structurally impossible.
+
+% -------------------------------------------------------------------------- %
+\subsection{Formal Definition of Drift}
+\label{sec:drift-definition}
+
+We define drift formally to establish the precise failure condition that RSP eliminates.
+
+\begin{dfn}[Drift]
+\label{dfn:drift}
+An agent $n$ is in a state of drift at time $t$ if and only if all of the following hold:
+
+\begin{enumerate}
+    \item[(D1)] $n$ is in an active operational state (not \texttt{TERMINATED} or \texttt{COMPLETED}).
+    \item[(D2)] The human principal $h$ is not reachable as the terminus of $\Chain{n}$ at time $t$ — either because $\alpha$ has been modified after provisioning, because the chain topology recorded in the forensic ledger differs from the current claimed chain, or because no Purpose Layer warrant exists for one or more links in $\Chain{n}$.
+    \item[(D3)] $n$ is taking actions or maintaining active execution context that produces or maintains physical effects in the deployment environment.
+\end{enumerate}
+\end{dfn}
+
+Drift is a structural property of the chain, not a property of the agent's behavior, alignment, or intentions. An agent is drifted when its delegation chain does not verifiably terminate at a human principal at runtime and it continues to act. The definition distinguishes drift from orphaning: an orphaned node has no living parent — its parent has been legitimately decommissioned — but may retain a verifiable chain to a human anchor through other links in the chain. A drifted node has lost the verifiable connection to its human anchor regardless of whether its parent is alive. The two conditions may coincide: a node whose parent was decommissioned and whose chain topology was subsequently modified is both orphaned and drifted. But the defining failure mode of drift is the loss of verifiable chain-to-principal.
+
+Under RSP, conditions D1 and D2 are mutually exclusive: if $n$ is active (D1), then $\alpha(n)$ is immutable and its chain to the human anchor is runtime-verifiable (the negation of D2). An active RSP node cannot be drifted because the immutability of $\alpha(n)$ is a protocol-level constraint, not an access control policy. The protocol makes the modification that drift requires structurally impossible.
+
+% -------------------------------------------------------------------------- %
+\subsection{Paper Roadmap}
+\label{sec:roadmap}
+
+This paper specifies the Recursive Spawning Protocol as the second named pillar of the \bxthree{} Framework, building on the framework's three-layer architecture (Purpose Layer, Bounds Engine, Fact Layer) to provide a structurally enforceable delegation chain from every active agent to a human principal. The paper proceeds as follows.
+
+\textbf{Section~\ref{sec:background}} situates RSP within five intersecting research threads: agent lifecycle management, accountability and provenance in distributed systems, delegation chain structure, hierarchical task decomposition, and the \bxthree{} Framework as substrate for immutable parent chains. It identifies the structural gap that RSP closes: the absence of immutable parentage in existing multi-agent architectures.
+
+\textbf{Section~\ref{sec:immutable-parent-pointers}} specifies the immutable parent pointer as the foundational primitive of RSP: its formal definition, the chain operator $\Chain{\cdot}$, the Fact Layer write protocol enforcement mechanism, the Purpose Layer's role in spawn authorization, and the complete chain traversal and verification algorithms.
+
+\textbf{Section~\ref{sec:rs-protocol}} specifies the Recursive Spawning Protocol in full: five mandatory structural phases (Purpose Layer validation gate, Bounds Engine depth check, Fact Layer immutable pointer creation, child activation, and chain verification), the depth management system, and the constant-time escalation bound.
+
+\textbf{Section~\ref{sec:bailout-protocol}} specifies the Bailout Protocol: the exception propagation mechanism by which any RSP node at any depth escalates to the human anchor when encountering an unresolvable condition.
+
+\textbf{Section~\ref{sec:implementation}} provides the implementation architecture for RSP: the three-layer system design, the sealed memory envelope mechanism, the forensic ledger structure, and the separation of concerns between layers.
+
+\textbf{Section~\ref{sec:related-work}} compares RSP to related approaches: Google's Tiered Agentic Oversight (TAO), Human Delegation Provenance (HDP), blockchain-based provenance systems, and enterprise agentic architecture frameworks. It identifies where each approach addresses part of the drift problem and why RSP's protocol-level immutability represents a structural rather than policy-level solution.
+
+\textbf{Section~\ref{sec:conclusion}} summarizes the contributions and discusses implications for the safe deployment of recursive AI agent systems.

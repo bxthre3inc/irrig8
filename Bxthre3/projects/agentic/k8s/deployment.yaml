@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-core
+  namespace: agentic
+  labels:
+    app: agentic-core
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: agentic-core
+  template:
+    metadata:
+      labels:
+        app: agentic-core
+    spec:
+      containers:
+      - name: agentic
+        image: agentic/core:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: agentic-system-config
+        resources:
+          requests:
+            cpu: "1000m"
+            memory: "2Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      nodeSelector:
+        workload: agentic
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentic-service
+  namespace: agentic
+spec:
+  selector:
+    app: agentic-core
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer

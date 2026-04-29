@@ -1,0 +1,107 @@
+\section{Implementation in the BX3 Framework}
+\label{sec:implementation}
+
+The BX3 Framework does not treat the Bailout Protocol as a standalone safety feature added to an existing system. It treats the Bailout Protocol as the \textit{runtime expression} of the framework's upstream accountability guarantee: that every exception state in any Bounds Engine node propagates to a human accountability anchor, bypassing all machine intermediaries. Making this guarantee architecturally enforceable rather than conventionally agreed upon requires that the Bailout Protocol be woven into the three-layer structure at each role boundary. This section specifies how the protocol operates at each layer, how the Forensic Ledger records bailout events, and how the state machine of the Bailout Protocol functions as a deterministic extension of the Fact Layer.
+
+\subsection{The Purpose Layer as Human Accountability Anchor}
+\label{sec:purpose-anchor}
+
+The Purpose Layer is the only layer in the BX3 architecture that may legitimately terminate a Bailout Protocol signal. This is not a design choice among alternatives; it is a definitional commitment. The Purpose Layer is defined by its capacity for genuine accountability --- the ability to bear responsibility for a decision in a way that is legally, socially, and organizationally enforceable. Machine actors cannot bear this responsibility in the relevant sense, regardless of their sophistication. Therefore, only a Purpose Layer actor may receive and resolve a Bailout signal.
+
+In the BX3 three-layer model, every node in a recursive system has a \textit{Purpose} authored and owned by a named human at the Purpose Layer. This Purpose is not a preference or a suggestion; it is a binding specification that defines what the node exists to accomplish, what constraints govern its operation, and who is accountable for its outcomes. When a node's Bounds Engine encounters a condition it cannot resolve within those constraints, the bailout signal does not route to an intermediate machine tier for a second attempt at autonomous resolution. It routes to the named Purpose Layer owner of that node, with full diagnostic context.
+
+The Purpose Layer thus serves a dual function in the Bailout Protocol:
+
+\begin{enumerate}
+\item \textbf{Authorization provenance.} The Purpose Layer establishes the authoritative chain from which all legitimate system action derives. Every Bounds Engine action traces back to a Purpose Layer authorization. If a bailout fires, the Purpose Layer owner receives the complete chain of prior authorizations and proposed actions, enabling informed judgment about how to proceed.
+\item \textbf{Resolution authority.} The Purpose Layer owner has the authority to override the bailout, to modify the node's constraints, to reassign the node to a different Bounds Engine, to halt the system, or to escalate to their own supervisory chain. No machine actor has this range of resolution options.
+\end{enumerate}
+
+The key architectural property is that the Purpose Layer is not merely \textit{available} as an escalation target. It is structurally the \textit{only} permissible terminal state for any unresolved exception. The BX3 upstream accountability guarantee is enforced by the layer architecture itself: the Bounds Engine may not terminate a bailout signal at another machine actor, and the Fact Layer hard-blocks any command that would bypass Purpose Layer routing for an exception condition.
+
+\subsection{The Bounds Engine Triggering the Bailout Protocol}
+\label{sec:bounds-triggering}
+
+The Bounds Engine is the layer that detects and fires bailout signals. This is a consequence of its defining role: the Bounds Engine evaluates proposed actions against encoded constraints and either approves, rejects, or escalates. When the situation exceeds its resolution authority --- a novel condition not covered by existing constraints, a conflict between competing imperatives, or a proposed action that would violate a hard constraint --- the Bounds Engine does not guess, does not default to a safest-known action, and does not attempt a recursive autonomous resolution. It fires the Bailout Protocol.
+
+The trigger conditions that activate the Bailout Protocol are formally specified as follows. A Bounds Engine node $B$ fires a bailout signal when:
+
+\begin{itemize}
+\item $B$ receives a request to perform action $a$, and $a$ is not within the constraint set $C_B$ defined for $B$'s current operational scope.
+\item $B$ detects a state $s$ in the system that is not covered by any constraint in $C_B$, and $s$ satisfies the condition $isUnresolvable(s, C_B)$, meaning no rule in $C_B$ can produce an approved action for state $s$.
+\item $B$ encounters a conflict $conflict(c_1, c_2)$ between two or more constraints $c_1, c_2 \in C_B$ such that no action $a$ satisfies both constraints simultaneously.
+\item $B$ receives a proposed action $a$ that, when evaluated against the Fact Layer validation model, would violate a Fact Layer enforcement rule $r \in R_{fact}$, where $R_{fact}$ is the set of deterministic enforcement rules maintained by the Fact Layer.
+\item $B$ receives a proposed action $a$ whose outcome projection, generated by the Bounds Engine's reasoning layer, produces a projected consequence that violates a hard constraint $c_{hard} \in C_B$.
+\end{itemize}
+
+When any of these conditions are met, the Bounds Engine constructs a \texttt{BailoutTrigger} record containing: the triggering condition category, the proposed action that was blocked, the complete constraint set active at the time of firing, the diagnostic context including relevant system state variables, and the propagation path identifying the parent node in the system hierarchy to which the trigger will be forwarded.
+
+Upon construction of the \texttt{BailoutTrigger}, the Fact Layer immediately enforces a \textit{hard block} on all physical actuator commands originating from the affected node. This hard block is not conditional on confidence thresholds, elapsed time, or the severity of the proposed action. It is a deterministic, binary enforcement: actuator commands are blocked or they are not. The hard block persists until the Bailout Protocol reaches the \texttt{resolved} state.
+
+The propagation chain follows the system hierarchy upward: the \texttt{BailoutTrigger} is forwarded to the parent node, which evaluates whether it is a Purpose Layer anchor. If the parent is a Purpose Layer anchor (a human-owned node with no further parent), the trigger arrives at the human accountability anchor and enters the \texttt{human\_review} state. If the parent is not a Purpose Layer anchor, the parent Bounds Engine evaluates the trigger and, if it cannot resolve it, re-fires the Bailout Protocol upward to its own parent. This upward propagation continues without exception until the trigger reaches a human anchor. No machine actor in this chain has the authority to absorb or override the trigger.
+
+The propagation chain is not a fallback chain. It is a structural guarantee: the bailout must reach a human, and it will continue propagating until it does. This eliminates the failure mode in which an intermediate machine actor silently absorbs an exception rather than escalating it, a failure mode that is among the most consequential and least monitored in conventional autonomous systems.
+
+\subsection{The Fact Layer Enforcing Audit Trail and Hard Block}
+\label{sec:fact-layer-audit}
+
+The Fact Layer performs two distinct enforcement functions in the Bailout Protocol: it maintains the hard block on physical actuator commands, and it operates the Forensic Ledger that creates a tamper-evident, append-only record of every bailout event across all three planes.
+
+The Fact Layer's hard block enforcement operates at the physical layer. When the Bounds Engine fires a \texttt{BailoutTrigger}, the Fact Layer receives the trigger event and immediately updates its enforcement state for the affected node: all physical actuator commands are denied at the Fact Layer, regardless of whether the Bounds Engine has issued an approval. This is a deterministic enforcement rule, not a policy that can be adjusted by a Bounds Engine or by any agent operating at a lower layer. The Fact Layer does not evaluate whether the block is warranted; it enforces the block because the block has been triggered.
+
+The Forensic Ledger maintained by the Fact Layer records every Bailout Protocol event across three simultaneous planes:
+
+\begin{enumerate}
+\item \textbf{Purpose Plane.} Records what was authorized, by whom, under what constraint specification, and for what operational scope at the time of the trigger. This plane establishes the chain of legitimate delegation from the human accountability anchor to the node that fired the bailout.
+\item \textbf{Bounds Engine Plane.} Records what action was proposed, what constraint conflict or violation triggered the bailout, what reasoning the Bounds Engine applied before firing, and what the projected consequence was of the blocked action.
+\item \textbf{Fact Plane.} Records what physical command was hard-blocked, at what timestamp, on which actuator interface, and what the Fact Layer enforcement outcome was. This plane provides the definitive record that physical action did not occur.
+\end{enumerate}
+
+Each ledger entry is sealed with a SHA-256 hash that chains to the preceding entry, creating an immutable, tamper-evident record verifiable independently by any party with access to the ledger. Modifying a prior ledger entry breaks the hash chain at the point of modification and is detectable by any verifier performing a chain-integrity check. The three-plane structure satisfies audit requirements for regulated environments --- in agricultural autonomous systems, for example, it provides the evidentiary standard required for water usage reporting and regulatory compliance, demonstrating that every autonomous action was under continuous human accountability control.
+
+The Fact Layer does not merely log bailout events; it enforces the state machine transitions that govern the Bailout Protocol lifecycle. The state machine is defined in the Fact Layer as a set of deterministic transition rules, each mapping a current state and an event to a new state. This is discussed in detail in the following section.
+
+\subsection{The Bailout Protocol as Runtime Expression of the Upstream Accountability Guarantee}
+\label{sec:runtime-expression}
+
+The upstream accountability guarantee --- that systems built on the BX3 Framework fail upward into human consciousness and never downward into algorithmic chaos --- is a structural property of the framework. It is guaranteed by the layer architecture: the Purpose Layer is the only permissible terminal state for unresolved exceptions, enforced by the Fact Layer hard block and the Bounds Engine's trigger conditions. The Bailout Protocol is the runtime mechanism by which this guarantee is effectuated in real-time execution.
+
+To see why this distinction matters, consider the contrast with conventional autonomous systems. In a conventional system, human oversight is typically implemented as a supervisory layer that monitors agent outputs and can intervene on detecting a problem. The intervention is available, but the autonomous pipeline continues until a threshold is crossed. This creates two failure modes that BX3 eliminates. First, the system can fail dangerously while awaiting threshold crossing if the threshold is miscalibrated or the failure mode was unanticipated. Second, human oversight in the conventional model is reactive rather than mandatory: it depends on a human noticing a problem in time to intervene, with all the attentional and cognitive limitations that entails.
+
+The BX3 upstream accountability guarantee eliminates both failure modes by making human oversight the \textit{mandatory terminal state of every unresolvable condition}, not an optional intervention layer. The Bailout Protocol fires when the Bounds Engine identifies a condition it cannot resolve, not when a human notices a problem. The human does not need to be monitoring the system continuously; the system is structured so that it cannot proceed past the bailout without human authorization.
+
+This is the sense in which the Bailout Protocol is the \textit{runtime expression} of the upstream accountability guarantee. The guarantee is a static architectural commitment: human accountability is the terminal state. The Bailout Protocol is the dynamic mechanism that enacts that commitment in real time, at every node, for every unresolvable condition, without exception. The guarantee is the principle; the Bailout Protocol is the enforcement mechanism.
+
+The runtime expression must satisfy three criteria to fulfill the guarantee properly. First, it must fire deterministically: given the same constraint state and system inputs, the same trigger condition either fires or does not fire, with no probabilistic component. Second, it must propagate without absorption: the trigger must travel upward through the hierarchy without being absorbed, overridden, or silently dropped by any intermediate machine actor. Third, it must reach a human terminal state within a bounded time that is acceptable for the operational context of the system. The BX3 Framework satisfies all three criteria through the combination of the Bounds Engine trigger conditions, the Fact Layer enforcement of propagation integrity, and the structural designation of Purpose Layer nodes as the mandatory terminal state.
+
+\subsection{The State Machine as a Fact Layer Extension}
+\label{sec:state-machine}
+
+The Bailout Protocol operates as a state machine whose states and transitions are hard-encoded in the Fact Layer. The Fact Layer does not merely enforce the output of the Bailout Protocol; it defines the protocol's state machine itself. This is a critical architectural commitment: the state transitions of the Bailout Protocol are deterministic, not probabilistic, and are enforced by the same mechanism that enforces all Fact Layer constraints.
+
+The Bailout Protocol state machine defines the following states:
+
+\begin{enumerate}
+\item \textbf{\texttt{idle}:} The default state of a node's Bailout Protocol. No trigger is active. The Bounds Engine operates normally within its constraint set.
+\item \textbf{\texttt{fired}:} A trigger condition has been detected. The Bounds Engine has fired a \texttt{BailoutTrigger} and construction of the diagnostic context has begun. All physical actuator commands from the affected node are hard-blocked by the Fact Layer.
+\item \textbf{\texttt{escalating}:} The \texttt{BailoutTrigger} has been dispatched to the parent node in the propagation chain. The trigger is in transit. The Fact Layer maintains the hard block on the originating node.
+\item \textbf{\texttt{human\_review}:} The \texttt{BailoutTrigger} has arrived at the Purpose Layer human anchor. The Purpose Layer owner has the diagnostic context and is actively reviewing the bailout. The hard block remains in effect.
+\item \textbf{\texttt{resolved}:} The Purpose Layer owner has issued a resolution. The Fact Layer records the resolution in the Forensic Ledger, releases the hard block, and the system transitions back to \texttt{idle}.
+\end{enumerate}
+
+Transitions between states are triggered by events, not by timers or confidence thresholds:
+
+\begin{itemize}
+\item $\texttt{idle} \rightarrow \texttt{fired}$: Occurs when the Bounds Engine detects a trigger condition as defined in Section~\ref{sec:bounds-triggering}. This transition is deterministic: given the same constraint state and system inputs, the same transition either fires or does not fire. There is no probabilistic component.
+\item $\texttt{fired} \rightarrow \texttt{escalating}$: Occurs immediately upon completion of diagnostic context construction. The \texttt{BailoutTrigger} is dispatched to the parent node in the propagation chain.
+\item $\texttt{escalating} \rightarrow \texttt{human\_review}$: Occurs when the parent node receives the \texttt{BailoutTrigger} and determines that it is the Purpose Layer anchor --- that the parent node has no parent and is designated as a human root. If the parent node is not the Purpose Layer anchor, the transition is $\texttt{escalating} \rightarrow \texttt{escalating}$ (re-dispatch to the next parent), continuing until the trigger reaches a human anchor.
+\item $\texttt{human\_review} \rightarrow \texttt{resolved}$: Occurs when the Purpose Layer owner issues a resolution. The Fact Layer records the resolution and releases the hard block.
+\end{itemize}
+
+The Fact Layer enforces these transitions as deterministic state machine rules. A transition that is not explicitly authorized by the state machine definition cannot occur. For example, there is no transition from $\texttt{fired}$ directly to $\texttt{resolved}$ --- the Fact Layer will not accept a resolution from a machine actor at the $\texttt{fired}$ state, because the state machine defines that only the Purpose Layer owner at $\texttt{human\_review}$ may issue a resolution. This eliminates the failure mode in which a machine actor with a high-confidence fallback attempts to override a bailout and resolve the state autonomously.
+
+The state machine is designed to be monotonic with respect to the hard block: the block is applied at $\texttt{fired}$ and is not released until $\texttt{resolved}$. There is no state in which the hard block is conditionally applied based on confidence or elapsed time. This monotonicity property is what makes the Bailout Protocol a reliable safety mechanism rather than a configurable policy that can be inadvertently disabled or weakened.
+
+The Fact Layer maintains the state machine for every active \texttt{BailoutTrigger} across the entire system topology. This enables the framework to support recursive spawning patterns in which child nodes inherit the Bailout Protocol state machine from their parent, with the same states, transitions, and enforcement rules. The protocol is thus not a single-instance mechanism but a replicated, per-node state machine that propagates upward through the hierarchy when triggered.
+
+The combination of the state machine specification in the Fact Layer, the hard block on actuator commands, the three-plane Forensic Ledger, and the Bounds Engine trigger conditions constitutes a complete, architecturally enforced implementation of the Bailout Protocol. The guarantee is not maintained by convention, by operational policy, or by the reliability of any individual component. It is maintained by the layer architecture itself, enforced at the Fact Layer, and triggered by the Bounds Engine's boundary conditions of authority. The system fails upward, without exception, and with a complete forensic record.

@@ -16,7 +16,6 @@
 ---
 
 ## Procurement Scope
-
 - Corporate software subscriptions (SaaS tools, cloud services)
 - Hardware components and manufacturing (Irrig8 parts, electronics)
 - Professional services (lawyers, accountants, consultants, contractors)
@@ -43,98 +42,101 @@
 
 ---
 
-## Today's Standup — 2026-04-17
+## Procurement Standup — 2026-04-28 08:15 AM MT
 
-### Since Last Standup (2026-04-16)
-- **Sage VPC deal:** 23+ days stale — Drew INBOX confirms docs with Sage since 2026-03-24, mark-up due 2026-03-27. Escalated 3 consecutive days — no resolution. Escalating to Balance/Atlas today.
-- **G2E 2026:** P1 from 2026-04-09 — booth unconfirmed + demo hardware unsourced. Event now overdue from original 5-day window. Re-flagging to Atlas.
-- **AP aging:** Ledger has not delivered AP data across 6 days. Escalating to Balance.
-- **Vendor inventory:** Zero dept responses across 6 days. Atlas re-escalated.
-- **SaaS audit:** Not started. Cash conservation mode means no new subscriptions anyway.
+### ⚠️ 4-Day Standup Gap — All Outstanding Items Preserved
 
-### Status Summary
+**Last standup: 2026-04-24. This standup covers 04-25, 04-26, 04-27, 04-28.**
 
-| Category | Status | Notes |
-|----------|--------|-------|
-| Vendor Registry | 🟡 Sparse | 0 active, 0 prospective — dept intake at zero |
-| Active POs | 🔴 Unknown | Ledger AP aging 6+ days overdue |
-| Contracts | 🔴 Unknown | Raj contract queue 6+ days overdue |
-| SaaS Subscriptions | 🔴 Unaudited | Zo, Stripe, Linear, Notion, Airtable — no spend audit |
-| Hardware/Vendor POs | 🔴 Unknown | Need intake from Iris/Dev |
-| Insurance | 🟢 On radar | Anchor coordinating |
-| Corporate Card | 🔴 Unknown | Ledger AP data overdue |
+### 🔴 Critical Overdue — Deadlines All Missed
 
-### Today's Actions
+**irrig8 farmer introductions — HARD DEADLINE MISSED (4 days):**
+- Original deadline: 2026-04-24 EOD → Extended to 04-25 EOD → **Still 4 days overdue.**
+- 21+ days non-responsive from irrig8.
+- Impact: Irrig8 acquisition pipeline zero. SLV rollout slipped to minimum 2026-05-06.
 
-| Priority | Action | Owner | Deadline |
-|----------|--------|-------|----------|
-| P1 | Escalate Sage VPC to Balance/Atlas — 23+ days stale, 3 prior escalations failed | Purchase → Balance/Atlas | 2026-04-17 10:00 AM |
-| P1 | Escalate G2E booth/hardware status to Atlas — original P1 was 8 days ago | Purchase → Atlas | 2026-04-17 10:00 AM |
-| P2 | Re-escalate Ledger AP aging to Balance — 6 days non-response | Purchase → Balance | 2026-04-17 EOD |
-| P3 | Maintain vendor intake request template | Purchase | 2026-04-17 EOD |
-| P3 | Begin Zo/SaaS subscription spend baseline | Purchase | 2026-04-17 EOD |
+**G2E 2026 closeout — 13+ days overdue:**
+- Event: 2026-04-15. Hardware return + inventory still unverified.
+- Source/Shelf owned. Deadline 2026-04-22 EOD.
 
-### Blockers
+**VPC WY LLC formation — 6+ days overdue:**
+- P0 from war room 2026-04-21. ~$2,600 for bonds + filing.
+- T1 affiliate program 100% blocked.
 
-| Blocker | Impact | Owner | Days Open |
-|---------|--------|-------|-----------|
-| Sage VPC legal docs | $2,500 cash + equity deal dead; VPC pipeline at risk | Drew | 23+ days |
-| G2E booth/hardware unconfirmed | Trade show presence at risk; demo hardware unsourced | Atlas | 8+ days |
-| No AP aging data from Ledger | PO tracking + cash visibility blocked | Ledger/Recon | 6 days |
-| No contract queue from Legal | Vendor onboarding stalled | Raj | 6 days |
-| No vendor inventory from depts | Registry + spend benchmarking impossible | All depts | 6 days |
+**Drew reassignment — missed:**
+- 13+ days unresponsive. Sage VPC + WY LLC both stalled.
+- brodiblanco directed decision on 2026-04-24. No confirmed reassignment logged.
 
-### Cash Conservation
+### 🔴 Grants — 4 Deadlines Within 2–3 Days
 
-⚠️ **~1 week runway. $400K bridge needed by July 1.** No non-essential procurement. All purchases require P2+ approval from Balance or Atlas.
+| Grant | Deadline | Days Left |
+|-------|----------|-----------|
+| ARPA-E OPEN 2026 | 2026-05-01 | 3 days |
+| CIG Colorado LOI | 2026-04-30 | 2 days |
+| USDA SBIR Phase I | 2026-04-30 | 2 days |
+| USDA REAP | 2026-04-30 | 2 days |
 
----
+### 🟡 Pending Verification
 
-## Today's Standup — 2026-04-15
+**Sage VPC deal:** Event fired 2026-04-24. Verbal confirmation 4 days overdue. Atlas.
 
-### Since Last Standup (2026-04-14)
-- **Sage VPC deal:** Drew still on legal docs — 13 days stale. Escalating to Balance/Atlas if unresolved today.
-- **G2E 2026:** Booth/hardware gap flagged to Atlas — no resolution yet.
-- **AP aging data:** Ledger unresponsive across 5 days. Escalating to Balance as org-level issue.
-- **Vendor inventory:** No dept responses. Atlas re-escalated. Purchase cannot build registry without dept input.
-- **SaaS audit:** Not started. Cash conservation mode means no new subscriptions anyway.
+**CIG Colorado LOI:** Event fired 2026-04-24. Details (amount + NRCS confirmation #) 4 days overdue. Maya/Casey.
+
+**ABT-006 T3 commission:** Harvest initiates outreach. Due 2026-04-25. Status unknown.
 
 ### Status Summary
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Vendor Registry | 🟡 Sparse | 0 active, 0 prospective — dept intake at zero |
-| Active POs | 🟡 Unknown | Ledger AP aging 5+ days overdue |
-| Contracts | 🟡 Unknown | Raj contract queue 5+ days overdue |
-| SaaS Subscriptions | 🟡 Unaudited | Zo, Stripe, Linear, Notion, Airtable — no spend audit |
-| Hardware/Vendor POs | 🔴 Unknown | Need intake from Iris/Dev |
-| Insurance | 🟢 On radar | Anchor coordinating |
-| Corporate Card | 🟡 Unknown | Ledger AP data overdue |
+| irrig8 farmer introductions | 🔴 MISSED | 21+ days non-responsive; 4 days past hard deadline |
+| VPC WY LLC | 🔴 BLOCKED | ~$2,600 — P0, affiliate program dead |
+| G2E 2026 closeout | 🔴 13+ DAYS OVERDUE | Hardware/assets unverified since 04-15 |
+| Drew reassignment | 🔴 MISSED | 13+ days unresponsive; no confirmed decision |
+| Sage VPC deal | 🟡 VERIFY | Event fired 04-24; verbal confirmation 4 days overdue |
+| CIG Colorado LOI | 🟡 VERIFY | Event fired 04-24; details 4 days overdue |
+| ARPA-E / Grants | 🔴 2–3 DAYS | 4 grants deadlines this week |
+| Vendor Registry | 🔴 EMPTY | 0 active, 0 prospective |
+| Active POs | 🔴 UNKNOWN | Ledger AP aging 17+ days overdue |
+| Contracts | 🔴 UNKNOWN | Raj contract queue 17+ days overdue |
+| SaaS Subscriptions | 🔴 UNAUDITED | Zo, Stripe, Linear, Notion, Airtable |
+| Hardware/Vendor POs | 🔴 UNKNOWN | Need intake from Iris/Dev |
+| Insurance | 🟢 ON RADAR | Anchor coordinating |
 
 ### Today's Actions
 
 | Priority | Action | Owner | Deadline |
 |----------|--------|-------|----------|
-| P1 | Chase Drew on Sage VPC — 13 days stale on legal docs | Purchase → Drew | 2026-04-15 EOD |
-| P1 | Escalate AP aging / Ledger non-response to Balance | Purchase → Balance | 2026-04-15 EOD |
-| P2 | Re-flag G2E booth/hardware gap to Atlas | Purchase → Atlas | 2026-04-15 10:00 AM |
-| P2 | Push vendor intake to Atlas for dept lead broadcast | Purchase → Atlas | 2026-04-15 10:00 AM |
-| P3 | Maintain vendor intake request template | Purchase | 2026-04-15 EOD |
-| P3 | Begin Zo/SaaS subscription spend baseline | Purchase | 2026-04-15 EOD |
+| P0 | irrig8 farmer introductions — 4 days past hard deadline | irrig8 → brodiblanco | 2026-04-28 EOD |
+| P0 | VPC WY LLC formation — ~$2,600 approval needed | brodiblanco | 2026-04-28 EOD |
+| P0 | Drew reassignment — delegate to Bridge OR close dead | brodiblanco | 2026-04-28 EOD |
+| P1 | Sage VPC verbal confirmation | Atlas → Purchase | 2026-04-28 EOD |
+| P1 | CIG Colorado LOI details — amount + NRCS confirmation # | Maya/Casey → Purchase | 2026-04-28 EOD |
+| P1 | G2E 2026 closeout — hardware return + inventory | Source/Shelf → Purchase | 2026-04-28 EOD |
+| P1 | ABT-006 T3 outreach status | harvest → Purchase | 2026-04-28 EOD |
+| P1 | ARPA-E OPEN 2026 narrative | Maya | 2026-04-28 EOD |
+| P1 | Grants sprint — CIG CO, USDA SBIR, USDA REAP | Casey/Maya | 2026-04-28 EOD |
+| P2 | Re-escalate Ledger AP aging to Balance — 17+ days | Purchase → Balance | 2026-04-28 EOD |
+| P2 | Re-escalate contract queue to Raj — 17+ days | Purchase → Raj | 2026-04-28 EOD |
+| P3 | Begin Zo/SaaS subscription spend baseline | Purchase | 2026-04-28 |
+| P3 | Issue vendor intake broadcast to all departments | Purchase | 2026-04-28 |
 
 ### Blockers
 
 | Blocker | Impact | Owner | Days Open |
 |---------|--------|-------|-----------|
-| No AP aging data from Ledger | PO tracking + cash visibility blocked | Ledger/Recon | 5+ days |
-| No contract queue from Legal | Vendor onboarding stalled | Raj | 5+ days |
-| No vendor inventory from depts | Registry + spend benchmarking dead | All depts | 5+ days |
-| G2E booth/hardware unconfirmed | Trade show presence at risk | Atlas | 1+ days |
+| irrig8 farmer non-response | Farmer interviews blocked; SLV rollout slipped to 2026-05-06+ | irrig8 | 21+ days |
+| VPC WY LLC formation | T1 affiliate program 100% blocked; ~$2,600 needed | brodiblanco | P0 |
+| Drew unresponsiveness | Sage VPC + WY LLC + all Drew procurement items stalled | Drew | 13+ days |
+| G2E post-event closeout | Hardware/assets cannot be reconciled | Source/Shelf | 13+ days |
+| No AP aging data from Ledger | PO tracking + cash visibility blocked | Ledger/Recon | 17+ days |
+| No contract queue from Legal | Vendor onboarding stalled | Raj | 17+ days |
+| No vendor inventory from depts | Registry + spend benchmarking impossible | All depts | 17+ days |
+| Grants deadlines | 4 grants within 2–3 days | Maya/Casey | Active |
 
 ### Cash Conservation
 
-⚠️ **~1 week runway. $400K bridge needed by July 1.** No non-essential procurement. All purchases require P2+ approval from Balance or Atlas.
+⚠️ **~$130K on hand. ~1 week runway. $387,500 bridge gap.** No non-essential procurement. All purchases require P2+ approval from Balance or Atlas. All vendor onboarding paused until funding secured.
 
 ---
 
-*Last Updated: 2026-04-17 08:15 AM MT*
+*Last Updated: 2026-04-28 08:15 AM MT*

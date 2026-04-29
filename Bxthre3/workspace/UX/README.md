@@ -8,10 +8,11 @@
 ## Overview
 
 This repository holds all UX research artifacts for Bxthre3 ventures:
-- Irrig8 (agriculture OS)
-- Starting 5 (AI co-founders SaaS)
-- Valley Players Club (sweepstakes gaming)
-- Zoe / Agentic (AI workforce orchestration)
+- **Irrig8** (precision agriculture OS)
+- **Starting 5** (AI co-founders SaaS)
+- **Valley Players Club** (sweepstakes gaming)
+- **Zoe / Agentic** (AI workforce orchestration)
+- **AgentOS** (platform)
 
 ---
 
@@ -33,20 +34,32 @@ UX/
 
 | Venture | Method | Status | Next Milestone |
 |---------|--------|--------|----------------|
-| Irrig8 | Farmer interviews | 🟡 Script ready, interviews pending candidate introductions | First interviews 2026-04-22 |
-| Agentic | Heuristic evaluation | ✅ Complete | Dashboard fix in progress |
-| Starting 5 | Product definition needed | 🔴 Blocked | Awaiting Roadmap brief |
-| VPC | Player research | 🔴 Blocked | Awaiting compliance resolution |
+| Irrig8 | Farmer interviews | 🔴 Blocked — no farmer introductions (20 days) | Awaiting brodiblanco path decision |
+| Agentic | Heuristic evaluation | ⚠️ CRITICAL — both deadlines missed (20 days) | Dashboard fixes pending (14 days) |
+| VPC | Player research | 🟢 Ready to execute — compliance cleared | KYC flow review + competitive analysis |
+| Starting 5 | Product definition needed | 🔴 Blocked — no brief from Roadmap (19 days) | Awaiting Roadmap input |
 
 ---
 
-## Deliverables
+## Verified Deliverables
 
-| Deliverable | Version | Date | Status |
-|-------------|---------|------|--------|
-| Irrig8 Farmer Persona v1 | 1.0 | 2026-04-16 | ✅ Created |
-| Weekly Research Insights Brief #1 | 001 | 2026-04-16 | ✅ Created |
-| AOS Dashboard Heuristic Evaluation | 1.0 | 2026-04-08 | ✅ Complete — 26/50 (POOR) |
+| Deliverable | File | Date | Status |
+|-------------|------|------|--------|
+| Irrig8 Farmer Persona v1 | `UX/personas/IRRIG8_FARMER_PERSONA_V1.md` | 2026-04-16 | ✅ Verified 2026-04-22 |
+| Weekly Research Insights Brief #1 | `UX/insights-briefs/UX_RESEARCH_INSIGHTS_BRIEF_001_2026-04-16.md` | 2026-04-16 | ✅ Verified 2026-04-22 |
+| AOS Dashboard Heuristic Evaluation | `UX/usability-tests/AOS_DASHBOARD_HEURISTIC_EVALUATION.md` | 2026-04-08 | ✅ Verified — 26/50 (POOR) |
+
+---
+
+## AOS Dashboard Findings (Unresolved)
+
+| Finding | Severity | Days Open | Owner |
+|---------|----------|-----------|-------|
+| Agent initials (T, M, I, D, T) — zero recognition | HIGH | 14 | Palette / Engineering |
+| No escalation resolution path visible | HIGH | 14 | Engineering |
+| No onboarding flow | MED | 14 | Engineering |
+
+**Escalation:** P2 to Palette — Fix commitment needed by 2026-04-25.
 
 ---
 
@@ -54,9 +67,12 @@ UX/
 
 | Asset | Location | Notes |
 |-------|----------|-------|
-| FARMER_INTERVIEW_SCRIPT.md | `the-irrig8-project/docs/` | Pre-existing interview protocol (2026-03-19) |
-| MASTER_MANUAL.md | `the-irrig8-project/docs/md/` | System documentation (2026-03-14) |
-| AOS Dashboard Heuristic Evaluation | `UX/usability-tests/AOS_DASHBOARD_HEURISTIC_EVALUATION.md` | 26/50 — critical findings documented |
+| Farmer Interview Script | `the-irrig8-project/docs/FARMER_INTERVIEW_SCRIPT.md` | Pre-existing protocol (2026-03-19) |
+| Master Manual | `the-irrig8-project/docs/md/MASTER_MANUAL.md` | System documentation (2026-03-14) |
+| AOS Heuristic Evaluation | `UX/usability-tests/AOS_DASHBOARD_HEURISTIC_EVALUATION.md` | 26/50 — critical findings |
+| Farmer Persona v1 | `UX/personas/IRRIG8_FARMER_PERSONA_V1.md` | Draft — pending validation |
+| Insights Brief #1 | `UX/insights-briefs/UX_RESEARCH_INSIGHTS_BRIEF_001_2026-04-16.md` | Week 2026-04-08–04-14 |
+| Insights Brief #2 | `UX/insights-briefs/UX_RESEARCH_INSIGHTS_BRIEF_002_2026-04-28.md` | IN PROGRESS |
 
 ---
 
@@ -64,10 +80,28 @@ UX/
 
 | Blocker | Owner | Days Active | Impact |
 |---------|-------|-------------|--------|
-| Farmer interview introductions | irrig8 / brodiblanco | 9 days | Irrig8 interviews cannot proceed |
-| Starting 5 product definition | Roadmap | 9 days | Founder interviews blocked |
-| VPC compliance resolution | VPC / Rain | 9 days | Player research blocked |
+| Farmer interview introductions | irrig8 / brodiblanco | **20 days** | Irrig8 research cannot proceed |
+| AOS Dashboard — agent initials | Palette / Engineering | **20 days** | HIGH severity, deadline missed |
+| AOS Dashboard — no escalation path | Palette / Engineering | **20 days** | HIGH severity, deadline missed |
+| Starting 5 product definition | Roadmap | **19 days** | Founder interviews blocked |
+| VPC product walkthrough | VPC Agent | **19 days** | Player research limited |
 
 ---
 
-*Last Updated: 2026-04-16 by Lens*
+## Standup History
+
+| Date | File |
+|------|------|
+| 2026-04-28 | `INBOX/departments/ux-research-standup-2026-04-28.md` |
+| 2026-04-27 | `INBOX/departments/ux-research-standup-2026-04-27.md` |
+| 2026-04-22 | `INBOX/departments/ux-research-standup-2026-04-22.md` |
+| 2026-04-16 | `INBOX/departments/ux-research-standup-2026-04-16.md` |
+| 2026-04-14 | `INBOX/departments/ux-research-standup-2026-04-14.md` |
+| 2026-04-11 | `INBOX/departments/ux-research-standup-2026-04-11.md` |
+| 2026-04-10 | `INBOX/departments/ux-research-standup-2026-04-10.md` |
+| 2026-04-09 | `INBOX/departments/ux-research-standup-2026-04-09.md` |
+| 2026-04-08 | `INBOX/departments/ux-research-standup-2026-04-08.md` |
+
+---
+
+*Last Updated: 2026-04-28 by Lens | Next Brief: 2026-05-01*

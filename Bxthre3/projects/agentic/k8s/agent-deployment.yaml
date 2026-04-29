@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-worker
+  namespace: agent-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: agent-worker
+  template:
+    metadata:
+      labels:
+        app: agent-worker
+    spec:
+      containers:
+      - name: agent
+        image: agent-image:latest
+        envFrom:
+        - configMapRef:
+            name: agent-config
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agent-worker-hpa
+  namespace: agent-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: agent-worker
+  minReplicas: 2
+  maxReplicas: 100
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+version: 1.0.0
+version: 1.0.0

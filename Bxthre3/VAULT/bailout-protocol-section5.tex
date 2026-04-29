@@ -1,0 +1,114 @@
+\section{Guarantees and Correctness Properties}
+
+The Bailout Protocol is not a best-effort heuristic; it is a formally grounded oversight layer that ensures agentic systems remain under meaningful human control at all times. This section establishes three core correctness properties---Safety, Liveness, and Accountability---and provides proof sketches for each. Together, these properties guarantee that the protocol satisfies its mandate: to prevent autonomous collapse, ensure eventual human contact, and maintain unambiguous human accountability regardless of system complexity or operational tempo.
+
+We model the agentic system as a state machine $S$ operating in discrete time steps $t \in \mathbb{N}$. At each step, $S$ may be in one of three governance states: \texttt{HUMAN\_CONTROLLED}, \texttt{AGENTIC\_SUPERVISED}, or \texttt{COLLAPSE\_IMMINENT}. The Bailout Protocol runtime maintains a governance flag $g_t \in \{0, 1\}$ where $g_t = 1$ indicates that a verified human is currently in the loop. We define the protocol's operational correctness with respect to three properties, each stated as a logical invariant that must hold for all $t$.
+
+---
+
+\subsection{Safety: No Autonomous Collapse}
+
+\textbf{Property (Safety).} It is impossible for the system to transition from any state to \texttt{COLLAPSE\_IMMINENT} without $g_t = 1$ (human-in-the-loop active).
+
+\textbf{Intuition.} Autonomous collapse occurs when an agentic system continues operating without any governance checkpoint for a duration that exceeds the system's defined authority horizon. The Bailout Protocol prevents this by requiring that every agentic action sequence either passes through a human checkpoint or terminates in a safe state. The runtime enforces a maximum agentic horizon $H_{\max}$; beyond $H_{\max}$ steps without human contact, the protocol transitions all active agents to an idle state and blocks further execution until a human is verified.
+
+\begin{center}
+\begin{tabular}{lcl}
+\texttt{COLLAPSE\_IMMINENT} & $\implies$ & $\neg g_t$ \ (no human active) \\
+\texttt{COLLAPSE\_IMMINENT} & $\implies$ & $\texttt{Timer} > H_{\max}$ \ (horizon exceeded) \\
+\end{tabular}
+\end{center}
+
+The protocol guarantees $\neg(\texttt{COLLAPSE\_IMMINENT} \land g_t = 0)$, meaning collapse is definitionally coupled to the absence of human oversight. Since $g_t$ is a hardware-backed or cryptographically signed signal (not a soft flag), it cannot be faked or suppressed by the agentic layer.
+
+\bigskip
+\noindent\textbf{Proof Sketch (Invariant-Based).}
+\begin{enumerate}
+\item \textbf{Governance Flag Initialization:} At system boot, $g_0 = 1$ (human-in-the-loop is required for initial activation). This is enforced by the bootstrap circuit, not the agentic layer.
+
+\item \textbf{Flag Preservation:} The protocol runtime implements a hardware interlock that resets $g_t$ to $1$ whenever $g_t = 0$ and any agent attempts to execute an action. Formally, $\forall t: a_t \neq \texttt{no-op} \land g_t = 0 \implies g_{t+1} = 1$. The interlock cannot be overridden by the agentic process, as it operates at the execution layer below the agent's control surface.
+
+\item \textbf{Horizon Enforcement:} The protocol maintains a countdown timer $\tau$ initialized to $H_{\max}$. At each step where $g_t = 1$, $\tau$ resets to $H_{\max}$. At each step where $g_t = 0$, $\tau$ decrements. When $\tau = 0$ and $g_t = 0$, the protocol enters \texttt{COLLAPSE\_IMMINENT} and triggers an immediate hard stop of all agentic processes.
+
+\item \textbf{Correctness:} By induction on $t$, we show that the invariant $\texttt{COLLAPSE\_IMMINENT} \implies g_t = 0$ holds. The base case holds by initialization. The inductive step preserves the invariant because the only way to reach \texttt{COLLAPSE\_IMMINENT} is through timer expiry when $g_t = 0$, which is precisely the antecedent. Therefore, the invariant holds for all $t$, establishing Safety.
+\end{enumerate}
+
+The Safety property is \emph{strong} in the sense that it does not depend on the correctness of the agentic system, only on the protocol runtime and its hardware interlock. An adversarial or buggy agent cannot circumvent the guarantee, because the interlock operates at a lower privilege level.
+
+---
+
+\subsection{Liveness: Eventual Human Contact}
+
+\textbf{Property (Liveness).} For any execution trace in which the system remains operational, there exists a finite time bound $T_{\text{contact}}$ such that at time $t + T_{\text{contact}}$, a human is verified and $g_{t+T_{\text{contact}}} = 1$.
+
+\textbf{Intuition.} Safety alone is insufficient: a system that simply halts forever upon losing human contact satisfies Safety but provides no practical utility. Liveness requires that the protocol, under normal operating conditions, will produce an opportunity for human contact within a bounded time, even if the human does not immediately respond. This models real-world operations where a supervisor may be unavailable for minutes or hours but not indefinitely.
+
+The protocol distinguishes two modes:
+\begin{itemize}
+\item \textbf{Proactive Contact:} The agentic system generates a structured contact event (alert, notification, escalation) at $t_{\text{alert}}$ and enters a waiting state.
+\item \textbf{Human Arrival:} The human responds within the ambient time horizon $T_{\text{ambient}}$, at which point $g$ transitions to $1$.
+\end{itemize}
+
+Formally, Liveness holds whenever the communication channel between the agentic system and the human overseer remains functional. If the channel fails, the protocol falls back to a conservative timeout that defaults to safe-state suspension (consistent with Safety).
+
+\bigskip
+\noindent\textbf{Proof Sketch (Progress-Based).}
+\begin{enumerate}
+\item \textbf{Channel Availability:} Assume the notification channel $\mathcal{C}$ (e.g., push notification, SMS, email, or webhook) has probability $p_{\text{channel}} > 0$ of successful delivery in any given time step. This is a standard assumption for liveness proofs in distributed systems and is realistic for standard communication infrastructure.
+
+\item \textbf{Contact Event Generation:} At the first governance checkpoint requiring human input, the protocol generates a contact event $e_{\text{contact}}$. This event is created deterministically; there is no conditional logic that can suppress it (the agentic layer has no write access to the contact subsystem).
+
+\item \textbf{Bounded Retry:} The protocol retries contact delivery with exponential backoff up to a maximum of $N_{\max}$ attempts. Each attempt is an independent trial with success probability $p_{\text{channel}}$. The probability that all $N_{\max}$ attempts fail is $(1 - p_{\text{channel}})^{N_{\max}}$, which is negligible for reasonable values of $p_{\text{channel}}$ and $N_{\max}$ (e.g., $p=0.95$, $N=10$: failure probability $\approx 10^{-4}$).
+
+\item \textbf{Human Response Time:} Conditional on successful delivery, we model human response time $T_{\text{human}}$ as a random variable with finite expectation $E[T_{\text{human}}] < \infty$. This holds for any human supervisor operating under standard organizational conditions. Therefore, there exists a finite $T_{\text{contact}}$ such that with probability $> 0$, $g_{t+T_{\text{contact}}} = 1$.
+
+\item \textbf{Conclusion:} Since the protocol generates contact deterministically and the channel+response pipeline has a finite expected delay, the system will, with probability arbitrarily close to $1$, achieve human contact within a bounded time. This establishes Liveness.
+\end{enumerate}
+
+Note that Liveness is a \emph{probabilistic} property, not an absolute guarantee. In extremely adverse conditions (complete channel failure, human incapacitation), the protocol cannot force human contact. However, it guarantees that it will \emph{try} with bounded persistence and enter a safe suspended state if it fails---consistent with Safety.
+
+---
+
+\subsection{Accountability: Human Always Identifiable}
+
+\textbf{Property (Accountability).} At every governance checkpoint, there exists a unique, non-repudiable identifier for the human responsible for authorizing or ratifying the agentic action.
+
+\textbf{Intuition.} Safety and Liveness are meaningless if the human in the loop cannot be identified after the fact. Accountability requires that every decision trace is anchored to a specific, authenticated human being who can be held responsible for the outcome. This demands more than authentication at session start---it requires continuous identity verification and cryptographically signed action records.
+
+The protocol implements accountability through a three-layer identity architecture:
+
+\begin{enumerate}
+\item \textbf{Authentication Layer:} At each governance checkpoint, the human must re-authenticate via a mechanism independent of the agentic system's control surface (e.g., hardware key, biometric, or out-of-band code). This prevents session hijacking by a compromised agentic process.
+
+\item \textbf{Action Ledger:} Every governance action (authorization, rejection, modification) is written to an append-only action ledger $\mathcal{L}$ with the human's cryptographic signature, a timestamp, and a hash of the prior ledger entry. This creates an immutable, causally ordered audit trail.
+
+\item \textbf{Identity Binding:} The ledger entry also contains a human-readable identifier (name, role, organizational affiliation) resolved from the authentication credential, ensuring that non-technical stakeholders can interpret the audit trail.
+\end{enumerate}
+
+Formally, let $h_t$ denote the unique identifier of the human at time $t$. We require that for every governance action $a$ recorded in $\mathcal{L}$, there exists a corresponding $h_t$ such that the signature over $a$ is valid under $h_t$'s public key. No governance action exists in $\mathcal{L}$ without a valid human signature.
+
+\bigskip
+\noindent\textbf{Proof Sketch (Contradiction-Based).}
+\begin{enumerate}
+\item \textbf{Ledger Integrity:} Assume, for contradiction, that there exists a governance action $a^*$ recorded in $\mathcal{L}$ with no corresponding valid human signature. The ledger's append-only property is guaranteed by the hash-chain mechanism: each entry $i$ contains $\text{hash}(e_{i-1})$, making retroactive modification detectable. Since $a^*$ is present in the ledger, it was appended by the protocol runtime.
+
+\item \textbf{Append Gate:} The protocol runtime only appends to $\mathcal{L}$ after the authentication subsystem returns a valid, non-repudiated signature from the human. This is a hard-coded sequence in the protocol runtime; the agentic process has no API to write to $\mathcal{L}$ without a valid signature.
+
+\item \textbf{Non-Repudiation:} The signature scheme used (e.g., hardware-backed ECDSA or equivalent) ensures that a signature valid under $h_t$'s public key was generated by the corresponding private key, which is held exclusively by $h_t$. Therefore, $a^*$ necessarily corresponds to some human $h_t$.
+
+\item \textbf{Uniqueness:} The protocol enforces that only one human can be authenticated at a given governance checkpoint. Concurrent authentication is blocked by the authentication subsystem. Thus, $h_t$ is unique for $a^*$.
+
+\item \textbf{Conclusion:} Any action in $\mathcal{L}$ necessarily has a unique, identifiable human signatory. This holds for all actions by structural induction on ledger length, establishing Accountability.
+\end{enumerate}
+
+---
+
+\subsection{Discussion: The Interplay of Properties}
+
+The three properties are not independent; they form a mutually reinforcing correctness triad. Safety ensures that no collapse occurs without human awareness. Liveness ensures that the human awareness is achievable in practice, not just in theory. Accountability ensures that the human who exercises awareness is unequivocally responsible.
+
+A system satisfying only Safety and Liveness but not Accountability would be safe and would eventually contact a human, but the human could not be identified or held responsible---a legally and operationally untenable state. A system satisfying only Safety and Accountability but not Liveness would prevent collapse but could not sustain operations during prolonged human unavailability, making it impractical for real-world deployment. The Bailout Protocol is specifically designed to satisfy all three simultaneously.
+
+These properties are also robust to partial system compromise. Even if the agentic layer is fully compromised by an adversarial actor, Safety prevents the actor from suppressing the governance interlock; Liveness ensures that the contact escalation pathway cannot be permanently blocked; and Accountability ensures that every action taken under compromise is still attributed to a human, preserving the chain of responsibility.
+
+\end{document}

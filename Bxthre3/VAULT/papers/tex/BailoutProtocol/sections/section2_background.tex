@@ -1,0 +1,47 @@
+\section{Background}
+
+The proliferation of autonomous multi-agent systems across safety-critical domains—healthcare, infrastructure, finance, and defense—has surfaced a fundamental tension: the operational autonomy that makes such systems valuable simultaneously undermines the accountability structures necessary for responsible deployment. As these systems grow in complexity and distribution, established paradigms for human oversight, fail-safe design, and causal accountability require systematic re-examination.
+
+\subsection{Accountability in Multi-Agent AI Systems}
+
+Classical accountability frameworks assume a single locus of control—a human or organization that directs action and bears responsibility for outcomes. Multi-agent AI systems dissolve this assumption by distributing decision-making authority across autonomous actors that may interact in emergent, non-deterministic ways. Bansal et al. \cite{bansal2019} demonstrate that the safety profile of multi-agent systems cannot be reduced to the safety of individual agents; inter-agent interactions produce emergent failure modes that no single actor anticipates or controls. This emergent complexity renders traditional hierarchical accountability insufficient.
+
+The accountability problem in multi-agent systems is compounded by opacity. When a cascade of autonomous decisions produces an undesirable outcome, tracing causal responsibility requires techniques that modern machine learning systems notoriously lack—explainability, audit trails, and intervention points. Wiener \cite{wiener1948} anticipated this tension in his foundational treatment of feedback mechanisms, observing that systems operating beyond human comprehension create responsibility gaps that cannot be closed through retrospective analysis alone. The \textbf{BX3 Framework}'s three-layer model—spanning the Execution Layer (concrete actions), the Coordination Layer (goal management), and the Strategic Layer (normative constraints)—addresses this by embedding accountability architecture directly into the system's structure, ensuring that each layer maintains explicit auditability and intervention capability.
+
+%\subsection{The BX3 Framework's Three-Layer Model}
+
+The BX3 Framework provides a principled decomposition of agency into three orthogonal layers, each corresponding to a distinct temporal and causal scale of operation:
+
+\begin{itemize}
+    \item \textbf{Strategic Layer}: The normative substrate establishing invariant constraints—ethical boundaries, regulatory compliance, and organizational policy. This layer operates on the slowest timescale and defines the space of permissible outcomes, not specific plans to achieve them.
+    \item \textbf{Coordination Layer}: The tactical substrate managing goal decomposition, resource allocation, and inter-agent negotiation. This layer translates strategic imperatives into executable sub-goals while maintaining coherence across distributed actors.
+    \item \textbf{Execution Layer}: The operational substrate executing concrete actions in the environment, sensory processing, and actuator control. This layer operates on the fastest timescale and constitutes the only layer that directly interacts with the physical world.
+\end{itemize}
+
+Critically, the BX3 model ensures that higher layers constrain lower layers but do not control them—enabling bottom-up emergence while preserving top-down accountability. Each layer maintains its own failure modes, detection mechanisms, and recovery procedures, ensuring that compromises at one layer do not cascade unconditionally to others.
+
+\subsection{Human-in-the-Loop Design}
+
+The human-in-the-loop (HITL) paradigm represents the dominant approach to maintaining human oversight over autonomous systems. Originating in nuclear power plant control rooms and aircraft cockpit design, HITL embeds human operators as active participants in decision-making loops, capable of overriding, terminating, or reconfiguring autonomous processes \cite{tristr81}. The core insight is that humans provide adaptive reasoning under novel conditions that no pre-specified rule set can anticipate.
+
+However, classical HITL design assumes cognitive engagement—operators who actively monitor system state and intervene before failures propagate. As systems grow in complexity and operation timescales compress, human operators increasingly face \emph{automation surprise}: situations where system behavior diverges from expectations in ways that preclude effective response \cite{wiener1948}. Dijkstra's observation that \quotes{the question of whether machines can think is irrelevant to the question of whether machines can harm} \cite{dijkstra1982} underscores that HITL effectiveness depends not on the presence of a human, but on that human's situational awareness and response capacity.
+
+Bailout Protocol addresses this by designing for \emph{intentional disengagement} rather than continuous oversight. Rather than requiring operators to maintain real-time situational models, the system presents unambiguous failure signals and well-defined intervention boundaries. This inverts the cognitive burden: instead of requiring the human to understand the system, the system must ensure the human can reliably understand its failure state. The BX3 Strategic Layer provides the normative hooks necessary to implement this inverted accountability, ensuring that bailout triggers are themselves subject to ethical review and that disengagement procedures preserve evidence for retrospective accountability.
+
+\subsection{Fail-Safe Design in Safety-Critical Systems}
+
+Safety-critical systems have long grappled with the challenge of maintaining operational integrity under conditions of component failure, environmental perturbation, and human error. The fail-safe principle—stating that systems should transition to a safe state upon failure—has evolved through several paradigmatic shifts \cite{tristr81}.
+
+Early fail-safe design relied on physical interlocks and simple redundant systems: if component A fails, component B assumes control. This approach works when failure modes are well-characterized and the safe state is unambiguous (e.g., a train brake that locks when air pressure drops). However, as systems grew in complexity, failure mode enumeration became impossible, and the definition of \quotes{safe} became context-dependent.
+
+The shift to software-defined fail-safe introduced programmable logic controllers and fault detection systems capable of responding to conditions that physical interlocks could not address \cite{bansal2019}. Yet software fail-safe introduced its own failure modes: software bugs, specification errors, and the inability of safety monitors to observe their own integrity. Wiener \cite{wiener1948} formalized this as the \quotes{irony of automation}: the more reliable and complex automated systems become, the less capable humans become of supervising them effectively.
+
+The BX3 Framework's three-layer model addresses this paradox by allocating fail-safe responsibility hierarchically. The Execution Layer implements rapid, reflexive responses to immediate threats (motor reflexes). The Coordination Layer implements adaptive recovery strategies when initial responses fail (tactical recovery). The Strategic Layer ensures that all recovery attempts respect invariant constraints—ethical boundaries, legal requirements, and organizational policies. This hierarchical allocation ensures that fail-safe responses are both sufficiently rapid and sufficiently considered: fast enough to prevent harm, sophisticated enough to avoid creating new failure modes.
+
+\subsection{Synthesis: Toward Accountability-Aware Autonomous Systems}
+
+The convergence of multi-agent accountability challenges, HITL limitations, and fail-safe design tensions reveals a common requirement: systems that maintain meaningful human oversight must architecturally separate failure detection from failure response, intervention capability from intervention obligation, and operational autonomy from accountability transfer.
+
+The BX3 Framework's three-layer model provides this separation by design. The Strategic Layer maintains normative accountability without specifying operational details. The Coordination Layer translates accountability requirements into actionable plans without executing those plans. The Execution Layer executes without claiming normative authority. This layered architecture ensures that when a bailout is required, the human operator confronts a system that has preserved the evidence, constrained the options, and communicated the stakes—enabling genuine informed consent rather than reflexive automation.
+
+Bailout Protocol operationalizes this architectural commitment into a concrete mechanism: a structured, auditable, human-triggered disengagement procedure that preserves system state for retrospective analysis while immediately terminating operational risk. The following sections specify the protocol's design, implementation, and evaluation.

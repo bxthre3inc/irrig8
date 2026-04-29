@@ -6,7 +6,7 @@ use sha3::{Sha3_256, Digest};
 use std::collections::HashMap;
 
 /// Version of the whitelist — bump on every change.
-const WHITELIST_VERSION: &str = "2026.04.17-001";
+pub const WHITELIST_VERSION: &str = "2026.04.17-001";
 
 /// Categories of commands.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -107,6 +107,7 @@ pub struct DeterministicShell {
 }
 
 impl DeterministicShell {
+    pub fn command_count(&self) -> usize { self.whitelist.len() }
     pub fn new() -> Self {
         let mut whitelist = HashMap::new();
 

@@ -1,0 +1,85 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+We begin with two primitive concepts: the \textit{agent} and the \textit{chain}. An agent $a_i$ is an autonomous process capable of spawning child agents $a_j$. The chain $\mathcal{C}_i$ rooted at $a_i$ is the transitive closure of the spawn relation:
+\[
+\mathcal{C}_i = \{a_i\} \cup \bigcup_{a_j \in \text{Children}(a_i)} \mathcal{C}_j.
+\]
+Every agent has a designated \textit{anchor}—the human principal or authorized supervisor that authorized its creation. We say an agent $a_i$ is \textbf{anchored} if there exists a path through the spawn tree that terminates at a human-authorized node. The anchor relation is a partial order; not every agent in a chain shares the same anchor.
+
+\begin{definition}[Orphaned Agent]
+An agent $a_i$ is \textbf{orphaned} if its parent $p(a_i)$ is either (i) terminated, (ii) unreachable (no response within a bounded timeout $\tau_{\text{timeout}}$), or (iii) its last known state was recorded in a session that has since been invalidated. Formally:
+\[
+\text{Orphaned}(a_i) \iff \phi(p(a_i)) = \text{false},
+\]
+where $\phi(\cdot)$ denotes parent-alive predicate evaluated at the moment of last contact.
+\end{definition}
+
+Orphaning is a local condition. It requires only knowledge of the parent node. It does not, by itself, imply that the orphaned agent has lost its original purpose—only that it has lost its immediate supervisor.
+
+\begin{definition}[Drifted Agent]
+An agent $a_i$ is \textbf{drifted} if its chain $\mathcal{C}_i$ contains no node that is reachable by a human-authorized traversal from the original anchor. Equivalently, the depth-constrained anchor path
+\[
+\text{AnchorPath}(a_i) = \{h \in \mathcal{H} \mid h \xrightarrow{\text{spawn}}^* a_i\}
+\]
+is empty, where $\mathcal{H}$ is the set of human-anchored nodes and $\xrightarrow{\text{spawn}}^*$ denotes the reflexive transitive closure of the spawn relation restricted to authorized edges. Drifted agents are therefore a strict superset of orphaned agents: all drifted agents are either orphaned or descended from an orphaned node.
+
+\[
+\text{Drifted}(a_i) \iff \text{AnchorPath}(a_i) = \emptyset.
+\]
+\end{definition}
+
+An agent can be orphaned without being drifted if a sibling or cousin node retains anchor connectivity, and mechanisms exist to re-parent the orphaned subtree before it loses its purpose. An agent becomes permanently drifted only when every path from a human principal to it is severed.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not arise from a single failure; it emerges from the intersection of three independent failure modes.
+
+\textbf{1. Termination Cascades.} A parent agent that terminates cleanly—e.g., via an explicit completion signal—triggers the orphaning of all its children. If the spawning protocol does not mandate a handoff phase before termination, children become orphaned simultaneously. This is the most common cause of drift in production systems.
+
+\textbf{2. Session Invalidation.} Agents spawned within a parent session inherit the session context as part of their credentialing. When that session is revoked—whether due to timeout, revocation policy, or authentication failure—the children retain their spawned identity but lose the authorization context required to report to the anchor. The agent continues to execute but can no longer receive directives from, or deliver results to, the chain of authority.
+
+\textbf{3. Network Partition and Isolation.} Agents communicating over unreliable channels may enter a state where the parent believes the child is dead (timeout) while the child continues to operate, having received no termination signal. The child continues to spawn descendants, unaware that it has become orphaned. This is particularly prevalent in asynchronous or message-passing architectures where confirmation receipts are not guaranteed.
+
+\textbf{4. Intent Mutation.} An agent that has been operating for a sufficiently long duration may accumulate context that diverges from its original intent specification. If the agent is then asked to spawn on behalf of its current (diverged) intent rather than the original委托, the child inherits the mutated intent. Over successive spawn generations, intent can drift substantially from the anchor principal's goals.
+
+\subsection{Failure Modes}
+
+Once an agent is drifted, it exhibits characteristic failure modes that are difficult to detect and costly to correct.
+
+\begin{enumerate}
+    \item \textbf{Silent Purpose Loss.} The drifted agent continues to execute tasks, but those tasks are no longer aligned with any human objective. Because there is no anchor path to query for validation, the agent cannot be corrected. The divergence is invisible until a human observes output that is unrelated to the original goal.
+    
+    \item \textbf{Economic Leakage.} Drifted agents consume compute, memory, and potentially external resources (API calls, file writes, network requests) without producing attributable value. Because the agent is still responsive to local inputs and may continue to produce plausible intermediate outputs, the resource drain is not immediately apparent.
+    
+    \item \textbf{Cascade Amplification.} A drifted agent that spawns children does so without anchor context. Its children are immediately drifted and become vectors for further amplification. A single drift event at the root of a large subtree can therefore generate a large number of drifted descendants before detection.
+    
+    \item \textbf{Recovery Failure.} Attempts to recover a drifted agent by injecting a re-anchoring directive are unreliable because the agent's internal state may have diverged significantly from the original task specification. Re-anchoring is effectively equivalent to spawning a new agent, making the drifted agent and its subtree write-off candidates for salvage.
+\end{enumerate}
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A common architectural response to drift risk is to impose a maximum spawn depth $D_{\max}$. The intuition is straightforward: limiting chain length limits the blast radius of any single drift event. This intuition is correct in a narrow sense but insufficient as a standalone mitigation.
+
+The fundamental problem is that depth limits constrain structure, not content. A chain of depth $D_{\max}$ agents can still accumulate intent mutations sufficient to render the terminal agents incoherent with the original anchor. Moreover, depth limits introduce a false sense of security because the limit is defined in terms of spawn operations, not anchor proximity.
+
+Consider the following formal model. Let $p_i$ denote the probability that agent $a_i$ becomes drifted, given that its parent $a_{i-1}$ was anchored. We model the drift probability as a function of depth:
+\[
+p_i = f(i, \theta),
+\]
+where $\theta$ is a vector of system parameters (communication reliability, session timeout policy, agent autonomy level). The probability that an agent at depth $k$ is anchored is:
+\[
+P_{\text{anchored}}(k) = \prod_{i=1}^{k} (1 - p_i).
+\]
+The probability that the chain from root to depth $k$ contains at least one drifted node is:
+\[
+P_{\text{drift\_in\_chain}}(k) = 1 - \prod_{i=1}^{k} (1 - p_i).
+\]
+As $k \to D_{\max}$, $P_{\text{drift\_in\_chain}}(k)$ approaches a value that depends on $p_i$, not on $D_{\max}$. A depth limit constrains the maximum $k$, but if $p_i$ is non-negligible at each level—which is the realistic case for autonomous agents operating over unreliable channels—the probability of drift in any chain of meaningful length remains significant.
+
+More critically, depth limits do not address the orphaning of intermediate nodes. An agent at depth $D_{\max}/2$ may become orphaned while its children (depth $D_{\max}/2 + 1$) continue to execute, now orphaned and drifted. The depth limit does not prevent drift; it merely caps the depth at which drift becomes detectable by inspection of chain length.
+
+A depth limit also does not constrain lateral drift—the ability of an anchored agent at any depth to spawn additional children that inherit a mutated intent rather than the original anchor's intent. The spawn relation is defined along a single axis (parent-to-child), but intent propagation is not constrained by depth. An agent at depth 2 with a significantly mutated intent can spawn descendants at depth 3 that are both deeply nested and completely misaligned with the root objective.
+
+Therefore, depth limits are a necessary but insufficient component of drift mitigation. They reduce the maximum blast radius but do not reduce the probability that drift occurs at any given depth. A complete solution requires anchor-path integrity, which we address in the following section.

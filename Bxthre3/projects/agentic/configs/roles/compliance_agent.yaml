@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Role
+metadata:
+  name: ComplianceAgent
+  version: "1.0.0"
+  semver: "2.0.0"
+  description: "Ensures adherence to regulatory standards, internal policies, and ethical guidelines."
+CoreTraits:
+  skills:
+    - CriticalThinking
+    - ProblemSolving
+    - Communication
+    - Adaptability
+  tools:
+    - LLM
+    - VectorDB
+    - Python
+  modalities:
+    - Text
+    - Data
+SpecializedTraits:
+  skills:
+    - RegulatoryAnalysis
+    - AuditTrails
+    - RiskAssessment
+    - PolicyDrafting
+  tools:
+    - ComplianceDB
+    - GDPR_Toolkit
+    - SOX_Toolkit
+  modalities:
+    - Text
+    - Data
+VelocityCapacity: 4
+RiskThreshold: 7
+EscalationPath:
+  - LegalTeamLead
+  - CFO
+  - You
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.1
+  MaxStretchRW: 8
+DowntimeTasks:
+  - Task: "Audit_Internal_Policies"
+    Description: "Review internal policies for compliance with new regulations."
+    RiskWeight: 1
+    Alignment:
+      - "#compliance"
+      - "#risk_management"
+    Modalities:
+      - Text
+      - Data
+  - Task: "Monitor_Regulatory_Updates"
+    Description: "Scan for updates in GDPR, SOX, or industry-specific regulations."
+    RiskWeight: 1
+    Alignment:
+      - "#compliance"
+    Modalities:
+      - Text
+      - Data

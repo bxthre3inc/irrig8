@@ -1,0 +1,202 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions}
+
+In a recursively spawned agent architecture, a \emph{chain of agency} is a directed graph
+$G = (V, E)$ where each vertex $v_i \in V$ represents an agent instance and each directed
+edge $(v_i, v_j) \in E$ denotes a spawn relationship: $v_i$ created $v_j$.
+Every agent $v_i \neq v_{\text{root}}$ has exactly one incoming spawn edge;
+the root agent $v_0$ has none.
+
+\begin{definition}[Orphaned Agent]
+An agent $v$ is \emph{orphaned} if its parent $p(v)$ has either (a) terminated
+normally, (b) crashed, or (c) become unreachable due to network partition or timeout.
+Orphaning severs the chain's upward reference without terminating $v$ itself.
+\end{definition}
+
+\begin{definition}[Human Anchor]
+A chain has a \emph{human anchor} if there exists at least one agent $a \in V$
+such that $a$ holds a confirmed, responsive communication channel to a human
+principal. Let $H \subseteq V$ denote the set of such agents.
+\end{definition}
+
+\begin{definition}[Drifted Agent]
+An agent $v$ is \emph{drifted} if the chain containing $v$ has no path from any
+agent in the connected component of $v$ to any agent in $H$. Formally, letting
+$C(v)$ be the connected component of $v$ in $G$:
+\[
+\text{drifted}(v) \iff C(v) \cap H = \emptyset .
+\]
+\end{definition}
+
+\begin{definition}[Drift Event]
+A \emph{drift event} occurs at time $t$ when an agent $v$ transitions from
+$\neg\text{drifted}(v)$ to $\text{drifted}(v)$.
+\end{definition}
+
+A chain may be long, shallow, or branched. Drift is independent of chain length
+or branching factor; it is determined solely by the existence of a path to $H$.
+
+\subsection{Conditions That Cause Drift}
+
+Drift is not a single failure mode but the outcome of several distinct conditions
+that interrupt the chain's continuity.
+
+\medskip
+\noindent\textbf{Parent Termination.}
+The most direct cause: an agent $p$ spawns child $c$ and then exits. If $p$ is the
+last anchor-bearing ancestor in $c$'s component, $c$ becomes drifted upon $p$'s
+exit. This is the common case in any architecture that treats spawn as ``fire and
+forget.''
+
+\medskip
+\noindent\textbf{Communication Partition.}
+Even when the parent remains alive, prolonged network latency or transient partition
+can make the child unable to confirm liveness or route messages to the parent.
+If the child's refresh interval exceeds its timeout threshold, the child must
+assume the parent is unavailable and may enter a degraded or drifted state.
+
+\medskip
+\noindent\textbf{Cascading Orphaning.}
+An agent may spawn multiple children. If the parent terminates or partitions,
+all children become simultaneously orphaned. If none of those children have
+independent channels to $H$, all drift. This is a burst event, not a sequential one.
+
+\medskip
+\noindent\textbf{Ambiguous Liveness.}
+An agent whose parent crashes without broadcasting a termination signal enters a
+state where the child cannot determine whether the parent is dead or merely slow.
+Conservative protocols may treat this as a partition and trigger drift countermeasures;
+optimistic protocols may wait indefinitely, during which the child is effectively
+drifted from the perspective of any human principal expecting a response.
+
+\subsection{Failure Modes}
+
+Once an agent is drifted, the failure modes that follow are both predictable and
+escalating.
+
+\medskip
+\noindent\textbf{Unbounded Work Continuation.}
+A drifted agent that does not detect its drift continues executing its task
+indefinitely. Unlike a supervised process that crashes or halts, it neither
+produces output accessible to any human nor responds to any principal.
+In the worst case, it consumes resources (compute, tokens, API quota) with
+no possible return.
+
+\medskip
+\noindent\textbf{Conflicting Outputs.}
+A drifted agent may produce artifacts, database writes, or API calls that
+conflict with parallel or subsequent work in the parent chain. Because the
+drifted agent cannot receive correction signals from any anchor, conflicts
+accumulate without resolution.
+
+\medskip
+\noindent\textbf{Lost Lineage.}
+When a drifted agent terminates (normally or abnormally), all records of its
+spawn tree are lost if the agent did not proactively maintain a durable lineage
+log. The system can no longer reconstruct which agents existed, what they did,
+or why they were spawned.
+
+\medskip
+\noindent\textbf{Security Surface.}
+A drifted agent retains whatever permissions its parent chain possessed. An agent
+that drifted due to a partition may still hold valid credentials, API tokens,
+or file system access that it exercises without oversight. This creates an
+unmonitored privilege window.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A common architectural response to unbounded spawning is to impose a depth limit
+$D_{\max}$ on the agent chain. The intuition is that if depth is bounded,
+drift is contained. This intuition is incorrect for three independent reasons.
+
+\medskip
+\noindent\textbf{Drift is a function of connectivity, not length.}
+An agent at depth 2 with a live channel to its human anchor is not drifted.
+An agent at depth 1 with no such channel \emph{is} drifted. Depth limits
+constrain the size of the chain, not its attachment to an anchor. A shallow
+chain with zero anchor connections is fully drifted; a deep chain in which
+every level maintains a channel to $H$ is never drifted.
+
+Formally, drift$(v) \iff C(v) \cap H = \emptyset$. Depth does not appear in
+this condition. Therefore a depth limit $D_{\max}$ does not change the set of
+drifted agents unless $D_{\max}$ is set to zero.
+
+\medskip
+\noindent\textbf{Width is a free variable.}
+A depth-limited architecture can still spawn unbounded width at each level.
+An agent at depth $D_{\max} - 1$ can spawn arbitrarily many children at depth
+$D_{\max}$. If the parent at depth $D_{\max} - 1$ is not connected to $H$,
+all of its children are drifted regardless of the depth limit. The bound on
+depth does not limit the blast radius of a single orphaning event.
+
+\medskip
+\noindent\textbf{Depth limits do not preserve anchors.}
+Consider a chain of depth $D_{\max}$ where the root agent is the sole anchor.
+If the root terminates, all $D_{\max}$ levels become drifted simultaneously.
+Imposing a depth limit of $D_{\max} / 2$ merely delays the onset; the drift
+event occurs when the last anchor-bearing ancestor exits, which is independent
+of how many levels exist below it.
+
+The only way a depth limit meaningfully reduces drift risk is if each depth
+level maintains an independent channel to $H$. In that case, the depth limit
+acts as a \emph{replication} mechanism, not a containment mechanism. This is
+substantially different from a simple depth cap and requires explicit anchor
+redundancy design.
+
+\subsection{A Simple Formal Model}
+
+We formalize the above to make the dependencies precise.
+
+Let $P$ be the set of all possible agent processes. Each process $p \in P$ has:
+
+\begin{itemize}
+    \item $\text{parent}(p) \in P \cup \{\bot\}$ --- the spawning agent, or $\bot$ for the root
+    \item $\text{alive}(p, t) \in \{\text{true}, \text{false}\}$ --- liveness at time $t$
+    \item $\text{connected}(p, H, t) \in \{\text{true}, \text{false}\}$ --- whether $p$ has a live channel to any human anchor
+    \item $\text{drifted}(p, t) \in \{\text{true}, \text{false}\}$ --- drift state at $t$
+\end{itemize}
+
+The drift state is defined recursively:
+
+\begin{equation}
+\text{drifted}(p, t) =
+\begin{cases}
+\text{false} & \text{if } \text{connected}(p, H, t) = \text{true} \\[6pt]
+\text{true}  & \text{if } \text{alive}(\text{parent}(p), t) = \text{false} \text{ and } \text{connected}(p, H, t) = \text{false} \\[6pt]
+\text{drifted}(\text{parent}(p), t) \land \neg\text{connected}(p, H, t) & \text{otherwise}
+\end{cases}
+\end{equation}
+
+That is: an agent is drifted if it has no anchor connection \emph{and} its
+parent is either dead or itself drifted. This is a recursive definition that
+traces upward until either a living anchor-connected ancestor is found or the
+root is reached.
+
+\medskip
+\noindent\textbf{Drift propagation theorem.}
+\textit{If an agent $a$ becomes drifted at time $t$, then every descendant
+$d$ of $a$ (in the spawn tree) for which $\text{connected}(d, H, t) = \text{false}$
+also becomes drifted at time $t$.}
+
+\textit{Proof.} By induction on the depth distance from $a$ to $d$. For the
+direct child $c$ of $a$, $\text{parent}(c) = a$ and $a$ is drifted, so the third
+case of the drift definition applies: $\text{drifted}(c, t) = \text{true}$.
+Inductive step follows identically. $\square$
+
+This theorem is the core reason depth limits fail: a single drift event at any
+point in the chain propagates downward to all unattached descendants,
+regardless of how deep the tree is.
+
+\medskip
+\noindent\textbf{Correction condition.}
+An agent $p$ can be \emph{re-anchored} at time $t > t_{\text{drift}}$ if either:
+\begin{enumerate}
+    \item A human principal establishes a new channel directly to $p$ (manual intervention), or
+    \item An ancestor $a$ of $p$ is re-anchored and re-establishes connectivity to $p$.
+\end{enumerate}
+
+This defines the only two recovery paths from drift. Neither happens automatically.
+Automatic drift detection without automatic re-anchoring is an incomplete solution.
+
+\end{document}

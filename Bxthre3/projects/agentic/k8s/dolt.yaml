@@ -1,0 +1,40 @@
+# Dolt Deployment for Agentic1 (Deterministic Logging)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dolt
+  namespace: agentic
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dolt
+  template:
+    metadata:
+      labels:
+        app: dolt
+    spec:
+      containers:
+        - name: dolt
+          image: dolthub/dolt:latest
+          ports:
+            - containerPort: 3306
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dolt
+  namespace: agentic
+spec:
+  selector:
+    app: dolt
+  ports:
+    - port: 3306
+  type: ClusterIP

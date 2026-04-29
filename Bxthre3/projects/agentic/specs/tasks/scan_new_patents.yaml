@@ -1,0 +1,16 @@
+Task: "Scan_New_Patents"
+Description: "Scan patent databases for new filings in the domain."
+Prerequisites:
+  Access: [PatentDB]
+  Requires: [LLM]
+VelocityRequirement:
+  Min: 5
+  Stretch: 7
+RiskWeight: 1
+EscalationPath: []
+Alignment: ["#innovation"]
+Modalities:
+  Input: [Text, Data]
+  Output: [Text, Data]
+CascadingTriggers:
+  - OnFindMatch: "Analyze_Patent_Cluster"

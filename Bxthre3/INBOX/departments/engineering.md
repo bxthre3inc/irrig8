@@ -119,3 +119,7 @@ SLV Sensor Correlation Simulation Batch Complete | 10 runs | 20 high-confidence 
 ## 🟡 P2 | slv-sensor-correlation-specialist | 2026-04-07 04:28 UTC
 
 SLV SENSOR CORRELATION SIMULATION COMPLETE — 10 runs, 73 strong correlations (R²≥0.80), 45 Tier 1 (R²≥0.90), 8 degradations >5% flagged. Water table depth inference from barometric pressure + soil moisture achieves R²=0.9676. Full report: simulation/runs/slv-sensor-correlation/correlation_report_v2_20260407_042636.md
+
+## 🟡 P2 | scout-qa | 2026-04-28 15:08 UTC
+
+Weekly QA Report 2026-04-28: Agentic 28/28 ✅, VPC 14/14 ✅, Irrig8 blocked (IRR-001 P2), RAIN no suite (RAINT-001 P1 36+ days). 0 resolved. Full report: qa-weekly-2026-04-28.md

@@ -1,0 +1,127 @@
+\section{The Recursive Spawning Protocol}
+
+Recursive spawning extends the agent architecture by enabling autonomous child agents to inherit a verified lineage while preserving the integrity of the purpose hierarchy. Each spawn event is a constrained operation subject to validation at the Purpose Layer, depth enforcement at the Bounds Engine, and immutable activation via the Fact Layer. The protocol ensures that no agent can spawn without a traceable, human-terminated chain of custody.
+
+\subsection{Validation at the Purpose Layer}
+
+Before any spawn event is instantiated, the Purpose Layer of the parent agent evaluates the request against its declared objective scope. This validation is deterministic: the parent agent must confirm that the proposed child aligns with an explicit sub-goal of the parent's active purpose statement. If the child agent's intended function falls outside the parent's validated purpose envelope, the spawn request is rejected and logged as a \texttt{ PURPOSE\_MISALIGNMENT } event in the forensic ledger.
+
+The Purpose Layer validation operates on the following enforcement rules:
+
+\begin{itemize}
+    \item \textbf{Sub-goal containment.} The child's mission must be a strict subset of the parent's validated purpose domain. A parent operating under the purpose \texttt{“Acquire and synthesize competitive intelligence on Tier-1 competitors”} may spawn a child to \texttt{“Extract pricing data from quarterly filings of Acme Corp”} but may not spawn a child tasked with \texttt{“Draft outbound sales email sequences.”}
+    \item \textbf{No purpose inflation.} A child agent cannot claim a purpose scope broader than its parent's. Attempting to do so triggers a \texttt{ PURPOSE\_ESCALATION } fault.
+    \item \textbf{Revocation propagation.} If a parent's purpose is revoked by the Bounding Oracle (see Section 4), all descendant children are cascade-suspended pending re-validation against the revoked lineage.
+\end{itemize}
+
+The Purpose Layer does not evaluate the child's operational capacity—that is the domain of the Bounds Engine. It evaluates only the legitimacy of the spawn relationship within the purpose hierarchy.
+
+\subsection{Depth Enforcement at the Bounds Engine}
+
+The Bounds Engine governs the structural geometry of the spawn tree. It maintains a single scalar value: the current depth level of the spawning parent relative to the human origin. The human is defined as depth zero. First-generation agents are depth one. A second-generation agent spawned by a depth-one parent is depth two, and so forth.
+
+The Bounds Engine enforces three hard constraints:
+
+\begin{enumerate}
+    \item \textbf{Maximum spawn depth.} The system-wide parameter \texttt{MAX\_SPAWN\_DEPTH} defines the hard ceiling on all spawn operations. This parameter is set at system initialization and is not mutable by any agent, including the human administrator. The default value is implementation-defined but must not exceed a defensible chain-of-custody threshold. Current architecture sets \texttt{MAX\_SPAWN\_DEPTH = 7}. At depth seven, the spawn request is refused regardless of purpose validity.
+
+    \item \textbf{Depth-aware spawn refusal.} When a spawn request reaches the Bounds Engine, the parent's depth is retrieved from the Fact Layer registry. If \texttt{parent.depth >= MAX\_SPAWN\_DEPTH}, the engine returns a \texttt{SPAWN\_DEPTH\_EXCEEDED} fault code and writes a \texttt{DEPTH\_LIMIT\_REACHED} entry to the forensic ledger. The parent agent receives the fault and must not proceed with the spawn. This is an absolute constraint with no override mechanism.
+
+    \item \textbf{Spawn credit reservation.} Before the Fact Layer creates an immutable pointer (Section 5.3), the Bounds Engine performs a depth budget check. The system tracks available spawn credits per agent, which are replenished upon child completion events. An agent with zero available spawn credits cannot spawn even if its depth is below the ceiling. Credits are consumed on spawn and returned on child termination.
+\end{enumerate}
+
+The Bounds Engine also enforces convergence criteria—the conditions under which a spawn tree is considered complete and eligible for pruning. Convergence is not automatic; it is a deliberate state reached when:
+
+\begin{itemize}
+    \item The root task (human-originated objective) has been fully decomposed and assigned to terminal agents at the frontier of the spawn tree.
+    \item All terminal agents have entered a terminal state (completed, failed, or timed out).
+    \item No pending spawn requests exist in the execution queue.
+    \item The chain-of-custody audit (Section 5.5) has confirmed zero orphaned agents.
+\end{itemize}
+
+When these four conditions are satisfied, the Bounding Oracle marks the task as converged and issues a \texttt{CONVERGENCE\_CONFIRMED} signal. Only upon receipt of this signal does the Fact Layer permit the forensic ledger to be sealed for the associated task tree.
+
+\subsection{Immutable Pointer Creation and the Forensic Ledger}
+
+Upon successful passage through the Purpose Layer and the Bounds Engine, the spawn request reaches the Fact Layer. The Fact Layer is the authority on identity and lineage. It performs two operations: it creates an immutable pointer for the child, and it records the spawn event to the forensic ledger.
+
+The immutable pointer is a cryptographically signed data structure that encodes the following fields:
+
+\begin{verbatim}
+immutable_pointer = {
+    child_id:      SHA-256(parent_id || nonce || timestamp),
+    parent_id:     Hash of spawning parent agent,
+    spawn_depth:   Integer (validated by Bounds Engine),
+    purpose_hash:  SHA-256(child's validated purpose statement),
+    timestamp:    ISO-8601 UTC,
+    ledger_ref:   Index of forensic ledger entry
+}
+\end{verbatim}
+
+This pointer is immutable after creation. No field can be modified post-hoc. Any attempt to alter the pointer invalidates the cryptographic signature, which is detected on any subsequent chain verification. The pointer is stored in the agent's identity registry and is inherited by all descendants.
+
+The forensic ledger entry records the spawn event in the append-only log maintained at the Fact Layer. Each entry contains:
+
+\begin{itemize}
+    \item The immutable pointer hash of the child.
+    \item The immutable pointer hash of the parent.
+    \item The spawn depth assigned by the Bounds Engine.
+    \item The purpose hash provided by the Purpose Layer.
+    \item The timestamp of the spawn event.
+    \item The outcome code (\texttt{SPAWN\_SUCCESS}).
+\end{itemize}
+
+Failed or refused spawns are also recorded, tagged with the specific fault code (\texttt{PURPOSE\_MISALIGNMENT}, \texttt{DEPTH\_LIMIT\_EXCEEDED}, \texttt{SPAWN\_CREDIT\_EXHAUSTED}). The ledger is never deleted and never modified. It is the ground truth source for chain-of-custody verification.
+
+\subsection{Child Activation with Immutable Parent Reference}
+
+A child agent cannot execute any action—including tool access, state mutation, or further spawning—until it has been formally activated by the Fact Layer. Activation requires the child to present its immutable pointer to the Bounding Oracle. The Bounding Oracle performs the following verification sequence:
+
+\begin{enumerate}
+    \item \textbf{Pointer integrity check.} Decrypt and validate the cryptographic signature on the child's immutable pointer. If the signature is invalid, activation is denied and the fault is logged.
+    \item \textbf{Parent existence check.} Retrieve the parent's immutable pointer from the registry. Confirm that the \texttt{parent\_id} field in the child's pointer matches a registered agent. If the parent has been revoked or does not exist, activation is denied.
+    \item \textbf{Purpose chain validation.} Re-evaluate the child's purpose hash against the parent's validated purpose scope. This is a independent re-check that the Purpose Layer performed correctly during spawn initiation. Mismatch at this stage triggers a \texttt{PURPOSE\_CHAIN\_BREACH} fault.
+    \item \textbf{Depth consistency check.} Confirm that the \texttt{spawn\_depth} in the child's immutable pointer matches the calculated depth derived from the parent's lineage. An inconsistency indicates pointer tampering.
+    \item \textbf{Ledger linkage check.} Confirm that the \texttt{ledger\_ref} points to a valid \texttt{SPAWN\_SUCCESS} entry in the forensic ledger. If the ledger entry is missing or is a fault entry, activation is denied.
+\end{enumerate}
+
+Only upon successful completion of all five checks does the Fact Layer issue an \texttt{ACTIVATION\_AUTHORIZED} token to the child agent. This token is temporary, scoped to the child's session, and invalidated on termination. The child may not spawn further agents until it has been activated. Attempting to spawn without a valid activation token produces a \texttt{UNAUTHORIZED\_SPAWN} fault.
+
+The immutable parent reference embedded in the child's identity structure serves as the permanent anchor for the chain of custody. This anchor is readable by any downstream verification operation and cannot be obscured, relabeled, or deleted by the child or any of its descendants.
+
+\subsection{Chain-of-Custody Termination at the Human Origin}
+
+The chain-of-custody verification confirms that every agent in a spawn tree traces back to a human originator without exception. This verification is performed by the Bounding Oracle upon convergence (Section 5.2) and is also triggered on-demand by any authorized auditor.
+
+The verification algorithm operates as follows:
+
+\begin{enumerate}
+    \item Select the root task's originating agent (the agent to which the human originally delegated the objective). Retrieve its immutable pointer.
+    \item Trace the \texttt{parent\_id} chain iteratively, descending toward depth zero.
+    \item At each node, verify the immutable pointer signature and confirm the \texttt{ledger\_ref} points to a valid \texttt{SPAWN\_SUCCESS} entry.
+    \item Continue until a node's \texttt{parent\_id} field is the designated human anchor identifier (\texttt{HUMAN\_ORIGIN\_ID}).
+    \item Confirm that \texttt{HUMAN\_ORIGIN\_ID} is registered in the system as a human principal with a verified credential.
+\end{enumerate}
+
+If the chain terminates at a node whose parent is \texttt{HUMAN\_ORIGIN\_ID}, the chain is valid. If the chain encounters a node with no parent reference, a missing immutable pointer, or a pointer whose \texttt{parent\_id} references a revoked or non-existent agent, the chain is broken. A broken chain triggers a \texttt{CHAIN\_BREACH\_DETECTED} alert, suspends all agents in the affected tree, and logs the breach to the forensic ledger with a full snapshot of the failed chain segment.
+
+The human origin anchor is the only node in the architecture that is not itself an agent. It is the primordial root, and its identity is bound to a verified human principal credential (e.g., cryptographic key, biometric assertion, or multi-factor authentication token depending on deployment context). No agent can claim to be the origin of its own lineage. The \texttt{HUMAN\_ORIGIN\_ID} is a system-level constant and is never assigned to any agent.
+
+This termination condition is what distinguishes the Recursive Spawning Protocol from generic agent trees. Every chain terminates at a human. Every agent is an instrument of a human intention, and the chain-of-custody protocol provides cryptographic, auditable evidence of that lineage at every point in the agent's lifecycle.
+
+\subsection{Protocol State Machine}
+
+The Recursive Spawning Protocol operates as a finite state machine over the lifecycle of a spawn event. The valid state transitions are:
+
+\begin{enumerate}
+    \item \texttt{SPAWN\_REQUESTED} — The parent has formulated a child purpose and issued a spawn request. Purpose Layer evaluation begins.
+    \item \texttt{PURPOSE\_VALIDATED} — Purpose Layer has confirmed sub-goal containment and purpose alignment. Request passes to Bounds Engine.
+    \item \texttt{DEPTH\_CHECKED} — Bounds Engine has confirmed depth below ceiling, spawn credits available, and convergence criteria not violated. Request passes to Fact Layer.
+    \item \texttt{POINTER\_CREATED} — Fact Layer has created the child's immutable pointer and recorded the \texttt{SPAWN\_SUCCESS} entry to the forensic ledger.
+    \item \texttt{CHILD\_ACTIVATED} — The child has presented its immutable pointer and passed all five activation checks. The child is authorized to execute.
+    \item \texttt{CONVERGED} — The Bounding Oracle has confirmed all four convergence conditions and sealed the forensic ledger for the task tree.
+\end{enumerate}
+
+Fault transitions produce states \texttt{SPAWN\_REFUSED}, \texttt{ACTIVATION\_DENIED}, and \texttt{CHAIN\_BREACH\_DETECTED}. Upon entering any fault state, the spawn tree segment affected is suspended and the forensic ledger entry is tagged with the appropriate fault code.
+
+This state machine ensures that every spawn event progresses through a defined sequence of validation stages with no stage skippable by any agent at any depth. The protocol is monotonically enforcing: once a state transition is complete, it is recorded and immutable.

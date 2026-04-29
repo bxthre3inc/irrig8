@@ -1,0 +1,361 @@
+\section{The Bailout Protocol}
+\label{sec:bailout}
+
+\subsection{Overview and Design Intent}
+
+The Bailout Protocol is the named operational counterpart to the upstream accountability guarantee articulated in the BX3 Framework. Where the framework establishes \textit{that} accountability must escalate recursively upward until it reaches a human anchor, the Bailout Protocol specifies \textit{how} that escalation proceeds: the states the system passes through, the conditions that trigger each transition, the algorithmic behavior governing escalation, the bypass mechanism that allows it to traverse all machine actors without obstruction, and the timeout regime that ensures human acknowledgment is achieved within bounded wall-clock time.
+
+Critically, the Bailout Protocol is not an exception handler in the conventional software-engineering sense. It is not a last-resort error routine that executes after all other logic has failed. It is the primary escalation infrastructure of the BX3 Framework --- the mechanism by which the Purpose Layer's accountability obligation is discharged when bounded reasoning is insufficient to produce a resolution. Every other protocol in the BX3 stack operates within the boundaries established by the Bailout Protocol; the Bailout Protocol is what makes those boundaries safe.
+
+The protocol operates on a deterministic finite state machine (DFSM) with six named states, five directed transitions, and two interrupt-driven exceptions. It is designed to be implemented at the Fact Layer of any BX3-compliant system, ensuring that the protocol's own execution cannot be interrupted, delayed, or redirected by any actor occupying the Bounds Engine or Purpose Layer.
+
+\subsection{State Machine Formalism}
+
+We define the Bailout Protocol as a deterministic finite state machine:
+
+\[
+\mathcal{B} = (Q, \Sigma, \delta, q_0, F)
+\]
+
+where:
+
+\begin{itemize}
+    \item $Q = \{ \text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED} \}$ is the finite set of states;
+    \item $\Sigma = \{ \text{bound\_exceeded}, \text{human\_available}, \text{timeout}, \text{ack\_received}, \text{resolution\_confirmed}, \text{reset\_command} \}$ is the finite input alphabet (events);
+    \item $\delta: Q \times \Sigma \rightarrow Q$ is the deterministic transition function, defined in Table \ref{tab:state_transitions};
+    \item $q_0 = \text{IDLE}$ is the initial state;
+    \item $F = \{ \text{RESOLVED} \} \subset Q$ is the set of terminal accepting states.
+\end{itemize}
+
+The state machine is initially in IDLE. It transitions through BOUNDED and BAIL\_PENDING during normal operation. The ESCALATING state is entered only when normal escalation fails. HUMAN\_ACKNOWLEDGED is the terminal human-facing state. RESOLVED is the final accepting state, at which point the protocol resets to IDLE and normal operations resume.
+
+\begin{table}[htbp]
+\centering
+\caption{Bailout Protocol State Transition Function $\delta(q, \sigma)$}
+\label{tab:state_transitions}
+\begin{tabular}{l|l|l}
+\toprule
+Current State $q$ & Input Event $\sigma$ & Next State $\delta(q, \sigma)$ \\ \midrule
+IDLE & bound\_exceeded & BOUNDED \\
+IDLE & reset\_command & IDLE \\
+BOUNDED & human\_available & BAIL\_PENDING \\
+BOUNDED & timeout & ESCALATING \\
+BAIL\_PENDING & ack\_received & HUMAN\_ACKNOWLEDGED \\
+BAIL\_PENDING & timeout & ESCALATING \\
+ESCALATING & human\_available & BAIL\_PENDING \\
+ESCALATING & resolution\_confirmed & RESOLVED \\
+HUMAN\_ACKNOWLEDGED & resolution\_confirmed & RESOLVED \\
+HUMAN\_ACKNOWLEDGED & reset\_command & IDLE \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Named States: Formal Definitions}
+
+\subsubsection{IDLE}
+
+\textbf{Definition.} The system is operating within its defined bounds. No escalation condition is active. The Bounds Engine operates normally, proposing and evaluating interventions within the sandbox environment. The Fact Layer enforces executed actions without triggering. This is the default and nominal operating state.
+
+\textbf{Formal:} $\text{state} = \text{IDLE} \Leftrightarrow \forall a \in \text{active\_actors}: \text{pending\_risk}(a) < \text{bound\_threshold}(a)$
+
+\textbf{Properties:} No human notification is pending. No escalation timer is running. The system may remain in IDLE indefinitely. Exit occurs upon any bound\_exceeded event from any active actor.
+
+\subsubsection{BOUNDED}
+
+\textbf{Definition.} At least one active actor has issued a \texttt{bound\_exceeded} event, indicating that the actor has reached a decision point that exceeds its configured reasoning or action bounds. The system transitions from IDLE to BOUNDED immediately upon receipt of this event. In BOUNDED, the actor's pending proposal is held in a quarantined sandbox state, not yet cleared for Fact Layer execution.
+
+\textbf{Formal:} $\text{state} = \text{BOUNDED} \Leftrightarrow \exists a \in \text{active\_actors}: \text{pending\_risk}(a) \geq \text{bound\_threshold}(a)$
+
+\textbf{Properties:} The affected actor's proposed action is frozen in the Sandbox Gate. No Fact Layer enforcement is possible. The system enters a finite waiting period to determine whether a human participant is available to acknowledge the pending bailout request. If a human becomes available before the bounded timer expires, transition to BAIL\_PENDING. If the bounded timer expires before human availability is confirmed, transition to ESCALATING.
+
+\subsubsection{BAIL\_PENDING}
+
+\textbf{Definition.} A human participant has been identified and is being notified of a pending bailout request. The notification is sent through all configured channels (SMS, email, and platform notification) simultaneously. The human is provided with full context of the unresolved bound-exceeded event, including the actor that triggered it, the proposed action, the risk assessment, and the elapsed bounded time.
+
+\textbf{Formal:} $\text{state} = \text{BAIL\_PENDING} \Leftrightarrow \text{human\_available} = \text{true} \land \text{ack\_pending} = \text{true}$
+
+\textbf{Properties:} The bailout request is queued at the Human Acknowledgment Queue (HAQ). The system waits for a human acknowledgment signal (ack\_received). If the human responds with approval or rejection, the protocol transitions to HUMAN\_ACKNOWLEDGED. If the BAIL\_PENDING timer expires before acknowledgment is received, the protocol transitions to ESCALATING.
+
+\subsubsection{ESCALATING}
+
+\textbf{Definition.} The system has been unable to secure human acknowledgment within the bounded timeout. This is the highest-priority escalation state. The ESCALATING state bypasses all standard queuing, notification hierarchy, and machine-actor routing logic. It constitutes an unconditional interrupt to all machine actors, forcing them to pause their current operations and propagate the bailout signal.
+
+\textbf{Formal:} $\text{state} = \text{ESCALATING} \Leftrightarrow \text{timeout\_expired} = \text{true} \land \text{human\_available} = \text{false}$
+
+\textbf{Properties:} A recursive upward propagation algorithm is initiated (see Section \ref{sec:escalation_algorithm}). Every machine actor in the system hierarchy receives the bailout signal and is required to forward it to the next human-occupied layer above it. The Fact Layer of each machine actor is placed in a hard-block state --- no new actions may be proposed or executed during ESCALATING. The system remains in ESCALATING until either human availability is confirmed (transition to BAIL\_PENDING) or resolution\_confirmed is received (transition to RESOLVED).
+
+\subsubsection{HUMAN\_ACKNOWLEDGED}
+
+\textbf{Definition.} A human participant has positively acknowledged the bailout request. The human has reviewed the full context and issued a directive: approval (with or without modification) or rejection. The system records the human's decision, the timestamp, and the human's identifier for forensic ledger purposes.
+
+\textbf{Formal:} $\text{state} = \text{HUMAN\_ACKNOWLEDGED} \Leftrightarrow \text{ack\_received} = \text{true} \land \text{directive\_issued} = \text{true}$
+
+\textbf{Properties:} The human's directive is final. The Fact Layer applies the directive without further machine-actor review. If the directive is approval, the proposed action is executed through the Fact Layer with full audit trail. If the directive is rejection, the proposed action is nullified and logged. The system transitions to RESOLVED upon resolution\_confirmed. A reset\_command can also transition the system directly to IDLE (canceling the action without resolution).
+
+\subsubsection{RESOLVED}
+
+\textbf{Definition.} The bailout event has been fully closed. The human's directive has been executed and recorded in the forensic ledger. All actors are returned to nominal state. The protocol resets to IDLE.
+
+\textbf{Formal:} $\text{state} = \text{RESOLVED} \Leftrightarrow \text{resolution\_confirmed} = \text{true}$
+
+\textbf{Properties:} RESOLVED is a terminal accepting state. Upon entry, the forensic ledger receives a resolution record containing: the triggering event, all states visited, elapsed times at each state, human participant(s) contacted, directives issued, and final outcome. The protocol then transitions immediately and automatically to IDLE. No human intervention required for reset.
+
+\subsection{Transition Conditions}
+
+Each transition in the state machine is triggered by one of the following conditions, evaluated continuously while the protocol is not in a terminal state:
+
+\begin{enumerate}
+
+\item \textbf{IDLE $\rightarrow$ BOUNDED:} Triggered when any active actor's \texttt{bound\_exceeded} event evaluates to true. This condition is defined formally as:
+
+\[
+\text{bound\_exceeded}(a) \triangleq \text{pending\_risk}(a) \geq \text{bound\_threshold}(a)
+\]
+
+where \texttt{pending\_risk(a)} is computed by the Bounds Engine for actor $a$'s current proposal, and \texttt{bound\_threshold(a)} is the actor-specific risk ceiling established during system configuration.
+
+\item \textbf{BOUNDED $\rightarrow$ BAIL\_PENDING:} Triggered when \texttt{human\_available} evaluates to true and no timeout has been exceeded during the bounded waiting period. Formally:
+
+\[
+\text{BOUNDED} \rightarrow \text{BAIL\_PENDING} \triangleq \text{human\_available} = \text{true} \land \text{bounded\_timer} < T_{\text{bounded}}
+\]
+
+where $T_{\text{bounded}}$ is the configured bounded-state timeout (default: 60 seconds).
+
+\item \textbf{BOUNDED $\rightarrow$ ESCALATING:} Triggered when the bounded timer expires before human availability is confirmed:
+
+\[
+\text{BOUNDED} \rightarrow \text{ESCALATING} \triangleq \text{bounded\_timer} \geq T_{\text{bounded}} \land \text{human\_available} = \text{false}
+\]
+
+\item \textbf{BAIL\_PENDING $\rightarrow$ HUMAN\_ACKNOWLEDGED:} Triggered by the reception of a valid human acknowledgment signal:
+
+\[
+\text{BAIL\_PENDING} \rightarrow \text{HUMAN\_ACKNOWLEDGED} \triangleq \text{ack\_received} = \text{true}
+\]
+
+A valid acknowledgment must include a directive (approve, reject, or modify) and the human's authenticated identifier.
+
+\item \textbf{BAIL\_PENDING $\rightarrow$ ESCALATING:} Triggered when the bailout-pending timer expires before any human acknowledgment is received:
+
+\[
+\text{BAIL\_PENDING} \rightarrow \text{ESCALATING} \triangleq \text{bailout\_timer} \geq T_{\text{bailout}}
+\]
+
+where $T_{\text{bailout}}$ is the configured bailout-pending timeout (default: 120 seconds).
+
+\item \textbf{ESCALATING $\rightarrow$ BAIL\_PENDING:} Triggered when the escalation algorithm successfully locates an available human participant:
+
+\[
+\text{ESCALATING} \rightarrow \text{BAIL\_PENDING} \triangleq \text{human\_available} = \text{true}
+\]
+
+This is the only regressive transition in the state machine. It exists because the escalation algorithm may recover human availability after initially failing.
+
+\item \textbf{ESCALATING $\rightarrow$ RESOLVED:} Triggered when resolution is achieved through non-human means during escalation (e.g., automatic safety shutdown triggered by Fact Layer hard-block). Formally:
+
+\[
+\text{ESCALATING} \rightarrow \text{RESOLVED} \triangleq \text{resolution\_confirmed} = \text{true}
+\]
+
+\item \textbf{HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED:} Triggered when the human's directive has been fully executed and recorded in the forensic ledger:
+
+\[
+\text{HUMAN\_ACKNOWLEDGED} \rightarrow \text{RESOLVED} \triangleq \text{resolution\_confirmed} = \text{true}
+\]
+
+\item \textbf{HUMAN\_ACKNOWLEDGED $\rightarrow$ IDLE:} Triggered by an explicit reset command from the acknowledging human or a higher-privilege human actor:
+
+\[
+\text{HUMAN\_ACKNOWLEDGED} \rightarrow \text{IDLE} \triangleq \text{reset\_command} = \text{true}
+\]
+
+This transition bypasses resolution recording and is used when the human wishes to cancel the pending action without logging a rejection outcome.
+
+\end{enumerate}
+
+\subsection{Bail-Out Trigger Condition}
+
+The bail-out trigger is the event that initiates the Bailout Protocol from the nominal IDLE state. It is not a user-configurable parameter --- it is a structural consequence of the BX3 Framework's bounded-reasoning requirement.
+
+\begin{definition}
+\textbf{Bail-Out Trigger.} A bail-out event $b$ is triggered when the Bounds Engine determines that an actor $a$ has reached a decision state $d$ such that the actor's risk assessment for the proposed action $x$ exceeds the actor's configured bound threshold $\tau_a$:
+
+\[
+b = \text{true} \iff \exists a \in \text{active\_actors}: \text{risk}(a, x, d) \geq \tau_a
+\]
+
+where $\text{risk}(\cdot)$ is the deterministic risk scoring function maintained by the Bounds Engine, and $\tau_a$ is the immutable bound threshold for actor $a$.
+\end{definition}
+
+The trigger is evaluated at every decision point during the Bounds Engine's reasoning cycle. It is deterministic: given the same actor state and proposed action, the trigger condition will always evaluate identically. There is no probabilistic component to the bail-out trigger. This is a deliberate design choice --- it ensures that the decision to invoke the Bailout Protocol is not dependent on model confidence, inference temperature, or any other non-deterministic input.
+
+When the trigger fires, the system immediately:
+\begin{enumerate}
+    \item Freezes the actor's proposed action in the Sandbox Gate;
+    \item Emits a \texttt{bound\_exceeded} event;
+    \item Transitions the Bailout Protocol state machine from IDLE to BOUNDED;
+    \item Starts the bounded timer.
+\end{enumerate}
+
+No further action is taken by the actor until the protocol resolves.
+
+\subsection{Escalation Algorithm}
+\label{sec:escalation_algorithm}
+
+The escalation algorithm is invoked when the system enters the ESCALATING state. Its purpose is to locate a human participant capable of acknowledging the pending bailout request, propagating the signal recursively upward through the machine-actor hierarchy until a human is found.
+
+The algorithm is defined as a recursive depth-first traversal of the organizational hierarchy graph $G = (V, E)$, where vertices $V$ represent actors and edges $E$ represent the supervisory relationship between them. Machine actors have no incoming edges from other machine actors; they are leaves in the human-directed subgraph.
+
+\begin{algorithm}
+\caption{Recursive Escalation Algorithm}
+\label{alg:escalation}
+
+\begin{algorithmic}
+\Function{Escalate}{$node$, $bailout\_context$}
+    \State $T_{\text{escalation\_max}} \leftarrow 300$ \Comment{5-minute hard cap}
+    \State $start \leftarrow \text{current\_time}()$
+    \While{$\text{current\_time}() - start < T_{\text{escalation\_max}}$}
+        \If{$\text{is\_human}(node)$}
+            \State $\text{notify}(node, bailout\_context)$
+            \State \Return \Call{AwaitAcknowledgment}{$node$, $T_{\text{bailout\_pending}}$}
+        \EndIf
+        \State $successors \leftarrow \text{get\_supervisors}(node)$
+        \ForEach{$s \in successors$}
+            \State $result \leftarrow \Call{Escalate}{s, bailout\_context}$
+            \If{$result = \text{HUMAN\_ACKNOWLEDGED} \lor result = \text{RESOLVED}$}
+                \State \Return $result$
+            \EndIf
+        \EndFor
+        \State $fallback \leftarrow \text{get\_fallback\_humans}()$
+        \ForEach{$h \in fallback$}
+            \State \Call{NotifyAllChannels}{$h$, $bailout\_context}$}
+            \State $result \leftarrow \Call{AwaitAcknowledgment}{$h$, $T_{\text{bailout\_pending}}$}
+            \If{$result = \text{HUMAN\_ACKNOWLEDGED}$}
+                \State \Return $result$
+            \EndIf
+        \EndFor
+        \State $\text{wait}(10)$ \Comment{Poll interval: 10 seconds}
+    \EndWhile
+    \State \Return \text{ESCALATION\_TIMEOUT}
+\EndFunction
+
+\State
+
+\Function{AwaitAcknowledgment}{$human$, $timeout$}
+    \State $start \leftarrow \text{current\_time}()$
+    \While{$\text{current\_time}() - start < timeout$}
+        \If{$\text{ack\_received}(human)$}
+            \State \Return \text{HUMAN\_ACKNOWLEDGED}
+        \EndIf
+        \State $\text{wait}(1)$
+    \EndWhile
+    \State \Return \text{ACK\_TIMEOUT}
+\EndFunction
+
+\State
+
+\Function{GetFallbackHumans}{}
+    \State $primary \leftarrow \text{config.get}($\texttt{primary\_human}$)$
+    \State $secondary \leftarrow \text{config.get}($\texttt{secondary\_humans}$)$
+    \State $emergency \leftarrow \text{config.get}($\texttt{emergency\_contact}$)$
+    \State \Return $[primary, secondary, emergency]$
+\EndFunction
+
+\State
+
+\Function{NotifyAllChannels}{$human$, $context$}
+    \State $\text{send\_sms}(human, context)$
+    \State $\text{send\_email}(human, context)$
+    \State $\text{send\_platform\_notification}(human, context)$
+    \State $\text{log\_notification}(human, context, \text{current\_time}())$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm imposes a hard ceiling of $T_{\text{escalation\_max}} = 300$ seconds (5 minutes) from the moment ESCALATING is entered. If no human acknowledgment is secured within this window, the algorithm returns \texttt{ESCALATION\_TIMEOUT}, at which point the system's Fact Layer enters a permanent hard-block state until manual override by a human with physical or administrative access.
+
+\subsection{Bypass Mechanism: Traversing Machine Actors}
+
+The bypass mechanism is the architectural feature that makes the upstream accountability guarantee enforceable. Without it, machine actors in the supervisory hierarchy could absorb, suppress, or delay bailout signals --- defeating the guarantee. The bypass mechanism ensures that no machine actor can obstruct, defer, or intermediate the bailout signal's path to a human.
+
+The mechanism is implemented through the following structural constraints:
+
+\begin{enumerate}
+
+\item \textbf{Fact Layer enforcement of bypass.} The bypass is not a software convention or a social contract --- it is enforced by the Fact Layer of every machine actor in the hierarchy. When a machine actor receives a bailout signal, its Fact Layer immediately places the actor in a hard-block state (no new proposals, no new executions). This hard-block is not conditional on the machine actor's consent or cooperation; it is a physical interrupt triggered by the signal's arrival at the actor's Fact Layer interface.
+
+\item \textbf{No intermediate buffering.} The bailout signal is never buffered in any machine actor's proposal queue, inbox, or priority queue. It is received by the machine actor's Fact Layer and transmitted directly to the human-occupied interface without any machine-actor evaluation step. The machine actor has no opportunity to assign a priority, defer the signal, or apply any transformation.
+
+\item \textbf{Signal propagation is non-blocking.} The machine actor's processing of the bailout signal does not block the signal's propagation. The signal is received and simultaneously forwarded upward. The machine actor continues to forward the signal even if its own processing is delayed, crashed, or killed.
+
+\item \textbf{Human interface is unconditionally accessible.} The human-occupied interface of every machine actor is designed to accept bailout signals regardless of the actor's current load, priority, or state. There is no queue position, no access control, and no authentication requirement beyond the human's identity verification (which occurs at the notification channel level, not at the interface level).
+
+\item \textbf{Hierarchy traversal is always upward.} The bypass mechanism traverses exclusively through upward supervisory edges. A machine actor never routes a bailout signal sideways or downward. This eliminates the possibility of signal loops or circular routing.
+
+\end{enumerate}
+
+The bypass mechanism ensures that the Bailout Protocol's escalation is architecturally isolated from the machine-actor hierarchy's normal operating logic. Machine actors participate in the escalation as signal relays only; they have no agency in the decision-making process once a bailout has been triggered.
+
+\subsection{Timeout Handling}
+
+Timeouts are a critical component of the Bailout Protocol. Without them, a system could remain in an intermediate state indefinitely, creating an unresolved accountability gap. The protocol defines four distinct timeout parameters, each with a defined system response upon expiration:
+
+\begin{enumerate}
+
+\item \textbf{$T_{\text{bounded}}$ --- Bounded State Timeout.}
+\begin{itemize}
+    \item Default: 60 seconds.
+    \item Trigger: Transition from BOUNDED to ESCALATING.
+    \item Response: Bounded timer expires. System evaluates human availability. If unavailable, enters ESCALATING immediately. If available, remains in BOUNDED until availability is confirmed or this timer also expires.
+    \item Governance: Configurable per actor class, not per individual actor. Must be set before system initialization. Cannot be modified during runtime without entering ESCALATING.
+\end{itemize}
+
+\item \textbf{$T_{\text{bailout}}$ --- Bailout Pending Timeout.}
+\begin{itemize}
+    \item Default: 120 seconds.
+    \item Trigger: Transition from BAIL\_PENDING to ESCALATING.
+    \item Response: Human has been notified but has not acknowledged within the window. Escalation algorithm is invoked.
+    \item Governance: Configurable globally. May be extended by the notifying human through an explicit acknowledgment signal before expiration.
+\end{itemize}
+
+\item \textbf{$T_{\text{escalation\_max}}$ --- Escalation Hard Cap.}
+\begin{itemize}
+    \item Default: 300 seconds (5 minutes).
+    \item Trigger: Permanent hard-block of all machine actors upon ESCALATING timeout.
+    \item Response: All actors freeze in place. System enters LOCKDOWN state (Training Wheels Protocol, Mode 3). Only human with physical or administrative access can reset. All escalation attempts and their outcomes are logged for forensic review.
+    \item Governance: Non-configurable. This is a permanent system constraint.
+\end{itemize}
+
+\item \textbf{$T_{\text{resolution}}$ --- Resolution Timeout.}
+\begin{itemize}
+    \item Default: 60 seconds after HUMAN\_ACKNOWLEDGED.
+    \item Trigger: Transition from HUMAN\_ACKNOWLEDGED to RESOLVED or IDLE.
+    \item Response: If resolution is not confirmed within the window, the protocol issues a warning to the acknowledging human and extends the timeout by an additional 60 seconds. If the extended window also expires without resolution, the system transitions to RESOLVED with an \texttt{unconfirmed} flag and logs the incomplete resolution for audit.
+    \item Governance: Per-session configurable by acknowledging human.
+\end{itemize}
+
+\end{enumerate}
+
+All timeout values are recorded in the forensic ledger alongside the events they govern. There is no silent timeout --- every expiration is logged, attributed to the system or actor responsible, and included in the resolution record transmitted to the Purpose Layer upon protocol completion.
+
+\subsection{Formal Properties and Safety Guarantees}
+
+The Bailout Protocol satisfies the following formal properties:
+
+\begin{enumerate}
+
+\item \textbf{Progress.} Every non-terminal state ($q \in \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}\}$) has at least one outgoing transition. The state machine cannot reach a deadlock state from which no transition is defined.
+
+\item \textbf{Determinism.} The transition function $\delta$ is total and deterministic: for every $q \in Q$ and $\sigma \in \Sigma$, exactly one next state is defined. There are no nondeterministic or probabilistic transitions.
+
+\item \textbf{Bounded Resolution.} Every invocation of the Bailout Protocol completes within $T_{\text{bounded}} + T_{\text{bailout}} + T_{\text{escalation\_max}} + T_{\text{resolution}} \leq 601$ seconds under default configuration (approximately 10 minutes). This upper bound is guaranteed by the hard cap on escalation and the resolution timeout.
+
+\item \textbf{Human Terminality.} The state machine can only reach the terminal accepting state RESOLVED through the HUMAN\_ACKNOWLEDGED state, which requires a human acknowledgment signal. No machine actor can independently drive the protocol to RESOLVED without human participation.
+
+\item \textbf{Bypass Integrity.} During ESCALATING, no machine actor can intervene in, delay, or reroute the bailout signal. The signal traverses all machine actors as pure relay; none have decision-making authority over the signal's propagation.
+
+\item \textbf{Forensic Completeness.} Every state transition, timeout event, human notification, acknowledgment, and directive is recorded in the forensic ledger before the protocol reaches RESOLVED. There is no state for which no ledger entry exists.
+
+\end{enumerate}
+
+These properties collectively ensure that the Bailout Protocol provides a reliable, enforceable, and auditable mechanism for discharging the BX3 Framework's upstream accountability guarantee across any system architecture that implements it.

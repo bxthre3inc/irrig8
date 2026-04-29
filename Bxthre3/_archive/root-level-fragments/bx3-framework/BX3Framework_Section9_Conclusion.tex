@@ -1,0 +1,60 @@
+\section{Conclusion}\label{sec:conclusion}
+
+The \bxthree{} Framework advances a single, architecturally precise claim: that
+autonomous systems must propagate every unresolved exception state to a named
+human principal, bypassing all intermediate machine actors, as a compulsory
+structural requirement rather than a runtime choice.  This mandatory bailout
+property is not a feature that can be retrofitted to an existing agentic
+architecture through better error handling or improved escalation heuristics.
+It is a structural property that follows, as a matter of architectural
+necessity, from the functional separation between Purpose, Bounds, and Fact
+layers.
+
+The framework's five named architectural pillars are co-equal and mutually
+reinforcing.  Loop Isolation ensures that the spawn graph is a rooted DAG and
+that accountability attribution is never ambiguous.  Recursive Spawning fixes the
+accountability chain at the architectural level and makes it immutable.
+Spatial Firewall contains sub-agent failures within execution domains and
+prevents lateral state corruption.  Sandbox Gate provides the sole permitted
+cross-domain communication channel with mandatory authorization verification.
+The Bailout Protocol compels the final escalation for any condition not resolved
+by the preceding four pillars, including conditions not anticipated at design
+time.
+
+Together, these five pillars constitute the upstream accountability guarantee:
+that \bxthree{} systems \emph{fail upward into human consciousness, never
+downward into autonomous chaos}.  The guarantee is not a design aspiration.
+It is a logical consequence of the framework's three-layer architecture, enforced
+by the \fact{} layer's deterministic pre-commit hook and recorded in the
+append-only Forensic Ledger.
+
+The theoretical contribution of this paper is foundational: that the upstream
+accountability guarantee is not a design choice but a logical consequence of the
+three-layer architecture, and that the Bailout Protocol is the mechanism by
+which that consequence is enforced at runtime.  The practical contribution is
+equally clear: that autonomous systems operating without such a mechanism are
+structurally exposed to failure modes --- invisible exception absorption,
+contingent escalation, and irreversible drift --- that cannot be eliminated by
+incremental improvement.  They require a new architectural primitive.  The
+\bxthree{} Framework is that primitive.
+
+The limitations analysis identifies the boundaries of this primitive as
+currently specified: human response latency introduces a structural floor on
+exception resolution time; sophisticated agents may exploit strategic
+misclassification to suppress warranted escalation; cascading failure conditions
+introduce scalability constraints that the current framework does not resolve;
+and the framework's guarantees are conditioned on substrate integrity properties
+that the framework itself cannot verify.  The directed research agenda ---
+formal verification, adaptive timeout mechanisms, distributed anchor pools, and
+exploitation resistance --- addresses each limitation as a principled research
+program.
+
+Future work will determine whether the \bxthree{} Framework's guarantees hold
+under full formal verification, whether adaptive exception classification can
+preserve safety while reducing human latency for low-consequence exceptions,
+and whether distributed human anchor pools can sustain scalability under
+cascading failure conditions without compromising the no-machine-actor-absorbs
+property.  The framework's core claim --- that the upstream accountability
+guarantee requires mandatory human escalation for all unresolved exception
+states --- is not contingent on these open questions.  It is established by
+the structural necessity of the three-layer architecture.

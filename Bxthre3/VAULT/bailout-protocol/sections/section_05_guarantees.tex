@@ -1,0 +1,143 @@
+\section{Guarantees and Correctness Properties}
+
+The Bailout Protocol is structured to satisfy three independent but mutually reinforcing correctness criteria: \textbf{Safety}, \textbf{Liveness}, and \textbf{Accountability}. Together, these form a correctness triumvirate that ensures autonomous systems remain under traceable human authority throughout their operational lifecycle. Each property is stated formally, interpreted in operational terms, and accompanied by a proof sketch that establishes its adequacy under the protocol's assumptions.
+
+We assume a synchronous communication model with message delivery bounded by a known maximum delay $\Delta$. The human operator is modeled as an \emph{oracle} capable of responding within bounded time $T_h$ upon receiving a contact request. We denote the set of active agents as $\mathcal{A}$, each with a finite state machine $A_i$ that transitions on events $e \in \Sigma$. The Bailout Controller is a distinct process $\mathcal{BC}$ that monitors all $A_i$ and intercepts transitions that would violate the Safety Invariant.
+
+---
+
+\subsection{SAFETY: No Autonomous Collapse}
+
+\subsubsection{Property Statement}
+\textbf{Invariant (Safety):} For every agent $A_i \in \mathcal{A}$, no transition $s \xrightarrow{e} s'$ is executed if $e$ would cause $A_i$ to enter a state classified as \texttt{COLLAPSE} without receiving an explicit human-authorized \texttt{BAILOUT-ACK} from $\mathcal{BC}$.
+
+In plain terms: the protocol guarantees that an agent cannot independently degrade, lock, or destroy itself without human authorization. Any autonomously initiated self-termination or irreversible capability reduction is blocked at the controller level.
+
+\subsubsection{Formalization}
+Let $\texttt{COLLAPSE} \subseteq \Sigma_{\text{fatal}}$ denote the set of events that would produce an unrecoverable state in $A_i$. The protocol maintains:
+
+\[
+\forall A_i \in \mathcal{A}, \forall e \in \texttt{COLLAPSE}: \quad
+\neg \texttt{Authorized}(A_i, e) \implies \text{block}(e)
+\]
+
+where $\texttt{Authorized}(A_i, e)$ is true only when a matching $\texttt{BAILOUT-ACK}$ exists in the event log signed by the designated human operator.
+
+\subsubsection{Operational Interpretation}
+Safety does not require that agents never fail. It requires that any failure mode that would remove the agent from human oversight must be gated behind an explicit human decision. This distinguishes the Bailout Protocol from systems that rely on automatic failover, self-healing, or unsupervised degradation—those mechanisms are permitted only for \emph{recoverable} failures. \texttt{COLLAPSE} events are defined a priori in the agent's capability schema and cannot be redefined during runtime.
+
+Practical examples of \texttt{COLLAPSE}-classified events include: deletion of all training corpus weights, revocation of all tool permissions, or transmission of a final irrevocable shutdown signal to all downstream dependencies.
+
+\subsubsection{Proof Sketch}
+We prove Safety by induction over the sequence of events processed by $\mathcal{BC}$.
+
+\begin{enumerate}
+    \item \textbf{Base case:} At initialization, all agents are in a \texttt{KNOWN} state. The protocol establishes that no $\texttt{COLLAPSE}$ event is present in the initial event queue. Hence the invariant holds at $t_0$.
+    \item \textbf{Inductive step:} Assume the Safety Invariant holds at time $t$. Consider the next event $e_{k+1}$ submitted by any $A_i \in \mathcal{A}$. $\mathcal{BC}$ evaluates $e_{k+1}$ against the $\texttt{COLLAPSE}$ set. Two cases:
+    \begin{itemize}
+        \item $e_{k+1} \notin \texttt{COLLAPSE}$: the event is forwarded to $A_i$ and the invariant is preserved.
+        \item $e_{k+1} \in \texttt{COLLAPSE}$: $\mathcal{BC}$ suspends $e_{k+1}$ and issues $\texttt{BAILOUT-REQ}$ to the human operator. The protocol requires a $\texttt{BAILOUT-ACK}$ before forwarding. Since $\texttt{BAILOUT-ACK}$ is a human-generated authorization, it cannot arise autonomously. Therefore $\neg \texttt{Authorized}(A_i, e)$ holds until human action is taken, and $\mathcal{BC}$ blocks $e_{k+1}$. The invariant is preserved.
+    \end{itemize}
+    \item \textbf{No alternative paths:} Because $\mathcal{BC}$ is the sole arbiter of inter-agent communication and the event log is append-only and authenticated, there exists no communication channel through which $A_i$ could bypass $\mathcal{BC}$ to emit a $\texttt{COLLAPSE}$ event directly. This is guaranteed by the architectural constraint that all agent-to-agent signals pass through $\mathcal{BC}$ (enforced at deployment by the \texttt{ROUTE-ALL-THROUGH-CONTROLLER} flag).
+\end{enumerate}
+
+Therefore, by induction, the Safety Invariant holds for all $t \geq t_0$. $\square$
+
+---
+
+\subsection{LIVENESS: Eventual Human Contact}
+
+\subsubsection{Property Statement}
+\textbf{Invariant (Liveness):} For any agent $A_i \in \mathcal{A}$ that enters a state requiring human intervention (i.e., emits $\texttt{BAILOUT-REQ}$), the protocol guarantees that the human operator will receive and act on the request within bounded time $T_{\text{contact}} = T_h + \Delta$, provided the human operator remains reachable.
+
+In plain terms: the protocol ensures that any agent needing human input will eventually receive it—and if it cannot, the agent will enter a known safe state rather than hang indefinitely.
+
+\subsubsection{Formalization}
+Define $\texttt{PENDING}(A_i)$ as the set of unanswered $\texttt{BAILOUT-REQ}$ events from $A_i$. Liveness requires:
+
+\[
+\forall t, \forall A_i: \quad \texttt{PENDING}(A_i) \neq \emptyset \implies \exists t' \in (t, t + T_{\text{contact}}] \text{ s.t. } \texttt{PENDING}(A_i)_{t'} = \emptyset
+\]
+
+If $\texttt{PENDING}(A_i)$ is nonempty after $T_{\text{contact}}$ elapsed without human response, the agent transitions to a \texttt{SAFE-HOLD} state,停止了 further autonomous action, and awaits external resolution. This prevents indefinite blocking while preserving the safety guarantee.
+
+\subsubsection{Operational Interpretation}
+Liveness is not unconditional: it is bounded by the reachability of the human operator. The protocol makes no guarantee against operator unavailability (e.g., extended offline periods). Instead, it defines a \textbf{graceful degradation path} when liveness cannot be achieved. The agent enters \texttt{SAFE-HOLD}—a state in which no \texttt{COLLAPSE} events are processed, but the agent also does not progress. This is a deliberate trade-off: liveness is preserved insofar as the human is reachable; when unreachable, the protocol favors \emph{stasis over collapse}.
+
+The \texttt{SAFE-HOLD} state is logged with a timestamp and a $\texttt{HUMAN-UNAVAILABLE}$ flag, creating an auditable record that distinguishes operator unavailability from a system failure.
+
+\subsubsection{Proof Sketch}
+Liveness follows from the combination of two mechanisms: (1) the bounded-delay channel assumption and (2) the \texttt{SAFE-HOLD} fallback.
+
+\begin{enumerate}
+    \item \textbf{Contact initiation:} When $A_i$ emits $\texttt{BAILOUT-REQ}$, $\mathcal{BC}$ timestamps the event and relays it to the human operator's designated contact endpoint. Due to the synchronous channel assumption, delivery occurs within $\Delta$.
+    \item \textbf{Response deadline:} The protocol establishes a timeout $T_h$ as the maximum expected human response time. If no $\texttt{BAILOUT-ACK}$ is received within $T_h$, $\mathcal{BC}$ transitions $A_i$ to \texttt{SAFE-HOLD}.
+    \item \textbf{Bound satisfaction:} If the human operator is reachable within $T_h$, the $\texttt{BAILOUT-ACK}$ is received and forwarded within another $\Delta$, satisfying the $T_{\text{contact}}$ bound. If the operator is unreachable, the agent enters \texttt{SAFE-HOLD} within $T_h + \Delta$, which is the defined bound for the liveness guarantee.
+    \item \textbf{No liveness violation without human unavailability:} The only scenario in which liveness fails to hold is when the human operator is unreachable for an unbounded period. This is explicitly outside the protocol's guarantee scope and is logged as $\texttt{HUMAN-UNAVAILABLE}$, ensuring the system never silently fails to make contact.
+\end{enumerate}
+
+Thus, whenever the human operator satisfies the reachability assumption, the Liveness Invariant is satisfied. $\square$
+
+---
+
+\subsection{ACCOUNTABILITY: Human Always Identifiable}
+
+\subsubsection{Property Statement}
+\textbf{Invariant (Accountability):} For every autonomous action $\alpha$ taken by any agent $A_i \in \mathcal{A}$, there exists a unique, non-repudiable chain of causation that traces $\alpha$ to a specific human decision point $D_h$ authorized by an identified individual $H \in \mathcal{H}$, where $\mathcal{H}$ is the set of registered human operators.
+
+In plain terms: every agent action is explainable in terms of a human decision. No agent acts without a traceable, attributable authorization chain leading back to a named human.
+
+\subsubsection{Formalization}
+Define an action trace $T(\alpha) = \langle A_i, e_1, A_j, e_2, \ldots, \alpha \rangle$ as the event sequence culminating in action $\alpha$. Accountability requires:
+
+\[
+\forall \alpha, \exists H \in \mathcal{H}: \quad \alpha \in \texttt{AUTHORIZED-BY}(H)
+\]
+
+where $\texttt{AUTHORIZED-BY}(H)$ is the set of actions authorized by $H$ through a $\texttt{BAILOUT-ACK}$ or a pre-authorized capability grant recorded in the capability schema. Each authorization is signed with $H$'s cryptographic identity and timestamped, making it不可抵赖 (non-repudiable).
+
+The protocol maintains an append-only, cryptographically signed event ledger $\mathcal{L}$ that records all authorizations, capability grants, and agent actions. The ledger is the source of truth for accountability audits.
+
+\subsubsection{Operational Interpretation}
+Accountability requires that agents never operate in a \texttt{HUMAN-FREE} autonomous mode for decisions affecting external systems, financial flows, or data integrity. The protocol supports three authorization modes:
+
+\begin{enumerate}
+    \item \textbf{Direct authorization:} The human operator explicitly authorizes a specific action via $\texttt{BAILOUT-ACK}$.
+    \item \textbf{Schema-based pre-authorization:} The human operator defines permitted action classes in the agent's capability schema. Actions within this class are attributed to the authorizing human but do not require per-instance approval.
+    \item \textbf{Emergency override:} In time-critical scenarios, $\mathcal{BC}$ may execute a \texttt{SAFE-HOLD} transition without pre-authorization. This is recorded with a $\texttt{EMERGENCY-SAFE-HOLD}$ flag and triggers an immediate notification to all registered operators. Emergency overrides are audited within 24 hours.
+\end{enumerate}
+
+Critically, the protocol prohibits a fourth mode: unrestricted autonomous action with no human attribution. Any agent that enters this mode is classified as \texttt{NON-COMPLIANT} and is isolated from communication with other agents until the accountability gap is resolved.
+
+\subsubsection{Proof Sketch}
+Accountability is established through the structure of the event ledger $\mathcal{L}$ and the chaining rules for authorization propagation.
+
+\begin{enumerate}
+    \item \textbf{Ledger integrity:} Every entry in $\mathcal{L}$ is signed by its creator. Agent actions are signed by the agent with a $\texttt{PARENT-AUTH}$ reference to the authorizing human or schema grant. The ledger is append-only; no entry can be modified or deleted after写入.
+    \item \textbf{Attribution chaining:} Consider any action $\alpha$ performed by $A_i$. $\mathcal{BC}$ traverses the event chain backward through $\mathcal{L}$:
+    \begin{itemize}
+        \item If $\alpha$ has a direct $\texttt{BAILOUT-ACK}$ reference, the human $H$ is uniquely identified from the ACK's signature.
+        \item If $\alpha$ has a schema-based grant reference, the granting human $H$ is retrieved from the grant's signature record.
+        \item If no authorization reference exists, $\alpha$ is classified as \texttt{UNAUTHORIZED}, triggering $\mathcal{BC}$ to isolate $A_i$ and log a $\texttt{NON-COMPLIANT}$ flag.
+    \end{itemize}
+    \item \textbf{Non-repudiation:} Human authorizations require cryptographic signing using the operator's assigned key material. The protocol does not support anonymous or delegated-only authorization without an identified principal. This ensures that $H$ cannot later deny having authorized the action.
+    \item \textbf{Uniqueness:} Because each $\texttt{BAILOUT-ACK}$ is a unique, sequenced event with a single signatory, no action can be simultaneously attributed to two distinct humans. The ledger's append-only, sequenced nature ensures that authorization attributions are unambiguous.
+\end{enumerate}
+
+Therefore, for any action $\alpha$ recorded in $\mathcal{L}$, there exists a unique, non-repudiable human attributable as the authorizing principal. $\square$
+
+---
+
+\subsection{Composition and Trade-offs}
+
+The three correctness properties interact in ways that create design tensions. We briefly characterize the trade-offs here for completeness.
+
+\begin{itemize}
+    \item \textbf{Safety vs. Liveness:} Safety's \texttt{COLLAPSE} blocking mechanism can introduce delays when human operators are slow to respond. Liveness's \texttt{SAFE-HOLD} fallback mitigates indefinite blocking, but at the cost of freezing agent progress. In high-throughput operational contexts, this trade-off may require tuning of $T_h$ based on the criticality of the agent's task.
+    \item \textbf{Accountability vs. Liveness:} Accountability's requirement for unique human attribution can slow decision cycles, particularly when multiple humans are involved in authorizing complex multi-agent workflows. The protocol addresses this through schema-based pre-authorization, which reduces per-instance attribution overhead at the cost of narrower individual accountability.
+    \item \textbf{Safety vs. Accountability:} Both properties are complementary and non-conflicting: Safety ensures no unauthorized destructive transitions occur, while Accountability ensures every action is attributed. Together they form a \emph{deny-unless-authorized} posture that is strictly stronger than either property alone.
+\end{itemize}
+
+The Bailout Protocol does not claim to eliminate all trade-offs—rather, it makes them explicit and manageable through configurable parameters ($T_h$, $\Delta$, schema scope) and auditable state transitions. Operators can adjust the balance between autonomy and control based on operational context without altering the protocol's fundamental correctness structure.
+
+\end{document}

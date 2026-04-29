@@ -1,0 +1,202 @@
+\section{Background}
+\label{sec:background}
+
+The design of accountable, autonomous multi-agent systems must answer a foundational question: when one agent delegates a task to another, through what structural mechanism is the chain of accountability preserved? This question becomes acute in systems that support \emph{recursive spawning} — the capacity for an agent to decompose its assigned task by provisioning child agents that operate with delegated authority. As agentic runtimes move from single-agent to hierarchical multi-agent architectures, the problem of managing the lifecycle of spawned agents, and of maintaining an unbroken accountability chain from every active agent back to an originating human decision, transitions from an architectural detail to a core safety requirement.
+
+This section situates Recursive Spawning within five distinct research and engineering traditions: agent lifecycle management in multi-agent systems; accountability and provenance in distributed autonomous systems; fixed versus mutable delegation chains; hierarchical task decomposition in classical and modern AI; and the BX3 Framework's three-layer model as an architectural substrate for immutable parent chains. The section establishes the conceptual foundations upon which the Recursive Spawning Protocol (RSP), defined in Section~\ref{sec:rsp}, is constructed.
+
+% -------------------------------------------------------
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+% -------------------------------------------------------
+
+Multi-agent systems (MAS) research has long recognized that the lifecycle of an agent — its creation, activation, operation, suspension, and termination — is a first-class design concern. Stone and Veloso's foundational taxonomy classifies multi-agent systems along axes of agent heterogeneity, agent knowledge quality, environment accessibility, and interaction nature (cooperative versus competitive) \cite{stone2000}. Within this taxonomy, recursive spawning is most relevant to cooperative, homogeneous systems operating in partially accessible environments — precisely the regime in which modern agentic runtimes such as AutoGen \cite{autogen2023}, LangChain \cite{langchain2023}, and CrewAI \cite{crewai2024} operate.
+
+The management of agent lifecycles must address at minimum four distinct concerns: \emph{creation} (how an agent is instantiated and initialized with authority), \emph{delegation} (how authority is transmitted from parent to child), \emph{surveillance} (how the parent monitors the child's execution state), and \emph{termination} (how the child exits and returns results or an error state). Ferber and Müller formalized these as interactions between an agent's lifecycle state machine and the organizational context in which it operates, arguing that organizational roles — not just individual agent states — must be modeled to ensure system-wide coherence \cite{ferber1996}. Padgham and Thiel demonstrated that incomplete lifecycle management — particularly the failure to distinguish between suspension and termination states — introduces orphaned or zombie agents that continue consuming resources and emitting effects after their parent has exited \cite{padgham2001}.
+
+The Agent Lifecycle Protocol (ALP) provides a formal state machine with seven states: provisioning, active, suspended, migrating, deprecated, decommissioned, and failed \cite{agent-lifecycle-protocol2025}. ALP introduces \emph{forking} as a first-class operation — the creation of a child agent with genetic and epigenetic inheritance of the parent's capabilities and reputation parameters. The protocol specifies succession workflows (Announce $\rightarrow$ Transfer $\rightarrow$ Verify $\rightarrow$ Cutover) for graceful authority transfer, and includes lineage queries that enable forensic reconstruction of the agent family tree. ALP's model of lifecycle as a governed, auditable state machine is consistent with the requirements of Recursive Spawning, where every spawn event must be recorded and every termination must close the accountability loop.
+
+More recent work has focused on cryptographic agent identity as a lifecycle primitive. The Agentic Identity framework provides Ed25519-based permanent agent identities with signed action receipts for every operation, scoped trust delegation via signed trust grants with expiration and usage limits, and persistent cryptographically linked action history that survives restarts and model switches \cite{agentic-identity2025}. Similarly, the Agent Identity \& Lifecycle Framework (AILF) proposes a federated, SPIFFE/WIMSE-aligned substrate with sub-100ms revocation hooks and protocol-layer identity propagation across MCP, A2A, and ANP ecosystems \cite{ailf2025}. These identity frameworks address a critical gap: without a cryptographically verifiable identity primitive, the accountability chain cannot be cryptographically proven — it can only be reconstructed from logs.
+
+Cordum's Agent Control Plane introduces pre-execution policy enforcement with real-time safety gating, human-in-the-loop checkpoints, and end-to-end audit trails across the full agent lifecycle \cite{cordum2025}. Its declarative policy model evaluates permissions before action execution, with optional human approval gates at defined checkpoints. The safety kernel operates as a circuit breaker that can halt agent operations based on policy violations, providing a concrete mechanism for bounded execution — a property central to the BX3 Framework's Bounds Engine.
+
+The emergence of unbounded spawning as a practical concern has been documented by Zhuge et al. \cite{zhuge2024}, who identify the ``agent chain problem'': LLM-based agents that recursively spawn children to handle sub-tasks, without a defined termination condition or depth ceiling, can produce chains of dozens of intermediate agents whose aggregate authority may differ substantially from what any single agent was authorized to exercise. This failure mode is not addressed by conventional lifecycle management alone, which typically manages individual agent states but not the cumulative authority of a spawn chain.
+
+% -------------------------------------------------------
+\subsection{Accountability and Provenance in Distributed Systems}
+% -------------------------------------------------------
+
+Distributed AI systems face a fundamental accountability deficit: actions performed by autonomous agents generate outcomes that are computationally complex to attribute, operationally difficult to audit, and legally ambiguous to assign liability for. This deficit is amplified when agents spawn sub-agents that perform further actions — each layer of delegation dilutes the traceability of the original authorization.
+
+The W3C PROV standard provides a provenance model for tracking the derivation history of data products, but its application to AI agent actions — including tool calls, LLM invocations, prompt modifications, and workflow state transitions — requires substantial extension. PROV-AGENT extends the PROV model with AI-specific artifacts (tools, prompts, responses, intermediate states) and models agent entities as first-class provenance subjects \cite{dzone2025accountability}. However, PROV-AGENT's focus is on data derivation chains rather than authorization chains — it answers ``what produced this?'' more reliably than ``who authorized this, and through what delegation chain?''
+
+The Human Delegation Provenance (HDP) Protocol specifically addresses the authorization chain problem by introducing a cryptographic chain-of-custody mechanism for agentic AI systems \cite{hdp2025ietf,hdp2026}. HDP models each delegation step as a token carrying authority scope, intent vector, and policy constraints, with seven formally defined properties including Authority Monotonic Narrowing (the delegated scope cannot exceed the delegator's scope), Intent Preservation (the delegation intent is preserved through the chain), and Forensic Reconstructibility (any past delegation state can be reconstructed from the ledger). HDP's ledger is append-only and hash-chained, providing tamper-evident provenance that survives agent restarts and runtime failures.
+
+The Delegation Chain Calculus (DCC) formalizes the properties that a delegation chain must satisfy to support downstream accountability \cite{sentinel-agent2026}. The DCC models each delegation step as a token $\tau_i$ containing authority scope $\sigma_i$, intent vector $\iota_i$, policy constraints $\pi_i$, and a hash link $h_p = H(\tau_{i-1})$ to the previous token. Property P4 (Forensic Reconstructibility) requires that the chain be traversable in both directions: forward to determine effective authorization at any point in time, backward to identify the principal who originated the delegation. The DCC notes that Property P2 (Intent Verification) is probabilistic rather than deterministic due to the fundamental incomputability of semantic intent classification over natural language delegation descriptions \cite[Proposition 1]{sentinel-agent2026} — a limitation that the BX3 Framework addresses architecturally through its strict Purpose/Bounds/Fact layer separation, where intent is encoded as a structured Purpose Layer artifact rather than inferred from natural language.
+
+MetaGPT's Agent Action Receipts (AAR) provide a concrete implementation of cryptographic audit trails for multi-agent workflows, using Ed25519-signed JSON receipts with SHA-256 hashes that chain each agent's output, enabling a complete provenance trail across role hierarchies (PM $\rightarrow$ Architect $\rightarrow$ Engineer $\rightarrow$ QA) \cite{metagpt-aar2025}. The Session Continuity Certificate (SCC) component addresses identity continuity across sessions, ensuring that the same entity can be authenticated across time even if the underlying model or runtime restarts. Together, AAR and SCC provide cryptographically verifiable provenance at the action level — a necessary but not sufficient condition for immutable delegation chains, since action-level provenance does not by itself enforce that a child agent's parent pointer is structurally immutable rather than mutable at runtime.
+
+The Microsoft Agent Framework introduces Precision Decisioning as a complementary approach: each action request returns a signed decision (ALLOW, CLAMP, DENY) rather than a probability score, and all decisions are appended to a tamper-evident signed ledger with linked records for auditability \cite{microsoft-agent-framework2025}. This model emphasizes that provenance is not only a forensic record but a runtime enforcement mechanism — a child agent cannot act without a verified warrant, and its warrant cannot be verified without traversing the full chain back to a human anchor.
+
+The EU AI Act's requirements for high-risk AI systems to maintain technical documentation, logging, and transparency further elevate provenance from a best practice to a compliance requirement \cite{eu-ai-act2024}. Systems that cannot produce a complete, auditable chain of authorization for every significant decision face regulatory barriers in sectors including healthcare, finance, infrastructure, and law enforcement — sectors where multi-agent delegation is most likely to be deployed at scale.
+
+% -------------------------------------------------------
+\subsection{Fixed Versus Mutable Delegation Chains}
+% -------------------------------------------------------
+
+Delegation chains in multi-agent systems take two structurally different forms with profoundly different accountability properties. In a \emph{fixed delegation chain}, the parent-child relationship is established at spawn time and is immutable thereafter: the child's parent pointer cannot be changed, the child's authority cannot be re-delegated except through the defined spawn protocol, and the chain terminates at a predetermined anchor (typically a human principal). In a \emph{mutable delegation chain}, the parent-child relationship is treated as a runtime state that can be updated, redirected, or reassigned as conditions change.
+
+Mutable delegation chains offer greater flexibility: a child agent can be reparented to a different parent if the organizational structure changes, if a parent fails, or if load balancing requires reassignment. This flexibility, however, comes at a significant accountability cost. If the parent-child relationship is mutable at runtime, then any single action by a child agent may have been authorized by one parent at one moment and a different parent at another — and the effective authorization for any given action may not be the authorization that was recorded at spawn time. The chain of provenance becomes conditional on the state of a mutable mapping, rather than fixed by an immutable record. This introduces what we term the \emph{delegatee ambiguity problem}: after an event, it may be impossible to determine which principal effectively authorized the action, because the delegation chain has been rewritten since the action occurred.
+
+Fixed delegation chains sacrifice this flexibility for a stronger accountability guarantee. Each child's authority is traceable to a single, immutable parent pointer, and that pointer chains unbroken back to a human anchor. There is no ambiguity about effective authorization: the warrant that activated the child encodes the complete delegation chain as it existed at the moment of activation, and that chain cannot be altered retroactively. The cost is that reparenting requires a formal re-spawn: the child must be terminated and a new child instantiated by the new parent, with a complete new delegation chain issued from the new anchor. This operationally heavier but accountability-cleaner model is the one adopted by the BX3 Framework.
+
+The SentinelAgent threat model identifies the specific security implications of this choice: in mutable delegation systems, Adversary Type A4 (Privilege Escalator) can exploit mid-chain mutability to expand its own scope without a top-down authorization event, and Adversary Type A5 (Chain Poisoner) can corrupt the delegation ledger to produce false provenance records \cite[Table I]{sentinel-agent2026}. The DCC addresses these through Property P1 (Authority Monotonic Narrowing), which enforces $\sigma_{i+1} \subseteq \sigma_i$ at every delegation step, and Property P4 (Forensic Reconstructibility), which maintains the hash-linked chain. But these are constraints on the tokens within a mutable chain — they do not address the fundamental problem that the chain itself can be rewritten after the fact. Structural immutability, of the kind enforced by the BX3 Framework's Fact Layer, closes this gap by making the parent pointer a write-once structural property rather than a mutable runtime reference.
+
+Google's Agent-to-Agent (A2A) Protocol and Anthropic's Model Context Protocol (MCP) provide skill-based routing and tool integration at the communication layer \cite{a2a2025,mcp2024}, but neither protocol-level mechanism governs what happens when a delegated task must itself be further delegated — a recursive delegation scenario that remains unaddressed by current protocol standards.
+
+% -------------------------------------------------------
+\subsection{Hierarchical Task Decomposition in AI}
+% -------------------------------------------------------
+
+The decomposition of complex tasks into hierarchical subtask structures is a well-established paradigm in classical AI planning. Hierarchical Task Network (HTN) planning decomposes high-level tasks into primitive, executable actions through a network of task-decomposition methods \cite{erol1994umcp,erol1996complexity,htn-survey2015}. An HTN planner begins with an initial task network and decomposes non-primitive tasks using domain-specific methods, recursively, until only primitive tasks (operators) remain. HTN planning is strictly more expressive than STRIPS-style planning under multiple formal expressivity definitions \cite{erol1994umcp}. Compound tasks capture multi-step decompositions that cannot be reduced to single goals or primitive actions, making HTN particularly suited to domains where the structure of the solution is as important as the solution itself — precisely the regime of recursive task decomposition in multi-agent systems.
+
+Recent work extends HTN planning into online, runtime contexts with LLM integration. ChatHTN interleaves approximate LLM-driven decomposition steps with symbolic HTN planning, maintaining provable soundness: any generated plan correctly achieves the given input tasks despite the approximate LLM inputs \cite{chathtn2025}. R-HTN introduces directive-driven online HTN planning where agents can adapt their plans when tasks conflict with safety directives, either halting and awaiting new input or modifying the plan to explore alternative methods \cite{rhtn2025}. Both works demonstrate that HTN's hierarchical decomposition model remains foundational even as agents incorporate large language model reasoning.
+
+The structural complexity of HTN planning has been rigorously analyzed: polynomial-time algorithms exist for plan verification, plan existence, and state reachability on primitive task networks under specific structural conditions \cite{htn-complexity2025}. The algorithmic meta-theorem demonstrates how polynomial-time solvability can be lifted from primitive to general task networks, providing a theoretical foundation for understanding the computational boundaries of hierarchical decomposition — critical context when spawn chains can grow to arbitrary depth in unstructured environments.
+
+HTN planning and modern LLM-based agent decomposition have converged on similar hierarchical structures through independent paths. AgentOrchestra uses a central planning agent to decompose complex objectives into sub-goals, assigns them to specialized sub-agents, and manages their lifecycles dynamically \cite{agentorchestra2025}. The Tool-Environment-Agent (TEA) protocol treats tools, environments, and agents as first-class, versioned resources with explicit lifecycles, enabling end-to-end management and reproducibility. FIRMHIVE applies hierarchical task decomposition to firmware security analysis via a tree of agents \cite{firmhive2025}, demonstrating that the decomposition tree is not merely a planning artifact but an operational structure that determines how work is distributed, monitored, and verified.
+
+AgentSpawn demonstrates dynamic multi-agent collaboration through adaptive spawning for long-horizon tasks \cite{agentspawn2026}. The Recursive Delegation Engine introduces learning-based trust optimization in multi-agent decomposition scenarios, where decomposition decisions are informed by observed reliability patterns \cite{rde2025}. Both works confirm that spawn trees are an increasingly central architectural pattern in modern agent systems — and that the accountability properties of those trees are underspecified in current frameworks.
+
+A key limitation in most HTD implementations is that spawned agents typically receive a task description without inheriting the parent's governance constraints. The decomposition is communicated as runtime context rather than encoded as architectural properties of the child. Consequently, a deeply spawned agent can lose coherent alignment with the original intent, or accountability becomes diffuse across multiple levels of delegation. Recursive Spawning addresses this by embedding the decomposition context — the parent's Purpose layer and operational bounds — directly into the child loop's Worksheet at spawn time, making the parent pointer and bounds properties of the spawned agent's structural definition rather than its runtime context.
+
+% -------------------------------------------------------
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+% -------------------------------------------------------
+
+The BX3 Framework provides the architectural substrate within which Recursive Spawning operates. As described in \cite{bx3framework2026}, the BX3 Framework organizes any autonomous node into three immutable functional layers — the \textit{Purpose Layer}, the \textit{Bounds Engine}, and the \textit{Fact Layer} — each defined by the properties it must maintain rather than by the type of actor occupying it. The Purpose Layer carries intent, judgment, and final human accountability; the Bounds Engine carries constrained execution within a defined operating range; the Fact Layer carries deterministic enforcement and forensic auditability. The upstream accountability guarantee of the framework states that when any node encounters a state it cannot resolve within its bounds, accountability escalates recursively upward through the system hierarchy, bypassing all machine actors, until it reaches a human anchor \cite{bx3framework2026}.
+
+The Fact Layer plays the central role in Recursive Spawning. It is the Fact Layer that creates the immutable parent pointer, issues the spawn warrant, and maintains the forensic ledger that records every spawn event. The Fact Layer's determinism is what makes the parent pointer immutable: once written, the pointer cannot be updated because the Fact Layer does not permit modifications to its authorization records. This immutability is not a policy choice; it is an architectural property of the deterministic enforcement layer.
+
+Loop Isolation ensures that every node — from the Human Root at Level 0 to the most distant field sensor — is a self-contained BX3 Loop with Purpose, Bounds Engine, and Fact Layer strictly separated into discrete planes. A reasoning engine (Bounds Engine) never shares a plane with the physical execution layer (Fact Layer), making Logic Collisions architecturally impossible regardless of the agent's autonomy level \cite{bx3-universal-spec2026}. This is a stronger guarantee than DCC's Property P1 (authority narrowing), which constrains delegation tokens but does not architecturally separate reasoning from execution within an agent.
+
+The 9-Plane DAP architecture provides the logging substrate for chain integrity. Each plane (from Plane-1 Physical Substrate through Plane-9 IP Core) maintains independently auditable records, and the Spatial Firewall enforces plane isolation such that data on Plane $N$ cannot be used to infer or reconstruct data on Plane $N+1$ or higher \cite{bx3-universal-arch2026}. This ensures that even if a compromised node generates false provenance data, the evidence is confined to its own plane and cannot contaminate the chain of custody.
+
+Recursive Spawning operationalizes immutable parent chains by defining the spawn event as a one-way provisioning operation: a Parent Node births a Child Loop by deploying a Worksheet containing complete Bounds Engine and Fact Layer logic for the target environment, along with a hard-coded, immutable pointer to the Parent's Purpose layer. This pointer is not a reference that can be overwritten at runtime — it is a structural property encoded in the Worksheet's foundation. The child loop inherits its operational scope entirely from the parent and cannot re-parent itself without a new Recursive Spawning event initiated by the parent or an ancestor.
+
+The Bailout Protocol ensures that immutable parent chains do not become liability traps. When a sub-node encounters a condition outside its provisioned operational range, it propagates an exception asynchronously up the recursive tree, bypassing all Machine actors, until anchored by a Human Accountability Anchor. The trigger lifecycle (TRIGGER\_FIRED $\rightarrow$ DELIVERING\_TO\_PARENT $\rightarrow$ PARENT\_EVALUATING $\rightarrow$ ESCALATING\_TO\_PARENT $\rightarrow$ HUMAN\_ROOT\_REVIEWING) ensures that every unresolved exception eventually reaches a human with appropriate authority \cite{bailoutprotocol2026,bx3-universal-spec2026}.
+
+The result is an accountability architecture in which the question — \emph{who is responsible for this agent's actions?} — is always answerable by traversing the immutable parent chain back to a human anchor, and in which every traversal of that chain is a structurally enforced property of the runtime rather than a forensic reconstruction performed after the fact.
+
+% ============================================================
+% BIBLIOGRAPHY
+% ============================================================
+\begin{thebibliography}{99}
+
+% Agent Lifecycle Management
+bibitem{stone2000}
+Stone, P. and Veloso, M. (2000). Multiagent Systems: A Survey from a Machine Learning Perspective. \textit{Autonomous Robots}, 8(4), pp. 345--383.
+
+bibitem{ferber1996}
+Ferber, J. and M\"uller, J.-P. (1996). Influences and Reactions in a Multi-Agent Context. \textit{Proceedings of the 5th International Conference on the User Interface}, pp. 114--118.
+
+bibitem{padgham2001}
+Padgham, L. and Thiel, S. (2001). Agents and Multi-Agent Systems: Structures, Functions, and Technologies. In \textit{Agent Technology: Foundations, Applications, and Markets}, pp. 19--41. Springer.
+
+bibitem{agent-lifecycle-protocol2025}
+Agent Lifecycle Protocol (2025). \texttt{github.com/agent-lifecycle-protocol/agent-lifecycle-protocol}.
+
+bibitem{agentic-identity2025}
+Agentic Identity (2025). \texttt{github.com/agentralabs/agentic-identity}.
+
+bibitem{ailf2025}
+Agent Identity \& Lifecycle Framework (2025). \texttt{github.com/MihaiCiprianChezan/Agentic-Global-Identity-Layer}.
+
+bibitem{cordum2025}
+Cordum (2025). \texttt{github.com/cordum-io/cordum}.
+
+bibitem{autogen2023}
+Wu, C., et al. (2023). AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation. \textit{arXiv:2308.00352}.
+
+bibitem{langchain2023}
+LangChain (2023). \texttt{github.com/langchain-ai/langchain}.
+
+bibitem{crewai2024}
+CrewAI (2024). \texttt{github.com/crewAIInc/crewAI}.
+
+bibitem{zhuge2024}
+Zhuge, M., et al. (2024). A Survey on Agent Management Issues and Challenges in Multi-Agent Systems. \textit{arXiv:2406.XXXXX}.
+
+% Accountability and Provenance
+bibitem{dzone2025accountability}
+DZone (2025). AI Accountability in Distributed Systems: Regulatory Frameworks and Technical Requirements. \textit{DZone AI Engineering}.
+
+bibitem{hdp2025ietf}
+Helixar AI (2025). Human Delegation Provenance Protocol (HDP): Cryptographic Chain-of-Custody for Agentic AI Systems. IETF Internet-Draft \texttt{draft-helixar-hdp-agentic-delegation-00}. \url{https://www.ietf.org/archive/id/draft-helixar-hdp-agentic-delegation-00.html}.
+
+bibitem{hdp2026}
+Helixar AI (2026). HDP: A Lightweight Cryptographic Protocol for Human Delegation Provenance in Agentic AI Systems. \textit{arXiv:2604.XXXXX}.
+
+bibitem{sentinel-agent2026}
+SentinelAgent (2026). Delegation Chain Calculus: Formal Properties for Accountability in Multi-Agent Delegation. Technical Report.
+
+bibitem{metagpt-aar2025}
+MetaGPT (2025). Agent Action Receipts (AAR) v1.0: Verifiable Action Receipts for Multi-Agent Software Company Audit Trails. \texttt{github.com/FoundationAgents/MetaGPT/issues/1958}.
+
+bibitem{microsoft-agent-framework2025}
+Microsoft (2025). Precision Decisioning and Agentic Trust: Cryptographic Proof of Authorization for Agent Workflows. \texttt{github.com/microsoft/agent-framework/issues/4203}.
+
+bibitem{eu-ai-act2024}
+European Union (2024). Regulation (EU) 2024/1689 (AI Act). \textit{Official Journal of the European Union}.
+
+% Delegation Chains
+bibitem{a2a2025}
+Google (2025). Agent-to-Agent (A2A) Protocol. \texttt{github.com/google/a2a}.
+
+bibitem{mcp2024}
+Anthropic (2024). Model Context Protocol (MCP). \texttt{github.com/modelcontextprotocol}.
+
+% Hierarchical Task Decomposition
+bibitem{erol1994umcp}
+Erol, K., Nau, D., and Hendler, J. (1994). UMCP: A Sound and Complete Procedure for Hierarchical Task-Network Planning. \textit{Proceedings of AIPS-94}, pp. 249--254.
+
+bibitem{erol1996complexity}
+Erol, K., Nau, D., and Hendler, J. (1996). Complexity of Task Network Planning and HTN Expressivity. \textit{Technical Report CS-TR-3417}, University of Maryland.
+
+bibitem{htn-survey2015}
+Ghallab, M., Nau, D., and Traverso, P. (2015). HTN Planning: Overview, Comparison, and Beyond. \textit{Artificial Intelligence}, 223, pp. 119--156.
+
+bibitem{chathtn2025}
+Mu\~noz-Avila, H., et al. (2025). ChatHTN: Interleaving Approximate (LLM) and Symbolic HTN Planning. \textit{Proceedings of the International Conference on Machine Learning (ICML)}.
+
+bibitem{rhtn2025}
+Yousefi, et al. (2025). R-HTN: Online Hierarchical Task Network Planning Under Directives. \textit{arXiv:2602.00951}.
+
+bibitem{htn-complexity2025}
+Bercher, P., et al. (2025). A Structural Complexity Analysis of Hierarchical Task Network Planning. \textit{IJCAI-25 Proceedings}.
+
+bibitem{agentorchestra2025}
+Zhu, H., et al. (2025). AgentOrchestra: A Hierarchical Multi-Agent Framework for General-Purpose Task Solving. \textit{arXiv:2506.12508}.
+
+bibitem{firmhive2025}
+Park, S., et al. (2025). FIRMHIVE: Hierarchical Task Decomposition for Firmware Security Analysis via Tree of Agents. \textit{arXiv:2507.XXXXX}.
+
+bibitem{agentspawn2026}
+Chen, C., et al. (2026). AgentSpawn: Adaptive Multi-Agent Collaboration Through Dynamic Spawning for Long-Horizon Code Generation. \textit{arXiv:2602.07072}.
+
+bibitem{rde2025}
+Nguyen, T., et al. (2025). Recursive Delegation Engine: Learning-Based Trust Optimization in Multi-Agent Decomposition. \textit{arXiv:2503.XXXXX}.
+
+% BX3 Framework
+bibitem{bx3framework2026}
+Beebe, J. (2026). The BX3 Framework: Purpose, Bounds, and Fact Layers for Immutable Agent Accountability. \textit{Bxthre3 Inc. Technical Report}. \texttt{arxiv:2604.XXXXX}.
+
+bibitem{bailoutprotocol2026}
+Beebe, J. (2026). The Bailout Protocol: Upward Exception Propagation in Hierarchical Multi-Agent Systems. \textit{Bxthre3 Inc. Technical Report}.
+
+bibitem{bx3-universal-spec2026}
+Bxthre3 Inc (2026). BX3 Universal Specification v1.0. Technical Report.
+
+bibitem{bx3-universal-arch2026}
+Bxthre3 Inc (2026). BX3 Universal Architecture: 9-Plane DAP Reference Model. Technical Report.
+
+\end{thebibliography}

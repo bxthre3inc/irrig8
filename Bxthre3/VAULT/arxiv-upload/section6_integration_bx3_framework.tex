@@ -1,0 +1,141 @@
+\section{Integration with the BX3 Framework}
+\label{sec:framework-integration}
+
+The Recursive Spawning Protocol as described in Section~\ref{sec:recursive-spawning} is architecturally dependent on the BX3 Framework's three-layer runtime. RSP does not operate as an independent policy layer applied after agent construction; it is instantiated through the coordinated enforcement of the \purpose{} layer, the \bounds{} layer, and the \fact{} layer. Each layer carries a distinct functional responsibility in the accountability architecture, and their combination is what makes drift structurally impossible rather than conventionally prevented.
+
+% ---------------------------------------------------------------
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:purpose-layer-anchor}
+
+The \purpose{} layer is the singular anchor of human intent in the BX3 architecture. Every root agent is initialized with a declared purpose clause that defines the boundaries of its operational scope; no child agent's purpose may extend beyond its parent's semantic scope, and no agent may revise its purpose after spawn. In the recursive spawning context, the \purpose{} layer serves as the sole authorization gateway for any spawn event: a parent node issues a \texttt{SPAWN} directive only after the \purpose{} layer has verified that the proposed child's authorized operation set is a proper subset of the parent's own authorized scope ($\delta \subseteq \sigma(n_{\text{parent}})$, INV-S2). This constraint is architecturally enforced, not policed by policy convention — a spawn request that expands scope rather than narrowing it is rejected at the \purpose{} layer before any other layer evaluates the event.
+
+The \purpose{} layer additionally enforces scope containment: $n_{\text{child}}$ may not be granted access to resources — external APIs, data partitions, memory regions — that $n_{\text{parent}}$ does not itself have clearance to access. This prevents lateral movement through the delegation chain. A malfunctioning node at depth $\phi$ cannot use recursive spawning as a mechanism to reach resources beyond its ancestor's clearance boundary.
+
+The critical property of the \purpose{} layer as anchor is that every node in the accountability chain has a \purpose{} layer. The chain of \purpose{} layers is coextensive with the parent pointer chain: following the parent pointer from any active node to the root traverses the same sequence that a human principal would follow when issuing constraints or revoking authorization. The \purpose{} layer is therefore not merely a configuration attribute — it is a runtime accountability interface that is transitively present at every depth. This is what makes the human anchor reachable at any depth, and what prevents the drift condition in which a machine node at depth $d$ operates without any human principal in its transitive scope of authorization.
+
+% ---------------------------------------------------------------
+\subsection{Bounds Engine Depth Enforcement}
+\label{sec:bounds-engine-depth}
+
+The \bounds{} layer enforces structural and computational constraints that prevent unbounded recursion. Each node carries an immutable depth attribute $\phi(n)$ assigned at spawn time and cryptographically sealed in the forensic ledger. The Bounds Engine enforces two independent constraints at every spawn event:
+
+\begin{enumerate}
+    \item \textbf{Depth increment:} $\phi(n_{\text{child}}) = \phi(n_{\text{parent}}) + 1$ (INV-S1). No node may skip depth levels or spawn a child at an arbitrary depth of its choosing.
+    \item \textbf{Depth ceiling:} $\phi(n_{\text{child}}) \leq \Phi_{\max}$. No spawn event may produce a child at or beyond the configured maximum depth.
+\end{enumerate}
+
+When the Bounds Engine refuses a spawn at the depth limit, the response is not silent absorption by the parent. The spawn request is invalidated, the proposed child is never created, and the parent receives a \texttt{DEPTH\_LIMIT\_EXCEEDED} exception. This exception propagates via the Bailout Protocol toward the human anchor. The human principal must either re-authorize the operation at a shallower depth or decline. This design ensures the depth bound is a structural ceiling, not a suggestion that can be bypassed by a parent willing to absorb the delegated work.
+
+The combination of immutable depth attribute and depth ceiling enforcement means the effective maximum depth of any accountability chain is $\Phi_{\max} + 1$ hops from the root human. Chain traversal is therefore $O(\Phi_{\max})$ — constant with respect to total system population. This bound is particularly significant for the Bailout Protocol: any unresolved exception propagates to a human within a predictable maximum number of hops, regardless of population size or branching factor.
+
+The \bounds{} layer also enforces convergence criteria beyond depth. A depth-limited system can still enter oscillation — multiple nodes repeatedly spawning each other within the depth budget — without ever reaching a resolution state. The Bounds Engine tracks work-item completion state: if a spawn event cannot be completed within the configured convergence budget (maximum spawn count without work-item resolution), the engine treats the condition as terminal and triggers the Bailout Protocol. This prevents unbounded oscillation within the depth limit.
+
+% ---------------------------------------------------------------
+\subsection{Fact Layer as Forensic Ledger}
+\label{sec:fact-layer-f ledger}
+
+The \fact{} layer is the append-only, tamper-evident record of all spawn events, delegation actions, purpose clause bindings, and state transitions. It serves as the final activation gate for every child node: no child transitions to the \texttt{ACTIVE} state until the \fact{} layer has confirmed both the ledger write and the creation of the immutable parent pointer. This two-phase activation barrier prevents the scenario in which a child begins executing before its accountability chain is fully inscribed — a window of unanchored agency.
+
+Every spawn event $s = \langle n_{\text{parent}}, n_{\text{child}}, \delta, \phi, t_s \rangle$ is recorded as a \texttt{SPAWN} event in the forensic ledger. The immutable parent pointer $p(n_{\text{child}}) = n_{\text{parent}}$ is stored as a SHA-256 hash of the concatenation of the parent's node ID, the child's genesis block, and the timestamp $t_s$. The ledger entry contains the full spawn tuple and a hash reference to the prior ledger entry, forming a chain that is append-only and tamper-evident. Modification or deletion of any ledger entry after commitment is rejected by the protocol; the hash chain would break, invalidating the chain integrity claim.
+
+The \fact{} layer performs chain termination verification on every spawn: it traverses the parent pointer chain from $n_{\text{child}}$ upward, following $p(n)$ at each step, and confirms that the traversal terminates at a node with a defined human anchor $h(n)$. If the chain reaches a node $n_{\text{terminus}}$ for which no human anchor is defined and $n_{\text{terminus}}$ is not itself a human, the \fact{} layer rejects the spawn with a \texttt{DENIED\_CHAIN\_TERMINATION} error. This is a non-negotiable invariant: every active node must be architecturally reachable from a human principal via the parent pointer chain.
+
+The three-layer concurrency requirement ensures that spawning is accountable from inception: the \purpose{} layer may authorize, and the \bounds{} layer may permit, but if the \fact{} layer cannot verify the forensic record or the chain termination, the child is not activated. The \fact{} layer is the final activation gate precisely because it is the layer that executes — it does not deliberate, and it cannot be deceived by its own output. When it records that $\textit{ParentPointer}(p, c)$ has been established, that record is a physical fact about the state of the system.
+
+Every \texttt{CHAIN\_TRAVERSE} event (parent pointer reads during chain traversal) and every \texttt{CHAIN\_EXTEND} event (new spawn events) is recorded simultaneously on the \purpose{}, \bounds{}, and \fact{} planes. Three-plane attestation is required for any chain integrity claim. Divergence at any plane — a \texttt{CHAIN\_EXTEND} on the \fact{} plane but absent from the \purpose{} plane, for example — raises a \texttt{CHAIN\_INTEGRITY\_FAILURE} flag and triggers a Bailout Protocol signal to the nearest \purpose{} layer ancestor. This multi-plane model ensures that no single plane can be compromised to falsify chain state without detection by the remaining two.
+
+\vfill
+
+% ---------------------------------------------------------------
+\section{Correctness Properties}
+\label{sec:correctness-properties}
+
+The Recursive Spawning Protocol, operating on the BX3 three-layer substrate, satisfies a set of structural correctness properties that together establish the drift-prevention guarantee. We prove these properties formally and show that they hold for any valid BX3 population under the RSP invariants (INV-S1 through INV-S4) from Section~\ref{sec:spawn-invariants}.
+
+% ---------------------------------------------------------------
+\subsection{Drift Prevention}
+\label{sec:drift-prevention}
+
+We prove that the autonomous drift problem (Section~\ref{sec:autonomous-drift}) is structurally impossible in a BX3 system operating under the RSP.
+
+\begin{definition}[Drift]
+An agent $a$ is in the drifted state if and only if all three of the following hold simultaneously:
+\begin{enumerate}
+    \item $a$ is active and executing consequential actions.
+    \item There exists no chain of $\purpose{}$ layer principals connecting $a$ to any human principal in $a$'s transitive scope of authorization.
+    \item $a$ is not in a terminal exception state awaiting Bailout Protocol resolution.
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[Drift Prevention]
+In a BX3 system operating under the RSP with invariants INV-S1 through INV-S4, no agent $a$ can enter the drifted state.
+\end{theorem}
+
+\begin{Proof}
+We prove the contrapositive: if any of the three drift conditions fails, the agent cannot be drifted. Consider condition (2) — disconnection from human anchor. By INV-S4, every active node $n$ has a human anchor $h(n)$ that is reachable via the parent pointer chain and verified at spawn time by the \fact{} layer's chain termination check. Since $p(n_{\text{child}}) = n_{\text{parent}}$ is immutable (INV-S3), this chain cannot be broken by any subsequent operation within $n$ or any third-party actor. Condition (2) is therefore structurally impossible for any active node.
+
+Now consider condition (1) — active consequential execution. By INV-S3, no child node transitions to \texttt{ACTIVE} until its immutable parent pointer is sealed and logged. A node without a parent pointer cannot be activated. A node with a parent pointer is, by the parent pointer definition (Definition~\ref{def:parent-pointer}), permanently connected to its parent. Therefore any active node is, by construction, connected to its parent chain at activation and remains so for its operational lifetime. Condition (1) cannot hold in isolation from condition (2).
+
+Condition (3) — not awaiting Bailout resolution — is the negation of the exception state. The Bailout Protocol is triggered automatically on any unresolved exception, and by the chain traversal bound of $O(\Phi_{\max})$, any unresolved state reaches a human within a bounded number of hops. The agent cannot independently remain active through an exception that should have triggered Bailout without the chain being detectably broken — which would be caught by the three-plane attestation.
+
+Since all three conditions cannot simultaneously hold for any node, the drifted state is architecturally impossible. \qed
+\end{Proof}
+
+The intuition underlying the proof is that drift requires \emph{simultaneous} failure of all three structural mechanisms: a broken parent pointer (immutability), a missing forensic record (ledger), and a chain that terminates at a machine rather than a human (Purpose Layer). The RSP enforces all three simultaneously and independently at every spawn event. Drift is not a statistical property to be reduced — it is a structural impossibility as a matter of protocol enforcement.
+
+The proof sketch above is combinatorial rather than probabilistic: it does not rely on the likelihood that a drifted agent evades detection. It relies on the architectural definitions of immutability, chain termination, and three-layer concurrency, which are enforced as physical constraints of the runtime. An agent cannot be drifted because it cannot be orphaned (immutable parent pointer), it cannot hide its chain (forensic ledger), and it cannot terminate at a machine (chain termination verification at every spawn).
+
+% ---------------------------------------------------------------
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+
+\begin{definition}[Chain Integrity]
+The accountability chain of a node $a$ has integrity if and only if:
+\begin{enumerate}
+    \item The chain $\textit{Chain}(a)$ as recorded in the forensic ledger is identical to the chain reconstructed by transitively applying the parent pointer function $\alpha$ from $a$ to the root.
+    \item Every link in $\textit{Chain}(a)$ was created by a valid spawn event satisfying INV-S1 through INV-S4.
+    \item The ledger hash chain is unbroken from the root to $a$.
+\end{enumerate}
+\end{definition}
+
+\begin{property}[Chain Integrity]
+For any active node $a$ in a BX3 system operating under the RSP, $\textit{Chain}(a)$ has integrity.
+\end{property}
+
+\begin{Proof}
+By INV-S3, every active node $n$ has a sealed, ledger-committed parent pointer $p(n)$. The forensic ledger records every spawn event as a \texttt{SPAWN} entry with a hash reference to the prior entry, forming an append-only hash chain. By the definition of hash chain integrity, any modification to a ledger entry invalidates all subsequent hash references, making the break detectable by recomputing the chain. The \fact{} layer performs this verification at every spawn event and raises \texttt{CHAIN\_INTEGRITY\_FAILURE} on any divergence. The three-plane attestation requirement further ensures that no single plane can falsify chain state without triggering the failure flag. Therefore, for any active node, its recorded chain and its reconstructed chain are identical and both are hash-verified. \qed
+\end{Proof}
+
+This property ensures that the accountability chain is not merely a logical construct but a machine-verifiable property of the runtime state, independently auditable by external inspectors without relying on any agent to self-report its own chain.
+
+% ---------------------------------------------------------------
+\subsection{Chain Termination at Human Anchor}
+\label{sec:chain-termination}
+
+\begin{property}[Termination at Human Anchor]
+For any active node $a$ in a BX3 system operating under the RSP, the accountability chain $\textit{Chain}(a)$ terminates at a node $r$ for which $\alpha(r) = \bot$ and $r$ is a human principal.
+\end{property}
+
+\begin{Proof}
+By INV-S4, every active node has a human anchor $h(n)$. The human anchor is defined as the terminal node in the parent pointer chain that is a human. By Definition~\ref{def:chain}, the chain is constructed by recursively applying the parent function $\alpha$ until the base case $\alpha(r) = \bot$ is reached. The root human node $r$ is the unique node in the system with $\alpha(r) = \bot$, and it is a human principal by construction (Section~\ref{sec:root-human-anchor}). The \fact{} layer's chain termination check at every spawn event confirms that the proposed child $n_{\text{child}}$ has a human anchor reachable before activating the node (Section~\ref{sec:fact-layer-fledger}). Therefore, by INV-S4 and the chain termination check, every active node's chain terminates at the root human. \qed
+\end{Proof}
+
+This property ensures that every active node in the system — regardless of spawning depth, branching factor, or population size — is reachable from a single human principal who bears ultimate accountability. This is the foundational property on which all downstream guarantees (Bailout Protocol, Training Wheels Protocol, auditability) depend.
+
+% ---------------------------------------------------------------
+\subsection{Termination of the Accountability Chain}
+\label{sec:accountability-chain-termination}
+
+\begin{property}[Finite Chain Length]
+For any node $a$ in a BX3 system operating under the RSP, the accountability chain $\textit{Chain}(a)$ has finite length equal to $\textit{depth}(a) \leq \Phi_{\max} + 1$.
+\end{property}
+
+\begin{Proof}
+By INV-S1, each child increments depth by exactly one from its parent and no node may be created at depth greater than $\Phi_{\max}$. Therefore any node's depth is bounded above by $\Phi_{\max} + 1$. The parent function $\alpha$ is a total function on all non-root nodes, and by the acyclicity of the spawn relation (no node can spawn itself or be its own transitive ancestor), repeated application of $\alpha$ visits a strictly decreasing sequence of nodes in a finite set. The longest possible chain has length $\Phi_{\max} + 1$, guaranteeing termination. \qed
+\end{Proof}
+
+This property is the operational counterpart to chain termination at the human anchor. It ensures that the Bailout Protocol can always reach a human principal within a bounded number of exception propagation hops: the maximum escalation path length is $O(\Phi_{\max})$, which is constant with respect to total system population. The human principal can therefore bound the worst-case time-to-escalation for any unresolved exception, regardless of how many agents are active in the system.
+
+Together, the drift prevention theorem, chain integrity property, and termination properties establish that the BX3 recursive spawning architecture provides the following composite guarantee: every active node traces to a human anchor, the chain is verifiable and tamper-evident, the chain terminates at a human within bounded depth, and no node can be in the drifted state. These properties are enforced structurally — by the immutable parent pointer, the forensic ledger, and the Purpose Layer's chain termination verification — not by policy convention or detection heuristics. The drift triad (orphaned, drifted, operating) is architecturally impossible as a matter of protocol.
+
+\vfill

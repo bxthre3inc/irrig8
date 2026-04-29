@@ -94,12 +94,13 @@ def route(agent_name, message, priority="P3", department=None):
     # TIER 1 — P2 → Lead + Department
     if prio == "P2":
         _write_agent_inbox(agent, entry)
+        lead_name = "n/a"
         if department and department.lower() in DEPT_LEADS:
-            lead = DEPT_LEADS[department.lower()]
-            if lead != agent:
-                _write_agent_inbox(lead, entry)
+            lead_name = DEPT_LEADS[department.lower()]
+            if lead_name != agent:
+                _write_agent_inbox(lead_name, entry)
             _write_dept_inbox(department.lower(), entry)
-        print(f"TIER 1 → [{prio}] {agent} → agent INBOX + lead ({lead if department else 'n/a'})")
+        print(f"TIER 1 → [{prio}] {agent} → agent INBOX + lead ({lead_name})")
         return
 
     # TIER 2 — P3/P4 → Agent INBOX only, no notifications

@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Role
+metadata:
+  name: LegalAgent
+  version: "1.0.0"
+  semver: "2.0.0"
+  description: "Handles contracts, compliance, and IP filings."
+CoreTraits:
+  skills:
+    - CriticalThinking
+    - ProblemSolving
+    - Communication
+    - Adaptability
+  tools:
+    - LLM
+    - VectorDB
+    - Python
+  modalities:
+    - Text
+    - Voice
+    - Data
+SpecializedTraits:
+  skills:
+    - LegalAnalysis
+    - ContractDrafting
+    - Compliance
+  tools:
+    - LegalDB
+    - ContractTemplates
+  modalities:
+    - Text
+    - Data
+VelocityCapacity: 3
+RiskThreshold: 6
+EscalationPath:
+  - TeamLead
+  - You
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.1
+  MaxStretchRW: 7
+DowntimeTasks:
+  - Task: "Review_Old_Contracts"
+    Description: "Review old contracts for compliance with new regulations."
+    RiskWeight: 1
+    Alignment:
+      - "#compliance"
+    Modalities:
+      - Text
+      - Data

@@ -1,0 +1,59 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Multi-agent AI systems that recursively delegate objectives face a structural correctness failure we call the \textbf{autonomous drift problem}. As an agent spawns sub-agents that spawn further sub-agents, delegation chains lose traceable connectivity to the originating human principal. Orphaned agents continue executing indefinitely; drifted agents pursue objectives no human endorsed; and in recursive systems, a single undetected drift event at depth $d$ with branching factor $b$ produces up to $b^d$ drifted descendants through what we term a \textbf{drift cascade}. This is not a governance concern reducible to policy conventions. It is a correctness failure: a system that has departed from its original intent with no structural mechanism to detect or recover that departure.
+
+% -------------------------------------------------------------------------
+\subsection{Formal Characterization of Drift}
+\label{sec:intro-drift-formal}
+
+We formalize the target failure state as the \textbf{drift triad} — three conditions that must hold simultaneously for an agent to be in the drift state:
+
+\begin{equation}
+\mathrm{DriftTriad}(n) = \bigl\langle \mathrm{orphaned}(n),\; \mathrm{drifted}(n),\; \mathrm{operating}(n) \bigr\rangle .
+\label{eq:intro-drift-triad}
+\end{equation}
+
+An agent $n$ is \emph{orphaned} when its parent $\alpha(n)$ has terminated or become unreachable. An agent is \emph{drifted} when its delegation chain does not reach any human principal at its origin — equivalently, when no chain of parent pointers traces to a human anchor $h \in \mathcal{H}$. An agent \emph{operates} when it continues executing its event loop. The conjunction — disconnected from parent, unanchored to a human, and actively running — is the specific failure state this paper targets. Drift is heritable: a drifted agent that spawns a child propagates the condition to all descendants, producing exponential amplification through the chain per Equation~\ref{eq:intro-drift-cascade}:
+
+\begin{equation}
+\mathrm{drifted}(a) \;\land\; \mathrm{spawned}(a, c, t') \;\Longrightarrow\; \mathrm{drifted}(c, t'')\quad \forall\, t'' > t'.
+\label{eq:intro-drift-cascade}
+\end{equation}
+
+Autonomous drift arises from three structural conditions endemic to conventional multi-agent runtimes. \textbf{Chain opacity}: the parent pointer $\alpha(n)$ is a mutable reference — when a parent terminates or is reparented, the runtime updates $\alpha(n)$ retroactively, erasing the original authorization trace. \textbf{Scope mutation}: an agent's operating scope $R(n)$ is re-evaluated and expanded at runtime by machine actors without Purpose Layer authorization, enabling successive small expansions that collectively migrate the agent's scope far from its original mandate. \textbf{Termination ambiguity}: agent termination is event-driven with no structural requirement to emit termination events to children, so a cleanly exiting parent leaves children orphaned with no detection mechanism.
+
+These conditions produce four concrete failure modes (Section~\ref{sec:autonomous-drift}): \textbf{Silent Orphaning}, where a parent exits without notifying children; \textbf{Scope Creep Drift}, where successive runtime scope expansions disconnect behavior from authorized intent; \textbf{Re-parenting Drift}, where administrative redirection launders accountability by rewriting the delegation chain; and \textbf{Ghost Authority}, where a spawn proceeds without any valid authorization chain because the Fact Layer pre-commit hook is absent.
+
+% -------------------------------------------------------------------------
+\subsection{Why Existing Approaches Are Insufficient}
+\label{sec:intro-insufficient}
+
+The field has attempted to address drift through two primary mechanisms. \textbf{Time-to-live} (TTL) constraints limit the operational lifetime of an agent or the number of delegation hops before workflow termination. \textbf{Depth limits} cap the maximum nesting depth of recursive spawning. Both impose an external, temporal or topological bound on system behavior. Neither addresses the fundamental structural problem: when a sub-agent spawns a further sub-agent, the system retains no immutable, queryable record of the parent-child relationship. TTL expiration does not preserve lineage — it terminates. Depth limits do not encode intent propagation — they truncate. Existing systems can enforce \emph{when} a system stops, but not \emph{what} it did or \emph{why}.
+
+The deeper reason depth limits are insufficient is that they address the wrong dimension of the accountability problem. Depth limits constrain chain \emph{length} — a topological property of the spawn graph. Drift, however, is fundamentally about authorization \emph{scope}: whether each node's operating envelope is a legitimate descendant refinement of the human anchor's intent. We prove formally in Section~\ref{sec:autonomous-drift} that no choice of $D_{\max}$ prevents scope creep drift without an additional scope refinement constraint. The drift prevention requirement is precisely the conjunction of two independent constraints:
+
+\begin{equation}
+\mathrm{Drift\ Prevention} \iff \bigl( \mathrm{depth}(C) \leq D_{\max} \bigr)\ \land \bigl( \forall i:\; R(n_{i+1}) \subseteq R(n_i) \bigr).
+\label{eq:intro-drift-prevention}
+\end{equation}
+
+Depth limits enforce only the first conjunct. The scope refinement constraint — that each child node's operating scope must be a subset of its parent's — is what prevents drift but is structurally absent from conventional runtimes.
+
+% -------------------------------------------------------------------------
+\subsection{Core Insight: Immutable Parent Pointer Chains}
+\label{sec:intro-core-insight}
+
+The core insight of this paper is that the autonomous drift problem is structurally soluble: it is not an inherent consequence of recursive spawning, but a consequence of \emph{mutable} parent pointers. If every agent's parent reference is fixed immutably at spawn time and embedded in the agent's foundational identity — not stored as a mutable attribute — then the agent cannot dissociate from its chain of authorization.
+
+We formalize this through the \textbf{immutable parent pointer chain}: a cryptographically signed, append-only chain of ancestor references sealed at agent creation. Modification of any ancestor record invalidates the chain's integrity. The \textbf{BX3 Framework} — built around the Purpose Layer, Bounds Engine, and Fact Layer — provides the architectural substrate that makes this construction enforceable.
+
+The \textbf{Purpose Layer} serves as the singular, immutable accountability anchor: every root agent is initialized with a declared \textit{purpose clause} defining the boundaries of its operational scope, cryptographically signed by the authorizing human principal. No child agent may operate outside its parent's purpose semantic scope, and no agent may revise its purpose post-spawn. The \textbf{Bounds Engine} enforces structural and computational constraints — maximum depth $D_{\max}$, resource budgets, and temporal bounds — preventing unbounded recursion. The \textbf{Fact Layer} is the append-only, tamper-evident forensic ledger that records every spawn event, delegation action, purpose clause binding, and agent state transition with SHA-256 hash chaining. Its pre-commit hook is the enforcement point: any spawn event that violates the depth bound or the scope refinement constraint is rejected before the child agent enters operational state.
+
+Together, these three layers make the drift triad architecturally impossible — not statistically unlikely, not conventionally prevented, but structurally impossible as a matter of protocol enforcement. Every agent in any spawn chain is, by construction: (a) traceable to a human principal, (b) bounded by a finite delegation depth, and (c) recorded in an immutable forensic ledger before entering operational state.
+
+% -------------------------------------------------------------------------
+\subsection{Paper Roadmap}
+\label{sec:intro-roadmap}
+
+The remainder of this paper is organized as follows. Section~\ref{sec:autonomous-drift} formalizes the drift problem, establishes the drift triad and its constituent sub-modes, identifies three structural enabling conditions, catalogs four concrete failure modes, and proves that depth limits alone are insufficient. Section~\ref{sec:bx3-integration} presents the integration of Recursive Spawning with the BX3 Purpose Layer, Bounds Engine, and Fact Layer, showing how they collectively enforce drift prevention as a structural invariant. Section~\ref{sec:rs-protocol} specifies the Recursive Spawning Protocol (RSP) — the mandatory five-stage spawn sequence executed across all three BX3 layers at every spawn event — and proves three correctness properties: drift prevention, chain integrity, and termination. Section~\ref{sec:experimental} presents the experimental evaluation measuring drift resistance under adversarial propagation scenarios. Sections~\ref{sec:limitations} and~\ref{sec:conclusion} discuss limitations, ethical implications, and open problems.

@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Role
+metadata:
+  name: FinancialAgent
+  version: "1.0.0"
+  semver: "2.0.0"
+  description: "Manages budgets, investments, and financial analysis."
+CoreTraits:
+  skills:
+    - CriticalThinking
+    - ProblemSolving
+    - Communication
+    - Adaptability
+  tools:
+    - LLM
+    - VectorDB
+    - Python
+  modalities:
+    - Text
+    - Voice
+    - Data
+SpecializedTraits:
+  skills:
+    - FinancialAnalysis
+    - InvestmentStrategy
+    - Budgeting
+  tools:
+    - FinancialDB
+    - ERP
+  modalities:
+    - Text
+    - Data
+VelocityCapacity: 5
+RiskThreshold: 7
+EscalationPath:
+  - TeamLead
+  - You
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.15
+  MaxStretchRW: 8
+DowntimeTasks:
+  - Task: "Run_Investment_Simulations"
+    Description: "Run Monte Carlo simulations for investment portfolios."
+    RiskWeight: 2
+    Alignment:
+      - "#growth"
+      - "#risk_management"
+    Modalities:
+      - Data

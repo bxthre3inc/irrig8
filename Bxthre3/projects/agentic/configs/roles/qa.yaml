@@ -1,0 +1,30 @@
+name: qa
+description: "Quality assurance role responsible for testing, validation, and bug reporting."
+version: 1.0.0
+capabilities:
+  - test_case_design
+  - test_execution
+  - bug_reporting
+  - validation
+tools:
+  - name: selenium
+    type: library
+    version: 4.9.0
+  - name: pytest
+    type: library
+    version: 7.4.0
+  - name: jira
+    type: tool
+    version: 9.4.5
+  - name: postman
+    type: tool
+    version: 10.13.5
+permissions:
+  - read:test_cases
+  - write:bug_reports
+  - execute:test_script
+constraints:
+  max_memory: "8Gi"
+  max_cpu: "4"
+  timeout: 5400
+version: 1.0.0

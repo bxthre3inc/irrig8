@@ -1,0 +1,70 @@
+% =============================================================================
+\section{Limitations and Future Work}
+\label{sec:limitations}
+
+The Recursive Spawning model provides strong structural guarantees under one critical assumption: the chain is initialized from an honest, well-formed root and the BX3 implementation is correct. Three specific limitations fall outside that assumption and impose real costs on any deployment. Each defines both an open research gap and an engineering constraint.
+
+% ------------------------------------------------------------------------------
+\subsection{Performance Overhead}
+\label{sec:lim-perf}
+
+Every spawn event executes a mandatory sequence across the Fact Layer: SHA-256 hash-chain validation, scope projection verification against the Purpose Layer artifact, depth counter atomic increment, ledger append, and signed initialization artifact emission. The child does not enter operational state until the sequence completes in full. No operational urgency constitutes an exception.
+
+For shallow chains (depth $1$--$4$), this overhead is negligible---spawn latency in the tens of milliseconds, with Fact Layer overhead of a few milliseconds, is acceptable in most deployments. The problem emerges at scale. At depth $D_{\max} - 1$, a parent spawning $N$ parallel children must execute $N$ sequential Fact Layer pre-commit cycles. At $N = 100$, cumulative latency becomes operationally significant. The ledger append is sequential per parent; parallelization across independent parents helps at the system level but does not eliminate per-chain serialization.
+
+Three mitigations exist within the current architecture. \textbf{Batch spawn entries} amortize a parent's hash verification across a single \texttt{SPAWN-BATCH} ledger entry, reducing per-child overhead at the cost of reduced forensic granularity. \textbf{Hardware cryptographic acceleration}---SHA-256 and HMAC operations are natural candidates for hardware offload---materially reduces per-spawn latency on supported hardware. \textbf{Asynchronous Fact Layer acknowledgment} permits child activation to proceed while the ledger write propagates, provided the child cannot itself spawn until its acknowledgment is confirmed---a constraint enforced by the Bounds Engine. None of these eliminates the overhead; they reduce it to a fixed architectural tax. The open question is whether this tax scales linearly or superlinearly under sustained production spawn rates, and whether asynchrony introduces observable gaps in the forensic record under crash-failure conditions.
+
+% ------------------------------------------------------------------------------
+\subsection{Scalability of the Forensic Ledger}
+\label{sec:lim-scale}
+
+The Fact Layer ledger grows monotonically with system event count. Each spawn event, scope refinement, bailout trigger, and parent-pointer-write denial generates a permanent entry. Individual hash-chain verification is $O(1)$, and partial replay remains computationally tractable for typical operational lifetimes. But the relevant metric for production systems is verification time \emph{relative to operational tempo}. An auditor responding to a reported anomaly or a regulatory inquiry may need to verify an agent's complete lineage in real time. At millions of ledger entries, full replay is operationally impractical.
+
+Partial verification strategies---verifying only the suffix from the most recent signed checkpoint---address the common case but introduce a new structural problem: the checkpoint itself must be trustworthy. Signed checkpoints are verifiable but introduce a trusted infrastructure component the original model avoids by making every entry self-certifying through the hash chain. The tension between full auditability and practical verification time is fundamental, not engineering. A checkpoint-based pruning strategy that is itself auditable and does not compromise the immutability guarantees of retained ledger portions has not yet been specified.
+
+Storage scalability compounds this. Ledger size grows with the product of chain count, average chain depth, and event rate per agent. At sufficient scale---hundreds of chains, depth averaging $8$--$12$, event rates in the thousands per agent per hour---ledger storage becomes a meaningful infrastructure cost. Sparse Merkle trees, logarithmic-sized inclusion proofs, and Byzantine-fault-tolerant distributed ledger architectures are natural candidates. A distributed Fact Layer is the most significant open scalability direction.
+
+% ------------------------------------------------------------------------------
+\subsection{Compromised Purpose Layer}
+\label{sec:lim-purpose}
+
+The drift prevention property and the three correctness properties of Sections~\ref{sec:rs-protocol} and~\ref{sec:correctness-properties} rest on a critical, unauditable assumption: that the root agent's purpose clause is well-formed at initialization, immutable thereafter, and honestly reflective of the human principal's actual intent. If this assumption is violated, the chain inherits the corruption faithfully and propagates it downward without detection.
+
+Two scenarios define the attack surface. A \textit{colluding root} is a human principal who deliberately initializes a root agent with a purpose clause whose scope exceeds the principal's legitimate authority. The chain propagates this over-authorized purpose downward; each child inherits a properly scoped subset of an improperly broad root purpose. The drift prevention property holds within the corrupted chain---every agent remains traceable to a human principal---but the chain operates outside any legitimate authority boundary. The Recursive Spawning model provides no defense, because it treats the root purpose clause as an axiomatic input it cannot audit.
+
+A \textit{Purpose Layer bypass} is a vulnerability in the BX3 implementation that permits an agent to modify its Purpose Layer artifact post-spawn without triggering the Fact Layer pre-commit rejection. The drift prevention property depends structurally on the hook rejecting any such modification. If the hook can be circumvented---through a software vulnerability, a compromised runtime, or an implementation error---the property fails silently and the chain becomes orphaned mid-execution without any tamper-evident record of the modification attempt.
+
+These scenarios establish that the Recursive Spawning model inherits the security posture of its underlying layers. It provides strong guarantees against drift \emph{within a chain initialized from an honest, well-formed root with a correct Purpose Layer implementation}, but it does not and cannot guarantee root honesty or Purpose Layer inviolability from within the model itself. Hardening the Purpose Layer through hardware security modules, formal verification of the pre-commit hook, and runtime binary attestation are the necessary next steps.
+
+% ------------------------------------------------------------------------------
+\subsection{Future Work}
+\label{sec:future}
+
+The three limitations above define the near-term research agenda. Four open problems are the highest priority.
+
+\textbf{Empirical evaluation.} The current work is foundational and formal. Behavioral characterization under production workloads---spawn rates, chain depths, failure modes, and recovery operations---requires a reference implementation evaluated against existing agent frameworks on standardized benchmarks. This is a prerequisite for any claim of practical deployability.
+
+\textbf{Distributed Fact Layer.} A single-instance Fact Layer is both a scalability bottleneck and a single point of failure. Extending it to a Byzantine-fault-tolerant distributed ledger would preserve immutability and tamper-detection properties while enabling horizontal scaling. The primary challenge is resolving the tension between distributed consistency and the strict serialization guarantees the atomic spawn protocol assumes.
+
+\textbf{Formal verification of the pre-commit hook.} The Fact Layer pre-commit hook is the most security-critical component in the system. A verification effort using Coq, Isabelle, or TLA$^+$ to prove that the hook correctly enforces all four Fact Layer invariants under all possible spawn sequences would close the gap between security claims and provable implementation correctness.
+
+\textbf{State recovery and chain repair.} The current model specifies deterministic bailout for drifted agents but does not specify a recovery procedure for the chain afterward. A formal state recovery protocol---adapted to the immutable parent chain model and analogous to database transaction rollback---is required before deployment in high-stakes environments.
+
+% =============================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+The Recursive Spawning Protocol advances a single, strong architectural claim: immutable parent pointers, established at spawn time and enforced by a tamper-evident forensic ledger, are the correct foundation for accountable multi-agent spawning. This is not a policy claim. It is a structural claim supported by three correctness properties---Drift Prevention, Chain Integrity, and Finite Termination---which together establish that a spawn chain constructed under the Recursive Spawning Protocol cannot produce agents that operate outside their declared purpose, cannot be retrospectively altered without detection, and cannot grow without bound.
+
+The intuition is direct. Accountability in a multi-agent system requires attributing every agent's actions to a chain of decisions traceable to a human principal. Mutable parent pointers make this impossible by construction: if the parent of an agent can be revised after initialization, the agent's provenance becomes a moving target, and retrospective audit cannot reliably reconstruct the original authorization chain. The drift triad---orphaned from its parent, disconnected from its human principal, and continuing to operate---is the direct consequence of this mutability. The problem is not that mutability makes audit difficult; it makes audit conclusions unreliable.
+
+The Recursive Spawning Protocol eliminates this failure mode architecturally. By fixing the parent pointer at spawn time and making any subsequent modification structurally impossible via the Fact Layer pre-commit hook, the model removes the mutable-provenance failure mode entirely. The parent pointer is not a runtime convention---it is a structural property of the Fact Layer's append-only write protocol. The forensic ledger does not record what the parent \textit{should be}; it records what the parent \textit{was at the moment of spawn}, in a form that cannot be revised without breaking the hash chain.
+
+The three BX3 layers make this construction executable rather than aspirational. The Purpose Layer defines spawn authorization policy and serves as the exclusive terminus of every accountability path. The Bounds Engine evaluates spawn necessity and enforces the depth constraint, preventing unbounded growth regardless of operational urgency. The Fact Layer enforces the immutable parent pointer, maintains the append-only forensic ledger, and executes the pre-commit hooks that make all other constraints structurally enforceable. This conjunction is a structural necessity, not a design pattern. Removing any layer causes the corresponding guarantee to collapse.
+
+Immutable parent pointers are the foundational architectural element of this construction precisely because they are the single structural property that cannot be circumvented, approximated, or weakened without breaking the chain of accountability entirely. Unlike depth limits, which can be bypassed through operational pressure or administrative override, the parent pointer is physically enforced by the Fact Layer at every spawn event. Unlike policy conventions, which depend on human compliance, the parent pointer is a property of the spawn event's structure---it exists in the forensic record whether or not any human monitors it. Unlike mutable delegation chains, which can be retroactively rewritten by any actor with sufficient access, the immutable parent pointer is append-only and hash-chained, making any tampering detectable at verification time.
+
+This is an architectural claim, not a guarantee of perfection. The model does not assert that agents will always behave honestly, that root purpose clauses will always be well-formed, or that implementations will be vulnerability-free. It asserts something narrower and more defensible: that \emph{if} the chain is initialized from an honest, well-formed root, and \emph{if} the Fact Layer pre-commit hook is correctly implemented and operative, the chain's accountability properties hold as structural invariants---enforced by the conjunction of the three BX3 layers, not by the discretion of any agent in the chain.
+
+Immutable parent pointers are not a complete solution to agent accountability. They solve the traceability sub-problem definitively, with architectural certainty. Traceability is a necessary condition for accountability; it is not sufficient. But without it, no amount of downstream reasoning can reconstruct what actually happened in a spawn tree. With it, the architectural foundation is in place for building the remaining layers of accountable, auditable, aligned multi-agent systems. The remaining open problems---distributed ledger scaling, pre-commit hook verification, and state recovery---can be stated precisely and addressed systematically within that framework. That is the work ahead.
+% =============================================================================

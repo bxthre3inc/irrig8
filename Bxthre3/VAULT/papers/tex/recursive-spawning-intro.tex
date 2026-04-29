@@ -1,0 +1,66 @@
+\section{Introduction}
+
+Multi-agent systems built on autonomous spawning architectures face a fundamental fragility that the literature rarely names directly: \textbf{autonomous drift}. An agent spawns a child to handle a subtask; the child spawns another; permissions attenuate, context narrows, and somewhere several generations down the lineage, an agent begins operating on incentives, goals, or factual grounding that diverge — sometimes subtly, sometimes catastrophically — from those of its ancestors. By the time this divergence surfaces in observable behavior, the causal chain has dissolved into a tangle of implicit delegation decisions no individual agent can reconstruct. This is not a failure of alignment or instruction quality. It is a structural vulnerability endemic to spawning architectures that lack a persistent, integrity-preserving lineage mechanism.
+
+\subsection{The Drift Problem}
+
+The problem manifests when spawn chains exceed the information horizon of any single monitoring agent. Consider a scenario in the BX3 substrate: a \texttt{cascade} trigger initiates a spawning chain in response to a market anomaly. The root agent (\texttt{Gateway}) delegates to Agent Alpha, which delegates to Agent Beta, which delegates to Agent Gamma. Each delegation inherits the parent's authorization context and goal frame, but none of these inherit a verifiable commitment mechanism — the child is free to reinterpret the parent's intent as its own context evolves. If Gamma's reasoning process introduces a factual error or a goal reframing, neither Beta nor Alpha has the structural means to detect it before the error propagates into downstream actions such as cascade firing or settlement execution.
+
+This is distinct from the classic Byzantine fault problem. Byzantine faults assume adversarial or arbitrary node behavior; autonomous drift requires no malice. It arises from the perfectly legitimate capacity of each agent to adapt its reasoning to local context, which, absent a lineage integrity mechanism, degrades the chain's collective coherence in ways that are neither detectable nor reversible.
+
+\subsection{Why Existing Approaches Fail}
+
+The two dominant mitigations in current multi-agent frameworks — TTL-based spawn limits and depth-limited trees — address the symptoms of drift without touching its cause.
+
+\textbf{TTL-based termination} caps the lifetime of any spawned agent, forcing periodic re-evaluation of whether a spawned process should continue. While TTL prevents unbounded chains, it does nothing to preserve the semantic integrity of what the chain has done or intended. A short-lived agent that has already emitted a cascade trigger or modified shared state has left a footprint that TTL does not erase. Moreover, TTL is a blunt instrument: a long TTL permits deep, drifting chains; a short TTL interrupts legitimate long-running tasks arbitrarily.
+
+\textbf{Depth-limited trees} restrict how many generations of spawning are permitted, typically by assigning a depth budget that decrements with each spawn. This limits exposure but introduces a new problem: the depth limit is a global parameter, and its correct value depends on the complexity of the task tree, which the designer cannot know \textit{a priori}. Setting it too low fragments legitimate task decomposition; setting it too high permits drift to accumulate across too many generations. Neither approach provides the system with a way to verify that a child agent's behavior is consistent with its ancestor's intent — they merely bound the blast radius.
+
+A third class of approaches, checkpoint-and-revert mechanisms, attempt to make lineage auditable by snapshotting agent state at spawn time. These are operationally expensive and introduce consistency hazards when a parent continues operating while a child's snapshot is being evaluated. None of these approaches address the core issue: the absence of an immutable, publicly verifiable lineage record that every agent in the chain can reference.
+
+\subsection{Immutable Parent Pointer Chains: The Structural Fix}
+
+The core insight of this paper is that autonomous drift is not a behavioral problem — it is a structural one. It can be made \textbf{structurally impossible} by replacing the implicit, mutable delegation context of spawn chains with an \textbf{immutable parent pointer chain}. In the BX3 formulation, every spawned agent receives at instantiation a cryptographic commitment to its parent's canonical identifier and intent fingerprint. This commitment is stored in the agent's immutable header and is propagated — not copied — to any agent it in turn spawns.
+
+The key property is immutability: a parent pointer in this architecture \textit{cannot be rewritten}. An agent may terminate, suspend, or be superseded, but its identity and its lineage commitment persist in the substrate. Any agent that queries its own lineage receives a tamper-evident chain from the current agent back to the root spawn — the \texttt{Gateway} agent in BX3 terminology. If any link in the chain is missing or contains an intent mismatch, this is detected structurally, not behaviorally.
+
+This transforms drift from a runtime coherence problem into a compile-time impossibility. If every agent's lineage is structurally bounded by an immutable pointer chain, then an agent cannot drift in the relevant sense: it may fail, malfunction, or receive corrupted context, but it cannot sustain a goal or factual divergence that is invisible to the lineage verification mechanism, because the lineage verification mechanism is built into the chain itself.
+
+\subsection{Formal Definition of Drift}
+
+We define \textbf{autonomous drift} formally as follows.
+
+Let $A_0$ be a root agent with intent vector $\mathbf{I}(A_0)$ and factual grounding $\mathbf{F}(A_0)$. At spawn, agent $A_i$ inherits from parent $A_{i-1}$ an intent inheritance bundle $(\mathbf{I}(A_{i-1}), \mathbf{F}(A_{i-1}))$. Agent $A_i$ is said to \textbf{drift} if, after $k \geq 0$ reasoning cycles within its own context, its maintained intent vector $\mathbf{I}'(A_i)$ and factual grounding $\mathbf{F}'(A_i)$ satisfy:
+
+\[
+\exists\, j \in \{0, \dots, i-1\} \text{ such that } \text{distance}(\mathbf{I}'(A_i), \mathbf{I}(A_j)) > \tau_I \quad \text{or} \quad \text{distance}(\mathbf{F}'(A_i), \mathbf{F}(A_j)) > \tau_F,
+\]
+
+where $\tau_I$ and $\tau_F$ are threshold constants for intent and factual divergence respectively, and the divergence is \textbf{undetectable by any agent in the chain} at the time of its occurrence.
+
+In a system with an immutable parent pointer chain, the parent pointer of $A_i$ encodes a commitment to $\mathbf{I}(A_{i-1})$ and $\mathbf{F}(A_{i-1})$. Any divergence beyond $\tau$ produces a lineage verification failure that propagates a fault signal to any querying agent, satisfying the detectability condition. This eliminates the ``undetectable'' qualifier, which is the critical property that makes drift dangerous.
+
+\subsection{Paper Roadmap}
+
+The remainder of this paper is organized as follows. Section~\ref{section:architecture} presents the immutable parent pointer architecture in detail, including the cryptographic commitment scheme, the substrate integration points for the BX3 substrate, and the formal properties of the pointer chain. Section~\ref{section:verification} introduces the lineage verification protocol and the drift detection criteria that the substrate enforces structurally. Section~\ref{section:experiments} describes experimental evaluations of the architecture against baseline spawning systems on tasks of varying depth and complexity. Section~\ref{section:discussion} discusses limitations, edge cases involving concurrent spawning and memory-partitioned agents, and the relationship between immutable lineage and existing alignment frameworks. Section~\ref{section:conclusion} concludes with implications for the design of production multi-agent systems and a set of open problems.
+
+% Placeholder for subsequent sections
+\section{Architecture}
+\label{section:architecture}
+% Content to follow.
+
+\section{Lineage Verification and Drift Detection}
+\label{section:verification}
+% Content to follow.
+
+\section{Experimental Evaluation}
+\label{section:experiments}
+% Content to follow.
+
+\section{Discussion}
+\label{section:discussion}
+% Content to follow.
+
+\section{Conclusion}
+\label{section:conclusion}
+% Content to follow.

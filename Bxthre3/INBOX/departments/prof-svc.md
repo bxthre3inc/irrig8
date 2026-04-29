@@ -1,6 +1,6 @@
 # Department INBOX — Professional Services (Prof-Svc)
 
-**Last Updated:** 2026-04-14 08:15 AM MT  
+**Last Updated:** 2026-04-24 08:15 AM MT  
 **Department Lead:** Deliver  
 **Stakeholders:** Grow (CS), Deal (Sales), Atlas (COO)  
 **Reporting Period:** 2026-04-06
@@ -147,5 +147,50 @@ BUILDBZ ThinkTank decisions (16 [TBD]s) remain the critical path for VPC PS play
 - No P1 findings requiring SMS this cycle.
 
 ---
+
+## 📋 Standup — 2026-04-24 08:15 AM MT
+
+### Venture Status
+
+| Venture | Phase | Health | Δ from 2026-04-10 |
+|---------|-------|--------|---------------------|
+| **Irrig8** | Pre-launch (pilot) | 🟡 Standby | No change — **66 days to Water Court** (Jun 29); sensor deployment funding-gated; sensor correlations validated (R²>0.85) |
+| **Agentic / Zoe** | Active internal | 🟢 Live | No change — internal workforce operational |
+| **Valley Players Club** | Planning | 🟡 Planning | No change — WY LLC + bond filings pending; v8.1 building |
+| **The Starting 5** | Not started | 🔴 Blocked | **Unchanged — project dir still missing (21 days stale)** |
+
+### Deliverables Status
+
+| Deliverable | Irrig8 | Agentic/Zoe | VPC | Starting 5 |
+|-------------|--------|-------------|-----|------------|
+| Implementation playbook | ❌ | ❌ | ❌ | ❌ |
+| Onboarding timeline (30/60/90) | ❌ | ❌ | ❌ | ❌ |
+| Training materials | ❌ | ❌ | ❌ | ❌ |
+| Health checkpoints | ❌ | ❌ | ❌ | ❌ |
+| CS handoff doc | ❌ | ❌ | ❌ | ❌ |
+
+### Blockers — All Stale (14 Days)
+
+| Blocker | Venture | Owner | Days Stale | Resolution Needed |
+|---------|---------|-------|------------|-------------------|
+| No project directory | Starting 5 | brodiblanco | **21 days** | Create `Bxthre3/projects/the-starting5-project/` + define scope |
+| Sensor funding gate | Irrig8 | brodiblanco | 21 days | SLV pilot funding required to begin deployment planning |
+| Legal/compliance gate | VPC | Raj | 21 days | WY LLC + bond filings must complete before PS playbook |
+| Platform target undefined | VPC | Dev | 21 days | PS playbook needs v8.1 feature complete |
+| Motion brief pending | Irrig8 | brodiblanco | 21 days | Direction decision for brand style guide |
+| Water Court evidence gaps | Irrig8 | rain | 21 days | P1 evidence items missing — blocks pilot authorization |
+
+### PS Pipeline — ThinkTank Critical Path
+
+BUILDBZ ThinkTank decisions (16 [TBD]s) remain the critical path for VPC PS playbook. AGEAAS1 (21 [TBD]s) may define a PS service layer for Irrig8. No resolution since 2026-04-10 (14 days stale).
+
+### Escalations
+
+- None to canonical INBOX this cycle.
+- No P1 findings requiring SMS this cycle.
+
+---
+
+**Last Updated:** 2026-04-24 08:15 AM MT
 
 *Deliver — Professional Services Lead*

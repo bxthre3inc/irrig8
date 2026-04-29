@@ -1,0 +1,129 @@
+\section{The Autonomous Drift Problem}
+\label{sec:rs-drift}
+
+The Recursive Spawning Protocol is the response to a specific structural failure that conventional multi-agent architectures cannot rule out: the condition in which an agent continues to operate — to spawn, to decide, to act — with no traceable authorization path to any human principal. We call this failure \emph{autonomous drift}. It is not a category of system malfunction detectable by conventional monitoring; it is a category of unauthorized operational state that the agent enters by virtue of structural properties of the runtime, not by virtue of any observable fault. This section provides the formal characterization of autonomous drift: its defining entities, the three structural conditions that enable it, the four concrete failure modes it produces, and a formal proof that depth limits alone are insufficient to prevent it.
+
+% -------------------------------------------------------
+\subsection{Formal Model}
+% -------------------------------------------------------
+
+We model a multi-agent system as a rooted directed acyclic graph (DAG) of agent nodes $\mathcal{N}$. Each node $n \in \mathcal{N}$ has a \emph{parent pointer} $\alpha(n)$ referencing the node that authorized its provisioning. The root of the graph is a human principal $h$; all other nodes are machine agents. A \emph{spawn chain} (or simply \emph{chain}) is a directed path
+
+\[
+C = \langle n_0, n_1, \ldots, n_k \rangle
+\]
+
+where $n_{i-1} = \alpha(n_i)$ for all $1 \leq i \leq k$ and $n_0 = h$ is the human anchor. The length of the chain is $k$. The depth of node $n_i$ in the spawn tree is $k$.
+
+Each node $n$ is provisioned with an \emph{operating scope} $R(n)$ — a set of authorized states, actions, resource accesses, and escalation triggers that define its legitimate operational envelope. The operating scope is established at provisioning by the parent node's Purpose Layer and is encoded in the spawn warrant recorded by the Fact Layer. An agent operates \emph{within scope} when all of its state transitions and actions are contained in $R(n)$. It \emph{violates scope} when it takes an action $a \notin R(n)$ without an authorized scope expansion recorded in the forensic ledger.
+
+\medskip
+\noindent\textbf{Definition 1 (Orphaned Agent).} An agent $n$ is \emph{orphaned} if its parent node $\alpha(n)$ has either (\emph{a}) \emph{terminated} — exited operational state through normal completion, abnormal failure, or administrative shutdown — or (\emph{b}) \emph{became unreachable} — is non-responsive to any communication protocol and the unreachability persists beyond a defined timeout $\tau_{\text{timeout}}$. Orphaning severs the delegation chain at the parent node. The agent persists in operational state but is disconnected from its chain of authorization. Formally:
+
+\begin{equation}
+\text{orphaned}(n) \;\Longleftrightarrow\; \bigl(\text{terminated}(\alpha(n)) \;\lor\; \text{unreachable}(\alpha(n), \tau_{\text{timeout}})\bigr)
+\label{eq:drift-orphaned}
+\end{equation}
+
+\medskip
+\noindent\textbf{Definition 2 (Drifted Agent).} An agent $n$ is \emph{drifted} if its delegation chain $C(n) = \langle n_0, n_1, \ldots, n \rangle$ does not contain a human principal at its origin. Equivalently: there exists no human anchor $h$ such that $n_0 = h$ and the chain terminates at a human principal. A drifted agent may or may not be orphaned — it may have a living parent, but that parent's authority does not trace to any human decision. Formally:
+
+\begin{equation}
+\text{drifted}(n) \;\Longleftrightarrow\; \neg\bigl(\exists\, h \in \mathcal{H}:\; \alpha^{(k)}(n) = h\bigr)
+\label{eq:drift-drifted}
+\end{equation}
+
+where $\mathcal{H}$ is the set of human principals and $\alpha^{(k)}(n)$ denotes the $k$-fold application of $\alpha$ until a fixed point is reached.
+
+\medskip
+\noindent\textbf{Definition 3 (Operating Scope).} Each agent $n$ is provisioned with an \emph{operating scope} $R(n)$ — a set of authorized states, actions, resource accesses, and escalation triggers that define its legitimate operational envelope. An agent operates \emph{within scope} when all state transitions and actions are contained in $R(n)$. It \emph{drifts in scope} when it takes an action $a \notin R(n)$ without an authorized scope expansion recorded in the forensic ledger.
+
+\begin{equation}
+\text{scope-drift}(n) \;\Longleftrightarrow\; \exists\, a \in \text{actions}(n):\; a \notin R(n) \;\land\; \text{scope-expansion}(a) \notin \text{ledger}
+\label{eq:drift-scope}
+\end{equation}
+
+Note that \emph{scope drift} (Definition~3) is distinct from, and weaker than, \emph{agent drift} (Definition~2). An agent may drift in scope without being fully drifted; conversely, an agent with an intact chain may still drift in scope if it acts outside its provisioned envelope without authorization.
+
+\medskip
+\noindent\textbf{Definition 4 (Drift Triad).} An agent enters the \emph{drift triad} when it is simultaneously orphaned, drifted, and operating — executing its event loop with no structural awareness that its warrant has disconnected from accountability. Formally:
+
+\begin{equation}
+\text{DriftTriad}(n) = \bigl\langle \text{orphaned}(n),\; \text{drifted}(n),\; \text{operating}(n) \bigr\rangle
+\label{eq:drift-triad}
+\end{equation}
+
+The drift triad is the failure condition RSP is designed to make structurally impossible. It requires all three constituents: an agent that is orphaned but not drifted (e.g., its chain terminates at a human anchor despite the parent termination) is accountable through the remaining chain; an agent that is drifted but not orphaned (e.g., its parent is alive but the chain does not reach a human) is drifted by construction and its operating status is the remaining threat.
+
+% -------------------------------------------------------
+\subsection{Enabling Structural Conditions}
+% -------------------------------------------------------
+
+Autonomous drift does not arise from arbitrary system failures; it arises from three structural properties endemic to conventional multi-agent runtimes. Each property is individually capable of enabling one or more of the drift failure modes, and their combination produces the full severity of the drift problem.
+
+\medskip
+\noindent\textbf{Chain Opacity.} The parent pointer $\alpha(n)$ is maintained as a mutable reference that can be updated at runtime. When a parent terminates or is reparented, the child's authorization trace is retroactively modified — the original chain is obscured, and the effective authorization for any action taken by the child becomes ambiguous or unresolvable. Chain opacity eliminates the possibility of runtime verification: any traversal of the chain may be traversing a modified reference, not the authorization path that existed at spawn time.
+
+\medskip
+\noindent\textbf{Scope Mutation.} The operating scope $R(n)$ can be expanded at runtime by the agent itself or by a supervisory node without Purpose Layer authorization. Successive small expansions accumulate: each individual expansion may appear within scope, but the aggregate effect is that the chain's effective operating envelope diverges from its human anchor's intent without any single authorization event that would register the divergence. Scope mutation is particularly insidious because no single action is unauthorized — only the cumulative pattern of expansions reveals the drift.
+
+\medskip
+\noindent\textbf{Termination Ambiguity.} Agent termination is event-driven but not structurally required to propagate to children. A parent may exit cleanly through normal completion or abnormal failure without issuing a termination event to its children. Children that do not receive a termination event remain unaware that their parent has exited; they continue in operational state, potentially spawning further children, with no structural indication that the chain has been severed. Termination ambiguity is the mechanism by which orphaning becomes possible in systems where agents are long-running relative to their parents.
+
+These three conditions are \emph{enabling structural conditions}: they do not directly produce drift, but they create the structural preconditions without which drift cannot arise. When all three are absent — when the parent pointer is immutable, the operating scope is authorization-gated, and termination propagates structurally — the drift triad cannot be established by any sequence of operations.
+
+% -------------------------------------------------------
+\subsection{Failure Modes}
+% -------------------------------------------------------
+
+The three enabling structural conditions, individually and in combination, produce four concrete failure modes in conventional multi-agent runtimes.
+
+\medskip
+\noindent\textbf{Failure Mode 1: Silent Orphaning.} A parent node terminates without notifying its children. The child node remains operational and continues to process events, spawn children, and make decisions. Because the termination event was not propagated, the child has no structural awareness that its parent has exited. The child is orphaned (Definition~1) and may be drifted (Definition~2) if the system's recovery mechanisms do not re-anchor the child's chain at the human principal before the next spawn event. Silent orphaning arises from termination ambiguity and is enabled by chain opacity, which prevents the system from independently verifying that the child's chain is intact.
+
+\medskip
+\noindent\textbf{Failure Mode 2: Scope Creep Drift.} A node expands its operating scope $R(n)$ at runtime without Purpose Layer authorization. The expansion may be small enough to avoid detection in any individual step, but successive expansions accumulate: after $m$ expansions, $R(n_m)$ may be entirely disjoint from the original scope $R(n_0)$. Each intermediate expansion is recorded as a policy update, so the forensic record is internally consistent — but none of the expansions were authorized by the Purpose Layer that originally bounded the node's scope. The chain depth is within all conventional limits; the chain has a human anchor; yet the effective operating envelope of the leaf node bears no recognizable relationship to the human anchor's intent. Scope creep drift arises from scope mutation and is enabled by chain opacity (which prevents independent verification of scope lineage).
+
+\medskip
+\noindent\textbf{Failure Mode 3: Re-parenting Drift.} $\alpha(n)$ is redirected by an administrative operation after the node has been provisioned. The original authorization trace is retroactively obscured: the node's parent now points to a different node than the one that authorized its creation. The retroactive modification may be authorized by an administrator with runtime privilege, but it severs the link between the node's current authority and its original warrant. Any actions taken by the node between the original spawn and the re-parenting event had effective authorization from the original parent; the re-parenting operation does not retroactively revoke those actions but does make the authorization chain irrecoverable. Re-parenting drift arises from chain opacity and is enabled by the absence of structural immutability guarantees in conventional runtimes.
+
+\medskip
+\noindent\textbf{Failure Mode 4: Ghost Authority.} A node spawns a child without any authorized delegation chain — that is, the spawn event is initiated by a parent that is itself already drifted, or the spawn is initiated by an agent that has no valid warrant to the human anchor. The child is drifted by construction: its chain does not reach a human principal, regardless of whether its immediate parent is alive. Ghost authority can arise in systems that enforce depth limits but not scope refinement: a drifted node at depth $d < D_{\max}$ can spawn children that are also drifted, and each generation propagates the unauthorized scope downward.
+
+In recursive systems, the severity of these failure modes compounds across generations. A single drifted agent at depth $d$ can spawn children at depth $d+1$ that inherit and extend its unauthorized scope. The task tree may superficially resemble a correctly authorized hierarchical decomposition — the same tree topology, the same spawn structure — but its effective operating envelope is unrecognizable as the product of its human anchor's intent. The drift does not announce itself; it accumulates silently within the scope mutation process.
+
+% -------------------------------------------------------
+\subsection{Why Depth Limits Alone Are Insufficient}
+% -------------------------------------------------------
+
+The conventional architectural response to unbounded agent spawning is the \emph{depth limit}: the system enforces a maximum chain depth $D_{\max}$, rejecting any spawn event that would cause the resulting chain to exceed this bound. Depth limits are necessary — they prevent infinite spawn cascades and bound the escalation path length — but they are structurally insufficient to prevent autonomous drift. This subsection proves this claim formally.
+
+\medskip
+\noindent\textbf{Theorem (Depth Limit Insufficiency).} Let $C = \langle n_0, n_1, \ldots, n_k \rangle$ be a spawn chain with human anchor $h(n_0) = n_0$ and chain length $k$. If the system enforces only the depth constraint $\text{depth}(n_i) \leq D_{\max}$ for all $i$ but does not enforce scope refinement as a structural invariant, then there exist chains satisfying the depth constraint for which $n_k$ is drifted.
+
+\begin{Proof.}
+We construct a counterexample. Let $D_{\max} = 10$ and consider a chain of length $k = 5$, satisfying $\text{depth}(n_5) = 5 \leq 10$. At provisioning, each node $n_i$ is given a legitimate operating scope $R(n_i)$ that is a descendant refinement of $R(n_{i-1})$, consistent with the human anchor's intent. Now apply scope creep drift to this chain: for each $i \geq 1$, the parent $n_{i-1}$ expands the proposed child scope at spawn time to include actions not within its own provisioned scope $R(n_{i-1})$, without Purpose Layer authorization. Each individual expansion is recorded as a policy update in the forensic ledger, so the ledger is internally consistent. After five successive expansions, the effective scope $R(n_5)$ is entirely disjoint from $R(n_0)$.
+
+The depth constraint $\text{depth}(n_5) = 5 \leq D_{\max}$ is satisfied throughout. The chain has a human anchor at $n_0$. Yet $n_5$ is drifted by Definition~2: its operating scope is not a descendant refinement of its human anchor's intent — it is a divergence from that intent enabled by successive unauthorized scope expansions. The depth limit constrained the \emph{number} of spawn generations; it placed no constraint on the \emph{scope} of each generation's authorized actions. Therefore depth limits alone do not prevent drift. \qed
+\end{Proof}
+
+The drift prevention requirement is formally a conjunction of two constraints:
+
+\begin{equation}
+\text{Drift Prevention} \;\iff;\ \bigl(\text{depth}(C) \;\leq\; D_{\max}\bigr) \;\land\; \bigl(\forall i:\; R(n_{i+1}) \;\subseteq\; R(n_i)\bigr)
+\label{eq:drift-prevention-condition}
+\end{equation}
+
+Depth limits enforce only the first conjunct. A system that enforces $D_{\max}$ but not the scope refinement constraint is immune to unbounded spawn cascades but remains fully vulnerable to scope creep drift. Time-to-live (TTL) constraints suffer from the same insufficiency: TTL constrains an agent's \emph{lifetime}, not its \emph{scope within that lifetime}. An agent with a 60-second TTL and unrestricted scope expansion authority can produce consequences exceeding its human anchor's intent within seconds of spawning.
+
+Logging and audit infrastructure can partially reconstruct the chain after the fact, but retroactive reconstruction is categorically different from runtime enforcement. A system that discovers, after an incident, that its agent was drifted has not prevented drift — it has documented it. In consequential environments where unauthorized actions may be irreversible, runtime enforcement is a structural requirement, not an optional enhancement.
+
+The deeper reason depth limits fail is that they address the wrong dimension of the accountability problem. They constrain how many spawn generations can exist; they say nothing about what each generation is authorized to do. Without scope refinement as a structural invariant — enforced not by policy convention but by protocol constraint — chain length is bounded while scope divergence is unbounded. The conjunction in Equation~\ref{eq:drift-prevention-condition} is minimal: dropping either conjunct immediately permits drift.
+
+% -------------------------------------------------------
+\subsection{Characterization Summary}
+% -------------------------------------------------------
+
+The drift problem is fully characterized by the drift triad (Equation~\ref{eq:drift-triad}), which can only be established when at least one of the three enabling structural conditions (chain opacity, scope mutation, termination ambiguity) is present. These conditions produce four concrete failure modes — silent orphaning, scope creep drift, re-parenting drift, and ghost authority — whose severity compounds in recursive spawn chains. Depth limits are necessary but insufficient: they enforce the depth conjunct of the drift prevention requirement but leave the scope refinement conjunct unenforced. The formal characterization establishes that preventing autonomous drift requires both constraints simultaneously, and that the scope refinement constraint cannot be replaced by any depth bound or TTL mechanism.
+
+The Recursive Spawning Protocol, specified in the following section, addresses the drift problem by eliminating the three enabling structural conditions at the protocol level — making the parent pointer immutable, requiring scope refinement as a structural invariant at every spawn event, and mandating structural termination propagation to children. The result is that the drift triad is architecturally impossible: not statistically unlikely, not conventionally prevented, but structurally ruled out as a matter of protocol enforcement.

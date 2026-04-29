@@ -1,0 +1,30 @@
+name: system_design
+description: "Design system architecture and components."
+version: 1.0.0
+role: engineer
+inputs:
+  - name: requirements
+    type: document
+    source: s3://docs-bucket/requirements/
+outputs:
+  - name: design_doc
+    type: document
+    destination: s3://docs-bucket/design/
+steps:
+  - name: review_requirements
+    action: review
+    tool: markdown
+  - name: create_architecture
+    action: design
+    tool: drawio
+    parameters:
+      template: microservices
+  - name: write_design_doc
+    action: write
+    tool: latex
+    parameters:
+      document_class: article
+constraints:
+  max_retries: 1
+  timeout: 7200
+version: 1.0.0

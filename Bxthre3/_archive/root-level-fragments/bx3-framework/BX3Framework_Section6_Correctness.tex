@@ -1,0 +1,182 @@
+\section{Correctness Properties}\label{sec:correctness}
+
+The \bxthree{} Framework is designed to satisfy a set of independently stated
+correctness properties that together constitute the \textit{upstream accountability
+guarantee}: that consequential decision authority in any \bxthree{} system
+remains permanently attributable to a named human principal, and that any
+unresolved exception condition is compulsorily escalated to that principal
+without passing through any intermediate machine actor as a terminus.
+
+Each property is stated as a formal invariant over the full framework state space,
+supported by a proof sketch that traces the structural mechanisms enforcing it,
+and is cross-referenced to the specific pillar or layer that provides the
+enforcing mechanism.  The properties are not independent -- they are mutually
+supporting, and each depends on the correct operation of specific \fact{} layer
+pre-commit hooks that are identified explicitly.
+
+% ---------------------------------------------------------------
+\subsection{Property 1: Intent Preservation}\label{sec:intent-preservation}
+
+\theorem[Intent Preservation]{Every consequential action executed by any node $n$ in any \bxthree{} system is authorized by a \fact{} layer entry in the authorization ledger and falls within the operating range $R(n)$ defined by the \purpose{} layer of $n$.}
+
+\subparagraph{Formal statement.}  Let $\mathcal{A}(n)$ denote the set of all consequential actions executed by node $n$ during its operational lifetime.  Let $\mathcal{E}(n)$ denote the set of authorization ledger entries for node $n$.  Intent Preservation requires:
+\[
+\forall a \in \mathcal{A}(n)\ :\ \exists e \in \mathcal{E}(n)\ :\ \text{action}(e) = a
+\ \land\ \text{scope}(e) \subseteq R(n)
+\]
+where $R(n)$ is the operating range defined by the \purpose{} layer at node provisioning.
+
+\subparagraph{Enforcing mechanism.}  The \fact{} layer's pre-commit hook
+intercepts every action request from the \bounds{} layer before it is dispatched
+to the execution engine.  The hook consults the authorization ledger to verify
+that a valid entry exists for the requested action within the current operating
+range.  If no valid entry exists -- if the action is unauthorized or the scope
+parameter of the existing entry does not cover the current execution context --
+the pre-commit hook rejects the action and the node enters the Bailout Protocol
+at the BOUNDED state.  No machine actor, including the \bounds{} layer, may
+bypass this pre-commit check.
+
+\subparagraph{Dependence.}  This property depends on Invariant~\ref{inv:intent}
+(the per-node intent preservation invariant established at provisioning) and on
+Invariant~\ref{inv:ledger-immutability} (the immutability of the authorization
+ledger).  If the ledger were mutable, a compromised machine actor could retroactively
+authorize an unauthorized action; if the intent preservation invariant were
+violated, the operating range check at pre-commit would lack a valid reference
+scope.
+
+% ---------------------------------------------------------------
+\subsection{Property 2: Structural Auditability}\label{sec:structural-auditability}
+
+\theorem[Structural Auditability]{The complete action history, exception history, and resolution history of any node $n$ is recoverable from the Forensic Ledger at any point in time after node provisioning, with cryptographic assurance that no entry has been modified, deleted, or inserted after the fact.}
+
+\subparagraph{Formal statement.}  Let $\mathcal{F}(n)$ denote the Forensic Ledger
+entries for node $n$.  Structural Auditability requires that $\mathcal{F}(n)$ forms
+a cryptographically chained sequence $f_1, f_2, \ldots, f_k$ in which each
+$f_i$ contains $\text{hash}(f_{i-1})$, and that this chain property is
+verifiable by any auditor with read access to $\mathcal{F}(n)$ without requiring
+access to any other component of the framework.
+
+\subparagraph{Enforcing mechanism.}  The \fact{} layer's Forensic Ledger Writer
+assigns each entry a logical timestamp and computes the SHA-256 hash of the
+preceding entry before committing.  The chain is initialized with a genesis hash
+established at node provisioning.  The \fact{} layer's pre-commit hooks for all
+five pillars commit their state transitions and events to the Forensic Ledger
+atomically with the state change -- no state transition is committed unless the
+corresponding Forensic Ledger entry is also committed.  The cryptographic chaining
+is enforced by the \fact{} layer and cannot be bypassed by any machine actor.
+
+\subparagraph{Dependence.}  This property depends on Invariant~\ref{inv:forensic-completeness}
+(the completeness of Forensic Ledger recording) and on Invariant~\ref{inv:ledger-immutability}
+(the immutability of both ledgers).  Completeness ensures that no relevant event
+is omitted; immutability ensures that the recorded events are authentic.
+
+% ---------------------------------------------------------------
+\subsection{Property 3: Compulsory Human Escalation}\label{sec:compulsory-escalation}
+
+\theorem[Compulsory Human Escalation]{For any node $n$, if the Bailout Protocol
+enters the ESCALATING state at $n$ and all resolution paths within current
+authority are exhausted, then the protocol must eventually contact $h(n)$ and
+must not enter a terminal resolving state without a directive issued by $h(n)$.}
+
+\subparagraph{Formal statement.}  Let $t_0$ be the time at which the protocol
+enters ESCALATING at node $n$.  Let $P(t)$ denote the set of functional
+pathways to $h(n)$ available at time $t$.  Let $T_{\max}$ be the deployment-specific
+maximum propagation time.  Compulsory Human Escalation requires:
+\[
+\exists t_1 \geq t_0\ :\ t_1 - t_0 \leq T_{\max}
+\ \implies\ h(n) \text{ is contacted}
+\]
+and, additionally:
+\[
+\text{state}(n) = \text{RESOLVED}
+\ \implies\ \text{directive}(n) \in \{\texttt{RESOLVE},\ \texttt{REJECT}\}
+\]
+where the directive is verified by the \fact{} layer as issued by $h(n)$.
+
+\subparagraph{Enforcing mechanism.}  The Bailout Protocol's state machine
+(Section~\ref{sec:bailout-full}) enforces the compulsory escalation property
+through its deterministic transition relation: the only transitions entering
+RESOLVED require either a RESOLVE or REJECT directive from $h(n)$.  The
+\fact{} layer's pre-commit hook for the Bailout Protocol rejects any directive
+whose issuer is not verified as $h(n)$.  The escalation algorithm propagates
+via the immutable parent pointer chain, bypassing intermediate machine actors
+via the BYPASS property, which is itself enforced by the \fact{} layer's
+pre-commit hooks.
+
+\subparagraph{Dependence.}  This property depends on Invariant~\ref{inv:human-anchor}
+(the exclusivity of $h(n)$ as terminus), Invariant~\ref{inv:parent-pointer} (the
+immutability of the parent pointer chain), and the correct operation of the
+Pathway Health Registry ensuring that at least one functional pathway to $h(n)$
+is available at all times during normal operation.
+
+% ---------------------------------------------------------------
+\subsection{Property 4: Spawn Tree Integrity}\label{sec:spawn-tree-integrity}
+
+\theorem[Spawn Tree Integrity]{The spawn tree of any \bxthree{} system is an
+acyclic graph with a designated human root at each node, established at node
+provisioning, and the parent pointer of each node is immutable throughout its
+operational lifetime.  No node may transfer state to any node outside its
+spawn subtree except through the authorized cross-domain channel defined by
+the Spatial Firewall pillar.}
+
+\subparagraph{Formal statement.}  Let $\mathcal{T}(n)$ denote the spawn tree
+rooted at node $n$.  Spawn Tree Integrity requires: (i) $\mathcal{T}(n)$ is a
+directed acyclic graph; (ii) for every node $m \in \mathcal{T}(n)$, the parent
+pointer $\alpha(m)$ is established at provisioning and is never modified; (iii)
+the human anchor $h(r)$ of the root node $r \in \mathcal{T}(n)$ is a named
+human principal; (iv) no state transfer between nodes $p, q \in \mathcal{T}(n)$
+occurs except through the authorized channel where $\alpha(p) = q$ or
+$\alpha(q) = p$ (parent-child) or where both $p$ and $q$ share a common
+ancestor $a$ and the transfer occurs through the Spatial Firewall's authorized
+cross-domain channel.
+
+\subparagraph{Enforcing mechanism.}  The \fact{} layer's pre-commit hooks
+enforce all four conditions at the pre-commit stage.  The Recursive Spawning
+state machine (Section~\ref{sec:pillar-recursive-spawning}) rejects any spawn operation that does
+not establish $\alpha(c)$ as the spawning node at provisioning.  The Spatial
+Firewall (Section~\ref{sec:pillar-spatial-firewall}) intercepts all cross-domain communication
+and permits only the authorized cross-domain channel under authorization ledger
+verification.  The Forensic Ledger records all spawn and state-transfer events,
+enabling retrospective verification of the acyclicity and isolation properties.
+
+\subparagraph{Dependence.}  This property depends on Invariant~\ref{inv:parent-pointer}
+(the immutability of the parent pointer) and on the correct operation of the
+Spatial Firewall's pre-commit hook for cross-domain communication.  If either
+mechanism is compromised, the spawn tree can no longer be guaranteed acyclic
+or isolated.
+
+% ---------------------------------------------------------------
+\subsection{Property 5: Sandbox Containment}\label{sec:sandbox-containment}
+
+\theorem[Sandbox Containment]{Every execution event within a sandboxed computation
+is contained within the sandbox's provisioned execution budget and isolation
+boundary.  No side effect of a sandboxed computation may propagate to the
+host system or to any other sandbox without passing through the \fact{} layer's
+authorization verification.  If the sandboxed computation attempts to exceed
+its execution budget, the abort sequence is triggered and the deviation is
+recorded in the Forensic Ledger before any subsequent action is taken.}
+
+\subparagraph{Formal statement.}  Let $s$ be a sandbox instance with execution
+budget $B(s)$ and isolation boundary $I(s)$.  Let $\mathcal{E}(s)$ be the set of
+execution events generated by the sandboxed computation.  Sandbox Containment
+requires: (i) $\forall e \in \mathcal{E}(s)$, $e$ is observable only within $s$
+or within the \fact{} layer's monitoring interface; (ii) if the provisioned
+execution time $T(s)$ expires before the sandboxed computation completes, the
+abort sequence is triggered; (iii) the abort sequence records the termination
+event in the Forensic Ledger before the sandbox is destroyed.
+
+\subparagraph{Enforcing mechanism.}  The Sandbox Gate (Section~\ref{sec:pillar-sandbox-gate})
+enforces the execution budget and isolation boundary through the \fact{} layer's
+pre-commit hook.  Every I/O operation attempted by the sandboxed computation is
+intercepted by the gate and submitted to the \fact{} layer for authorization
+verification before execution.  The abort sequence is triggered by the watchdog
+timer embedded in the Sandbox Gate, which operates with the same scheduling
+priority as the Bailout Monitor and is not preemptible by sandboxed code.
+The Forensic Ledger records the abort event with the full execution trace
+generated during the sandbox session.
+
+\subparagraph{Dependence.}  This property depends on the isolation guarantees
+provided by the underlying sandboxing substrate (a deployment assumption) and
+on the correct operation of the Sandbox Gate's watchdog timer.  If the watchdog
+timer fails to fire or the pre-commit hook is bypassed, the containment
+property is violated.

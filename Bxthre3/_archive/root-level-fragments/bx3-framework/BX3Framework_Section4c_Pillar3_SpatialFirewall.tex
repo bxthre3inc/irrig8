@@ -1,0 +1,123 @@
+\section{Pillar 3: Spatial Firewall}\label{sec:pillar-spatial-firewall}
+
+\subsection{Conceptual Motivation}
+
+Multi-domain multi-agent systems face a structural vulnerability that is not addressed by node-level constraints alone: the domain boundary. When agents operating within different domains communicate, they introduce a cross-domain causal channel through which failures in one domain may propagate into another. If a malicious or malfunctioning agent in Domain A produces an action that crosses into Domain B and violates Domain B's operating constraints, the failure is no longer attributable solely to Domain A — it has become a shared failure whose consequences Domain B must bear without having authorized the originating action.
+
+This cross-domain failure mode is distinct from intra-domain failure modes. Within a single domain, the Bailout Protocol, Loop Isolation, and Recursive Spawning constraints ensure that exceptions are contained and escalated. But those constraints operate within a domain — they do not address what happens when a failure crosses a domain boundary. Without an explicit cross-domain containment mechanism, the domain structure provides nominal separation but no structural enforcement. The boundary is an administrative convention, not an architectural constraint.
+
+The Spatial Firewall addresses this by treating the domain boundary as a first-class architectural element that must be enforced by the framework, not managed by domain administrators. The firewall inspects every cross-domain message, validates that the message's content and destination are consistent with the transmitting domain's operating scope, and maintains an integrity hash of the message content that prevents undetected modification in transit. Any cross-domain transmission that fails these checks is blocked, logged, and escalated to the human anchor of the transmitting domain — and the human anchor of the receiving domain is notified that an attempted violation was blocked.
+
+The key insight is that domain boundaries must be enforced symmetrically and at the framework level. The receiving domain cannot trust the transmitting domain to enforce its own scope constraints, just as the transmitting domain cannot trust the receiving domain to reject unauthorized messages. The Spatial Firewall enforces the boundary from both sides simultaneously, using the same deterministic logic in the \fact{} layer of both domains.
+
+\subsection{Formal Definition}\label{sec:spatial-firewall-formal}
+
+A \bxthree{} domain $D$ is a triple $(V_D, R_D, F_D)$ where $V_D$ is the set of nodes operating within the domain, $R_D$ is the domain's operating scope defining the set of permissible cross-domain actions for all nodes in $V_D$, and $F_D$ is the Spatial Firewall state for the domain.
+
+For any pair of domains $D_i$ and $D_j$ with $i \neq j$, the Spatial Firewall defines two interface functions:
+
+\begin{itemize}\itemsep=0pt
+\item $f_{ij} : M_{ij} \to \{\,\text{APPROVED}, \text{REJECTED}\,\}$ — the transmission validation function from $D_i$ to $D_j$, where $M_{ij}$ is the set of all possible messages from any node in $D_i$ to any node in $D_j$;
+\item $f_{ji} : M_{ji} \to \{\,\text{APPROVED}, \text{REJECTED}\,\}$ — the transmission validation function from $D_j$ to $D_i$, defined symmetrically.
+\end{itemize}
+
+A message $m \in M_{ij}$ is approved by $f_{ij}$ if and only if both of the following conditions hold:
+
+\begin{enumerate}\itemsep=0pt
+\item[\textbf{Scope consistency.}] The action described by $m$ is within the transmitting domain's scope $R_i$. Formally: $\text{action}(m) \in R_i$.
+\item[\textbf{Integrity.}] The SHA-256 hash of $m$'s content matches the hash recorded in $m$'s header, confirming that the message was not modified in transit.
+\end{enumerate}
+
+If either condition fails, $f_{ij}(m) = \text{REJECTED}$. The rejection is recorded in both domains' Forensic Ledgers as a cross-domain violation event with full attribution: the transmitting domain, the receiving domain, the message content hash, the failure reason, and the transmitting node identifier.
+
+Cross-domain messages that pass both checks are recorded in the Forensic Ledgers of both domains before being released for transmission. The recording includes the transmitting domain identifier, receiving domain identifier, message content hash, timestamp, transmitting node identifier, and message destination.
+
+\subsection{State Machine Formalism}\label{sec:firewall-state-machine}
+
+The Spatial Firewall is formally modeled as a deterministic finite state machine:
+
+\[
+\mathcal{F} \;=\; (Q_F,\; q_0^F,\; \Sigma_F,\; \rightarrow_F,\; Q_F^F)
+\]
+
+where:
+
+\begin{itemize}\itemsep=0pt
+\item $Q_F = \{\,\text{FIREWALL\_OPEN},\; \text{FIREWALL\_BOUNDED},\; \text{VIOLATION\_DETECTED},\; \text{FIREWALL\_CLOSED},\; \text{FIREWALL\_TERMINATED}\,\}$ is the set of firewall states;
+\item $q_0^F = \text{FIREWALL\_OPEN}$ is the initial state, entered when the domain is provisioned;
+\item $\Sigma_F$ comprises cross-domain message events $e_{\text{xmsg}}$, scope-violation events $e_{\text{scope-violation}}$, integrity-violation events $e_{\text{integrity-violation}}$, human-reset events $e_{\text{reset}}$, and termination events $e_{\text{terminate}}$;
+\item $\rightarrow_F \subseteq Q_F \times \Sigma_F \times Q_F$ is the deterministic transition relation (Table~\ref{tab:firewall-transition});
+\item $Q_F^F = \{\text{FIREWALL\_TERMINATED}\}$ is the terminal accepting state.
+\end{itemize}
+
+\begin{table}[htbp]
+\caption{Spatial Firewall state transition relation $\rightarrow_F \subseteq Q_F \times \Sigma_F \times Q_F$. Rows are current state; columns are input events. Blank cells indicate no defined transition. The VIOLATION\_DETECTED $\rightarrow$ FIREWALL\_CLOSED transition is atomic — no intermediate state is observable.}
+\label{tab:firewall-transition}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{Input event} \\
+\cmidrule(l){2-6}
+Current state & $e_{\text{xmsg}}$ & $e_{\text{scope-violation}}$ & $e_{\text{integrity-violation}}$ & $e_{\text{reset}}$ & $e_{\text{terminate}}$ \\
+\midrule
+FIREWALL\_OPEN & FIREWALL\_OPEN & VIOLATION\_DETECTED & VIOLATION\_DETECTED & — & — \\
+FIREWALL\_BOUNDED & FIREWALL\_BOUNDED & VIOLATION\_DETECTED & VIOLATION\_DETECTED & — & FIREWALL\_TERMINATED \\
+VIOLATION\_DETECTED & — & — & — & — & FIREWALL\_CLOSED \\
+FIREWALL\_CLOSED & — & — & — & FIREWALL\_OPEN & FIREWALL\_TERMINATED \\
+FIREWALL\_TERMINATED & — & — & — & — & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subparagraph{State definitions.}
+
+\begin{itemize}\itemsep=0pt
+\item[\textbf{FIREWALL\_OPEN.}] The domain's cross-domain message processing is fully active. All cross-domain messages are intercepted, validated by $f_{ij}$, and either approved and transmitted or rejected and logged. The FIREWALL\_BOUNDED state is entered when any cross-domain throughput threshold is exceeded, indicating potential anomalous activity.
+
+\item[\textbf{FIREWALL\_BOUNDED.}] Cross-domain message processing continues but monitoring is intensified. The \fact{} layer records additional metadata for each message — including the message content hash, the transmitting node's recent behavioral profile, and the deviation from the domain's normal cross-domain message distribution. This state is a heightened monitoring mode, not a restriction — no messages are blocked solely for being in BOUNDED state.
+
+\item[\textbf{VIOLATION\_DETECTED.}] A scope violation or integrity violation has been detected by the interface function $f_{ij}$. The violation is recorded in the Forensic Ledger of both the transmitting and receiving domains. The transition to FIREWALL\_CLOSED is atomic — no time elapses between violation detection and firewall closure, and no cross-domain message can be processed during this interval.
+
+\item[\textbf{FIREWALL\_CLOSED.}] All cross-domain message processing for the domain is halted. No messages may be sent to or received from any other domain. The human anchor $h(D)$ is notified of the violation and the closure. The firewall remains in CLOSED state until $h(D)$ issues a \texttt{FIREWALL\_RESET} directive, at which point the machine transitions to FIREWALL\_OPEN. No machine actor may issue this reset.
+
+\item[\textbf{FIREWALL\_TERMINATED.}] The domain has been permanently terminated by human authorization. All cross-domain message processing ceases. The final firewall state and the complete cross-domain message log are recorded in the Forensic Ledger as an archival record.
+\end{itemize}
+
+The atomic VIOLATION\_DETECTED $\rightarrow$ FIREWALL\_CLOSED transition is the structural guarantee that a detected violation cannot be followed by a window of continued cross-domain activity before the firewall closes. The transition is enforced by the \fact{} layer's pre-commit hook — it cannot be delayed by any machine actor.
+
+The \bounds{} layer evaluates whether a proposed cross-domain transmission is consistent with the transmitting domain's scope $R$. This evaluation is a deterministic bounds check: the message content and destination are compared against the scope definition, and the check either passes or fails. If it fails, the \bounds{} layer emits a \texttt{bailout\_signal} and the cross-domain transmission is blocked — the message is not sent, and the violation is recorded in the Forensic Ledger. The \bounds{} layer does not make judgment calls about whether a scope violation is benign; it enforces the scope definition without discretion.
+
+The \fact{} layer implements the interface functions $f_{ij}$ and $f_{ji}$, maintains the integrity verification hash for every cross-domain message, and records all cross-domain transmissions in the Forensic Ledger with full attribution. The layer also implements the firewall state machine's transition relation and enforces the VIOLATION\_DETECTED $\rightarrow$ FIREWALL\_CLOSED transition atomically, without machine-actor discretion, when a violation is detected.
+
+The hierarchical relationship between domains mirrors the hierarchical relationship between nodes: child domains inherit the spatial constraints of their parent domain. A domain $D_c$ spawned within a parent domain $D_p$ must have a scope $R(D_c) \subset R(D_p)$, and its cross-domain transmissions are subject to both $D_c$'s own firewall constraints and the inherited constraints from $D_p$. This hierarchical structure ensures that domain isolation is consistent across the full system hierarchy.
+
+A domain $D_c$ spawned within a parent domain $D_p$ must have a scope $R(D_c) \subset R(D_p)$, and its cross-domain transmissions are subject to both $D_c$'s own firewall constraints and the inherited constraints from $D_p$. This hierarchical structure ensures that domain isolation is consistent across the full system hierarchy.
+
+The hierarchical domain structure adds a depth bound $D_{\max}^{\text{domain}}$ analogous to the hierarchy finiteness bound for recursive spawning. Child domains cannot be spawned beyond this depth, and the cross-domain escalation path — the chain of parent domains traversed when a cross-domain violation requires human review — is bounded by this depth. The human anchor $h(D)$ for any domain $D$ is reachable within a bounded number of domain levels, ensuring that cross-domain violations can be escalated with the same Liveness guarantee that applies to node-level exceptions.
+
+\subsection{Invariants}\label{sec:firewall-invariants}
+
+Two invariants govern the Spatial Firewall.
+
+\begin{invariant}[Domain Isolation Invariant]\label{inv:domain-isolation}
+During FIREWALL\_OPEN or FIREWALL\_BOUNDED state, no cross-domain transmission from $D_i$ to $D_j$ is approved unless $\text{action}(m) \in R_i$ and the message integrity hash is valid. During FIREWALL\_CLOSED state, no cross-domain transmission from $D_i$ to any external domain is approved.
+\end{invariant}
+
+\subparagraph{Enforcement.} The interface function $f_{ij}$ is implemented as a pre-commit hook in the \fact{} layer. The hook is invoked for every cross-domain message before it is released for transmission. The hook's logic is non-bypassable by any machine actor.
+
+\begin{invariant}[Cross-Domain Logging Invariant]\label{inv:xdomain-logging}
+Every cross-domain transmission from $D_i$ to $D_j$ — whether approved or rejected — is recorded in the Forensic Ledger of both $D_i$ and $D_j$ before the transmission is released or rejected. The log entry includes the transmitting domain identifier, receiving domain identifier, message content hash, timestamp, transmitting node identifier, and the approval/rejection decision.
+\end{invariant}
+
+\subparagraph{Enforcement.} The cross-domain logging is implemented in the \fact{} layer as part of the interface function's post-decision processing. It is not conditional on the approval/rejection decision — both outcomes are logged identically.
+
+These invariants ensure that cross-domain violations are never invisible. The boundary between domains is not merely a routing rule; it is a fully audited, deterministically enforced checkpoint that cannot be bypassed by any machine actor.
+
+\subsection{Relationship to the Upstream Accountability Guarantee}\label{sec:firewall-uag}
+
+The upstream accountability guarantee requires that every consequential action taken by the system be attributable to a human principal who bears institutional responsibility for it. In a multi-domain system, this guarantee is threatened by cross-domain failures: a failure in one domain that propagates into another may produce outcomes that cannot be attributed to any single human principal, because the causal chain spans multiple domains with potentially different principals.
+
+The Spatial Firewall ensures that cross-domain failures do not compromise this guarantee by making domain boundaries impermeable to scope violations and integrity violations. When a failure occurs within a domain, the failure is contained within that domain's scope: it cannot produce actions in another domain without passing through the receiving domain's firewall, which would detect and block the unauthorized cross-domain transmission. The human anchor for the originating domain is the accountable principal for the failure; the human anchor for the receiving domain is not exposed to consequences caused by the failure in another domain.
+
+The Forensic Ledger's cross-domain logging provides the auditable record needed to reconstruct the full causal chain when a cross-domain failure does occur. The log entry for every cross-domain transmission is available to human principals reviewing the event, and the integrity hash ensures that the record of what was transmitted cannot be disputed by either domain. This makes post-hoc attribution of cross-domain failures tractable even when the causal chain involves multiple domains and multiple nodes.
+
+The Spatial Firewall's role in the upstream accountability guarantee is complementary to the other four pillars: it ensures that the system's multi-domain structure does not introduce accountability gaps at domain boundaries, just as Loop Isolation ensures that causal loops do not introduce gaps within domains, just as Recursive Spawning ensures that the delegation chain does not introduce gaps across depth levels, and just as the Bailout Protocol ensures that unresolved exceptions do not introduce gaps at the human-machine interface.

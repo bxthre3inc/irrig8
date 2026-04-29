@@ -1,0 +1,112 @@
+% =============================================================================
+% Section 6: Integration with the BX3 Framework
+% Section 7: Correctness Properties
+% For: Recursive Spawning — BX3-Compliant Multi-Agent Delegation
+% =============================================================================
+
+% =============================================================================
+\section{Integration with the BX3 Framework}
+% =============================================================================
+
+The BX3 (Behavior, Execution, and eXchange) framework provides the architectural substrate on top of which the drift-prevention guarantees of the immutable parent pointer chain are realized. BX3 is organized as three interdependent layers: the \textbf{Purpose Layer}, which encodes the terminal accountability anchor for every agent; the \textbf{Bounds Engine}, which enforces structural constraints on delegation depth and scope; and the \textbf{Fact Layer}, which maintains the append-only forensic ledger of all execution records. Each layer contributes a distinct and necessary property to the overall guarantee. Together they make drift structurally impossible, not merely statistically unlikely.
+
+\subsection{Purpose Layer: The Accountability Anchor}
+
+Every agent in a BX3-compliant system is instantiated with an explicit, immutable declaration of its terminal purpose. This declaration — the \textbf{Purpose Anchor} — is a cryptographically signed record identifying the principal (human or institutional) who authorized the agent's creation and the objective they delegated. The Purpose Anchor is the root of all authority in the system; no agent may claim legitimacy without a chain of purpose stretching unbroken to some authorized principal.
+
+The Purpose Layer operates as the system's \textbf{accountability anchor} because it provides the single authoritative answer to the question: \emph{who is responsible for this agent's actions?} In conventional multi-agent systems, accountability attribution degrades with delegation depth: at depth $n$, responsibility is diffused across $n$ potential principals with no formal mechanism to trace authority backward. In BX3, the Purpose Layer maintains a live, queryable mapping from any agent at any depth back to its originating purpose. The Chain Query Interface (CQI) exposes this mapping as a first-class operation, enabling any authorized actor — human overseer, auditing system, or downstream agent — to retrieve the complete purpose chain in $O(d)$ time where $d$ is the delegation depth.
+
+Critically, the Purpose Layer is not merely a metadata store. It participates in the \textbf{Truth Gate} — BX3's runtime enforcement mechanism — by providing the reference against which all agent behavior is verified. Before any agent commits an action to the Fact Layer, the Truth Gate confirms that the action is consistent with the agent's declared purpose. An action that cannot be reconciled with the agent's Purpose Anchor fails the Truth Gate and is rejected. This means that drift cannot occur at the execution level even if some corruption attempted to modify behavior at runtime: the Purpose Layer provides the normative reference against which all behavior is measured.
+
+The Purpose Layer also provides the \textbf{termination criterion} for the parent pointer chain. The chain does not terminate arbitrarily at some depth limit imposed by the Bounds Engine; it terminates logically at the Purpose Layer, which represents the point of original human authorization. Every agent's ultimate purpose traces to a human principal who authorized the workflow. This is not a governance convention; it is an architectural invariant. An agent whose purpose chain cannot be traced to a human principal is, by definition, unauthorized and must not execute.
+
+\subsection{Bounds Engine: Structural Depth Enforcement}
+
+While the Purpose Layer provides logical termination of the accountability chain, the Bounds Engine provides \textbf{structural enforcement} of delegation constraints. The Bounds Engine is a BX3 runtime component that enforces four categories of bounds on every spawn event:
+
+\begin{enumerate}
+    \item \textbf{Depth Bound ($D_{\max}$)}: The maximum number of delegation hops permitted in a given workflow. This is a workflow-level parameter set at creation time by the originating principal.
+    \item \textbf{Scope Bound ($S_{\max}$)}: The maximum number of simultaneous active sub-agents a given agent may spawn. This constrains fan-out parallelism.
+    \item \textbf{Authority Bound}: A bitmask defining which classes of actions (read, write, execute, delegate, external\_call) a spawned agent is permitted to perform. Authority bounds are set by the parent agent at spawn time and cannot be expanded by the child.
+    \item \textbf{Temporal Bound}: A TTL relative to wall-clock time or operational steps, after which the agent's session expires regardless of completion status.
+\end{enumerate}
+
+The Bounds Engine enforces these constraints at \textbf{spawn time}, not merely at some later checkpoint. When an agent invokes the spawn primitive, the Bounds Engine performs a pre-spawn verification: it checks that the resulting delegation depth is within $D_{\max}$, that the parent's current active sub-agent count is within $S_{\max}$, that the requested authority does not exceed the parent's own authority (a property called \textbf{authority monotonicity}), and that the temporal bound is within any workflow-level TTL. If any check fails, the spawn is rejected and logged to the Fact Layer as a \textbf{bounds violation event}.
+
+This pre-spawn enforcement is critical because it prevents the accumulation of constraint violations. Unlike systems that detect constraint breaches retrospectively (and must then decide whether and how to roll back), the Bounds Engine makes violation impossible by construction. An agent cannot spawn a sub-agent that violates the workflow's structural constraints, because the spawn cannot complete without Bounds Engine approval.
+
+The Bounds Engine also enforces the \textbf{monotonicity of authority}: a child agent cannot receive more authority than its parent possessed. This property is essential for maintaining the accountability chain's directional integrity. If a parent with read-only authority could spawn a child with write authority, the child could perform actions the parent was never authorized to authorize. The monotonicity constraint prevents this by ensuring that authority flows \emph{downward} only as a subset of what flowed \emph{above}.
+
+\subsection{Fact Layer: Forensic Ledger}
+
+The Fact Layer is the append-only, cryptographically sealed audit log of all execution records in a BX3-compliant system. Every action taken by any agent — every decision, every spawned sub-agent, every external call, every Truth Gate passage or rejection — is recorded in the Fact Layer with a SHA-256 hash that cryptographically binds it to the prior record, forming an unbroken hash chain analogous to a blockchain's transaction ledger.
+
+The Fact Layer serves three forensic functions that are essential to drift prevention:
+
+\begin{enumerate}
+    \item \textbf{Completeness}: The Fact Layer guarantees that the record of execution is complete and unrepudiable. An agent cannot deny having taken an action because the action is sealed in the Fact Layer with a timestamp and a hash linking it to the chain. This is not a best-effort log; it is a cryptographic commitment that can be verified independently by any party with access to the chain.
+    \item \textbf{Immutability}: Once a record is sealed into the Fact Layer, it is cryptographically immutable. Modification of any record would invalidate the hash chain from that point forward, immediately detectable by any verification run. This property is guaranteed by SHA-256's second-preimage resistance: for a given chain, there exists no computationally feasible method to produce a different chain that hashes to the same root.
+    \item \textbf{Reconstructability}: Because every record references its parent pointer (via the PPC) and its position in the delegation tree, the complete execution history of any agent — including all of its ancestors and descendants — can be reconstructed from the Fact Layer. This is the forensic basis for the drift detection and recovery procedures described in Section 7.
+\end{enumerate}
+
+The Fact Layer integrates with the Purpose Layer via the Truth Gate. The Truth Gate operates as a three-party checkpoint: it holds the agent's current state, the agent's declared purpose, and the Fact Layer's most recent sealed record. It verifies that the proposed next action is consistent with the purpose and does not contradict any sealed historical record. Only actions that pass this three-way consistency check are sealed into the Fact Layer and permitted to execute. This tight coupling between purpose verification and forensic sealing means that the Fact Layer is not merely a passive log — it is an active enforcement mechanism that refuses to record actions that would constitute drift.
+
+The combination of the three layers produces a system in which: (a) every agent has a verifiable purpose traceable to an authorized principal (Purpose Layer); (b) every spawn event is checked against structural constraints before it can complete (Bounds Engine); and (c) every action is sealed into an immutable forensic ledger that captures the complete execution history (Fact Layer). Drift is thereby addressed at three simultaneous levels: logical (purpose consistency), structural (bounds enforcement), and archival (forensic completeness).
+
+% =============================================================================
+\section{Correctness Properties}
+% =============================================================================
+
+We now formalize the correctness guarantees that the BX3 architecture provides for recursive spawning. We state three theorems: drift prevention, chain integrity, and termination. Each theorem is stated in natural language with an informal proof sketch; formal treatment appears in the appendices.
+
+\subsection{Drift Prevention}
+
+\begin{theorem}[Drift Prevention]\label{th:drift_prevention}
+Let $a_0$ be an authorized agent whose purpose trace terminates at a human principal $p$. Let $a_i$ be any descendant of $a_0$ in the parent pointer chain such that the chain $C = (a_0, a_1, \dots, a_i)$ is sealed via SHA-256 forensic sealing and each $a_j \in C$ has passed the Truth Gate at every prior step. Then $a_i$ cannot exhibit drift with respect to the purpose of $p$.
+\end{theorem}
+
+\begin{proof}[Proof Sketch]
+The proof proceeds by induction on delegation depth. For the base case, $a_0$ is initialized with a Purpose Anchor signed by $p$, which is sealed into the Fact Layer at creation. Since $a_0$'s purpose is cryptographically bound to $p$, no drift is possible at depth 0.
+
+Assume $a_j$ at depth $j$ has not drifted from $p$'s purpose. By the monotonicity property of the Bounds Engine, $a_j$'s authority is a subset of its parent's authority, which by the inductive hypothesis is itself a subset of $p$'s authorized scope. When $a_j$ spawns $a_{j+1}$, the Bounds Engine enforces pre-spawn verification: the proposed purpose of $a_{j+1}$ must be a sub-objective of $a_j$'s purpose (authority monotonicity), the resulting depth must be within $D_{\max}$, and the spawn must be approved by the Truth Gate. The Truth Gate checks that the proposed purpose is consistent with $a_j$'s sealed purpose from the Fact Layer.
+
+After spawn, $a_{j+1}$ is sealed with a SHA-256 hash that includes both $a_j$'s identity hash and $a_{j+1}$'s initial purpose record. Modification of $a_{j+1}$'s purpose after creation would break the hash chain from $a_j$ forward, immediately detectable by a Fact Layer integrity check.
+
+At execution time, the Truth Gate enforces that every action of $a_{j+1}$ is consistent with its sealed purpose. Any action that would constitute drift — i.e., any action not reconcilable with the sub-objective authorized by $a_j$ and ultimately by $p$ — fails the Truth Gate and is not sealed. Therefore, $a_{j+1}$ cannot exhibit drift.
+
+By induction, all descendants $a_i$ in chain $C$ are drift-free with respect to $p$'s purpose. $\square$
+\end{proof}
+
+The drift prevention guarantee is \textbf{structural}, not statistical. It does not rely on the improbability of cryptographic collision or the statistical unlikelihood of sustained correct behavior. It relies on the impossibility of a spawn completing without Bounds Engine pre-spawn approval, the impossibility of an action executing without Truth Gate passage, and the impossibility of a forensic record being modified post-seal without detection. All three impossibilities are grounded in cryptographic hardness assumptions (SHA-256 collision resistance and second-preimage resistance) that are computationally infeasible to violate for any agent, including state-level adversaries.
+
+An important corollary of Theorem \ref{th:drift_prevention} is that drift cannot be rescued by deleting or discarding the parent pointer chain. Because the chain is embedded in the agent's foundational identity — the agent's identity \emph{is} defined by its chain — there is no version of the agent that exists without the chain. The chain cannot be shed because it is not an attribute; it is the agent.
+
+\subsection{Chain Integrity}
+
+\begin{theorem}[Chain Integrity]\label{th:chain_integrity}
+The parent pointer chain $C = (a_0, a_1, \dots, a_n)$ maintained by the BX3 Fact Layer is append-only and tamper-evident: for any agent $a_k$ where $0 < k \leq n$, the PPC entry for $a_k$ cannot be modified without invalidating the SHA-256 hash chain from $a_k$ to $a_n$.
+\end{theorem}
+
+\begin{proof}[Proof Sketch]
+The Fact Layer maintains a SHA-256 hash chain in which each agent's sealed record contains: (i) a cryptographic hash of the agent's full internal state at the time of sealing, (ii) a reference to the parent agent's sealed hash, and (iii) a commitment to the agent's purpose and authority bounds at time of creation. The hash of $a_k$ is computed as:
+\[
+h_k = \text{SHA-256}(h_{k-1} \parallel s_k \parallel p_k \parallel b_k)
+\]
+where $h_{k-1}$ is the parent's sealed hash, $s_k$ is the agent's state, $p_k$ is the purpose record, and $b_k$ is the authority bounds vector.
+
+Any modification to $a_k$'s PPC entry changes $s_k$, $p_k$, or $b_k$, which changes $h_k$. Since $h_{k+1}$ was computed as $\text{SHA-256}(h_k \parallel s_{k+1} \parallel p_{k+1} \parallel b_{k+1})$, the change to $h_k$ invalidates $h_{k+1}$, which invalidates $h_{k+2}$, and so on. The root hash $h_n$ no longer matches the stored commitment, and the violation is detected by any Fact Layer integrity check. Because the chain is append-only — no entry is ever deleted or modified after sealing — the chain provides a continuous, verifiable history from any descendant back to $a_0$. $\square$
+\end{proof}
+
+The tamper-evidence property is unilateral: any party with access to the sealed chain — including a human auditor, a downstream system, or the agent itself — can independently verify chain integrity by recomputing hashes forward from $a_0$ and comparing against the stored root commitment. No trusted third party is required for verification.
+
+\subsection{Operational Termination}
+
+\begin{theorem}[Operational Termination]\label{th:termination}
+Every agent in a BX3-compliant system terminates execution after a finite number of steps, either by reaching the Purpose Layer (depth 0) or by exhausting the Bounds Engine's structural constraints (depth $D_{\max}$, scope $S_{\max}$, authority, or temporal bound).
+\end{theorem}
+
+\begin{proof}[Proof Sketch]
+The termination property follows from the architectural invariants of the Purpose Layer and Bounds Engine. The Purpose Layer represents the terminal accountability anchor; every agent's purpose chain must trace to a human principal, and the chain cannot extend beyond depth 0. The Bounds Engine enforces finite limits on delegation depth ($D_{\max}$), active sub-agent count ($S_{\max}$), authority, and temporal validity. Any spawn that would violate these constraints is rejected by the Bounds Engine, and any agent whose purpose chain cannot be traced to a human principal is rejected by the Purpose Layer. Thus, no agent can execute indefinitely. $\square$
+\end{proof}
+
+The termination theorem ensures that the system does not enter infinite loops or unbounded delegation chains, which would undermine the forensic integrity of the Fact Layer and the accountability guarantees of the Purpose Layer.

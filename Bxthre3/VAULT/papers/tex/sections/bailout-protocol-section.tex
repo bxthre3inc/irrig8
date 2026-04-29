@@ -1,0 +1,274 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+The Bailout Protocol is a deterministic, fault-injection response framework that governs how an Agentic system transitions control back to a human operator when autonomous remediation attempts have been exhausted or a defined safety threshold has been crossed. It is not a graceful degradation mechanism — it is a structured abandonment of machine autonomy in favor of human override, executed through a finite state machine with formally defined transition guards.
+
+The protocol assumes that all agents operate under bounded autonomy. Bounded autonomy implies that every agent action has an implicit maximum dwell time and an explicit escalation ceiling. When either ceiling is breached, the Bailout Protocol activates.
+
+\subsection{State Machine Definition}
+
+\label{state-machine}
+The protocol is formally defined as a 6-tuple:
+
+\[
+\text{BAILOUT\_FSM} = \langle S, s_0, \Sigma, T, G, \Delta \rangle
+\]
+
+\begin{align*}
+S &= \{\ \text{IDLE},\ \text{BOUNDED},\ \text{BAIL\_PENDING},\ \text{ESCALATING},\ \text{HUMAN\_ACKNOWLEDGED},\ \text{RESOLVED}\ \}\\
+s_0 &= \text{IDLE} \\
+\Sigma &= \{\ \iota_1,\ \iota_2,\ \iota_3,\ \iota_4,\ \iota_5,\ \iota_6,\ \iota_7,\ \iota_8,\ \iota_9,\ \iota_{10}\ \}\\
+T &\subseteq S \times S \\
+G &: T \rightarrow \mathbb{B} \quad \text{(transition guard predicate)}\\
+\Delta &: T \rightarrow \mathbb{A} \quad \text{(transition action)}
+\end{align*}
+
+Each state carries an invariant that must hold for the system to remain in that state. Violation of the state invariant triggers an immediate transition to the next state in the sequence.
+
+\bigskip
+\noindent\textbf{State IDLE}
+
+\begin{itemize}
+  \item \textbf{Semantic meaning:} The system is operational, no active fault condition exists, and agents operate under normal bounded autonomy.
+  \item \textbf{State invariant:} $\phi_{\text{IDLE}} = \lnot \text{FAULT\_ACTIVE} \land \lnot \text{ESCALATION\_FLAGS\_SET}$
+\end{itemize}
+
+\noindent\textbf{State BOUNDED}
+
+\begin{itemize}
+  \item \textbf{Semantic meaning:} A fault condition has been detected. All agent actors are placed under strict action-rate limiting. New side-effect-producing operations are frozen. The system is in a diagnostic observation window.
+  \item \textbf{State invariant:} $\phi_{\text{BOUNDED}} = \text{FAULT\_ACTIVE} \land \text{action\_budget} \leq 0 \land \lnot \text{HUMAN\_NOTIFIED}$
+\end{itemize}
+
+\noindent\textbf{State BAIL\_PENDING}
+
+\begin{itemize}
+  \item \textbf{Semantic meaning:} The fault condition has persisted past the bounded observation window. The system has determined that autonomous recovery is unlikely. A bail-out request is formally queued. All actors freeze pending human response.
+  \item \textbf{State invariant:} $\phi_{\text{BAIL\_PENDING}} = \text{FAULT\_ACTIVE} \land \text{recovery\_probability} < \tau_{\text{recover}} \land \text{HUMAN\_NOTIFIED} \land \lnot \text{HUMAN\_ACKNOWLEDGED}$
+\end{itemize}
+
+\noindent\textbf{State ESCALATING}
+
+\begin{itemize}
+  \item \textbf{Semantic meaning:} The bail-out request has gone unanswered past the primary timeout threshold $\tau_{\text{primary}}$. Secondary notification channels are activated. The fault is treated as higher severity.
+  \item \textbf{State invariant:} $\phi_{\text{ESCALATING}} = \text{HUMAN\_NOTIFIED} \land \text{elapsed\_time} > \tau_{\text{primary}} \land \lnot \text{HUMAN\_ACKNOWLEDGED} \land \text{escalation\_level} \geq 1$
+\end{itemize}
+
+\noindent\textbf{State HUMAN\_ACKNOWLEDGED}
+
+\begin{itemize}
+  \item \textbf{Semantic meaning:} A human operator has confirmed receipt of the bail-out notification and has entered an active supervisory loop. The system awaits instruction. No autonomous action may proceed without explicit human sign-off.
+  \item \textbf{State invariant:} $\phi_{\text{HUMAN\_ACKNOWLEDGED}} = \text{HUMAN\_ACKNOWLEDGED} \land \text{supervisory\_loop\_active}$
+\end{itemize}
+
+\noindent\textbf{State RESOLVED}
+
+\begin{itemize}
+  \item \textbf{Semantic meaning:} The fault has been resolved. All agents have been reset to nominal state. A post-incident log has been committed. The system returns to IDLE.
+  \item \textbf{State invariant:} $\phi_{\text{RESOLVED}} = \lnot \text{FAULT\_ACTIVE} \land \text{incident\_log\_committed} \land \text{all\_actors\_reset}$
+\end{itemize}
+
+\subsection{Transition Table}
+
+Table~\ref{tab:transitions} defines all valid state transitions, their trigger inputs, guard conditions, and associated actions.
+
+\begin{table}[htbp]
+\centering
+\caption{Bailout Protocol State Transition Table}
+\label{tab:transitions}
+\begin{tabular}{|c|c|l|c|p{4.5cm}|p{3.5cm}|}
+\hline
+\textbf{From} & \textbf{To} & \textbf{Trigger Input} & \textbf{Guard $G$} & \textbf{Transition Action $\Delta$} & \textbf{Axiom} \\ \hline
+IDLE & BOUNDED & $\iota_1$ & $\phi_{\text{IDLE}} \land \text{FAULT\_ACTIVE}$ & \texttt{freeze\_actors(); set\_fault\_flags(); start\_timer(T\_bounded)} & (T1) \\ \hline
+BOUNDED & BAIL\_PENDING & $\iota_2$ & $\phi_{\text{BOUNDED}} \land \tau_{\text{bounded}}$ & \texttt{evaluate\_recovery(); if recover\_prob < $\tau_{\text{recover}}$: enqueue\_bailout()} & (T2) \\ \hline
+BOUNDED & IDLE & $\iota_3$ & $\phi_{\text{BOUNDED}} \land \text{fault\_cleared}$ & \texttt{clear\_fault\_flags(); release\_actors(); log\_incident(auto\_cleared)} & (T3) \\ \hline
+BAIL\_PENDING & ESCALATING & $\iota_4$ & $\phi_{\text{BAIL\_PENDING}} \land \text{elapsed} > \tau_{\text{primary}}$ & \texttt{activate\_secondary\_channels(); increment\_escalation\_level(); emit\_critical\_alert()} & (T4) \\ \hline
+BAIL\_PENDING & HUMAN\_ACKNOWLEDGED & $\iota_5$ & $\phi_{\text{BAIL\_PENDING}} \land \text{HUMAN\_ACKNOWLEDGED}$ & \texttt{confirm\_receipt(); suspend\_autonomy(); open\_supervisory\_loop()} & (T5) \\ \hline
+ESCALATING & HUMAN\_ACKNOWLEDGED & $\iota_6$ & $\phi_{\text{ESCALATING}} \land \text{HUMAN\_ACKNOWLEDGED}$ & \texttt{bypass\_primary\_timeout(); confirm\_receipt(); suspend\_autonomy()} & (T6) \\ \hline
+ESCALATING & ESCALATING & $\iota_7$ & $\phi_{\text{ESCALATING}} \land \text{elapsed} > \tau_{\text{secondary}}$ & \texttt{reroute\_to\_fallback\_operators(); increment\_escalation\_level(); log\_stalled\_bailout()} & (T7) \\ \hline
+HUMAN\_ACKNOWLEDGED & RESOLVED & $\iota_8$ & $\phi_{\text{HUMAN\_ACKNOWLEDGED}} \land \text{operator\_resolved}$ & \texttt{execute\_operator\_指令(); reset\_all\_actors(); commit\_incident\_log(); return\_to\_idle()} & (T8) \\ \hline
+HUMAN\_ACKNOWLEDGED & BOUNDED & $\iota_9$ & $\phi_{\text{HUMAN\_ACKNOWLEDGED}} \land \text{operator\_demands\_retry}$ & \texttt{reset\_action\_budget(); release\_actors\_conditional(); log\_operator\_retry()} & (T9) \\ \hline
+RESOLVED & IDLE & $\iota_{10}$ & $\phi_{\text{RESOLVED}}$ & \texttt{finalize\_incident\_record(); clear\_all\_flags(); transition\_complete()} & (T10) \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Bail-Out Trigger Condition}
+
+The bail-out trigger is the necessary and sufficient condition that elevates a fault from a bounded incident to a human-override event. It is evaluated at the conclusion of the BOUNDED state observation window.
+
+\begin{definition}[Bail-Out Trigger Condition]
+\label{def:bailout-trigger}
+The system \textbf{triggers a bail-out} if and only if:
+
+\[
+\Theta_{\text{bail}} \;\equiv \text{FAULT\_ACTIVE} \;\land\; \tau_{\text{observation}} \text{ has elapsed} \;\land\; \mathcal{P}(\text{autonomous\_recovery}) < \tau_{\text{recover}}
+\]
+
+Where:
+\begin{itemize}
+  \item $\text{FAULT\_ACTIVE}$ is a boolean flag set by the fault detection subsystem upon observing a state that violates nominal operating parameters.
+  \item $\tau_{\text{observation}}$ is the bounded observation window (default: 30 seconds, configurable per deployment profile).
+  \item $\mathcal{P}(\text{autonomous\_recovery})$ is the estimated probability of autonomous recovery as computed by the recovery assessment module, evaluated at $t = \tau_{\text{observation}}$.
+  \item $\tau_{\text{recover}}$ is the recovery probability threshold below which bail-out is mandatory (default: 0.4).
+\end{itemize}
+\end{definition}
+
+The trigger condition is evaluated \textbf{exactly once} per fault event, at the expiration of the bounded observation window. Re-evaluation mid-window is not permitted — doing so would introduce non-determinism into the state machine. The guard $\mathcal{P}(\text{autonomous\_recovery}) < \tau_{\text{recover}}$ ensures that bail-out is not triggered for self-healing faults that exceed the recovery threshold.
+
+\subsection{Escalation Algorithm}
+
+The escalation algorithm governs what happens when a bail-out request goes unanswered. It is triggered by a timeout condition and implements a multi-channel, multi-recipient notification cascade.
+
+\bigskip
+\noindent\rule{\textwidth}{0.5pt}
+\fbox{\parbox{0.95\linewidth}{
+\textbf{Algorithm \ref{def:bailout-trigger}: EscalateBailout} \\
+\textbf{Input:} $s_{\text{current}} = \text{BAIL\_PENDING}$, elapsed time $t_e$, escalation level $e$ \\
+\textbf{Output:} Updated state $\text{ESCALATING}$, notification dispatched to fallback operators
+
+\begin{algorithmic}[1]
+\REQUIRE $s_{\text{current}} = \text{BAIL\_PENDING} \land t_e > \tau_{\text{primary}}$
+\ENSURE $s_{\text{next}} = \text{ESCALATING} \lor s_{\text{next}} = \text{HUMAN\_ACKNOWLEDGED}$
+
+\STATE $e \gets e + 1$
+\STATE $\text{channel}[e] \gets \text{secondary\_operator\_channel}(e)$
+\STATE $\text{payload} \gets \text{assemble\_bailout\_payload}()$
+\STATE $\text{dispatch}(\text{channel}[e], \text{payload})$
+\IF{$e \geq e_{\text{max}}$}
+\STATE $\text{activate\_fallback\_protocol}()$
+\STATE $\text{log\_escalation\_exhausted}()$
+\RETURN $\text{ESCALATING}$
+\ENDIF
+\STATE $\text{start\_timer}(\tau_{\text{secondary}})$
+\IF{$\text{HUMAN\_ACKNOWLEDGED received before } \tau_{\text{secondary}}$}
+\STATE $\text{goto } \text{HUMAN\_ACKNOWLEDGED via } \iota_6$
+\ELSE
+\STATE $\text{goto } \text{ESCALATING via } \iota_7$
+\ENDIF
+\end{algorithmic}
+}}
+\rule{\湿地}{0.5pt}
+
+\bigskip
+The escalation algorithm increments the escalation level $e$ on each timeout cycle. Each level activates a distinct notification channel with an independent delivery mechanism:
+
+\begin{itemize}
+  \item \textbf{Level 1:} Primary operator push notification + in-app alert
+  \item \textbf{Level 2:} SMS to primary operator + fallback operator push notification
+  \item \textbf{Level 3:} SMS to fallback operator + email to on-call engineering alias
+  \item \textbf{Level 4 (max):} Direct call routing via telco integration to on-call principal; emergency incident created in the incident management system
+\end{itemize}
+
+The algorithm enforces a hard cap $e_{\text{max}} = 4$. Upon reaching $e_{\text{max}}$ without human acknowledgment, the \texttt{activate\_fallback\_protocol} branch executes — this is a deterministic fallback that routes the incident to a pre-designated emergency contact pool and logs the event as a \texttt{BAILOUT\_STALLED} severity-1 incident.
+
+\subsection{Bypass Mechanism}
+
+\label{bypass}
+The bypass mechanism is the critical feature that distinguishes the Bailout Protocol from standard escalation workflows. When active, it short-circuits all machine actors — including orchestration agents, policy enforcers, and dependency chains — and establishes a direct human supervisory context.
+
+\begin{definition}[Bypass Condition]
+\label{def:bypass}
+The system \textbf{activates bypass} if and only if:
+
+\[
+\Theta_{\text{bypass}} \;\equiv\; (s_{\text{current}} \in \{\text{BAIL\_PENDING}, \text{ESCALATING}\}) \;\land\; \text{HUMAN\_ACKNOWLEDGED} = \text{TRUE}
+\]
+
+Bypass remains active for the duration of the HUMAN\_ACKNOWLEDGED state.
+\end{definition}
+
+\begin{algorithm}[H]
+\caption{Bypass Activation Algorithm}
+\label{alg:bypass}
+\begin{algorithmic}[1]
+\REQUIRE $s_{\text{current}} \in \{\text{BAIL\_PENDING}, \text{ESCALATING}\} \land \text{HUMAN\_ACKNOWLEDGED}$
+\ENSURE $\text{bypass\_active} = \text{TRUE} \land \forall a \in \text{machine\_actors}: \text{autonomy\_suspended}(a) = \text{TRUE}$
+
+\STATE $\text{bypass\_active} \gets \text{TRUE}$
+\FORALL{$a \in \text{machine\_actors}$}
+\STATE $\text{autonomy\_suspended}(a) \gets \text{TRUE}$
+\STATE $\text{enqueue\_block}(a, \text{BAILOUT\_BYPASS})$
+\ENDFOR
+\STATE $\text{close\_all\_dependent\_loops}()$
+\STATE $\text{open\_supervisory\_context}(\text{HUMAN\_OPERATOR})$
+\STATE $\text{log\_bypass\_activated}(\text{timestamp}, \text{triggered\_by} = \text{HUMAN\_OPERATOR})$
+\STATE \textbf{return} bypass active
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+\textbf{Why bypass overrides all machine actors.} The rationale is architectural. In the Agentic stack, agents operate within a hierarchy of delegated autonomy: orchestration agents dispatch tasks to sub-agents, policy agents gate actions based on configurable rules, and dependency agents manage inter-service state. When a bail-out is acknowledged, the question is not \emph{which} agent should yield autonomy — it is \emph{all} of them, simultaneously, without negotiation.
+
+If even a single machine actor retained the ability to take autonomous action during a bail-out window, the human operator would be operating in a false supervisory context — the system could still be mutating state in ways the human did not authorize. This is unacceptable. The bypass mechanism therefore enforces total suspension: no actor, regardless of privilege level or function, may execute a state-mutating operation while bypass is active.
+
+The bypass is implemented as a hard flag at the actor scheduler level, not as a policy override at the agent level. This distinction is critical: policy overrides can be outvoted by higher-priority policies; hard flags at the scheduler level cannot.
+
+\subsection{Timeout Handling}
+
+Timeouts are the temporal backbone of the Bailout Protocol. Every state with an expectation of human response carries an associated timeout value. Failure to respond within the timeout triggers an automatic transition to the next state in the escalation sequence. Timeout handling is thus not an exception path — it is the primary flow.
+
+\bigskip
+\noindent\textbf{Bounded State Timeout.}
+
+When the system enters BOUNDED state, the observation timer $\tau_{\text{observation}}$ is started. At expiration:
+
+\begin{enumerate}
+  \item The recovery assessment module computes $\mathcal{P}(\text{autonomous\_recovery})$.
+  \item If $\mathcal{P} < \tau_{\text{recover}}$, transition $\iota_2$ fires and the system enters BAIL\_PENDING.
+  \item If $\mathcal{P} \geq \tau_{\text{recover}}$, transition $\iota_3$ fires and the system returns to IDLE (self-healed fault).
+\end{enumerate}
+
+The bounded state timeout is the only timeout in the protocol where a self-healing outcome is possible. This is intentional — the protocol maximizes the opportunity for autonomous resolution before escalating to human intervention.
+
+\bigskip
+\noindent\textbf{Primary Timeout ($\tau_{\text{primary}}$).}
+
+Upon entering BAIL\_PENDING, a primary timeout $\tau_{\text{primary}}$ is started (default: 60 seconds). At expiration:
+
+\begin{itemize}
+  \item If no human acknowledgment has been received: transition $\iota_4$ fires, the system enters ESCALATING, secondary notification channels are activated, and the primary timer is abandoned.
+  \item If human acknowledgment is received before expiration: transition $\iota_5$ fires, bypass is activated via Algorithm~\ref{alg:bypass}, and the system enters HUMAN\_ACKNOWLEDGED.
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Secondary Timeout ($\tau_{\text{secondary}}$).}
+
+Within ESCALATING state, each escalation level carries a secondary timeout $\tau_{\text{secondary}}$ (default: 90 seconds per level). At expiration without acknowledgment:
+
+\begin{itemize}
+  \item Transition $\iota_7$ fires, the system re-enters ESCALATING at a higher escalation level, and the algorithm from Section~\ref{bypass} is invoked.
+  \item This loop continues until human acknowledgment is received, or until $e \geq e_{\text{max}}$ triggers the fallback protocol.
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Human Acknowledgment Timeout ($\tau_{\text{ack}}$).}
+
+Once HUMAN\_ACKNOWLEDGED is entered, the system does not enforce a maximum human engagement duration — a human operator may take as long as required to assess and resolve the fault. However, if the human operator is silent for $\tau_{\text{ack\_silent}}$ (default: 15 minutes), the system issues a passive reminder via the active supervisory channel. This is informational only and does not alter the system state.
+
+\bigskip
+\noindent\textbf{Timeout Configuration.}
+
+All timeout values are externalized as deployment parameters and may be overridden per deployment profile:
+
+\[
+\tau_{\text{observation}} \in [5s,\ 300s],\quad
+\tau_{\text{primary}} \in [30s,\ 600s],\quad
+\tau_{\text{secondary}} \in [60s,\ 900s],\quad
+\tau_{\text{ack\_silent}} \in [300s,\ 7200s]
+\]
+
+Values outside these ranges require explicit override authorization at deployment time. No timeout may be set to zero — doing so would eliminate the observation window and violate the protocol's self-healing design principle.
+
+\subsection{Protocol Properties}
+
+The Bailout Protocol satisfies the following formal properties:
+
+\begin{itemize}
+  \item \textbf{Progress:} Every state $s \neq \text{RESOLVED}$ has at least one outgoing transition. RESOLVED is the unique terminal state.
+  \item \textbf{No re-entrance:} Once a fault condition is acknowledged and HUMAN\_ACKNOWLEDGED is entered, the system cannot return to a pre-bailout state without explicit human action (transition $\iota_9$ is human-gated only).
+  \item \textbf{Bypass totality:} During bypass activation, $\forall a \in \text{machine\_actors}: \text{autonomy\_suspended}(a) = \text{TRUE}$ — this is enforced at the scheduler level, not the policy level.
+  \item \textbf{Determinism:} Given a state and a trigger input, the next state is uniquely determined. No transitions are probabilistic — only the fault probability assessment $\mathcal{P}(\text{autonomous\_recovery})$ may introduce uncertainty, and it is evaluated once per fault event.
+  \item \textbf{Timeout monotonicity:} Escalation timeouts never decrease with each level — $\tau_{\text{primary}} \leq \tau_{\text{secondary}}$ is guaranteed by the configuration constraints.
+\end{itemize}
+
+These properties ensure that the Bailout Protocol is predictable, auditable, and safe to deploy in production environments where machine autonomy errors carry operational or financial risk.

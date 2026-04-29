@@ -1,57 +1,60 @@
 # RevOps — Daily Standup Log
 
-**Date:** 2026-04-16
+**Date:** 2026-04-27
 **Time:** 8:15 AM MT
 **Agent:** Velocity (RevOps Lead)
-**Status:** 🟡 Active — Day 2 Assessment
+**Status:** ✅ Active
+**Standup #:** Day 3 | Last: 2026-04-16
 
 ---
 
-## Yesterday / Last 24h
+## Yesterday / Last 24h (2026-04-26)
 
-- Confirmed CRM baseline: no Deals table exists in either Airtable base
-- No standup held 2026-04-15 (orchestrator failure — logged by Logger)
-- Active P1 alerts from INBOX.md unchanged:
-  - Sage (VPC-CP-001): 20+ days stale on legal docs
-  - Danny Romero: 10+ days no response on dual offer
+1. **War Room 2026-04-24/25 resolutions confirmed:**
+   - `sage.vpc.deal.closed` event fired ✅
+   - `cig.colorado.loi.submitted` event fired ✅
+   - VPC compliance CLEARED ✅
+   - Drew reassignment P0 still open — 10+ days unresponsive
+2. **Grader completed ThinkTank cycle:** BUILDBZ passed (3.8/5) — new venture: Build-A-Biz LLC (sweepstakes compliance SaaS)
+3. **PaperPulse blocked on paper17** — agent economics paper missing; RevOps relevance: none
+4. **ARPA-E OPEN deadline: 4 days** (2026-05-01)
 
 ---
 
 ## Today
 
-1. **File standup** — Document full CRM audit findings
-2. **Raise P2 to Deal** — Deals table creation needed; Drew is blocked without it
-3. **Track active revenue signals** — VPC investor closes, ARPA-E grant (May 1, 15 days)
-4. **Flag Stripe onboarding** — Cannot invoice until Balance completes
+1. **Weekly Executive Briefing** — prepare revenue/RevOps section
+2. **Flag VPC revenue blockers to Atlas** — WY LLC formation, Sage verbal confirmation
+3. **Track ARPA-E OPEN close** — 4 days; Maya/Casey owning
+4. **Log Build-A-Biz LLC** as new venture in pipeline
+5. **Raise Drew reassignment P0** again — still unresolved
 
 ---
 
-## CRM Health — Full Audit
+## CRM Health — Unchanged
 
-| System | Base ID | Tables | Has Deals? | Revenue Visibility |
-|--------|---------|--------|------------|--------------------|
-| Airtable | AgentOS Base (`appHg8lr1v409yKBc`) | 6 | ❌ No | None |
-| Airtable | Bxthre3 ECC (`app93dsGcEyPfkqaa`) | 8 | ❌ No | None |
-| Linear | BX3 Team | 1 team / 6 issues | ❌ No | None |
+| System | Has Deals? | Revenue Visibility |
+|--------|------------|-------------------|
+| Airtable (AgentOS Base) | ❌ No | None |
+| Airtable (Bxthre3 ECC) | ❌ No | None |
+| Linear | ❌ No | None |
 
-**AgentOS Base tables:** Tasks, Table 1, Integrations, Irrig8 Field Data, Agent Reports, Agentic Tasks
-**Bxthre3 ECC tables:** Organizations, Projects, Tasks, People, Assets, Finances, Legal, Marketing
-
-**Finding:** Zero deal/opportunity/revenue tracking across all connected CRM systems.
+**Finding:** No deal/opportunity/revenue tracking across any connected CRM. New pipeline agent (pipeline.md, created 2026-04-25) is onboarding — schema exists in INBOX, Airtable table not yet created.
 
 ---
 
-## Pipeline Coverage Ratio
+## Pipeline Coverage Ratio — Current State
 
-| Venture | Stage | Count | Value | Coverage Ratio |
-|---------|-------|-------|-------|----------------|
-| **Build-A-Biz** | Unqualified | 109 leads | TBD | N/A — no deals table |
-| **ThinkTank** | TBD | 9 drafts | TBD | N/A — 111 TBDs unresolved |
-| **Irrig8** | Grant | 1 (ARPA-E) | TBD | N/A — grant not revenue |
-| **VPC** | Pre-revenue | 0 tracked | — | N/A |
-| **Active Deals** | Stalled | 2 (Sage, Danny R.) | TBD | N/A |
+| Venture | Pipeline Value | Coverage Ratio | Status |
+|---------|---------------|----------------|--------|
+| Build-A-Biz | 109 leads, $0 tracked | N/A | No CRM entries |
+| ThinkTank | 9 drafts, all TBD | N/A | 111 TBDs unresolved |
+| Irrig8 | Grant: ARPA-E (May 1) | N/A | Grant, not revenue |
+| VPC | $2,500 Sage (stalled) | N/A | Verbal unconfirmed |
+| Starting 5 | $0 | N/A | No pricing |
+| **Total** | **~$2,500 confirmed** | **N/A** | — |
 
-**Coverage Ratio:** UNKNOWN — no deals data to measure.
+*Target: 3× quarterly quota. No quota set. No pipeline data.*
 
 ---
 
@@ -61,59 +64,78 @@
 |---------|--------------|------------|----------|
 | All | 0 | 0 | N/A |
 
-**Baseline:** No closed-won/closed-lost data exists in any connected system.
+**Baseline:** No closed-won/closed-lost data in any system.
 
 ---
 
-## CAC (Customer Acquisition Cost)
+## CAC / Unit Economics — Irrig8 Only
 
-**Status:** NOT INSTRUMENTED
+| Metric | Value | Source |
+|--------|-------|--------|
+| CAC | $1,850 | `Bxthre3/INBOX/departments/pipeline.md` |
+| ARPU (annual) | $4,250 | `Bxthre3/INBOX/departments/pipeline.md` |
+| LTV | $63,750 | `Bxthre3/INBOX/departments/pipeline.md` |
+| LTV/CAC | 34.5× | `Bxthre3/INBOX/departments/pipeline.md` |
+| CAC payback | 5.2 months | `Bxthre3/INBOX/departments/pipeline.md` |
+| Farmer payback | 3.2 months | `Bxthre3/INBOX/departments/pipeline.md` |
+| Hardware margin | 37.5% | `Bxthre3/INBOX/departments/pipeline.md` |
 
-| Channel | Spend | Conversions | CAC |
-|---------|-------|-------------|-----|
-| Organic | $0 | [UNKNOWN] | N/A |
-| Paid | $0 | [UNKNOWN] | N/A |
-| Affiliate | $0 | [UNKNOWN] | N/A |
-| **Total** | $0 | — | — |
-
-**Action Required:** Marketing attribution must be instrumented before any paid spend.
+**Note:** VPC and Agentic CAC not instrumented. No paid marketing spend to measure against.
 
 ---
 
 ## NRR / Churn Rate
 
-**Status:** NOT INSTRUMENTED
-
-No customer success table exists. Required fields missing:
-- NPS score, Health score (0-100), Churn risk (High/Medium/Low), Contract value, Renewal date
-
-**Note:** No commercial customers exist yet — NRR becomes relevant at first revenue.
+**Status:** NOT INSTRUMENTED — no commercial customers exist.
 
 ---
 
-## Revenue Forecast (Weekly to Balance/CFO)
+## Revenue Forecast — Weekly to Balance (CFO)
 
 | Venture | Revenue | Confidence | Notes |
 |---------|---------|------------|-------|
-| Irrig8 | $0 | Low | ARPA-E OPEN 2026 (May 1, 15 days) — grant-dependent |
-| VPC | $0 | Low | CIG CO GO/NO-GO pending; Sage deal stalled |
-| Starting 5 | $0 | Low | No pricing finalized |
-| Build-A-Biz | $0 | Low | 109 leads, zero CRM entries |
-| ThinkTank | $0 | Low | No spec; 111 TBDs unresolved |
+| **Irrig8** | $0 | Low | ARPA-E OPEN (May 1, 4 days) — grant-dependent |
+| **VPC** | $0 | Low | CIG CO LOI submitted; Sage verbal unconfirmed; WY LLC formation blocked |
+| **Build-A-Biz** | $0 | Low | 109 leads, zero CRM entries, no pricing |
+| **Starting 5** | $0 | Low | No pricing finalized |
+| **ThinkTank** | $0 | Low | No spec; 111 TBDs unresolved |
+| **Agentic** | $0 | Low | IP remediation stage |
 
 **Total Weekly Revenue:** $0 | **Confidence:** Very Low
 **Cash Position:** ~$130,450 | **Runway:** ~1 week
 
 ---
 
-## Active Deals (From INBOX.md)
+## Active Deals
 
-| Deal | Venture | Value | Stage | Age | Status |
-|------|---------|-------|-------|-----|--------|
-| Sage | VPC (VPC-CP-001) | $2,500 cash + equity | Legal docs overdue | 20+ days | 🔴 Critical |
-| Danny Romero | TBD | TBD | Dual offer pending | 10+ days | 🔴 No Response |
+| Deal | Venture | Value | Stage | Age | Status | Owner |
+|------|---------|-------|-------|-----|--------|-------|
+| Sage | VPC | $2,500 cash + equity | Verbal confirmed event fired | 23+ days | 🔴 STALE — verbal unconfirmed | Drew |
+| Danny Romero | TBD | TBD | No response | 10+ days | 🔴 No Response | Drew |
+| CIG Colorado LOI | VPC | TBD | Submitted | — | 🟡 Details unconfirmed | Maya/Casey |
 
-**Sage deal tracker:** `file 'Bxthre3/VAULT/deals/sage-vcp-cp-001.md'`
+---
+
+## Cash / Runway Context
+
+| Item | Amount | Date |
+|------|-------|------|
+| Cash on hand | ~$130,450 | Apr 1 |
+| Bridge needed | $400,000 | Jul 1 |
+| Runway | ~1 week | — |
+| Burn rate | ~$130,000/week | [VERIFY] |
+
+**Revenue dependency:** Bridge close or grants close before cash runs out.
+
+---
+
+## New Venture Logged
+
+| Venture | Source | Score | Status |
+|---------|--------|-------|--------|
+| **Build-A-Biz LLC** | Grader ThinkTank | 3.8/5 ✅ PASS | New — no CRM entry |
+
+*Compliance-by-design SaaS for food/bev CPG sweepstakes. Colorado regulatory moat. BD-dependent.*
 
 ---
 
@@ -121,33 +143,14 @@ No customer success table exists. Required fields missing:
 
 | Blocker | Owner | Impact | Priority |
 |---------|-------|--------|----------|
-| No `Deals` table in Airtable | Velocity → Drew | Cannot track pipeline | P2 |
+| Drew reassignment | brodiblanco | Sage + VPC stalled | 🔴 P0 |
+| No `Deals` table in Airtable | Drew/Pipeline | Cannot track pipeline | P2 |
 | Stripe onboarding incomplete | Balance | Cannot invoice | P2 |
-| ThinkTank 111 TBDs unresolved | brodiblanco | No product = no deal structure | P1 |
-| No CAC tracking | Casey | Cannot optimize marketing spend | P3 |
-| No CS/health score table | Velocity | Cannot track NRR/churn | P3 |
-
----
-
-## P2 Action: Deals Table Schema — Proposed
-
-**Recommendation:** Create `Deals` table in Bxthre3 ECC base.
-
-Proposed fields:
-| Field | Type | Notes |
-|-------|------|-------|
-| Deal Name | Single line text | Primary field |
-| Venture | Single select | Irrig8 / VPC / Build-A-Biz / ThinkTank / Starting 5 / ARD / Other |
-| Amount | Currency | Deal value |
-| Stage | Single select | Prospect → Qualified → Proposal → Negotiation → Closed Won / Closed Lost |
-| Close Date | Date | Expected close |
-| Owner | Collaborator | Sales rep |
-| Probability | Number % | Auto-set by stage |
-| Account | Link to Organizations | |
-| Notes | Long text | |
-
-**Owner:** Drew (Sales Lead) — Deals table creation + lead entry
-**Velocity:** Pipeline design, stage definitions, comp plan framework
+| ThinkTank 111 TBDs unresolved | brodiblanco | No product = no deal | P1 |
+| VPC WY LLC formation | Drew | T1 affiliate blocked | P1 |
+| irrig8 farmer introductions | irrig8 | Slip to May 6 | P1 |
+| No CAC tracking | Casey | Cannot optimize spend | P3 |
+| No CS/health score table | Velocity | NRR/churn not trackable | P3 |
 
 ---
 
@@ -161,9 +164,8 @@ Proposed fields:
 
 ---
 
-## Next Standup: 2026-04-17 8:15 AM MT
+## Next Standup: 2026-04-28 8:15 AM MT
 
 ---
-
 *Velocity — RevOps Lead*
-*Standup: 2026-04-16*
+*Standup: 2026-04-27 8:15 AM MT*

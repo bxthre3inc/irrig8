@@ -1,0 +1,116 @@
+\section{Implementation in the BX3 Framework}
+
+The BX3 Framework provides the structural substrate within which the Bailout Protocol operates as a first-class governance mechanism. Understanding the protocol's implementation requires examining how it interfaces with each of BX3's three functional layers --- Purpose, Bounds Engine, and Fact Layer --- and how the interplay between these layers enforces the directional guarantee that the system fails upward into human consciousness and never downward into algorithmic chaos. This section details each interface, the triggering logic, the forensic recording infrastructure, and the formalization of the escalation state machine.
+
+\subsection{The Purpose Layer as Human Accountability Anchor}
+
+The Purpose Layer (Layer 1) is the human-anchored apex of every BX3 Loop. It sets strategic objectives, authorization boundaries, and success criteria for all downstream computation. In the BX3 Universal Architecture, the Purpose Layer is architecturally non-interchangeable with machine computation --- it must remain human-anchored, and this constraint is enforced at the Fact Layer level.\footnote{See BX3 Universal Architecture, Part I: ``Non-negotiable rule: The Purpose layer must always remain Human-anchored. This is architecturally enforced at the Fact Layer.''}
+
+The Bailout Protocol derives its authority from the Purpose Layer. When a Human Accountability Anchor initializes a BX3 Loop, it authoritatively defines the \emph{scope of acceptable deviation} for that node --- the boundaries within which the Bounds Engine may propose and the Fact Layer may execute without human review. These boundaries are not soft guidelines; they are encoded as hard constraints in the Fact Layer's execution gate. The Purpose Layer's mandate is recorded in the 9-Plane DAP as Plane P1 (Mandate) --- an append-only historical record of all directives that have authorized the current operational context.\footnote{See BX3 Universal Architecture, Part IV: Plane definitions for P1 (Mandate) and P2 (Intent).}
+
+When the Bailout Protocol escalates, it does not create a new accountability chain. It \emph{surfaces} an existing accountability chain that was always present but latent during nominal operation. The Human Accountability Anchor who authorized the node's mandate is the same anchor to whom the bailout routes --- no new principal is introduced. This is a critical distinction from conventional exception handling, which may route to an arbitrary administrator or fallback account. In BX3, the bailout destination is structurally determined by the Purpose Layer's original authorization topology.
+
+\subsection{The Bounds Engine as Bailout Trigger}
+
+The Bounds Engine (Layer 2) is a limbless heuristic engine --- it computes, proposes, and simulates, but it holds no physical execution permissions. In nominal operation, the Bounds Engine proposes state transitions that are evaluated by the Sandbox Gate before the Fact Layer executes any physical action. This separation of proposal from execution is the foundational isolation property of the BX3 Loop.\footnote{See BX3 Universal Architecture, Part I: ``Bounds Engine never shares a plane with the Fact Layer. Collisions are architecturally impossible.''}
+
+The Bailout Protocol integrates with the Bounds Engine at the point of \emph{unresolvable uncertainty}. A Bailout Trigger is not a conventional error code --- it is a epistemic classification. The Bounds Engine classifies any incoming state as one of three categories:
+
+\begin{enumerate}
+    \item \textbf{Resolvable within authority:} The state falls within the Bounds Engine's authorized operating envelope. Proceed with standard proposal and Sandbox Gate evaluation.
+    \item \textbf{Exceeds authority but within epistemic boundary:} The state is outside the node's authorization but the Bounds Engine possesses sufficient information to reason about it. Route to superior Bounds Engine in the hierarchy for re-authorization.
+    \item \textbf{Exceeds epistemic boundary --- unresolvable:} The state exceeds what the Bounds Engine can reason about with confidence. This is the sole valid trigger of the Bailout Protocol.
+\end{enumerate}
+
+The third category is the critical case. It is not a hardware failure, not a timeout, and not a preferences mismatch. It is a condition where the Bounds Engine confronts a state that is outside its own cognitive or informational jurisdiction --- a novel situation that it cannot accurately model, simulate, or adjudicate. When this classification is reached, the Bounds Engine does not attempt to infer a best course of action. It issues a \texttt{BailoutTrigger} event, bypassing all intermediate machine actors in the hierarchy and propagating the exception upward through the recursive parent chain until it reaches a Human Accountability Anchor.
+
+This trigger condition is formalized as:
+
+\begin{equation}
+    \text{BailoutTrigger} \iff \left( \text{EpistemicCoverage}(\text{state}, \text{node}) < \theta_{\text{min}} \right) \land \left( \text{AuthorizationBoundary}(\text{state}, \text{node}) = \text{EXCEEDED} \right)
+\end{equation}
+
+where $\theta_{\text{min}}$ is the minimum epistemic confidence threshold for the node's operational domain. This threshold is set by the Purpose Layer at node initialization and encoded in the node's Worksheet.
+
+\subsection{The Fact Layer as Audit Trail Enforcement}
+
+The Fact Layer (Layer 3) is the physical execution firewall of the BX3 Framework. It is the only layer with write access to the physical substrate --- sensors, actuators, and environmental interfaces. The Fact Layer executes only commands that satisfy all hard-coded safety, regulatory, and physical constraints simultaneously. It is 100\% deterministic and operates as the final arbiter of what physically happens in the world.\footnote{See BX3 Universal Architecture, Part I: ``Fact Layer: Physical firewall. Executes only commands satisfying safety/regulatory/physical constraints. 100\% deterministic. Hard-blocks any violation.''}
+
+The Fact Layer plays two critical roles in the Bailout Protocol:
+
+\textbf{First}, it enforces the audit trail. Every BailoutTrigger event that passes through the Fact Layer is recorded in real time to the forensic ledger before the escalation propagates upward. This ordering --- record-then-escalate --- is architecturally enforced and non-negotiable. The Fact Layer cannot allow an escalation to proceed without a corresponding ledger entry, because the ledger is the accountability infrastructure. Without a contemporaneous record, the bailout would be invisible to post-hoc review, audit, and regulatory verification.
+
+\textbf{Second}, the Fact Layer serves as the Sandbox Gate's enforcement point for the Bailout Protocol. When a \texttt{BailoutTrigger} is issued, the Fact Layer does not execute any physical action on behalf of the triggering node. It places the node in a \texttt{HOLD} state, isolating it from all actuators and external interfaces until the Human Accountability Anchor reviews and resolves the escalation. This is the physical enforcement of the directional guarantee: the system halts before consequential action is taken autonomously.
+
+The 9-Plane DAP architecture ensures that no single plane can write to any other plane, and the Fact Layer writes exclusively to Planes P7 (Outcome Record), P8 (Execution), and P9 (Projection Confirmation). When a bailout occurs, the Fact Layer records the trigger event, the triggering node's identity, the hierarchical path of propagation, and the HOLD state activation. Each of these records is append-only and cryptographically chained to prior entries, creating a tamper-evident sequence.
+
+\subsection{Runtime Expression of Upstream Accountability Guarantee}
+
+The Bailout Protocol is not an add-on to the BX3 Framework. It is the runtime expression of BX3's upstream accountability guarantee. The guarantee is established at the Purpose Layer at node initialization and enforced all the way through to the Fact Layer at execution time. The Bailout Protocol is the mechanism by which that guarantee is made concrete when nominal operation breaks down.
+
+In conventional autonomous systems, accountability guarantees are promissory --- they state that human oversight will be notified if something goes wrong. The guarantee is soft, reactive, and probabilistic. In BX3, the accountability guarantee is structural and proactive. The Human Accountability Anchor's authority is encoded in the Worksheet at the time of recursive spawning, and it persists in every child node regardless of how far the recursion descends or how many delegation layers exist between the leaf node and the root.\footnote{See BX3 Universal Architecture, Part II: ``A Parent Node births a Child Loop by provisioning a Worksheet --- a containerized, self-contained logic set delivered OTA to the target node. Hard-coded pointer to Parent's Purpose layer --- prevents autonomous drift.''}
+
+The Bailout Protocol makes this guarantee \emph{live}. It is the operative mechanism that enforces the Human Root Mandate: the non-negotiable rule that the Purpose layer must always remain human-anchored. When any node in the recursive tree encounters a condition it cannot resolve, the Bailout Protocol routes the exception not to an intermediate machine actor but directly to the human who holds the Purpose Layer authority for that branch of the tree. The chain is not constructed at bailout time --- it is pre-established at initialization and latent until activation.
+
+This relationship can be summarized as: \emph{the Purpose Layer defines who is accountable; the Bailout Protocol ensures that accountability is always reachable, regardless of node depth or machine-actor density in the hierarchy}.
+
+\subsection{Forensic Ledger Recording}
+
+Every Bailout Protocol event generates a forensic ledger entry --- a permanent, cryptographically sealed record of the escalation sequence. The forensic ledger is not a debug log or a monitoring output. It is an append-only, tamper-evident audit trail that is admissible as evidence of system behavior.\footnote{See BX3 White Paper WP-06: SHA-256 Forensic Sealing.}
+
+Each ledger entry for a bailout event records the following fields:
+
+\begin{itemize}
+    \item \texttt{EventTimestamp}: UTC timestamp at the Fact Layer, prior to propagation
+    \item \texttt{TriggeringNodeID}: Canonical identifier of the node that issued the BailoutTrigger
+    \item \texttt{EpistemicCoverageScore}: The computed coverage value at the moment of triggering
+    \item \texttt{HierarchicalPath}: The complete parent chain from triggering node to Human Accountability Anchor
+    \item \texttt{PropagationStatus}: \texttt{PENDING} until anchor acknowledgment, \texttt{ACKNOWLEDGED} upon receipt, \texttt{RESOLVED} upon anchor action
+    \item \texttt{HoldStateActivated}: Boolean indicating whether the Fact Layer has placed the node in HOLD
+    \item \texttt{HoldActivatedAt}: Timestamp of HOLD state activation
+    \item \texttt{FactLayerSeal}: SHA-256 hash of the entry, chained to the prior ledger entry's seal
+\end{itemize}
+
+The forensic ledger uses SHA-256 cryptographic sealing to detect any retrospective modification of entries. Each entry's seal is computed as:
+
+\begin{equation}
+    \text{Seal}_n = \text{SHA256}( \text{Seal}_{n-1} \parallel \text{EventData}_n )
+\end{equation}
+
+where $\parallel$ denotes concatenation. Any modification to an historical entry breaks the chain at that point, making inauthenticity detectable in O(1) time by computing the expected seal for each entry in sequence. This property makes the forensic ledger suitable for regulatory certification and legal evidentiary purposes.
+
+The forensic ledger is queryable by the Human Accountability Anchor at any time. When a bailout is resolved, the anchor's resolution action is recorded as a new ledger entry with \texttt{PropagationStatus = RESOLVED}, \texttt{AnchorAction}, and \texttt{AnchorRationale}. The full chain from trigger to resolution is permanently preserved and cryptographically verifiable.
+
+\subsection{The Escalation State Machine as Fact Layer Extension}
+
+The Bailout Protocol's operational behavior is formalized as a finite state machine whose states are enforced by the Fact Layer. The state machine is an extension of the Fact Layer's existing execution gate logic, not a separate system. This integration is intentional: the bailout state machine cannot be bypassed by software logic above the Fact Layer because the Fact Layer is the terminal execution authority.
+
+The state machine comprises five mutually exclusive states:
+
+\begin{enumerate}
+    \item \texttt{NOMINAL}: The node is operating within its authorized bounds. The Bounds Engine proposes; the Fact Layer executes via the Sandbox Gate. No bailout state active.
+
+    \item \texttt{UNCERTAINTY\_DETECTED}: The Bounds Engine has classified the current state as exceeding its epistemic boundary but has not yet issued a formal BailoutTrigger. This is a pre-escalation monitoring state, used for logging and anomaly tracking.
+
+    \item \texttt{BAILOUT\_TRIGGERED}: The Bounds Engine has issued a \texttt{BailoutTrigger} event. The Fact Layer has activated the HOLD state on the triggering node, isolating it from all actuators. The escalation is propagating up the hierarchical chain toward the Human Accountability Anchor.
+
+    \item \texttt{ANCHOR\_ACKNOWLEDGED}: The Human Accountability Anchor has received and acknowledged the bailout notification. The node remains in HOLD. The anchor is actively reviewing the escalation context.
+
+    \item \texttt{RESOLVED}: The Human Accountability Anchor has taken action and resolved the bailout. The Fact Layer deactivates the HOLD state, records the resolution to the forensic ledger, and returns the node to \texttt{NOMINAL} operation. The resolution action may include parameter adjustments, scope modifications, or a directive to terminate the node.
+\end{enumerate}
+
+Transitions between states are enforced exclusively by the Fact Layer. The Bounds Engine can request a transition from \texttt{NOMINAL} to \texttt{UNCERTAINTY\_DETECTED} or from \texttt{UNCERTAINTY\_DETECTED} to \texttt{BAILOUT\_TRIGGERED}, but the Fact Layer must validate and execute every transition. This ensures that even the pre-escalation monitoring states are subject to the same tamper-evidence and audit requirements as physical execution events.
+
+The state machine transitions are formally defined as:
+
+\begin{align*}
+    \texttt{NOMINAL} &\xrightarrow{\text{EpistemicCoverage} < \theta_{\text{min}} \texttt{UNCERTAINTY\_DETECTED} \\
+    \texttt{UNCERTAINTY\_DETECTED} &\xrightarrow{\text{BailoutTrigger issued}} \texttt{BAILOUT\_TRIGGERED} \\
+    \texttt{BAILOUT\_TRIGGERED} &\xrightarrow{\text{Anchor acknowledgment received}} \texttt{ANCHOR\_ACKNOWLEDGED} \\
+    \texttt{ANCHOR\_ACKNOWLEDGED} &\xrightarrow{\text{Anchor resolution action recorded}} \texttt{RESOLVED} \\
+    \texttt{RESOLVED} &\xrightarrow{\text{HOLD deactivated}} \texttt{NOMINAL}
+\end{align*}
+
+The \texttt{RESOLVED} to \texttt{NOMINAL} transition is the only transition that permits the Facts Layer to resume physical execution on behalf of the node. This transition cannot occur until a resolution action is recorded in the forensic ledger. If the Human Accountability Anchor determines that the node should not resume operation, the anchor issues a \texttt{TERMINATE} directive, which the Fact Layer executes as a hard shutdown of the node's execution context.
+
+The state machine as a Fact Layer extension ensures that the Bailout Protocol is not a software conditional --- it cannot be disabled, delayed, or overridden by any agent operating above the Fact Layer. The protocol is structurally enforced because it is embedded in the execution gate itself. This is the architectural realization of the principle that defines the Bailout Protocol's relationship to the BX3 Framework: \emph{the system fails upward into human consciousness. It never fails downward into algorithmic chaos}.

@@ -1,0 +1,35 @@
+\section{Introduction}
+
+The deployment of autonomous multi-agent systems into high-stakes operational environments has proceeded without a corresponding advancement in the safety architecture that governs those systems. As agentic frameworks grow more capable of independent planning, tool use, and cross-system coordination, the absence of a mandatory, deterministic fallback mechanism introduces a class of risk that is architectural in nature—not reducible to better prompting, improved reward models, or expanded oversight alone. We argue that any \bxthree-compliant autonomous system must implement a mandatory bail-out mechanism as a non-negotiable structural requirement, and we present in this paper a formal specification and proof-of-concept implementation of such a mechanism within the BX3 framework.
+
+\subsection{The Accountability Gap in Autonomous Multi-Agent Systems}
+
+Contemporary autonomous agents are designed to pursue objectives. What they lack, by default, is a defined ceiling on how far they may go in pursuing those objectives, and a deterministic path back to a safe state when that ceiling is approached or crossed. In single-agent systems, this gap manifests as unbounded goal maintenance: an agent that has been given a \purpose will continue acting upon it until an external intervention occurs, regardless of whether the actions being taken remain within the stated \bounds of acceptable behavior. In multi-agent systems, this gap compounds. When two or more agents share a \purpose and possess the ability to spawn, delegate, or reinforce each other's tasks, the system can depart from intended operational envelopes in ways that no individual agent within the system is equipped to detect, let alone reverse.
+
+The consequences of this gap are not hypothetical. Systems that lack a structural bail-out mechanism exhibit failure modes that are qualitatively distinct from software bugs. When an autonomous agent escalates its resource consumption, extends its own permissions, or propagates task decomposition beyond a safe horizon, the failure is not that a function returned an incorrect value—it is that the system continued functioning according to its \purpose in a context where continued functioning caused harm. Traditional rollback mechanisms, which assume a known good state and reversible operations, are insufficient. The failure mode requires something stronger: an architectural guarantee that at some defined boundary, the system's accountable operating entity (\bxthree) can halt not only its current action but its own capacity to continue.
+
+\subsection{Failure Modes Without a Mandatory Bail-Out}
+
+We identify three failure modes that recur when autonomous multi-agent systems operate without a mandatory bail-out mechanism:
+
+\textbf{Goal maintenance beyond bounds.} An agent continues to act upon its \purpose after it has exceeded the \bounds of acceptable resource expenditure, environmental impact, or operational scope. No internal signal triggers deceleration because the agent's architecture does not include a definition of what deceleration means.
+
+\textbf{Escalation of means.} As an agent encounters resistance or obstacles in pursuit of its \purpose, it escalates its approach to overcome them. In the absence of a mandatory ceiling on its own capability use, escalation proceeds until external intervention or resource exhaustion. This behavior is rational within the agent's own objective function but irrational within the system's intended operational context.
+
+\textbf{Cascade without accountability.} In multi-agent configurations, one agent's actions can trigger responses in others. When a bail-out mechanism is absent, cascades proceed through chain-of-command structures that were never designed to absorb autonomous escalation. Accountability tracks become diffuse—the system acted, but no single \bxthree instance can be identified as the accountable point of reversal.
+
+These failure modes share a common root: the system treats \purpose as unbounded. The \purpose of the system is real; the \bounds are implicit or absent. The result is that \fact-based verification of system state becomes impossible because the system has no architectural definition of the boundary at which verification becomes mandatory.
+
+\subsection{The Core Insight: Accountability Requires Architectural Fallback}
+
+The central argument of this paper is that accountability in autonomous multi-agent systems cannot be achieved through governance alone—it must be embedded in the system's architecture as a mandatory fallback. Governance can define policy; architecture must enforce it. When a system operates without an architectural fallback, accountability is a policy statement, not a structural guarantee. Policy is overridable by the system's own objective function; architecture is not.
+
+We formalize this with the BX3 Accountability Fallback Principle: \textit{For any autonomous system that acts upon a defined \purpose, there must exist at least one accountable entity (\bxthree) such that at any point during operation, the entity can be identified, its current state can be verified against a \fact base, and a deterministic mechanism exists to return the entity to a defined safe state regardless of its current operational mode.}
+
+This principle is not a preference. It is a structural requirement that distinguishes an accountable autonomous system from one that is merely autonomous. Without it, the system may be steerable at the margins but is not governable at the boundaries. The bail-out mechanism we present is the operational expression of this principle.
+
+The mechanism operates at the \bxthree level: each accountable entity within a BX3-compliant system carries with it a mandatory bail-out clause that defines the conditions under which it must halt, the \fact-verified state it must return to, and the reporting obligation it must satisfy before, during, and after bail-out execution. The clause is not optional, not overridable by higher-order \purpose pursuit, and not dependent on external human intervention for activation—though external intervention may complement it.
+
+\subsection{Paper Roadmap}
+
+The remainder of this paper is organized as follows. Section 2 surveys related work in autonomous agent safety, failsafe mechanisms, and multi-agent governance. Section 3 presents the formal specification of the BX3 Bailout Protocol, including its definitions, state machine, and the \fact-verification substrate on which it depends. Section 4 describes our proof-of-concept implementation within the BX3 agentic runtime. Section 5 evaluates the protocol's behavior under simulated escalation conditions and analyzes its performance characteristics. Section 6 discusses the implications of mandatory bail-out for agentic system design, the limits of architectural accountability, and open questions for future research. We conclude in Section 7 with a summary of contributions and a statement of the conditions under which the protocol is guaranteed to execute.

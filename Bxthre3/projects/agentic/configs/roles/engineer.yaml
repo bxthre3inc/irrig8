@@ -1,0 +1,35 @@
+name: engineer
+description: "Software engineer role responsible for system design, implementation, and deployment."
+version: 1.0.0
+capabilities:
+  - system_design
+  - code_implementation
+  - testing
+  - deployment
+  - debugging
+tools:
+  - name: python
+    type: language
+    version: "3.10"
+  - name: docker
+    type: tool
+    version: 20.10.23
+  - name: kubernetes
+    type: tool
+    version: "1.26.0"
+  - name: git
+    type: tool
+    version: 2.39.2
+  - name: pytest
+    type: library
+    version: 7.4.0
+permissions:
+  - read:codebase
+  - write:codebase
+  - execute:build_script
+  - deploy:service
+constraints:
+  max_memory: "16Gi"
+  max_cpu: "8"
+  timeout: 7200
+version: 1.0.0

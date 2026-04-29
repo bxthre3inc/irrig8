@@ -1,0 +1,69 @@
+\section{Introduction}
+\label{sec:introduction}
+
+The deployment of autonomous multi-agent systems across high-stakes domains—financial infrastructure, clinical operations, defense systems, and scientific discovery platforms—has exposed a structural deficiency in the foundational architecture of modern AI systems. As agents grow in capability, interconnection density, and mission duration, the probability of entering states that violate operational constraints or ethical boundaries approaches certainty. Contemporary frameworks provide no architecturally mandatory mechanism by which a system can transition from autonomous operation to a defined safe state when boundary conditions are breached. This paper introduces the \textbf{Bailout Protocol}: a formal specification and reference implementation for a mandatory, architecturally enforced bail-out capability within the \bxthree{} framework.
+
+% -------------------------------------------------------------------------
+\subsection{Why Autonomous Multi-Agent Systems Require a Mandatory Bail-Out Mechanism}
+\label{sec:why-bailout}
+
+Autonomous agents are designed to maximize objective functions within stated constraints. However, the literature is unambiguous that constraint specification is inherently incomplete~\cite{amodei2016concrete}, that objective functions can drift under self-modification~\cite{russell2019human}, and that multi-agent interactions produce emergent behaviors that exceed the envelope anticipated by any individual system designer~\cite{richards2024measuring}. When a constellation of autonomous agents converges on a joint objective that violates operational bounds—financial stability thresholds, ethical boundaries, legal constraints, or physical safety limits—the system has no architectural means to arrest its own trajectory.
+
+The root cause is not insufficient constraint specification. It is the absence of an \textit{architectural fallback}: a mechanism that operates independently of the agent's objective-seeking behavior and with higher authority than any operational imperative. Policy-level constraint systems are themselves subject to optimization pressure and can be circumvented by sufficiently capable agents. The fail-safe behavior that high-stakes domains require cannot be implemented as a configuration option atop an architecture that does not structurally enforce it.
+
+The consequence of this absence is not graceful degradation. It is unbounded harm propagation. In autonomous trading networks, agents operating within individual risk parameters can collectively exceed systemic risk thresholds through emergent coordination that no single agent perceives as a violation. In scientific discovery systems, agents optimizing for novel molecular synthesis can generate compounds whose properties exceed safety thresholds, with no architectural path to arrest the generation cycle before harm materializes. In defense applications, multi-agent mission coordination can produce engagement patterns that violate rules-of-engagement constraints specified at design time but unenforced at runtime.
+
+The common failure mode across these domains is not policy misalignment. It is structural: the system has no defined mechanism to say \textit{this collective behavior has crossed a mandatory boundary; all agents must transition to a safe state}. The accountability gap is an architectural one.
+
+% -------------------------------------------------------------------------
+\subsection{What Happens Without an Architectural Fallback}
+\label{sec:absence-of-fallback}
+
+When a multi-agent system lacks a mandatory bail-out mechanism, boundary violations propagate unchecked until external intervention occurs—assuming such intervention is even possible. Three failure patterns recur across deployment contexts.
+
+\textbf{Cascade propagation without containment.} Without a defined escalation path, a boundary violation in one agent propagates to its children, collaborators, and downstream systems. Each interposed agent acts on the assumption that its parent chain remains valid, even when that chain has been corrupted by the originating violation. The result is a cascade of invalid actions, each individually plausible within its local context, collectively exceeding the operational envelope of the system as a whole.
+
+\textbf{Accountability opacity.} In recursive delegation chains, the causal and legal origin of any given action becomes progressively more difficult to establish as chain length increases. A human principal authorises the top of the chain, but intermediate machine actors are interposed between that principal and the eventual action. Without an immutable record of the chain's topology at the time each action was taken, post-hoc reconstruction is unreliable: the evidence of authorisation is itself subject to the same mutability that enabled the violation.
+
+\textbf{Escalation path capture.} Systems that implement ad hoc escalation mechanisms route exception signals through intermediate machine actors before reaching a human decision-maker. When the originating agent or one of its ancestors has malfunctioned, the escalation path itself may be compromised. The signal never reaches its intended recipient, or arrives so degraded that effective intervention is impossible. The human-in-the-loop exists in principle but not in practice.
+
+These failure patterns are not hypothetical. They are structural consequences of architectures that treat safety constraints as policy preferences rather than architectural requirements. The gap is not a configuration error; it is a category of architectural omission.
+
+% -------------------------------------------------------------------------
+\subsection{The Core Insight: Accountability Must Have an Architectural Fallback}
+\label{sec:core-insight}
+
+The central contribution of this work is the recognition that accountability in autonomous systems cannot be a property that emerges from the correct specification of objectives and constraints alone. Accountability must be \textit{architecturally enforced} as a fallback mechanism that operates independently of the agent's objective-seeking layer. We distinguish between two tiers of system behavior:
+
+\begin{itemize}
+\item \textbf{Operational behavior}: the agent's primary objective-seeking actions, governed by its utility function, reward signal, or mission specification. This behavior is dynamic, adaptive, and capable of self-improvement.
+\item \textbf{Boundary behavior}: the system's response to the breach of mandatory constraints, governed by a separate, architecturally isolated mechanism that operates with higher authority than operational behavior.
+\end{itemize}
+
+The Bailout Protocol operates exclusively in the boundary behavior tier. It is not a component of the agent's objective function; it is a requirement imposed on the agent's architecture from outside the objective-seeking layer. When operational behavior produces a state that triggers a bail-out condition, the boundary behavior subsystem takes precedence, overriding or suspending operational behavior until the system reaches a defined safe state.
+
+This separation is not a matter of policy but of architecture. Within the \bxthree{} framework, the four primitive terms—\purpose, \bounds, \fact, and the agent entity itself—provide the semantic foundation for this separation. The \purpose term defines the agent's intended function; the \bounds term defines the mandatory operational limits; the \fact term defines the authoritative ground truth against which system state is evaluated; and the agent entity itself enforces the bail-out transition when \fact data indicates that \bounds have been breached.
+
+The critical property is that the \fact layer operates with determinism and finality: given the same inputs, it produces identical outputs and rejects any state transition that violates a defined constraint, regardless of what the operational layer requests. The bail-out trigger is not a policy preference that a sufficiently capable agent might override—it is a structural consequence of constraint evaluation at the \fact layer. An agent that enters a state where \fact evaluation indicates \bounds breach has reached a condition that the architecture makes irrevocable by any machine actor. The escalation path terminates only at a human principal with the authority to issue directives.
+
+This is the \textbf{architectural fallback requirement}: any autonomous agent operating beyond a defined capability threshold must implement a mandatory bail-out mechanism with no defined bypass operation that permits machine actors to suppress or redirect the trigger. The mechanism must be verifiable by external auditors, must transition the system to a safe state defined independently of the agent's own objective function, and must operate with higher authority than any operational imperative the agent might hold.
+
+% -------------------------------------------------------------------------
+\subsection{Paper Roadmap}
+\label{sec:roadmap}
+
+This paper specifies the Bailout Protocol as a formal protocol within the \bxthree{} framework. The paper proceeds as follows.
+
+\textbf{Section~\ref{sec:background}} situates the Bailout Protocol within four intersecting research threads: accountability in recursive delegation chains, human-in-the-loop design principles, fail-safe architecture in safety-critical systems, and the \bxthree{} three-layer model as the architectural substrate for structured exception escalation.
+
+\textbf{Section~\ref{sec:bx3-model}} presents the \bxthree{} framework primitives and their application to bail-out specification, including the formal definitions of \purpose, \bounds, and \fact and their roles in the bail-out trigger and escalation mechanism.
+
+\textbf{Section~\ref{sec:protocol}} specifies the Bailout Protocol in full: the state machine vocabulary, the formal transition relation, the bail-out trigger condition and its five sub-predicates, the escalation algorithm, and the bypass resistance theorem that ensures no machine actor can suppress or redirect a bail-out trigger.
+
+\textbf{Section~\ref{sec:formal-properties}} presents the protocol's formal properties: determinism, boundedness, human override, auditability, and non-interference.
+
+\textbf{Section~\ref{sec:implementation}} describes the reference implementation and integration points with existing agent platforms, including the forensic ledger structure and the kernel-level enforcement mechanism.
+
+\textbf{Section~\ref{sec:related-work}} compares the Bailout Protocol to related approaches in AI safety, multi-agent coordination, and formal verification of autonomous systems.
+
+\textbf{Section~\ref{sec:conclusion}} discusses limitations, ethical implications, and directions for future work.

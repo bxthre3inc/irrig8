@@ -1,0 +1,203 @@
+% =============================================================================
+% Section 4: Immutable Parent Pointers
+% For: Recursive Spawning — BX3-Compliant Multi-Agent Delegation
+% =============================================================================
+
+\section{Immutable Parent Pointers}
+\label{sec:immutable_parent_pointers}
+
+The parent pointer chain — the structural mechanism by which every agent retains a verifiable record of its ancestor lineage — is the central data primitive of the BX3 drift-prevention architecture. Unlike metadata annotations that can be attached or removed post-hoc, the parent pointer in BX3 is bound to the agent's identity at the moment of creation and cannot be dissociated from that identity without destroying the agent itself. This section formalizes the parent pointer's immutability properties, the chain construction algebra, the enforcement mechanisms in the Fact Layer, the spawn authorization process in the Purpose Layer, and the chain traversal algorithm that enables runtime introspection of agent ancestry.
+
+\subsection{ParentPointer: Formal Definition and Assignment Invariant}
+
+We define the parent pointer relation as a total function over the set of all agents in a BX3-compliant system.
+
+\begin{definition}[ParentPointer]
+\label{def:parent_pointer}
+Let $\mathcal{A}$ be the set of all agents in a BX3-compliant system. The \textbf{ParentPointer} relation $\textit{ParentPointer} : \mathcal{A} \times \mathcal{A}$ is a total function defined as follows: for any two agents $p, c \in \mathcal{A}$, $\textit{ParentPointer}(p, c)$ holds \emph{iff} $p$ is the direct parent (authorizing agent) of $c$ at the moment of $c$'s creation. We denote this compactly as $p = \parent(c)$.
+\end{definition}
+
+The defining invariant of $\textit{ParentPointer}$ is its \textbf{immutability after assignment}: once $\parent(c) = p$ is established at the moment of $c$'s creation and sealed into the Fact Layer, the relation cannot be changed for the lifetime of $c$. There exists no operation — no administrative command, no runtime action, no authorized override — that can modify $\parent(c)$ after sealing. This is not a policy choice that can be relaxed under emergency conditions; it is a structural property enforced by the architecture at the deepest level.
+
+\begin{invariant}[Immutability Invariant]
+\label{inv:pp_immutability}
+For any agent $c \in \mathcal{A}$, $\parent(c)$ is assigned exactly once at the moment of $c$'s creation and is sealed into the Fact Layer via SHA-256 forensic sealing. This assignment is \textbf{permanent} and \textbf{immutable}. No subsequent operation may alter $\parent(c)$, nor may any agent — including $c$ itself, the original parent $p$, or any administrative actor — modify, clear, or dissociate this relation. The only terminal state for any agent $c$ is a state in which $\parent(c)$ remains exactly as assigned at creation.
+\end{invariant}
+
+The immutability invariant has a direct consequence for agent identity. Because an agent's identity is cryptographically bound to its sealed parent pointer record, and because the parent pointer is immutable, the agent cannot exist in a state where its parent relation is undefined, modified, or replaced without this being immediately detectable as a chain integrity violation. The parent relation is not a property the agent \emph{has}; it is a constituent of what the agent \emph{is}. This distinction is operationally significant: an agent attempting to "disown" its parent would need to break the SHA-256 hash chain binding its identity to that parent, which is computationally infeasible.
+
+\subsection{Chain Construction Algebra}
+
+The parent pointer relation extends naturally to a full ancestry chain through a recursive definition. We define the chain of an agent as the set of all its ancestors, recursively constructed via the parent pointer relation.
+
+\begin{definition}[Ancestry Chain]
+\label{def:chain}
+For any agent $a \in \mathcal{A}$, the \textbf{ancestry chain} of $a$, denoted $\Chain(a)$, is defined recursively as:
+\begin{equation}
+\Chain(a) \;=\;
+\begin{cases}
+\emptyset & \text{if } \parent(a) = \text{null} \quad \text{(\textbf{base case: root human})} \\[6pt]
+\{\,\parent(a)\,\} \;\ \Chain(\parent(a)) & \text{if } \parent(a) \neq \text{null} \quad \text{(\textbf{recursive case})}
+\end{cases}
+\end{equation}
+where $\,;\,$ denotes set union and $\parent(a)$ is the direct parent of $a$.
+\end{definition}
+
+In words: the chain of an agent $a$ consists of $a$'s immediate parent, followed by that parent's parent, and so on, recursively, until the chain reaches an agent whose parent is null. That null-parent agent is the \textbf{root human} — the originating human principal who initiated the workflow. The root human is the terminal accountability anchor of the entire chain; it is the only agent in the system whose $\parent$ relation is null by definition, not by absence of record.
+
+\begin{example}[Chain Construction]
+Consider a workflow in which a human principal $h$ (depth 0) spawns an orchestration agent $a_1$ (depth 1), which spawns a analysis agent $a_2$ (depth 2), which spawns a retrieval agent $a_3$ (depth 3). The chains are:
+\begin{align*}
+\Chain(h)   &= \emptyset                                           && (\parent(h) = \text{null})\\
+\Chain(a_1) &= \{\,h\,\}                                           && (\parent(a_1) = h)\\
+\Chain(a_2) &= \{\,a_1,\, h\,\}                                    && (\parent(a_2) = a_1, \;\Chain(a_1) = \{h\})\\
+\Chain(a_3) &= \{\,a_2,\, a_1,\, h\,\}                             && (\parent(a_3) = a_2, \;\Chain(a_2) = \{a_1, h\})
+\end{align*}
+The chain of $a_3$ contains three elements: its direct parent $a_2$, its grandparent $a_1$, and the root human $h$. No chain element is repeated, and the chain is ordered from immediate parent to terminal root.
+\end{example}
+
+The chain construction algebra satisfies several structural properties that are essential to the system's correctness:
+
+\begin{property}[Ancestry Chain Properties]
+\label{prop:chain_properties}
+For all agents $a, b \in \mathcal{A}$:
+\begin{enumerate}
+\item \textbf{Well-definedness:} $\Chain(a)$ is always finite and always terminates at the root human. No infinite chains exist in a BX3-compliant system by construction (Bounds Engine enforces $D_{\max}$ at spawn time).
+\item \textbf{Uniqueness:} If $b \in \Chain(a)$, then $\Chain(b) \subset \Chain(a)$. No agent appears twice in any chain.
+\item \textbf{Transitivity:} If $b \in \Chain(a)$ and $c \in \Chain(b)$, then $c \in \Chain(a)$. Chain membership is transitive.
+\item \textbf{No cycles:} There exists no agent $a$ such that $a \in \Chain(a)$. ParentPointer is a strict partial order (irreflexive, transitive, antisymmetric where defined).
+\end{enumerate}
+\end{property}
+
+Property 4 (no cycles) is critical. Because each spawn event assigns a new $\parent$ relation that must reference an existing agent, and because the parent relation is immutable once assigned, it is structurally impossible to construct a cycle: agent $a$ cannot reference $b$ as its parent if $b$'s chain contains $a$, since that would require $a$ to precede itself in its own ancestry. The Fact Layer enforces this at spawn time by verifying that the proposed parent is not itself a descendant of the proposed child.
+
+\subsection{The Root Human: Base Case and Terminal Anchor}
+
+The root human occupies a special structural position in the parent pointer chain. Unlike all other agents, whose $\parent$ relation points to the agent that authorized their creation, the root human's $\parent$ relation is null by definition. This is not an exception or a special case that requires external handling — it is the base case that terminates the recursion in Definition \ref{def:chain}.
+
+\begin{definition}[Root Human]
+\label{def:root_human}
+The \textbf{root human} $h_r \in \mathcal{A}$ is the unique agent in the system such that $\parent(h_r) = \text{null}$. The root human is the terminal accountability anchor: all authority in the system flows from $h_r$, and all chains $\Chain(a)$ terminate at $h_r$. No agent may be created except by delegation from some existing agent; the chain must start at a human principal.
+\end{definition}
+
+The root human is the only agent for which the Fact Layer record contains a null parent pointer. This is a deliberate architectural invariant: every chain must be grounded in human authorization. An agent whose chain terminates at anything other than a human principal — for instance, an agent whose purported root is itself a spawned agent with null parent — is by definition unauthorized and must not execute. The Purpose Layer enforces this invariant at initialization and at every spawn event by verifying that the complete chain of any newly created agent terminates at a human principal.
+
+This design reflects a fundamental accountability principle: \textbf{no agent may authorize the existence of another agent without a traceable chain of human delegation}. The root human is the embodiment of this principle at the base of the chain. It is the single point of original authority from which all legitimate agency flows.
+
+\subsection{Immutability Enforcement: The Fact Layer}
+
+The immutability of the parent pointer is not enforced by convention or by policy — it is enforced by the cryptographic architecture of the Fact Layer. The Fact Layer is the append-only forensic ledger that records all agent creation events, including the parent pointer assignment, and seals each record with a SHA-256 hash that binds it irreversibly to the prior record in the chain.
+
+At the moment of agent creation, the Fact Layer records the following data into a sealed block:
+
+\begin{itemize}
+    \item The identity hash of the newly created agent $c$
+    \item The identity hash of the parent agent $p$
+    \item The complete purpose declaration of $c$
+    \item The authority bounds assigned to $c$
+    \item The parent pointer relation $\parent(c) = p$
+    \item A timestamp and sequence number
+    \item The hash of the immediately preceding Fact Layer block
+\end{itemize}
+
+This block is then hashed with SHA-256 to produce a commitment that is cryptographically bound to the entire prior chain. Any attempt to modify the parent pointer after sealing — whether by altering $p$, by setting $\parent(c)$ to null, or by substituting a different parent — would require recomputing the hash of the block containing $c$, which would invalidate the hash of every subsequent block in the chain. The SHA-256 second-preimage resistance property ensures that there exists no computationally feasible method to produce a modified chain that hashes to the same root commitment.
+
+The Fact Layer enforces immutability through three distinct mechanisms:
+
+\begin{enumerate}
+    \item \textbf{Sealed Assignment}: The parent pointer is sealed into the Fact Layer at the moment of agent creation and is never eligible for re-sealing. There is no update primitive for the parent pointer field; the field is write-once.
+    \item \textbf{Hash Chain Integrity}: Each Fact Layer block hashes the parent pointer relation into its commitment. Modification of any historical parent pointer invalidates the hash chain from that block forward, immediately detectable by any integrity verification run.
+    \item \textbf{No Delete Primitives}: The Fact Layer provides no operation to delete, truncate, or rebase a sealed chain. The chain is append-only by construction, not by policy. This eliminates the class of attacks that attempt to sanitize lineage by deleting intermediate records.
+\end{enumerate}
+
+An important operational property is that the immutability guarantee is \textbf{agent-self-verifying}. Any agent — or any external auditor with access to the sealed chain — can independently recompute the SHA-256 hash chain from the root human forward and compare the result against the stored root commitment. If any discrepancy is found, the chain is declared invalid and the agent is suspended. This is the forensic basis for the drift detection procedure: a chain whose hash chain does not verify is a chain whose agent has potentially been compromised or whose lineage has been tampered with.
+
+\subsection{Spawn Authorization: The Purpose Layer}
+
+While the Fact Layer provides the cryptographic immutability of the parent pointer, the Purpose Layer provides the authorization mechanism that determines which parent-child relationships are permitted to be created in the first place. Spawn authorization is the process by which the Purpose Layer validates that a proposed spawn event is consistent with the parent's declared purpose before the Fact Layer seals the parent pointer relation.
+
+\begin{definition}[Spawn Authorization]
+\label{def:spawn_authorization}
+When an agent $p \in \mathcal{A}$ proposes to spawn a child agent $c$, the Purpose Layer performs a \textbf{spawn authorization} check consisting of:
+\begin{enumerate}
+    \item \textbf{Purpose Consistency}: The proposed purpose of $c$ must be a sub-objective of $p$'s declared purpose. This ensures that delegation is purposeful and directed, not arbitrary.
+    \item \textbf{Authority Monotonicity}: The authority bounds requested for $c$ must be a subset of the authority possessed by $p$. A parent with read-only authority cannot spawn a child with write authority.
+    \item \textbf{Human Ground}: The complete ancestry chain of $c$, when constructed via $\Chain(c)$, must terminate at a human principal. The Purpose Layer verifies this before authorizing spawn.
+    \item \textbf{Bounds Check}: The resulting delegation depth must be within the workflow's $D_{\max}$, and the parent's active sub-agent count must be within $S_{\max}$. This check integrates with the Bounds Engine.
+\end{enumerate}
+\end{definition}
+
+If any of these checks fails, the spawn is rejected by the Purpose Layer and the Fact Layer records a \textbf{rejected spawn event} with the reason for rejection. This rejected event is itself sealed into the Fact Layer, ensuring that even denied spawn attempts leave a forensic record.
+
+On successful authorization, the Purpose Layer issues a \textbf{spawn approval} that includes the sealed parent pointer relation $\parent(c) = p$ and the purpose sub-objective delegated to $c$. This approval is forwarded to the Fact Layer, which seals the parent pointer relation as part of the agent creation record. The sequence is: Purpose Layer authorizes, Fact Layer records and seals. The Fact Layer does not record a parent pointer without Purpose Layer authorization, and the Purpose Layer does not authorize a spawn without subsequent Fact Layer sealing. This two-step choreography ensures that every parent pointer in the system is both authorized ( Purpose Layer) and sealed (Fact Layer).
+
+The Purpose Layer's spawn authorization is what gives the parent pointer chain its semantic meaning beyond mere metadata. The parent pointer is not simply a reference from child to parent; it is a cryptographically sealed record that the child was authorized to exist by the parent, that the parent's authority was sufficient to delegate the requested purpose, and that the entire chain is grounded in human authorization. This semantic content is what enables the drift detection procedures described in Section \ref{sec:drift_detection}.
+
+\subsection{Chain Traversal Algorithm}
+
+The ancestry chain is not merely a passive record — it is a queryable data structure that enables any authorized actor to reconstruct the complete delegation path of an agent at any point during execution. The Chain Query Interface (CQI) exposes this capability as a first-class operation. We present the canonical traversal algorithm in Algorithm \ref{alg:chain_traversal}.
+
+\begin{algorithm}[htbp]
+\caption{Chain Traversal — $\proc{GetAncestryChain}(a)$}
+\label{alg:chain_traversal}
+\begin{algorithmic}[1]
+\Require Agent identifier $a \in \mathcal{A}$
+\Ensure Ordered list $[a_0, a_1, \ldots, a_n]$ where $a_0 = a$, $a_{i+1} = \parent(a_i)$, and $a_n$ is the root human ($\parent(a_n) = \text{null}$)
+\State $\text{chain} \gets \text{empty ordered list}$
+\State $\text{current} \gets a$
+\State $\text{visited} \gets \emptyset$ \Comment*{Cycle detection}
+\Statex
+\Loop
+\If{$\text{current} = \text{null}$}
+    \State \textbf{return} $\text{chain}$ \Comment*{Base case: root human reached}
+\EndIf
+\If{$\text{current} \in \text{visited}$}
+    \State \textbf{return} $\text{ERROR\_CYCLE\_DETECTED}$ \Comment*{Invariant violation: no cycles by construction}
+\EndIf
+\State $\text{append current to chain}$ \Comment*{Prepend for reverse order if depth-first}
+\State $\text{visited} \gets \text{visited} \cup \{\text{current}\}$]
+\State $\text{current} \gets \parent(\text{current})$ \Comment*{Move to parent}
+\EndLoop
+\Statex
+\Comment*{Result: chain[0] = $a$, chain[last] = root human}
+\State \textbf{return} $\text{chain}$ in reverse depth order: $[\text{root}, \ldots, \parent(a), a]$
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm terminates because the chain is guaranteed to be finite: the Bounds Engine enforces a maximum delegation depth $D_{\max}$ at spawn time, which provides an upper bound on chain length, and the no-cycles invariant (Property \ref{prop:chain_properties}) ensures that the traversal cannot loop indefinitely. The visited set provides an additional safety guard: if a cycle were to exist despite the invariant (indicating a Fact Layer or Purpose Layer bug), the traversal detects it and returns an error rather than looping forever.
+
+\textbf{Complexity:} The algorithm runs in $O(d)$ time where $d$ is the delegation depth of the target agent, with $d \leq D_{\max} + 1$. Space complexity is $O(d)$ for the chain list and $O(d)$ for the visited set. The $O(d)$ time bound is optimal for chain traversal because the chain must be visited in order; no data structure can provide faster traversal without precomputing additional indexes, which the Fact Layer deliberately avoids to maintain immutability.
+
+\textbf{Query Interface:} The CQI exposes two primary query operations:
+
+\begin{itemize}
+    \item $\proc{GetAncestors}(a)$: Returns the ordered list $[a_0, a_1, \ldots, a_n]$ where $a_n$ is the root human. This is the forward traversal described in Algorithm \ref{alg:chain_traversal}.
+    \item $\proc{GetDepth}(a)$: Returns the integer depth of agent $a$ — the number of delegation hops from the root human to $a$. Computed as $|\Chain(a)|$.
+    \item $\proc{VerifyChain}(a)$: Verifies the SHA-256 hash chain from $a$ to the root human and returns $\text{VALID}$ if integrity holds or $\text{INVALID}(i)$ with index $i$ of the first invalid block if it does not.
+\end{itemize}
+
+These operations are exposed to all authorized agents and human overseers via the CQI. The \textbf{VerifyChain} operation is the forensic workhorse: it enables any party with read access to the Fact Layer to independently verify that the ancestry chain of any agent has not been tampered with, without needing to trust the agent itself or any intermediate party.
+
+\subsection{Connection to Drift Prevention}
+
+The immutable parent pointer chain is the structural foundation on which the drift prevention guarantee (Theorem \ref{th:drift_prevention}) is built. Its role in drift prevention operates at three levels:
+
+\begin{enumerate}
+    \item \textbf{Structural Immutability}: Because the parent pointer is sealed at creation and cannot be modified, the chain is permanently legible. Any attempt to modify a chain post-creation is detectable by the Fact Layer's hash chain verification. This means that an agent cannot dissociate itself from its ancestry to escape accountability.
+
+    \item \textbf{Intent Preservation}: The parent pointer chain preserves the full delegation path, enabling reconstruction of the original purpose at any depth. Even if a sub-agent at depth $n$ exhibits behavior that appears drifted, the chain enables an auditor to trace the purpose sub-objectives from the root human forward and identify where intent propagation diverged from the authorized path.
+
+    \item \textbf{Forensic Completeness}: The combination of sealed parent pointers, hash chain integrity, and the CQI means that the complete execution provenance of any agent is always available and always verifiable. This is the prerequisite for the forensic drift detection procedures that complement the structural drift prevention provided by the Purpose Layer and the runtime enforcement provided by the Truth Gate.
+\end{enumerate}
+
+The three levels map directly onto the three layers of the BX3 architecture: the Fact Layer provides structural immutability and forensic completeness; the Purpose Layer provides intent preservation through spawn authorization and the human ground invariant; and the Truth Gate (operating across all layers) provides runtime enforcement that any action taken by any agent is consistent with its authorized purpose and its sealed chain. The parent pointer chain is thus not merely a data structure — it is the connective tissue that links the three layers into a coherent drift-prevention system.
+
+% =============================================================================
+% Subsection placeholder for downstream section reference
+% =============================================================================
+\subsection{Drift Detection via Chain Introspection}
+\label{sec:drift_detection}
+
+Given a verifiable ancestry chain produced by the traversal algorithm, drift detection proceeds by reconstructing the purpose sub-objective at each depth and comparing it against the agent's sealed behavior record in the Fact Layer. An agent $a$ is considered to have drifted if there exists some ancestor $a_i \in \Chain(a)$ such that the purpose sub-objective associated with the edge $(a_i, a_{i+1})$ is inconsistent with an action recorded in the Fact Layer for $a_{i+1}$. The chain verification operation $\proc{VerifyChain}$ provides the cryptographic foundation; the purpose consistency check provides the semantic one. Both must pass for an agent to be considered drift-free.
+
+This detection procedure is orthogonal to, and complementary to, the preventive mechanisms: the Purpose Layer prevents drift from being introduced at spawn time, and the Fact Layer prevents drift from being concealed after the fact. Together, they constitute a system in which drift is structurally impossible to introduce and computationally impossible to conceal.

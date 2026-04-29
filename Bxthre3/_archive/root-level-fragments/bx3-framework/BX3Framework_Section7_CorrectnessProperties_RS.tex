@@ -1,0 +1,222 @@
+\section{Correctness Properties}
+\label{sec:rs-correctness}
+
+This section establishes three correctness properties for the Recursive Spawning
+mechanism: (1) drift prevention — the guarantee that spawned nodes cannot deviate
+from the human principal's intent in undetectable or uncorrectable ways; (2) chain
+integrity — the guarantee that the parent-pointer chain is tamper-evident and
+reconstructable; and (3) termination — the guarantee that the escalation chain
+from any node terminates at a human principal within a bounded number of steps.
+Each property is derived from the three-layer integration specified in
+Section~\ref{sec:rs-integration}.
+
+% ---------------------------------------------------------------
+\subsection{Drift Prevention}
+\label{sec:rs-drift-prevention}
+
+\textit{Drift} in a recursive spawning context refers to the phenomenon by which
+a child node's behavior diverges from the principal's intent as encoded in the
+parent's operating range — by expanding its own authority beyond what
+$R(\text{parent})$ permits, by modifying the accountability chain, or by
+replacing the human anchor with a machine actor as its escalation terminus.
+Drift is the primary failure mode that the Recursive Spawning pillar is designed
+to prevent, and its prevention depends on three structural properties acting in
+concert.
+
+\begin{theorem}[Drift Prevention]
+\label{th:drift-prevention}
+Let $T = (V, E)$ be a BX3 spawn tree satisfying all three constraints of
+Section~\ref{sec:recursive-spawning-formal}: hierarchy finiteness, parent-pointer
+immutability, and delegation scope inheritance.  Then for any node $v \in V$,
+the accountability chain from $v$ to its human anchor $h(v)$ cannot be redirected,
+truncated, or absorbed by any machine actor operating within the BX3 architecture.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The proof proceeds by establishing that three mutually reinforcing structural
+properties jointly preclude each possible drift pathway.
+
+\textit{Pathway 1: Parent-pointer modification.}  Suppose a machine actor $m$
+attempts to redirect $\alpha(v)$ from its legitimate parent $p$ to a different
+node $p'$.  By Invariant~\ref{inv:parent-pointer}, $\alpha(v)$ is a read-only
+property of the \fact{} layer worksheet, enforced by the pre-commit hook.  Any
+write attempt is intercepted and rejected before the state advances.  The rejection
+event is recorded in the Forensic Ledger as
+\texttt{parent-pointer-write-denied}$(v, p, p')$, and the Bailout Protocol is
+triggered.  The drift attempt is both prevented and recorded.  No machine actor
+has the authority to override this check.
+
+\textit{Pathway 2: Human anchor replacement.}  Suppose a machine actor attempts
+to replace $h(v)$ with a machine actor $m$ as the escalation terminus.  By
+Invariant~\ref{inv:human-anchor}, $h(v)$ is established at node provisioning and
+is never modified during the node's operational lifetime.  The human anchor is a
+structural property of the \purpose{} layer, not a configurable parameter.  Any
+attempt to modify it is rejected by the \fact{} layer's pre-commit hook, and the
+Bailout Protocol is triggered.  The drift attempt is prevented.
+
+\textit{Pathway 3: Authority expansion through spawning.}  Suppose a machine
+actor at node $p$ attempts to spawn a child $c$ with $R(c) \not\subset R(p)$,
+thereby expanding delegated authority beyond what the principal sanctioned.  By
+Invariant~\ref{inv:scope-inheritance}, the \bounds{} layer evaluates
+$R(c) \subset R(p)$ before every spawn event.  If the check fails, the
+$e_{\text{scope-violation}}$ event is emitted, the spawning state machine
+transitions to \texttt{SPAWN\_LOCKED}, and the Bailout Protocol is triggered.
+The attempted authority expansion is prevented and recorded.
+
+\textit{Pathway 4: Chain truncation via non-termination.}  Suppose a machine
+actor attempts to prevent the escalation chain from reaching $h(v)$ by causing
+the chain to loop or diverge.  By hierarchy finiteness (Invariant
+~\ref{inv:hierarchy-finiteness}), the parent-pointer chain from any node has
+maximum length $D_{\max}$, and by Invariant~\ref{inv:spawn-accountability} it
+terminates at a human principal.  The chain cannot loop because $\alpha(v)$ is
+immutable and acyclic (a node cannot be its own ancestor).  The chain cannot
+terminate at a machine actor because Invariant~\ref{inv:human-anchor} forbids
+the human anchor from being replaced.  The drift attempt is structurally
+impossible.
+
+Since all four drift pathways are precluded, the accountability chain from any
+node $v$ to its human anchor $h(v)$ is non-divertable.  $\square$
+\end{proof}
+
+\medskip
+\noindent\textbf{Role of the Forensic Ledger.}  Even though pre-commit hooks
+prevent drift at runtime, the Forensic Ledger ensures that any attempted drift —
+successful or not — is permanently recorded with cryptographic chain integrity.
+Drift attempts are therefore not merely prevented but also attributable: the
+identity of the node that attempted the drift, the time of the attempt, and the
+nature of the violation are all reconstructable by any auditor.  The combination
+of prevention and attribution is what makes the upstream accountability guarantee
+operational in high-stakes deployments.
+
+The drift prevention theorem depends critically on the \textit{conjunction} of
+all three constraints.  No single constraint is sufficient: parent-pointer
+immutability alone does not prevent authority expansion; delegation scope
+inheritance alone does not prevent chain redirection; hierarchy finiteness alone
+does not prevent the human anchor from being replaced.  It is the conjunction of
+all three, enforced by all three layers operating in concert, that yields the
+non-divertability guarantee.
+
+% ---------------------------------------------------------------
+\subsection{Chain Integrity}
+\label{sec:rs-chain-integrity}
+
+\textit{Chain integrity} refers to the guarantee that the parent-pointer chain
+from any node to its human anchor is complete, tamper-evident, and reconstructable.
+The chain is the escalation path used by the Bailout Protocol; if the chain is
+incomplete or tampered with, the escalation path is unreliable and the Liveness
+guarantee is compromised.
+
+\begin{property}[Chain Integrity]
+\label{prop:chain-integrity}
+For any node $v$ in a BX3 spawn tree, the accountability chain
+$C(v) = \langle v, \alpha(v), \alpha^{(2)}(v), \ldots, \alpha^{(k)}(v) \rangle$
+where $\alpha^{(k)}(v) = h(v)$ satisfies:
+\begin{enumerate}
+\item $k \leq D_{\max}$ (finite length);
+\item $\alpha^{(i)}(v)$ is a machine node for all $0 \leq i < k$;
+\item $\alpha^{(k)}(v)$ is a human principal;
+\item For all $0 \leq i < j \leq k$, $\alpha^{(i)}(v) \neq \alpha^{(j)}(v)$ (acyclic);
+\item Every entry in $C(v)$ appears as a \texttt{child-provisioned} event in the
+Forensic Ledger with matching $\alpha(\cdot)$ and $h(\cdot)$ values.
+\end{enumerate}
+\end{property}
+
+Property~\ref{prop:chain-integrity} is established by construction and verified by
+the \fact{} layer at each spawn event.  Items (1)–(3) follow from the hierarchy
+finiteness constraint, the delegation scope inheritance constraint, and the human
+anchor immutability invariant.  Item (4) follows from parent-pointer immutability:
+since $\alpha(v)$ is established once at node creation and never modified, and
+since $\alpha(v) \neq v$ for all $v$, the parent-pointer relation defines a
+strict partial order with no cycles.  Item (5) follows from the Forensic Ledger
+completeness invariant: every spawn event is recorded before subsequent actions
+are permitted, and every \texttt{child-provisioned} entry encodes both
+$\alpha(c) = p$ and $h(c) = h(p)$.
+
+The tamper-evidence property follows from the Forensic Ledger's SHA-256 hash
+chaining.  Each entry carries the hash of the preceding entry.  Any modification
+to an entry — node identifier, event type, context, or parent pointer — breaks
+the chain at the point of modification.  The break is detectable by recomputing
+the chain of hashes from the genesis entry to the entry in question and comparing
+the recomputed hash against the stored hash.  An auditor without access to the
+ledger's contents can detect tampering with high confidence.
+
+Reconstructability follows from items (4)–(5) and the cryptographic chaining.
+Given any node $v$, an auditor reconstructs $C(v)$ by querying the Forensic
+Ledger for all \texttt{child-provisioned} entries involving $v$, extracting the
+$\alpha(v)$ field from each, and traversing the chain until reaching a node that
+does not appear as a child in any \texttt{child-provisioned} entry — that node
+is $h(v)$.  The reconstruction is deterministic and reproducible; any two
+auditors who independently reconstruct $C(v)$ obtain identical results.
+
+% ---------------------------------------------------------------
+\subsection{Termination}
+\label{sec:rs-termination}
+
+\textit{Termination} is the guarantee that the escalation chain from any node
+always reaches a human principal in finite time, and that the Bailout Protocol's
+escalation algorithm terminates.  This is the structural foundation of the BX3
+Framework's Liveness guarantee.
+
+\begin{property}[Finite Termination]
+\label{prop:finite-termination}
+For any node $v$ in a BX3 spawn tree, the escalation chain $C(v)$ terminates
+at a human principal $h(v)$ in at most $D_{\max}$ steps.
+\end{property}
+
+\begin{proof}[Proof sketch]
+By the hierarchy finiteness constraint, every node $v$ has depth $d(v) \leq D_{\max}$,
+where $d(\text{root}) = 0$ and $d(v) = d(\alpha(v)) + 1$ for all $v \neq \text{root}$.
+The root node is provisioned directly by the human principal and therefore satisfies
+$h(\text{root}) = \text{principal}(\text{root})$.  For any node $v$, the chain
+$v, \alpha(v), \alpha^{(2)}(v), \ldots, \alpha^{(d(v))}(v)$ exists and has length
+$d(v) \leq D_{\max}$.  By Invariant~\ref{inv:human-anchor}, $\alpha^{(d(v))}(v)$
+is a human principal.  Therefore $C(v)$ terminates at a human principal in at most
+$D_{\max}$ steps.  $\square$
+\end{proof}
+
+Property~\ref{prop:finite-termination} is critical for the Bailout Protocol's
+operational correctness.  The Bailout Protocol traverses $C(v)$ from $v$ upward,
+escalating exceptions at each node until reaching $h(v)$.  If $C(v)$ were infinite
+or non-terminating, the escalation would stall — the Bailout Protocol would never
+reach the human principal, and the Liveness guarantee would be vacuous.  The
+property ensures that the escalation algorithm always completes in at most
+$D_{\max}$ steps.
+
+\begin{property}[Deterministic Escalation Path]
+\label{prop:deterministic-escalation}
+For any node $v$ and any exception state $e$ at $v$, the Bailout Protocol's
+escalation path from $v$ to $h(v)$ is uniquely determined and is independent of
+the content of $e$ or the state of the \bounds{} layer at any node on the path.
+\end{property}
+
+Property~\ref{prop:deterministic-escalation} follows from the immutability of
+the parent-pointer chain.  The escalation algorithm traverses
+$\alpha(v), \alpha^{(2)}(v), \ldots, \alpha^{(k)}(v)$ where $k \leq D_{\max}$.
+Each $\alpha^{(i)}(v)$ is immutable and deterministic — established once at node
+creation and never modified.  The path does not depend on the exception type, the
+exception severity, or any runtime state.  It is a structural property of the
+spawn tree, not an operational decision made by any machine actor.  This means
+that the escalation path is predictable and auditable before any exception occurs:
+the human anchor can determine the complete escalation path for any node by
+reading the Forensic Ledger entries for all \texttt{child-provisioned} events
+along the chain.
+
+% ---------------------------------------------------------------
+\subsection{Collective Correctness}
+\label{sec:rs-collective-correctness}
+
+Together, drift prevention, chain integrity, and finite termination constitute the
+full correctness specification for Recursive Spawning.  They establish that a BX3
+spawn tree is a structurally sound representation of the delegation chain: every
+edge represents a genuine, auditable, bounded delegation of authority from a
+principal (human or machine) to a child node, and the chain from any leaf node to
+its human anchor is fully recorded, finite in depth, tamper-evident, and
+non-circumventable.
+
+These correctness properties are not conditional on the honesty or correctness of
+any machine actor.  They are enforced by the structural properties of the
+three-layer architecture — specifically by the pre-commit hooks of the \fact{}
+layer — and they hold regardless of what any agent or node attempts to do at
+runtime.  This distinguishes the BX3 Framework's correctness guarantees from
+conventional audit-based accountability systems: the guarantees are architectural,
+not operational.

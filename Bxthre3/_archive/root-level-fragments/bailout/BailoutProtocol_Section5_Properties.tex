@@ -1,0 +1,151 @@
+\section{Guarantees and Correctness Properties}\label{sec:properties}
+
+The preceding sections specify the Bailout Protocol's state machine, trigger condition, escalation algorithm, and timeout handling. This section derives and formally states the three correctness properties that follow from that specification: \textbf{Safety} (no autonomous collapse), \textbf{Liveness} (eventual human contact), and \textbf{Accountability} (human always identifiable at the terminus). For each property we give a precise statement in terms of the protocol's formal model, state the key assumptions under which it holds, and provide a proof sketch that traces the argument through the protocol's architectural constraints.
+
+% ---------------------------------------------------------------
+\subsection{Safety: No Autonomous Collapse}\label{sec:safety}
+% ---------------------------------------------------------------
+
+\textbf{Property S (Safety).} For every node $n$ in any \bxthree{} deployment, and for every reachable state of the protocol state machine $\mathcal{B}_n$, if $\text{state}(n) = \text{ESCALATING}$ then the next enabled transition leads to $\text{HUMAN\_ACKNOWLEDGED}$ and the human anchor $h(n)$ is reachable within $T_{\max}$ wall-clock time.
+
+Formally:
+\[
+\forall n \in \text{nodes},\; \forall q \in Q \text{ reachable in } \mathcal{B}_n:\;
+q = \text{ESCALATING} \implies \exists \sigma \in \Sigma,\;
+(q, \sigma, \text{HUMAN\_ACKNOWLEDGED}) \in \rightarrow.
+\tag{S}
+\]
+
+Equivalently: the state machine $\mathcal{B}_n$ has no transition from \texttt{ESCALATING} that leads to any state in $Q \setminus \{\text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$ without passing through $h(n)$. A machine actor cannot absorb the exception and continue autonomous execution; the chain cannot terminate at a machine actor.
+
+\medskip\noindent\textbf{Key assumptions.}
+\begin{itemize}\itemsep=0pt
+\item[A1.] The parent pointer $\alpha(n)$ and human-root identifier $h(n)$ are immutable for the lifetime of node $n$. No machine actor can modify them.
+\item[A2.] The \fact{} layer pre-commit hook is operational and enforces the transition relation without exception. Every transition in $\rightarrow$ is enforced; no transition outside $\rightarrow$ can be committed.
+\item[A3.] The confidence threshold $\tau$ is provisioned at node initialization and is not adjustable at runtime by any machine actor.
+\item[A4.] The bypass mechanism is structurally present: the escalation path from $n$ to $h(n)$ contains no machine actor that can absorb, redirect, or suppress the exception in \texttt{ESCALATING} state.
+\end{itemize}
+
+\medskip\noindent\textbf{Proof sketch.}
+The proof proceeds by structural induction over the state machine's reachable state space.
+
+\textbf{Base case.} The initial state $q_0 = \text{IDLE}$ is not \texttt{ESCALATING}, so (S) holds vacuously.
+
+\textbf{Inductive step.} Assume (S) holds for all states reachable via fewer than $k$ transitions. Consider a state $q$ reachable via $k$ transitions with $q = \text{ESCALATING}$. By the definition of the transition relation (Table~1), the only enabled transitions from \texttt{ESCALATING} are:
+\begin{itemize}\itemsep=0pt
+\item $e_{\text{auth}} \to \text{HUMAN\_ACKNOWLEDGED}$ (T5),
+\item $e_{\text{ack}} \to \text{IDLE}$ (T6),
+\item $e_{\text{resolve}} \to \text{RESOLVED}$ (T7),
+\item $e_{\text{reject}} \to \text{RESOLVED}$ (T7),
+\item $e_{\text{timeout}} \to \text{ESCALATING}$ (T6, retry loop).
+\end{itemize}
+The retry loop ($e_{\text{timeout}}$ at \texttt{ESCALATING}) does not violate (S) because it is not a terminal transition --- it preserves the \texttt{ESCALATING} state and continues propagation toward $h(n)$ via the Pathway Health Registry's alternative pathway selection. The retry loop has no machine-actor terminus: each retry is directed at $h(n)$ by construction of the \texttt{Escalate} algorithm.
+
+The terminal transitions T7 ($e_{\text{resolve}}$ and $e_{\text{reject}}$) lead to \texttt{RESOLVED}, which is the intended terminal state: a human principal has issued a binding directive. These transitions do not violate (S) because they require a directive from $h(n)$, which is a human actor by definition of the accountability anchor. There is no path from \texttt{ESCALATING} to any non-terminal state that does not pass through $h(n)$ or a pathway leading to $h(n)$. The transition relation contains no edge labeled with any machine-actor event that would close the protocol without human involvement.
+
+\textbf{Bypass enforcement.} Assumptions A1 and A4 jointly ensure that no machine actor can appear as a terminal node in the escalation path. The parent-chain bypass (Section~\ref{sec:bypass}) skips all intermediate machine actors, routing directly to $h(n)$. The \fact{} layer pre-commit hook (A2) rejects any resolution attempt by a machine actor to close a protocol run without a $h(n)$-authorized directive. Assumption A3 prevents a machine actor from inflating its own confidence to suppress the trigger, ensuring that warranted escalations are never suppressed before reaching \texttt{ESCALATING}.
+
+\textbf{Conclusion.} By induction over the reachable state space, combined with the bypass and pre-commit hook enforcement, every execution path that reaches \texttt{ESCALATING} either (a) transitions to \texttt{HUMAN\_ACKNOWLEDGED} upon $h(n)$ receiving the exception, or (b) transitions to \texttt{RESOLVED} upon $h(n)$ issuing a directive. No path leads to autonomous machine-only continuation. $\square$
+
+\bigskip
+\noindent\textbf{Corollary S1 (Non-suppression).} No machine actor can suppress, delay beyond $T_{\max}$, or redirect an exception once the state machine has entered \texttt{ESCALATING}. This follows directly from the bypass mechanism: there is no machine actor in the communication path between the originating node and $h(n)$, so no machine actor can interpose.
+
+% ---------------------------------------------------------------
+\subsection{Liveness: Eventual Human Contact}\label{sec:liveness}
+% ---------------------------------------------------------------
+
+\textbf{Property L (Liveness).} For every node $n$ in any \bxthree{} deployment, and for every exception $x$ that satisfies the trigger condition $\text{TRIGGER}(n, x)$, the protocol state machine $\mathcal{B}_n$ reaches $\text{HUMAN\_ACKNOWLEDGED}$ within a finite, bounded number of transitions, and $h(n)$ is contacted within $T_{\max}$ wall-clock time, where $T_{\max}$ is defined as:
+\[
+T_{\max} \;=\; T_{\text{bounds}} \;+\; N_{\max} \cdot T_{\text{cap}} \;+\; T_{\text{human}}.
+\tag{T-max}
+\]
+
+Formally:
+\[
+\forall n \in \text{nodes},\; \forall x \in \text{inputs}:\;
+\text{TRIGGER}(n, x) \implies
+\exists t \leq T_{\max}:\;
+\text{state}_{\mathcal{B}_n}(t) \in \{\text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}.
+\tag{L}
+\]
+
+Equivalently: the protocol is deadlock-free for all exceptions that satisfy TC, and human contact is guaranteed within the provisioned timeout bound.
+
+\medskip\noindent\textbf{Key assumptions.}
+\begin{itemize}\itemsep=0pt
+\item[L1.] The human anchor $h(n)$ is provisioned and registered at node initialization. The registration is recorded in the Fact Layer's Pathway Registry and is immutable during node operation.
+\item[L2.] At least one functional communication pathway to $h(n)$ exists at protocol activation time. The Pathway Health Registry tracks pathway availability; if all pathways fail consecutive health checks, the node is structurally prevented from operating (this is a deployment prerequisite, not a protocol failure).
+\item[L3.] $N_{\max}$ (maximum retry count) and $T_{\text{cap}}$ (maximum per-hop timeout) are finite and provisioned. $T_{\text{bounds}}$ and $T_{\text{human}}$ are finite and provisioned.
+\item[L4.] The Escalate algorithm's retry loop terminates after $N_{\max}$ retries and does not re-attempt indefinitely.
+\end{itemize}
+
+\medskip\noindent\textbf{Proof sketch.}
+We show that under L1--L4, every protocol run that activates TC reaches $h(n)$ within $T_{\max}$.
+
+\textbf{Trigger activation.} When TC fires at node $n$, the state machine transitions to \texttt{BOUNDED} (T1) and the Bounds Engine is granted $T_{\text{bounds}}$ to produce a Fact-Layer-approved resolution. By definition of TC, all three sub-conditions hold simultaneously: $x \notin R(n)$, the condition is not previously resolved, and $\text{confidence}(n, x) < \tau$. The only resolution path available within $T_{\text{bounds}}$ is either a Fact-Layer-approved local resolution (T2: return to \texttt{IDLE}) or expiration of $T_{\text{bounds}}$ (T3: advance to \texttt{BAIL\_PENDING} then immediately, atomically to \texttt{ESCALATING} via T4). There is no other path.
+
+\textbf{Escalation progress.} Once in \texttt{ESCALATING}, the Escalate algorithm propagates the exception toward $h(n)$ via the parent chain. For each hop, $T_{\text{prop}}$ measures the time to receive an acknowledgment from the parent. On timeout, the algorithm retries with exponential backoff: $T_{\text{prop}} \leftarrow \min(2 \cdot T_{\text{prop}}, T_{\text{cap}})$. After $N_{\max}$ consecutive retries at $T_{\text{cap}}$, the algorithm fires \texttt{parent\_unreachable} and selects the next available functional pathway from the Pathway Health Registry. Because L2 guarantees at least one functional pathway exists, and the registry updates at $T_{\text{health}}$ intervals, the algorithm will eventually select a functional pathway and deliver the exception to $h(n)$.
+
+\textbf{Timeout bound.} The total time from TC firing to human contact is bounded by $T_{\max} = T_{\text{bounds}} + N_{\max} \cdot T_{\text{cap}} + T_{\text{human}}$. This is a finite sum of finite, provisioned terms (L3). The retry loop terminates after $N_{\max}$ retries (L4), so the backoff cannot continue indefinitely. When $h(n)$ receives the exception, the state transitions to \texttt{HUMAN\_ACKNOWLEDGED} (T5), satisfying the liveness condition.
+
+\textbf{Deadlock prevention.} The only potential deadlock paths are: (a) all pathways to $h(n)$ fail simultaneously --- ruled out by L2 as a deployment prerequisite; (b) $h(n)$ does not respond within $T_{\text{human}}$ --- handled by the $T_{\text{human}}$ timeout, which transitions to \texttt{RESOLVED} with an \texttt{unresolved} tag and requires human re-engagement to clear, without automatic re-escalation. The absence of automatic re-escalation prevents a denial-of-service condition against $h(n)$ but does not violate the liveness guarantee: $h(n)$ has been contacted (the notification was delivered), and the protocol is in a terminal state awaiting human re-engagement.
+
+\textbf{Conclusion.} Every protocol run that activates TC reaches $h(n)$ within $T_{\max}$ under assumptions L1--L4. $\square$
+
+\bigskip
+\noindent\textbf{Corollary L1 (Finite termination).} The Bailout Protocol state machine terminates in a terminal state (\texttt{RESOLVED} or \texttt{IDLE}) within at most $T_{\text{bounds}} + (N_{\max} + 1) \cdot T_{\text{cap}} + T_{\text{human}}$ time units after TC activation. No infinite loops exist in the state machine's transition relation.
+
+% ---------------------------------------------------------------
+\subsection{Accountability: Human Always Identifiable at Terminus}\label{sec:accountability}
+% ---------------------------------------------------------------
+
+\textbf{Property A (Accountability).} For every protocol run that reaches \texttt{RESOLVED} at any node $n$, the Forensic Ledger contains an entry that (i) identifies the human anchor $h(n)$ by provisioned name and institutional affiliation, (ii) records the binding directive issued by $h(n)$ (\texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT}), and (iii) links the entry by SHA-256 hash chain to the trigger event that initiated the protocol run, establishing an unbroken chain of custody from exception detection to resolution.
+
+Formally:
+\[
+\forall n \in \text{nodes},\; \forall \text{protocol run } \rho \text{ of } \mathcal{B}_n:\;
+\text{state}_{\rho}(\text{end}) = \text{RESOLVED}
+\implies
+\exists \text{ledger entry } \ell \in L:
+\begin{cases}
+\ell.\text{type} \in \{\texttt{ACK}, \texttt{RESOLVE}, \texttt{REJECT}\} \\
+\ell.h(n) = h(n) \\
+\ell.\text{hash} = H(\ell.\text{content} \| \ell.\text{prev}) \\
+\ell \text{ is reachable from } \rho\text{'s trigger entry}
+\end{cases}
+\tag{A}
+\]
+
+Equivalently: every protocol run that terminates does so with a human-issued directive recorded immutably in the Forensic Ledger, and the complete propagation chain from trigger to resolution is verifiably preserved.
+
+\medskip\noindent\textbf{Key assumptions.}
+\begin{itemize}\itemsep=0pt
+\item[A1.] The Forensic Ledger is append-only and its write authority belongs exclusively to the \fact{} layer. No machine actor has write access to the ledger.
+\item[A2.] The SHA-256 hash chain integrity mechanism is operational. Each ledger entry's hash covers the entry content and the hash of the preceding entry, making retrospective tampering computationally detectable.
+\item[A3.] $h(n)$ is provisioned at node initialization with verified identity credentials registered in the Purpose Layer's human-root registry. The registry is write-protected and accessible only for read operations during protocol execution.
+\item[A4.] The \purpose{} layer is non-delegable as an exception terminus: no machine actor may issue, simulate, or substitute a directive in \texttt{HUMAN\_ACKNOWLEDGED} state.
+\end{itemize}
+
+\medskip\noindent\textbf{Proof sketch.}
+We prove that (A) holds for every protocol run that reaches \texttt{RESOLVED}.
+
+\textbf{Ledger entry creation.} The Forensic Ledger records every protocol event as an append-only entry. The sequence of events for a terminating protocol run is: (i) trigger event (TC satisfied) $\to$ entry $e_0$; (ii) state transitions (T1--T4) $\to$ entries $e_1, e_2, e_3$; (iii) propagation via parent chain $\to$ entries $e_4 \dots e_k$ accumulated at each hop; (iv) human acknowledgment $e_{\text{ack}}$ $\to$ entry $e_{k+1}$; (v) human directive $e_{\text{resolve}}$ or $e_{\text{reject}}$ $\to$ entry $e_{k+2}$, which is the terminal ledger entry for the protocol run. By the state machine's transition relation, the only path to \texttt{RESOLVED} is via $e_{\text{resolve}}$ or $e_{\text{reject}}$ (T7), both of which are \purpose-layer-authorized directives. This is enforced by the Fact Layer's authorization ledger gate: any ledger entry that purports to close a protocol run without a \purpose-layer-authorized directive is rejected.
+
+\textbf{Human anchor identification.} By A3, $h(n)$ is provisioned with verified identity credentials at node initialization. This identity is immutable during node operation (A1). The terminal ledger entry $e_{k+2}$ records the directive and carries the $h(n)$ identifier from the node's Purpose Layer worksheet, which was registered at provisioning and is never modified. The ledger entry therefore contains a verifiable, non-repudiable record of which specific human principal issued the directive.
+
+\textbf{Chain integrity.} By A2, each ledger entry $\ell_i$ carries a hash $h_i = H(\ell_i.\text{content} \| h_{i-1})$, where $h_{i-1}$ is the hash of the preceding entry. This creates a forward-linked hash chain from the trigger entry $e_0$ to the terminal entry $e_{k+2}$. The trigger entry $e_0$ contains the node identifier, the trigger condition $\text{TRIGGER}(n, x)$, and a timestamp, establishing the provenance of the protocol run. Any retrospective tampering with an entry $\ell_j$ changes $h_j$, which breaks the chain at $h_j$ and is detectable by recomputing the chain from $e_0$ to $e_{k+2}$.
+
+\textbf{Non-repudiation.} The combination of (i) verified human identity (A3), (ii) \purpose-layer-authorized directive exclusivity (A4), and (iii) immutable ledger recording (A1) produces a non-repudiation guarantee: $h(n)$ cannot credibly deny having issued the directive, and the system cannot fabricate a directive that was not issued. This follows from the architectural constraint that only the \purpose{} layer can close a protocol run, and the \purpose{} layer is operationally coupled to the human anchor $h(n)$.
+
+\textbf{Conclusion.} Every protocol run that reaches \texttt{RESOLVED} produces a Forensic Ledger entry that identifies $h(n)$, records the human-issued directive, and maintains a verifiably intact hash chain from trigger to resolution. $\square$
+
+\bigskip
+\noindent\textbf{Corollary A1 (Auditability).} Any authorized auditor can independently verify (A) by recomputing the SHA-256 chain from the trigger entry to the terminal entry and confirming that the terminal entry's directive field is non-empty and attributed to a provisioned human anchor. No cooperation from any machine actor is required for this verification.
+
+% ---------------------------------------------------------------
+\subsection{Discussion: Interdependence of S, L, and A}\label{sec:properties-interdependence}
+% ---------------------------------------------------------------
+
+The three correctness properties are not independent; they are mutually reinforcing through the protocol's structural design. Safety (S) depends on the bypass mechanism and the Fact Layer's pre-commit hook, both of which also support Accountability (A): the same architectural constraints that prevent a machine actor from absorbing an exception in \texttt{ESCALATING} also prevent a machine actor from fabricating a ledger entry that misattributes the resolution to a human principal. Liveness (L) is enabled by the Pathway Health Registry and timeout parameters, which are themselves recorded in the Forensic Ledger, making every liveness-relevant decision auditable under (A).
+
+Conversely, the properties constrain one another in ways that prevent harmful tradeoffs. A design that maximized Safety at the expense of Liveness would be undesirable in practice; the timeout structure in (L) ensures that Safety is achieved without indefinite blocking. A design that maximized Liveness at the expense of Accountability would allow resolution by anonymous actors; (A) ensures that every termination is attributable to a specific, named human principal. The three properties together define the complete correctness contract of the Bailout Protocol: every exception that exceeds machine authority (Safety) eventually reaches a human (Liveness), and every such contact is verifiably attributed to a specific human principal (Accountability).

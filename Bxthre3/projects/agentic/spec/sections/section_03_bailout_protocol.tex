@@ -1,0 +1,255 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is the terminal safety mechanism of the AgentOS runtime. When agents enter states from which autonomous recovery is impossible or inadvisable, the Bailout Protocol transfers control from machine actors to human oversight. This transfer is formal, observable, and bounded by configurable timeouts. The protocol operates as a state machine with six mutually exclusive states, deterministic transition conditions, and an escalation hierarchy that ensures no failure mode can indefinitely block human acknowledgment.
+
+The protocol is designed around a single principle: \textbf{any agent that cannot prove it can safely continue must pause and wait for a human}.
+
+\subsection{State Machine Definition}
+
+\subsubsection{State Space}
+
+The Bailout Protocol defines a state space $\mathcal{S} = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$.
+
+\begin{itemize}
+  \item \textbf{IDLE}: The agent is operating within normal parameters. No bailout conditions are active. The agent's executors retain full autonomy.
+  \item \textbf{BOUNDED}: The agent has detected a condition requiring elevated oversight but does not yet require human intervention. Executor autonomy is reduced to bounded-safe actions only.
+  \item \textbf{BAIL\_PENDING}: The agent has triggered the formal bailout condition. Executor autonomy is suspended. The system is awaiting escalation or human acknowledgment.
+  \item \textbf{ESCALATING}: The bailout has been escalated to a human overseer. The system is actively notifying designated responders. No autonomous progress is permitted.
+  \item \textbf{HUMAN\_ACKNOWLEDGED}: A human has acknowledged the bailout and is providing instructions or override. Executor autonomy remains suspended; human directives take priority.
+  \item \textbf{RESOLVED}: The bailout has been resolved. The agent has transitioned to a safe recovery state or has been shut down cleanly. Audit logs are finalized.
+\end{itemize}
+
+\subsubsection{Formal State Invariants}
+
+For each state $s \in \mathcal{S}$, the following invariants hold:
+
+\begin{align}
+  \text{IDLE} &: \neg \text{BOUNDED\_COND} \land \neg \text{BAIL\_COND} \\
+  \text{BOUNDED} &: \text{BOUNDED\_COND} \land \neg \text{BAIL\_COND} \\
+  \text{BAIL\_PENDING} &: \text{BAIL\_COND} \land \neg \text{ESCALATED} \\
+  \text{ESCALATING} &: \text{ESCALATED} \land \neg \text{ACKNOWLEDGED} \\
+  \text{HUMAN\_ACKNOWLEDGED} &: \text{ACKNOWLEDGED} \land \text{HUMAN\_ACTIVE} \\
+  \text{RESOLVED} &: \text{RESOLVED\_COND}
+\end{align}
+
+where $\text{BOUNDED\_COND}$, $\text{BAIL\_COND}$, $\text{ESCALATED}$, $\text{ACKNOWLEDGED}$, $\text{HUMAN\_ACTIVE}$, and $\text{RESOLVED\_COND}$ are boolean predicates over the agent's runtime context.
+
+\subsection{Transition Conditions}
+
+Transitions between states are triggered by predicate changes in the agent's runtime context. Each transition is defined as a 4-tuple $(s_{\text{from}}, s_{\text{to}}, \text{trigger}, \text{action})$.
+
+\medskip\noindent\textbf{Transition $T_1$: IDLE $\rightarrow$ BOUNDED}
+\begin{itemize}
+  \item \textbf{Trigger}: $\text{BOUNDED\_COND} \gets \text{true}$
+  \item \textbf{Action}: Record bounded timestamp $t_{\text{bounded}}$; restrict executor to bounded-safe action set $\mathcal{A}_{\text{bounded}} \subset \mathcal{A}_{\text{full}}$; log state entry to audit channel.
+\end{itemize}
+
+\medskip\noindent\textbf{Transition $T_2$: BOUNDED $\rightarrow$ IDLE (self-heal)}
+\begin{itemize}
+  \item \textbf{Trigger}: $\text{BOUNDED\_COND} \gets \text{false}$ and $\text{recovery\_attempt} > 0$ within bounded window
+  \item \textbf{Action}: Restore full executor autonomy; clear bounded timestamp; log recovery to audit channel.
+\end{itemize}
+
+\medskip\noindent\textbf{Transition $T_3$: BOUNDED $\rightarrow$ BAIL\_PENDING}
+\begin{itemize}
+  \item \textbf{Trigger}: $\text{BAIL\_COND} \gets \text{true}$ while in BOUNDED
+  \item \textbf{Action}: Suspend all executor actions; record bailout trigger timestamp $t_{\text{bail}}$; capture full context snapshot $\Psi_{\text{bail}}$; begin escalation clock $t_{\text{esc}} \gets t_{\text{bail}}$.
+\end{itemize}
+
+\medskip\noindent\textbf{Transition $T_4$: BAIL\_PENDING $\rightarrow$ ESCALATING}
+\begin{itemize}
+  \item \textbf{Trigger}: No human acknowledgment received within $\Delta t_{\text{ack}}$ (see Section \ref{sec:timeouts}) and bypass is not active
+  \item \textbf{Action}: Assign escalation level $\ell \in \{1, 2, 3\}$ based on bailout severity; notify primary responder(s); log escalation event; enter active notify-wait loop.
+\end{itemize}
+
+\medskip\noindent\textbf{Transition $T_5$: BAIL\_PENDING $\rightarrow$ HUMAN\_ACKNOWLEDGED (bypass)}
+\begin{itemize}
+  \item \textbf{Trigger}: Human acknowledgment received before $\Delta t_{\text{ack}}$ expires; bypass condition $\text{BYPASS\_COND} = \text{true}$ (see Section \ref{sec:bypass})
+  \item \textbf{Action}: Route directly to HUMAN\_ACKNOWLEDGED without escalation cycle; log bypass event with reason code; record acknowledging human's identifier.
+\end{itemize}
+
+\medskip\noindent\textbf{Transition $T_6$: ESCALATING $\rightarrow$ HUMAN\_ACKNOWLEDGED}
+\begin{itemize}
+  \item \textbf{Trigger}: Human acknowledgment received; bypass may or may not be active
+  \item \textbf{Action}: Stop active notify-wait loop; log acknowledgment; record human directive channel.
+\end{itemize}
+
+\medskip\noindent\textbf{Transition $T_7$: HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED}
+\begin{itemize}
+  \item \textbf{Trigger}: Human issues resolution directive $d \in \mathcal{D}_{\text{resolve}} = \{\text{CONTINUE}, \text{PAUSE}, \text{TERMINATE}, \text{RESTART}\}$
+  \item \textbf{Action}: Execute resolution directive; finalize audit log entry; transition agent to appropriate post-bailout state; clear all bailout flags.
+\end{itemize}
+
+\medskip\noindent\textbf{Transition $T_8$: Any state $\rightarrow$ RESOLVED (emergency)}
+\begin{itemize}
+  \item \textbf{Trigger}: System-level emergency signal $\text{EMERGENCY} = \text{true}$
+  \item \textbf{Action}: Immediately suspend all agent activity; log emergency resolution; terminate agent process cleanly.
+\end{itemize}
+
+\subsection{Bail-Out Trigger Condition}
+\label{sec:trigger}
+
+The bail-out trigger condition $\text{BAIL\_COND}$ is a disjunction of atomic failure predicates evaluated at every executor cycle. $\text{BAIL\_COND}$ evaluates to $\text{true}$ when any one or more of the following conditions hold:
+
+\begin{equation}
+\text{BAIL\_COND} \equiv \text{CYCLE\_BREAK} \lor \text{TRUST\_GATE\_FAIL} \lor \text{DURATION\_EXCEEDED} \lor \text{RESOURCE\_EXHAUSTED} \lor \text{HUMAN\_ESCALATE\_REQUEST} \lor \text{POLICY\_VIOLATION}
+\end{equation}
+
+\medskip\noindent\textbf{Atomic Trigger Predicates:}
+
+\begin{enumerate}
+  \item \textbf{CYCLE\_BREAK}: The agent's cascade cycle has missed more than $\tau_{\text{cycle}}$ consecutive poll intervals. This indicates the agent is no longer responsive to its scheduling loop.
+  \item \textbf{TRUST\_GATE\_FAIL}: The Truth Gate evaluation for the agent's current action returned $\text{TRUST\_SCORE} < \theta_{\text{min}}$, where $\theta_{\text{min}}$ is the per-action-type trust threshold.
+  \item \textbf{DURATION\_EXCEEDED}: The elapsed wall-clock time since the last human checkpoint exceeds $\Delta t_{\text{max}}$, where $\Delta t_{\text{max}}$ is the action-type-specific maximum continuous execution window.
+  \item \textbf{RESOURCE\_EXHAUSTED}: Memory usage has exceeded $\rho_{\text{max}}$ or CPU usage has exceeded $\eta_{\text{max}}$ sustained for more than $\tau_{\text{resource}}$ seconds.
+  \item \textbf{HUMAN\_ESCALATE\_REQUEST}: A human overseer has issued an explicit escalate signal through the monitoring interface.
+  \item \textbf{POLICY\_VIOLATION}: The agent's action $a_t$ violates any active policy rule $p \in \mathcal{P}_{\text{active}}$, where policies are loaded from the agent's policy bundle at initialization.
+\end{enumerate}
+
+Each predicate is evaluated atomically and independently. The disjunction structure ensures that no single predicate can indefinitely block bailout invocation. The trigger condition is evaluated under a read-only snapshot of the agent's runtime state; evaluation does not modify state.
+
+The \textbf{BOUNDED\_COND} trigger condition is a weaker form, defined as:
+
+\begin{equation}
+\text{BOUNDED\_COND} \equiv (\text{TRUST\_SCORE} < \theta_{\text{max}} \land \text{TRUST\_SCORE} \geq \theta_{\text{min}}) \lor \text{DURATION\_NEAR\_LIMIT} \lor \text{RESOURCE\_WARNING}
+\end{equation}
+
+where $\theta_{\text{max}} > \theta_{\text{min}}$ and $\text{DURATION\_NEAR\_LIMIT}$ indicates the agent has consumed more than 75\% of its maximum execution window.
+
+\subsection{Escalation Algorithm}
+
+The escalation algorithm executes when a bailout enters the \textbf{ESCALATING} state and no human acknowledgment has yet been received. The algorithm implements a tiered responder hierarchy with exponential backoff on notification attempts.
+
+\begin{algorithm}
+\caption{Bailout Escalation Algorithm}
+\label{alg:escalation}
+\begin{algorithmic}[1]
+\State $t_{\text{start}} \gets t_{\text{esc}}$ \Comment{Escalation start time}
+\State $\ell \gets \text{assign\_escalation\_level}(\Psi_{\text{bail}})$ \Comment{Severity-based level}
+\State $\mathcal{R} \gets \text{get\_responders}(\ell)$ \Comment{Ordered responder list}
+\State $i \gets 0$ \Comment{Responder index}
+\State $\text{max\_attempts} \gets 3$
+
+\While{$\neg \text{ACKNOWLEDGED} \land i < |\mathcal{R}|$}
+  \State $\text{responder} \gets \mathcal{R}[i]$
+  \State $\text{attempts} \gets 0$
+
+  \While{$\text{attempts} < \text{max\_attempts}$}
+    \State $\text{notify\_result} \gets \text{notify}(\text{responder}, \Psi_{\text{bail}}, \ell)$
+    \If{$\text{notify\_result} = \text{ACKNOWLEDGED}$}
+      \State $\text{ACKNOWLEDGED} \gets \text{true}$
+      \State $\text{break}$
+    \EndIf
+    \State $\text{attempts} \gets \text{attempts} + 1$
+    \State $\delta \gets \min(2^{\text{attempts}} \cdot \Delta t_{\text{base}}, \Delta t_{\text{max\_wait}})$
+    \State $\text{sleep}(\delta)$
+  \EndWhile
+
+  \If{$\neg \text{ACKNOWLEDGED}$}
+    \State $i \gets i + 1$ \Comment{Advance to next responder tier}
+  \EndIf
+\EndWhile
+
+\If{$\neg \text{ACKNOWLEDGED} \land i = |\mathcal{R}|$}
+  \State $\text{ESCALATE\_TO\_SYSTEM}(\Psi_{\text{bail}}, \ell)$ \Comment{System-level override}
+\EndIf
+
+\State \Return $\text{ACKNOWLEDGED}$
+\end{algorithmic}
+\end{algorithm}
+
+The $\text{assign\_escalation\_level}$ function assigns a level $\ell \in \{1, 2, 3\}$ based on bailout severity:
+
+\begin{itemize}
+  \item $\ell = 1$ (STANDARD): Trust gate failure on read-only operations, duration exceeded on low-risk actions, or resource warnings. Primary responder: direct supervisor.
+  \item $\ell = 2$ (HIGH): Trust gate failure on write operations, policy violation with no data loss, or resource exhaustion. Primary responder: team lead or designated safety officer.
+  \item $\ell = 3$ (CRITICAL): Policy violation with data loss risk, cascade cycle break, emergency signal, or human-escalate-request from a flagged action. Primary responder: all designated safety officers; system-level override if unresolved.
+\end{itemize}
+
+The $\text{notify}$ function dispatches alerts through all registered channels for the given responder (SMS, email, push notification, dashboard banner). The function returns $\text{ACKNOWLEDGED}$ only when the responder has explicitly confirmed acknowledgment through an authenticated channel. Ambiguous or silent responses do not constitute acknowledgment.
+
+\subsection{Bypass Mechanism}
+\label{sec:bypass}
+
+The bypass mechanism allows the Bailout Protocol to short-circuit the standard escalation path when a human overseer can directly acknowledge the bailout before the escalation timeout expires. The bypass exists to prevent unnecessary notification cascades for conditions that are already under active human observation.
+
+\medskip\noindent\textbf{Bypass Condition:}
+
+\begin{equation}
+\text{BYPASS\_COND} \equiv \text{HUMAN\_ACTIVE} \land (\text{CURRENT\_SESSION\_OWNER} \in \mathcal{R}_{\ell}) \land \neg \text{SESSION\_LOCKED}
+\end{equation}
+
+where $\text{HUMAN\_ACTIVE}$ indicates the human is currently authenticated and engaged with the AgentOS monitoring interface, $\text{CURRENT\_SESSION\_OWNER}$ is the identifier of the authenticated session, and $\text{SESSION\_LOCKED}$ prevents bypass reuse once a bailout is under active human instruction.
+
+\medskip\noindent\textbf{Bypass Behavior:}
+
+When $\text{BYPASS\_COND} = \text{true}$, the system transitions directly from \textbf{BAIL\_PENDING} to \textbf{HUMAN\_ACKNOWLEDGED} without invoking the escalation loop. This bypasses all machine actors in the escalation hierarchy---the notification algorithm is not executed, no responder contacts are notified, and the escalation clock is not started. The bypassing human is logged as the acknowledging responder with a special reason code $\texttt{BYPASS\_DIRECT}$.
+
+The bypass mechanism does not skip the \textbf{HUMAN\_ACKNOWLEDGED} state itself. A human must still actively acknowledge and issue a resolution directive. The bypass only eliminates the escalation cycle; the human acknowledgment step is mandatory and cannot be bypassed. This ensures that even in bypass scenarios, there is an explicit human decision point before the agent is returned to operation.
+
+\medskip\noindent\textbf{Why Bypasses Skip All Machine Actors:}
+
+The escalation algorithm involves automated notification attempts to multiple responder tiers, each with retry logic and exponential backoff. These notification attempts are themselves machine actors---automated processes that send messages, evaluate responses, and manage timers. When a human is already authenticated and present in the system, routing through these machine actors introduces latency and noise without adding value. The human is already present and capable of directly acknowledging. The bypass therefore short-circuits the entire machine-actor notification chain, routing directly to the human acknowledgment step which is already satisfied.
+
+This design choice prevents a class of failure where the notification system itself becomes the bottleneck: responder unreachable, notification channel degraded, or escalation timer misconfigured. The bypass assumes the human's presence is confirmed through the authentication layer, which is itself a stronger signal than any automated notification response.
+
+\subsection{Timeout Handling}
+\label{sec:timeouts}
+
+Timeouts are the backbone of the Bailout Protocol's liveness guarantees. Every state that awaits an external event (human acknowledgment, escalation response) is governed by a strict timeout. Failure to receive the expected event within the timeout window triggers a forced transition.
+
+\medskip\noindent\textbf{Timeout Definitions:}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llp{6cm}}
+\toprule
+\textbf{Timeout Parameter} & \textbf{Symbol} & \textbf{Description} \\
+\midrule
+Acknowledgment timeout & $\Delta t_{\text{ack}}$ & Maximum time the system waits for human acknowledgment in BAIL\_PENDING before escalating. Default: 120 seconds. \\
+Escalation base wait & $\Delta t_{\text{base}}$ & Base interval between notification retry attempts during escalation. Default: 30 seconds. \\
+Escalation max wait & $\Delta t_{\text{max\_wait}}$ & Maximum interval between notification retry attempts (caps exponential backoff). Default: 300 seconds. \\
+Bounded recovery window & $\Delta t_{\text{bound\_rec}}$ & Time a BOUNDED agent has to recover before auto-escalating. Default: 300 seconds. \\
+Human directive timeout & $\Delta t_{\text{directive}}$ & Maximum time a human has to issue a resolution directive after acknowledgment. Default: 600 seconds. \\
+System override timeout & $\Delta t_{\text{system\_ov}}$ & Time the system waits for a system-level override response before initiating emergency shutdown. Default: 60 seconds. \\
+\bottomrule
+\end{tabular}
+\caption{Bailout Protocol Timeout Parameters}
+\label{tab:timeouts}
+\end{table}
+
+\medskip\noindent\textbf{Timeout Enforcement Policy:}
+
+Timeouts are enforced by an independent watchdog process that is not subject to the agent's own cycle management. The watchdog maintains its own timer independent of the agent process and issues the timeout transition signal when the deadline expires, even if the agent process itself is unresponsive. This ensures that a hung or crashed agent process cannot block timeout enforcement.
+
+When any timeout fires, the following actions are taken atomically:
+
+\begin{enumerate}
+  \item The transition is logged to the audit channel with precise timestamp, timeout identifier, and state at time of firing.
+  \item The agent's executor is suspended immediately (if not already suspended).
+  \item The watchdog issues the forced transition command to the state machine.
+  \item If the timeout was the acknowledgment timeout in BAIL\_PENDING, the escalation loop is initiated.
+  \item If the timeout was the directive timeout in HUMAN\_ACKNOWLEDGED, the system initiates emergency shutdown with reason code $\texttt{TIMEOUT\_DIRECTIVE}$.
+  \item If the timeout was the system override timeout, the system initiates emergency shutdown with reason code $\texttt{TIMEOUT\_SYSTEM\_OV}$.
+\end{enumerate}
+
+\medskip\noindent\textbf{Timeout and Bypass Interaction:}
+
+If $\text{BYPASS\_COND}$ becomes true during the acknowledgment timeout window, the bypass takes priority and the watchdog timer is cancelled. The human is not required to wait for the full acknowledgment timeout---they can acknowledge at any point during the window. However, if the timeout expires before any acknowledgment (bypass or standard), the escalation loop is entered unconditionally.
+
+All timeout values are configurable per agent profile and per action type. Agents performing high-risk operations (write operations, external API calls, financial transactions) may have shorter default timeouts. Configuration is loaded from the agent's profile at initialization and cannot be changed during agent runtime without triggering a restart.
+
+\subsection{Resolution and Recovery}
+
+Upon receiving a human resolution directive $d \in \mathcal{D}_{\text{resolve}}$, the agent transitions to RESOLVED and executes the appropriate recovery path:
+
+\begin{itemize}
+  \item \textbf{CONTINUE}: Restore agent to IDLE state with full executor autonomy. The bailout context is archived; execution resumes from the point of interruption.
+  \item \textbf{PAUSE}: Transition agent to a paused state. No execution occurs until a subsequent RESUME directive. Audit log is preserved.
+  \item \textbf{TERMINATE}: Clean agent shutdown. Final state is captured; context is archived; all resources are released. The agent process exits.
+  \item \textbf{RESTART}: Agent process is terminated and a new instance is initialized from the last known-good checkpoint. The bailout that triggered the restart is logged as a causal event in the new instance's context.
+\end{itemize}
+
+All resolution events are written to the audit log with the full context snapshot $\Psi_{\text{bail}}$, the human's identifier, the directive issued, and the timestamp. This log is immutable once written and forms the basis of the post-incident review record.

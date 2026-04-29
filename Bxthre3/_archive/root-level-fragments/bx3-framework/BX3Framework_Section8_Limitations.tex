@@ -1,0 +1,150 @@
+\section{Limitations and Future Work}\label{sec:limitations}
+
+The three correctness properties established in Section~\ref{sec:correctness}
+are conditional guarantees: each holds under a defined set of structural and
+deployment assumptions.  This section makes those assumptions explicit,
+characterizes the operational consequences of their failure, and maps each
+gap to a directed research agenda.
+
+% --------------------------------------------------------------
+\subsection{Limitations}\label{sec:limitations:subsection}
+% --------------------------------------------------------------
+
+\subsubsection{Human Response Latency}\label{sec:human-response-latency}
+
+The \bxthree{} Framework's Liveness property guarantees eventual human contact
+within a bounded wall-clock interval, but the bound $T_{\max}$ is a function of
+network topology, retry parameters, and provisioned timeouts --- not of human
+cognitive response time.  For operational domains with time constants measured
+in milliseconds (high-frequency trading, real-time process control, autonomous
+vehicle navigation), the time required for a human principal to receive,
+interpret, and respond to an escalation may exceed the system's operational
+time horizon by one to two orders of magnitude.
+
+The framework's prescribed failure mode under latency stress is well-defined:
+the node stalls in \texttt{ESCALATING} until the anchor responds or all
+pathways time out.  This is the intended safety-preserving behavior.  However,
+the operational cost of a stall is domain-dependent in ways the framework
+does not currently reason about.  In a precision agriculture context (Irrig8
+deployment), a stall that delays a watering decision by minutes is acceptable;
+in a financial risk-interlock context, a stall that delays a margin-call
+response by even seconds may expose the system to catastrophic loss.  The
+framework treats the human anchor as a timing black box; there is no mechanism
+to reason about whether delay reflects anchor overload, a structural mismatch
+between $T_{\max}$ and the anchor's operational availability, or a pathway
+failure.
+
+The deeper limitation is that human response latency is provisioned statically
+at node setup and is not sensitive to the anchor's current operational context.
+$T_{\max}$ is a deployment parameter, not an adaptive runtime parameter.  For
+latency-sensitive deployments, the provisioning burden falls on the system
+designer to establish empirically grounded latency budgets and encode them as
+enforceable policy.
+
+\textit{Directed research:} Empirical characterization of human response
+latency distributions across deployment contexts to establish statistically
+grounded, domain-specific latency budgets.  Integration of these budgets into
+the node-provisioning interface as enforceable policy parameters with runtime
+monitoring.  Investigation of graded escalation responses: a protocol that
+requests a rapid \texttt{ACK} followed by a detailed directive would better
+match the operational reality of human decision-making under varying loads.
+
+\subsubsection{Adversarial Conditions}\label{sec:adversarial-conditions}
+
+The Safety property requires that human-contact pathways cannot be permanently
+closed without recorded human authorization.  This guarantee holds under the
+assumption that the host platform provides independent scheduling priority to
+the Bailout Monitor (Assumption A1.1).  In an adversarial environment ---
+particularly one in which the host platform itself may be compromised --- this
+assumption may not hold.  A sophisticated attacker controlling the execution
+substrate can modify thread priorities, preempt the monitor thread, introduce
+race conditions into pathway-closure operations, or rewrite the Bailout
+Monitor's code before it executes.
+
+The framework's guarantees are platform guarantees.  They rest on invariants
+that the host platform must supply: non-preemptible monitor scheduling,
+append-only persistence for the authorization ledger, and interruptible
+blocking calls for pathway management.  The \bxthree{} Framework is designed
+for production AI deployments in which individual agents may behave
+unexpectedly but the host platform is trusted --- the standard assumption for
+regulated industries.  It is not designed for deployments in which the platform
+itself is an active adversary: national infrastructure control systems,
+military command-and-control environments, financial clearinghouse
+infrastructure.
+
+\textit{Directed research:} Formal specification of the composition interface
+between the \bxthree{} Framework and substrate-integrity mechanisms.
+Investigation of whether the framework's guarantees can be preserved under
+weaker platform assumptions, including partially compromised substrates.
+Exploration of hardware-attested execution environments (e.g., Intel SGX,
+ARM TrustZone) as a deployment target for the Bailout Monitor, eliminating
+the OS as a trust dependency.
+
+\subsubsection{Scalability}\label{sec:scalability}
+
+The \bxthree{} Framework is specified with a 1:1 relationship between each node
+and its human anchor.  This model is appropriate for single-node deployments or
+small-scale systems, but it creates a structural bottleneck in enterprise
+contexts where one anchor may supervise hundreds of concurrent nodes.  Without
+pooling and load-balancing mechanisms, the human anchor becomes the
+rate-limiting step in a system whose design intent is to route exceptions away
+from centralized machine decision points.
+
+The current specification treats human anchoring as a static 1:1 relationship
+established at node provisioning.  This model must evolve to support at minimum
+1:N relationships (one anchor supervising multiple nodes with workload pooling)
+and, in advanced deployments, N:M relationships (anchor pools with load
+balancing and dynamic routing).  The correctness properties of the framework
+must be shown to extend to these pooled configurations, particularly Safety:
+no pooling configuration may produce a state in which all human-contact
+pathways for a given node are permanently disabled.
+
+Additional scalability considerations arise from the spawn tree depth.  As the
+depth of the accountability chain grows through recursive spawning in large
+multi-agent systems, the time to propagate an exception to the anchor grows
+proportionally.  The interaction between chain depth, propagation latency,
+and timeout configuration must be characterized for deployments with large
+spawn trees.
+
+\textit{Directed research:} Formal specification of human anchor pool
+architectures, including load-balancing policies, prioritization schemes, and
+routing algorithms.  Extension of Safety and Liveness proofs to pooled anchor
+configurations with formally verified pathway-redundancy guarantees.
+Empirical evaluation of anchor pool performance under simulated
+high-escalation-load conditions.
+
+% --------------------------------------------------------------
+\subsection{Future Work}\label{sec:future-work}
+% --------------------------------------------------------------
+
+The following research directions extend the \bxthree{} Framework's guarantees
+to broader deployment contexts and establish a principled research program
+beyond the current specification.
+
+\textbf{Formal verification.}  Full mechanical verification of the Safety,
+Liveness, and Accountability invariants using a formal verification tool
+(Coq, Isabelle/HOL, or TLA\textsubscript{+}) applied to the \bxthree{} three-layer
+model and all five pillar state machines.  The current paper establishes the
+invariants through proof sketches; the directed research agenda targets full
+formal verification as a precondition for deployment in regulated industries.
+
+\textbf{Adaptive timeout mechanisms.}  Replacement of static timeout
+parameters ($T_{\text{bounds}}$, $T_{\text{prop}}$, $T_{\text{human}}$) with
+adaptive mechanisms that adjust to anchor workload, pathway latency, and
+deployment context.  The adaptive protocol would maintain the safety invariant
+(the anchor is always contacted within $T_{\max}$) while reducing unnecessary
+stalls in low-consequence, high-latency scenarios.
+
+\textbf{Distributed human anchor pools.}  Formal specification and empirical
+evaluation of anchor pool architectures that sustain scalability under
+cascading failure conditions without compromising the no-machine-actor-absorbs
+property.  This is the primary scalability extension required for enterprise
+\bxthree{} deployments.
+
+\textbf{Exploitation resistance.}  Design of triggering-behavior anomaly
+detectors that audit the statistical relationship between observed exception
+conditions and triggered escalations per node over rolling observation windows.
+Investigation of provenance attestation for operating-range assessments:
+requiring that each Bounds Engine self-assessment be counter-signed by an
+independent audit process, making post-hoc misclassification detectable through
+forensic reconstruction.

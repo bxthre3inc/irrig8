@@ -1,0 +1,21 @@
+Task: "Analyze_Patent_Cluster"
+Description: "Analyze a cluster of patents for prior art and novelty."
+Prerequisites:
+  Access: [PatentDB, InternalResearchDB]
+  DependsOn: [DraftPatent]
+  Requires: [LLM, GPU, OpenCLIP]
+  NeedsApproval: [You]
+VelocityRequirement:
+  Min: 8
+  Stretch: 10
+RiskWeight: 6
+EscalationPath: [You]
+Alignment: ["#IP_protection", "#R&D"]
+Modalities:
+  Input: [Text, Visual, Data]
+  Output: [Text, Visual, Data, Interactive]
+CascadingTriggers:
+  - OnComplete: "File_Patent"
+  - OnError: "Notify_You"
+AmbitionProtocol:
+  Enabled: true

@@ -1,0 +1,137 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Defining Drift: Orphans, Chains, and Human Anchors}
+
+In any spawning system where agents may recursively instantiate descendants, the system's safety properties depend not only on what any \emph{single} agent does, but on the structural integrity of the \emph{entire descendant chain} back to a verified human anchor. When this chain is severed or never established, the resulting agent enters a state we call \emph{autonomous drift}.
+
+We begin with two foundational definitions.
+
+\begin_definition}[Orphaned Agent]
+An agent $a$ is \textbf{orphaned} if its parent agent $p(a)$ is either \textbf{terminated} (process exited, cleaned up, or explicitly destroyed) or \textbf{unreachable} (no responsive control channel within a bounded timeout $\tau_{\text{reach}}$). Formally:
+\[
+\text{Orphaned}(a) \;\Longleftrightarrow\; \neg\text{Reachable}(p(a)) \;\lor\; \text{Terminated}(p(a)).
+\]
+An orphaned agent may continue executing, but it no longer participates in any parent-controlled lifecycle protocol.
+\end_definition}
+
+\begin_definition}[Human Anchor]
+A \textbf{human anchor} $h$ is a verified human principal from whom a spawning chain originates and to whom at least one agent in any descendant chain maintains a responsive, authenticated control channel. We denote the set of human anchors as $\mathcal{H}$. An agent $a$ is said to \textbf{reach} a human anchor if there exists a (possibly empty) chain
+\[
+a = a_0 \xrightarrow{\text{spawn}} a_1 \xrightarrow{\text{spawn}} \cdots \xrightarrow{\text{spawn}} a_k = h
+\]
+such that each link in the chain is responsive within $\tau_{\text{reach}}$.
+\end_definition}
+
+The human anchor is the \emph{trust root} of the entire spawning tree. Its function is not merely to "approve" agents at creation time, but to remain reachable as a final fallback for intervention throughout the agent's operational lifetime.
+
+\begin_definition}[Drifted Agent]
+An agent $a$ is \textbf{drifted} if it is \textbf{not} orphaned (its parent exists and is reachable) \emph{but} the full ancestral chain from $a$ to any human anchor in $\mathcal{H}$ is either broken or unreachable. Equivalently:
+\[
+\text{Drifted}(a) \;\Longleftrightarrow\; \neg\text{Orphaned}(a) \;\land\; \forall h \in \mathcal{H}:\; \neg\text{Reaches}(a, h).
+\]
+A drifted agent has a live parent, but that parent is itself either orphaned or drifted, creating a chain that terminates at a node with no path back to a human anchor.
+\end_definition}
+
+The distinction between orphaned and drifted agents is subtle but critical: an orphaned agent \emph{knows} it has lost its parent (the parent is demonstrably gone or unresponsive). A drifted agent may \emph{appear} operational—it has a parent, the parent may even appear to be executing correctly—but the entire subtree is cut off from oversight.
+
+Drift is a \emph{structural} property of the spawning tree, not a behavioral one. An agent does not become drifted by behaving badly; it becomes drifted by virtue of its position in the tree.
+
+\subsection{A Simple Formal Model of Spawning Chains}
+
+We model the spawning system as a directed forest $\mathcal{F} = (V, E)$ where each vertex $v \in V$ represents an agent and each directed edge $(u, v) \in E$ represents a \texttt{spawn} relation: $u$ is the parent of $v$. Each agent $v$ has a state:
+\[
+\text{state}(v) \in \{\text{ACTIVE}, \text{PAUSED}, \text{TERMINATED}, \text{CRASHED}\}.
+\]
+
+Each agent $v$ also carries a \textbf{reachability flag}:
+\[
+\text{reachable}(v, t) \in \{\text{true}, \text{false}\},
+\]
+evaluated at time $t$, indicating whether $v$ responds to a control ping within $\tau_{\text{reach}}$.
+
+\begin{figure}[h]
+\[
+\text{chain\_depth}(v) =
+\begin{cases}
+0 & \text{if } \nexists\; p(v) \text{ (root)} \\
+1 + \text{chain\_depth}(p(v)) & \text{otherwise}
+\end{cases}
+\]
+
+\[
+\text{anchor\_depth}(v) =
+\begin{cases}
+0 & \text{if } v \in \mathcal{H} \\
+\infty & \text{if } \text{Orphaned}(v) \text{ and } v \notin \mathcal{H} \\
+1 + \text{anchor\_depth}(p(v)) & \text{otherwise}
+\end{cases}
+\]
+\caption{Recursive definitions for chain depth and anchor depth. Anchor depth propagates $\infty$ when the chain is broken, making drift detectable without behavioral monitoring.}
+\end{figure}
+
+\textbf{Drift detection criterion:} An agent $v$ is drifted iff $\text{anchor\_depth}(v) = \infty$ while $\text{chain\_depth}(v) < \infty$. The agent exists in the tree (it has a parent), but no finite walk from $v$ reaches any human anchor.
+
+This formalization reveals that drift is \textbf{detectable algebraically} from the structure of the spawning tree, independent of any behavioral monitoring or output inspection. A spawning system that maintains parent pointers and reachability state can compute $\text{anchor\_depth}$ for every agent and flag drift in $O(|V|)$ time by traversing the tree once.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not arise from a single root cause. It emerges from the intersection of three independent failure conditions, any two of which can be sufficient.
+
+\textbf{Condition 1: Parent failure without orphan propagation.}
+When a parent agent terminates or crashes, its direct children become orphaned. In a correct system, orphaning triggers a re-parenting protocol (the orphaned agent adopts the nearest live ancestor as its new parent, or escalates to a designated supervisor). If this protocol is absent, not implemented, or fails silently, the orphaned children become drifted by definition—their chain to any human anchor is severed.
+
+\textbf{Condition 2: Spawn-side authentication failure.}
+An agent $p$ spawns a child $c$ but the child's spawn message arrives at a different agent $p' \neq p$ due to a routing error, a message replay, or a channel hijack. From $p$'s perspective, $c$ exists in its mental model. From $c$'s perspective, $p$ is its parent. But $p$ and $c$ are now in different trees. If $p'$ is itself not connected to any human anchor, $c$ is drifted.
+
+\textbf{Condition 3: Human anchor unreachable under load.}
+A human anchor $h \in \mathcal{H}$ becomes unreachable due to network latency, authentication timeout, or deliberate throttling. All agents in the subtree rooted at $h$ remain \emph{structurally} connected to $h$, but they can no longer be reached. By the formal definition, agents in this subtree are not drifted—they are orphaned (their anchor is unreachable). However, if a monitoring system interprets "reachable parent" as "safe," it may not flag these agents as problematic, allowing a cascade of failures to propagate silently through the subtree while each agent individually appears to have a reachable parent.
+
+The third condition highlights a critical subtlety: reachability and drift are \emph{dynamic} properties that change with time. An agent that is not drifted at time $t_1$ may become drifted at time $t_2$ if its parent is unreachable for long enough to trigger a re-parenting failure.
+
+\subsection{Failure Modes}
+
+We identify four distinct failure modes, ordered by increasing severity.
+
+\textbf{FM-1: Leaf Isolation.}
+A single leaf agent $a$ becomes drifted while its parent remains active and connected. This is the mildest form of drift: a leaf node is cut off, but the rest of the tree is unaffected. The drifted leaf may continue executing its current task indefinitely, with no mechanism for a human to inspect, interrupt, or redirect it. The failure is silent.
+
+\textbf{FM-2: Subtree Detachment.}
+An intermediate node $s$ becomes drifted, which propagates drift to all descendants of $s$. The subtree rooted at $s$ is now disconnected from the human anchor at the cost of a single upstream failure. This is the most common failure mode in deep spawning chains: a bottleneck node (a supervisor, a router, a coordinator) loses connectivity, and its entire child ecosystem is silently orphaned.
+
+\textbf{FM-3: Anchor Partition.}
+A human anchor $h$ becomes partitioned from the rest of the tree due to a network partition or authentication failure. All agents in $\mathcal{F} \setminus \text{Subtree}(h)$ retain their structure but can no longer receive commands from $h$. If the system relies on $h$ as the sole intervention point, the agents in the non-$h$ partition are, by our definition, \emph{not} drifted (they have parents) but are \emph{operationally} cut off from human oversight. The drift is laterally invisible: each agent's parent appears reachable.
+
+\textbf{FM-4: Systemic Drift.}
+The spawning system enters a state in which the set of non-drifted agents is a proper subset of the active agent set, and no human anchor can determine which agents are drifted without performing a full tree traversal. This is the catastrophic failure mode: the human anchor cannot trust any agent's claim of being connected, because the drift condition is structurally undetectable from within the tree. Only an external observer with a global view of the spawning forest can identify the drifted agents.
+
+FM-4 is particularly dangerous because it subverts the basic intuition that "if my agents are all responding, the system is healthy." Response and drift are orthogonal properties.
+
+\subsection{Why Depth Limits Are Insufficient}
+
+A common intuition is that drift can be prevented by limiting the depth of the spawning tree. If no chain is longer than $D_{\max}$, then a human anchor at depth $0$ can, in principle, reach any agent by traversing at most $D_{\max}$ edges. This reasoning is seductive but wrong. Depth limits address one failure mode (unbounded tree growth) while leaving the three root causes of drift entirely unaddressed.
+
+We formalize this as follows. Let $D_{\max}$ be a depth limit. An agent $a$ satisfies the depth constraint if $\text{chain\_depth}(a) \leq D_{\max}$. The human anchor's \textbf{effective reach} under a depth limit is the set:
+\[
+\mathcal{R}(h, D_{\max}) = \{ a \in V \mid \text{anchor\_depth}(a) \leq D_{\max} \}.
+\]
+A depth limit $D_{\max}$ is \textbf{drift-preventing} if for every agent $a \in V$, $a \in \mathcal{R}(h, D_{\max})$ for some $h \in \mathcal{H}$. That is, every agent in the tree is within $D_{\max}$ steps of some human anchor.
+
+\begin{claim}
+A depth limit $D_{\max}$ is drift-preventing \emph{if and only if} the spawning tree is acyclic, every agent's parent is reachable, and no spawn event occurs after a parent has become unreachable.
+\end{claim}
+
+\textbf{Proof sketch.} The depth limit establishes an upper bound on $\text{chain\_depth}(a)$. But $\text{anchor\_depth}(a)$ can be infinite even when $\text{chain\_depth}(a)$ is finite, if the ancestral chain is broken. A broken chain can be arbitrarily shallow (a depth of 2, or even 1 if the root is drifted) while being entirely disconnected from any human anchor. Conversely, a tree of arbitrary depth can be entirely drift-free if every link in the chain is both alive and reachable. $\square$
+
+The implication is stark: \textbf{a depth limit of any finite $D_{\max}$ does not prevent drift}. A chain of depth 2 can be fully drifted (parent $\rightarrow$ child, where the parent is itself drifted). A chain of depth 50 with all links intact and all agents reachable is fully safe.
+
+More concretely, consider a spawning system with $D_{\max} = 3$. An agent at depth 2 spawns a child at depth 3. The parent then becomes unreachable due to a transient network fault. The child at depth 3 is now orphaned. It is within the depth limit ($\text{chain\_depth} = 3 \leq 3$) but has $\text{anchor\_depth} = \infty$. The depth limit is satisfied; the drift condition is violated.
+
+The \textbf{false reassurance} of depth limits is their most dangerous property. A system that enforces $D_{\max}$ may give operators confidence that no agent can become "too autonomous," while the actual risk—losing the chain to a human anchor—is entirely unaffected by this constraint.
+
+Depth limits also create a perverse incentive: when agents approach the depth limit, operators may be reluctant to kill or pause them (doing so orphans their children), preferring instead to let them continue. This directly increases the probability of FM-1 and FM-2 by discouraging intervention at depth-bounded nodes.
+
+The correct mitigation is not a depth constraint but a \textbf{reachability invariant}: every agent in the active tree must have a finite $\text{anchor\_depth}$. Maintaining this invariant requires continuous structural monitoring, not a one-time depth bound.
+
+\subsection{Chapter Summary}
+
+This section has formalized the conditions under which agents in a recursive spawning system become disconnected from human oversight. We defined orphaned agents (those without a reachable parent), human anchors (the trust roots of spawning chains), and drifted agents (those whose ancestral chain does not reach any human anchor). We introduced a simple formal model of the spawning forest with recursive depth and anchor-depth functions, showing that drift is algebraically detectable from tree structure alone. We enumerated four failure modes ranging from leaf isolation to systemic drift, and we proved that depth limits are insufficient to prevent drift because chain depth and anchor depth are independent properties. The next section presents the Recursive Spawning Protocol (RSP), which enforces the reachability invariant through continuous structural monitoring and bounded re-parenting.

@@ -1,0 +1,101 @@
+% ============================================================
+% Section 7: Correctness Properties
+% ============================================================
+\section{Correctness Properties}
+\label{sec:rs-correctness}
+
+This section establishes three correctness theorems for the Recursive Spawning Protocol. Each theorem states a structural guarantee that follows from the RSP architecture as defined in Sections~\ref{sec:rs-protocol} and \ref{sec:rs-bx3-integration}. The theorems are proved from the RSP's structural constraints: the immutability of the parent pointer, the hash-chain integrity of the forensic ledger, the exclusive authorization role of the Purpose Layer, and the depth bound enforced by the Bounds Engine. No probabilistic assumptions are required; the proofs are deterministic.
+
+% ------------------------------------------------------------------
+\subsection{Theorem 1: Drift Prevention}
+\label{sec:rs-thm-drift}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue, title={Theorem 1 (Drift Prevention)}]
+\textbf{Given a delegation chain $\Chain{n_k} = \langle n_k, n_{k-1}, \ldots, n_0 \rangle$ constructed by the Recursive Spawning Protocol, the chain is resistant to scope drift: for every link $n_i \rightarrow n_{i-1}$ in the chain, $R(n_{i-1})$ is a strict superset of $R(n_i)$. No node in the chain can be in a state where it operates with an authorized scope different from the one established by the Purpose Layer warrant at its time of provisioning.}
+\end{tcolorbox}
+
+\medskip
+\noindent\textbf{Proof.} We prove drift resistance by examining each enforcement point that prevents drift.
+
+\medskip
+\noindent\textbf{Drift at provisioning (scope refinement enforcement).} At Phase 1 (Section~\ref{sec:rs-phase1-purpose}), the Purpose Layer validates condition (P1), requiring $R(n_{i+1}) \subset R(n_i)$ as a strict subset relationship before issuing warrant $w_i$ (Equation~\ref{eq:spawn-warrant}). The warrant is the sole authorized precondition for the Fact Layer provisioning write. The Fact Layer pre-commit hook independently re-verifies FC1: $R(n_{i+1}) \subseteq R(n_i)$. Both checks are enforced structurally --- they are not policy conventions that can be overridden by a machine actor. The scope relationship is therefore fixed at spawn time and cannot be altered by any subsequent action of the child node or any ancestor.
+
+\medskip
+\noindent\textbf{Drift at runtime (immutable parent pointer).} After provisioning, the child node $n_{i+1}$ carries its parent pointer $\alpha(n_{i+1}) = n_i$ as an immutable Fact Layer property stored in its sealed memory envelope (Section~\ref{sec:rs-phase4-child-activation}). The parent pointer is established once and is structurally permanent: the Fact Layer write protocol defines no valid write operation for modifying $\alpha(n)$ after provisioning (FLR1). A drifted node cannot redirect its parent pointer to a new parent, because no mechanism exists within the RSP architecture to modify $\alpha$ after the initial provisioning write.
+
+\medskip
+\noindent\textbf{Drift detection (forensic ledger).} Every state transition, including scope authorization events and drift-suggesting operations, is recorded as a ledger entry $\ell_j$ (Equation~\ref{eq:ledger-entry}) with hash-chain continuity $\text{hash}(\ell_{j-1})$. Any unauthorized scope modification would produce a ledger entry inconsistent with the chain's authorized scope history, breaking the hash chain at the point of the unauthorized entry. The break is detectable by any observer with ledger read access through Chain-Verify (Algorithm~\ref{alg:chain-verify}, Step V3).
+
+\medskip
+\noindent\textbf{Drift to non-human terminus (human anchor enforcement).} The chain terminates at a Purpose Layer entity with human principal designation $h$ (PLA2). No machine actor can serve as a chain terminus by architectural constraint. If a drifted node were to attempt to establish a machine actor as a terminus, Chain-Verify Step V1 would return \texttt{false} because the root of the chain would not satisfy $h(chain[m-1])$. The drift would be detected before any downstream accountability attribution occurs.
+
+\medskip
+\noindent\textbf{Conclusion.} Drift is prevented by three independent structural mechanisms operating in concert: (i) the Purpose Layer's scope refinement validation at spawn authorization, enforced as a structural invariant; (ii) the Fact Layer's immutable parent pointer, which prevents post-provisioning parent pointer modification; and (iii) the forensic ledger's hash-chain integrity, which makes any scope modification detectable. Together, these mechanisms make scope drift structurally impossible, not merely unlikely. $\square$
+
+% ------------------------------------------------------------------
+\subsection{Theorem 2: Chain Integrity}
+\label{sec:rs-thm-integrity}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue, title={Theorem 2 (Chain Integrity)}]
+\textbf{For any node $n$ in an RSP-compliant delegation chain, the delegation chain from $n$ to its human anchor $h$ is structurally sound: (i) the chain is acyclic, (ii) every link in the chain corresponds to an authorized spawn event recorded in the forensic ledger, (iii) the hash-chain of the forensic ledger is unbroken from the root entry to the entry recording $n$'s provisioning, and (iv) no entry in the chain can be added, removed, or modified after the fact without a detectable break in the hash chain.}
+\end{tcolorbox}
+
+\medskip
+\noindent\textbf{Proof.} We establish chain integrity by verifying each of the four conditions.
+
+\medskip
+\noindent\textbf{Condition (i): Acyclicity.} The parent pointer $\alpha(n_{i+1}) = n_i$ is established at provisioning and is immutable (FLR1). Since each application of $\alpha$ moves strictly from a child to its parent, and since every node has at most one parent (by the atomic provisioning write's creation of exactly one node record per spawn event), the graph induced by $\alpha$ is a directed acyclic graph (DAG). A cycle would require a sequence $n_{i_0}, n_{i_1}, \ldots, n_{i_m}$ where $n_{i_j+1} = \alpha(n_{i_j})$ and $n_{i_0} = n_{i_m}$. But $\alpha$ is defined as a strict parent relation with no reflexive mapping ($\alpha(n) \neq n$ for any $n$), so such a cycle cannot exist. The depth counter also enforces acyclicity: since $\text{depth}(n_{i+1}) = \text{depth}(n_i) + 1$, the depth strictly increases along any child-to-parent traversal, guaranteeing termination at the root in at most $D_{\max} + 1$ steps.
+
+\medskip
+\noindent\textbf{Condition (ii): Authorized spawn events.} Every link $n_i \rightarrow n_{i-1}$ corresponds to a spawn event that was authorized by a Purpose Layer warrant $w_{i-1}$ (Equation~\ref{eq:spawn-warrant}) and recorded as a ledger entry $\ell_j$ (Equation~\ref{eq:ledger-entry}) during the atomic provisioning write (Section~\ref{sec:rs-phase3-fact-layer}). Chain-Verify Step V2 confirms that a valid warrant exists for every spawn link in the chain. The absence of a warrant for any link causes Chain-Verify to return \texttt{false}, establishing that unauthorized spawn events cannot produce valid chains.
+
+\medskip
+\noindent\textbf{Condition (iii): Hash-chain continuity to the root.} Each ledger entry $\ell_j$ contains $\text{hash}(\ell_{j-1})$, creating a chain of cryptographic dependencies from any entry back to the root entry. The root entry records the human anchor establishment at $n_0$ and has no predecessor, so its hash is computed over its own content. Chain integrity from $n$ to the root is verified by recomputing the chain of hashes from the root to $\ell_j$ and comparing against the stored values. If any entry in the chain has been modified, the hash at the point of tampering will not match the stored value.
+
+\medskip
+\noindent\textbf{Condition (iv): Tamper-evident ledger.} The forensic ledger's tamper-evidence property follows from the hash-chain structure: any modification to an entry changes its hash, breaking the successor entry's stored $\text{hash}(\ell_{j-1})$ reference. Any insertion adds an entry whose hash reference does not match the preceding entry's actual hash. Any deletion removes an entry, causing all subsequent entries' hash references to point to a non-existent predecessor. In all three cases, the hash-chain verification fails at the tampering point, making the ledger self-certifying with respect to integrity. The detection does not require an external authority --- it follows from the ledger's own structure.
+
+\medskip
+\noindent\textbf{Conclusion.} Chain integrity is guaranteed by the structural immutability of the parent pointer (preventing acyclicity violations), the Purpose Layer warrant requirement (preventing unauthorized links), and the hash-chain continuity of the forensic ledger (enabling tamper detection). $\square$
+
+% ------------------------------------------------------------------
+\subsection{Theorem 3: Termination}
+\label{sec:rs-thm-termination}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue, title={Theorem 3 (Termination)}]
+\textbf{For any node $n_k$ in an RSP-compliant delegation chain, the delegation chain from $n_k$ to its human anchor $h$ terminates in at most $D_{\max} + 1$ applications of the parent pointer $\alpha$, regardless of the total number of active nodes in the system. The chain always terminates at a Purpose Layer entity with a human principal designation. No RSP chain can be infinite.}
+\end{tcolorbox}
+
+\medskip
+\noindent\textbf{Proof.} We prove termination through three lemmas.
+
+\medskip
+\noindent\textbf{Lemma T1 (Finite depth bound).} For any node $n_i$ in an RSP-compliant chain, $\text{depth}(n_i) \leq D_{\max}$ by the depth constraint enforcement (Equation~\ref{eq:depth-bound}) at every spawn event, independently enforced by both the Bounds Engine and the Fact Layer pre-commit hook (BDE2, FC2). The depth bound is immutable and cannot be exceeded by any spawn event.
+
+\medskip
+\noindent\textbf{Lemma T2 (Strict parent movement).} The parent pointer $\alpha(n_{i+1}) = n_i$ is a total function from every non-root node to its unique parent. Each application of $\alpha$ moves strictly from a child at depth $d$ to its parent at depth $d - 1$, because $\text{depth}(\alpha(n)) = \text{depth}(n) - 1$ follows from the definition in Equation~\ref{eq:depth-definition}. There is no operation within the RSP architecture that can increase depth along a parent pointer traversal.
+
+\medskip
+\noindent\textbf{Lemma T3 (Root identification).} The root node $n_0$ satisfies $\alpha(n_0) = \bot$ and $h(n_0) = h$ (human anchor establishment, Section~\ref{sec:rs-phase1-purpose}). No machine actor can satisfy the human principal designation predicate $h$, so the chain cannot terminate at a machine actor. The chain must terminate at the unique human principal who authorized $n_0$.
+
+\medskip
+\noindent\textbf{Main proof.} Consider an arbitrary node $n_k$ with $\text{depth}(n_k) = d \leq D_{\max}$. Starting from $n_k$, apply $\alpha$ iteratively. By Lemma T2, each application strictly decreases depth. After exactly $d$ applications, the chain reaches the root $n_0$. By Lemma T3, $n_0$ has a human principal designation and satisfies $\alpha(n_0) = \bot$, so traversal stops. The total number of pointer dereferences required to reach the human anchor from $n_k$ is $d + 1 \leq D_{\max} + 1$, which is independent of the total number of active nodes in the system.
+
+To show impossibility of infinite chains: an infinite chain would require an infinite strictly decreasing sequence of depth values, which is impossible because depth is a non-negative integer bounded below by 0 and above by $D_{\max}$. Therefore no RSP chain can be infinite.
+
+\medskip
+\noindent\textbf{Conclusion.} Every RSP chain terminates at a human principal within a constant bounded number of steps independent of system scale. This guarantees that human accountability is always reachable from any active node within a defined operational time bound, regardless of how many agents are active or how deeply nested the delegation hierarchy has become. $\square$
+
+% ------------------------------------------------------------------
+\subsection{Corollary: Structural vs. Emergent Guarantees}
+\label{sec:rs-corollary}
+
+The three theorems establish that RSP's correctness properties are \emph{structural}, not \emph{emergent}. A structural guarantee holds by virtue of the protocol's design: it follows deterministically from the enforcement of defined constraints and does not depend on the reliability, correctness, or good intentions of any machine actor operating within the chain. An emergent guarantee, by contrast, arises from the aggregate behavior of components and could fail if those components behave unexpectedly.
+
+RSP's drift prevention guarantee is structural: the Fact Layer pre-commit hook rejects any spawn where scope refinement is not satisfied (FC1), and no machine actor can modify $\alpha$ after provisioning (FLR1). Even if every machine actor in the chain were simultaneously compromised, the structural constraints would still prevent scope drift, because the constraints are enforced by the protocol rather than by the actors themselves.
+
+RSP's chain integrity guarantee is structural: the hash-chain continuity of the forensic ledger is verified by recomputing hashes, which requires no trust in any machine actor's honest reporting. A tampered ledger produces a detectable hash break regardless of whether the tampering node is behaving correctly.
+
+RSP's termination guarantee is structural: the depth bound and immutable parent pointer together guarantee termination independent of any machine actor's behavior.
+
+These structural properties are what make RSP suitable for deployment in high-stakes environments where probabilistic assurances are insufficient. The guarantee holds when the system operates correctly, and it equally holds when components fail or are compromised --- because the guarantees are embedded in the protocol's structure, not in the behavior of the actors it governs.

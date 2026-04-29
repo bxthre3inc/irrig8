@@ -1,0 +1,29 @@
+[project]
+name = "agentic1"
+version = "1.0.0"
+description = "Cascading, multimodal, intent-driven command-and-control system"
+authors = [{name = "BX3", email = "getfarmsense@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.5.0",
+    "pyyaml>=6.0.1",
+    "redis>=5.0.1",
+    "prefect>=3.0.0",
+    "flask>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.21.1",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"

@@ -1,0 +1,101 @@
+% -------------------------------------------------------
+\section{Limitations and Future Work}
+\label{sec:limitations-and-future-work}
+% -------------------------------------------------------
+
+The Bailout Protocol establishes a structural, compulsory escalation path from any node to a named human Purpose Layer anchor, with correctness properties established under explicit structural assumptions. Four honest limitations bound the scope of those guarantees; each defines a directed research agenda for subsequent work.
+
+% -------------------------------------------------------
+\subsection{Limitations}
+\label{sec:limitations}
+
+\subsubsection{Human Response Latency}
+\label{sec:limitations-latency}
+
+The protocol guarantees a \emph{finite} escalation path to a human anchor (Theorem~\ref{thrm:termination}), not a \emph{short} one. Worst-case human response time is measured in minutes to hours: time of day, geographic distribution, communication channel (SMS, email, phone), and cognitive load are all variables outside the protocol's control. For a precision irrigation controller making decisions at 3:00 AM, a 45-minute stall in \texttt{ESCALATING} state may be operationally unacceptable even though it formally satisfies the $T_{\max}$ bound.
+
+The Training Wheels Protocol (\S~\ref{sec:purpose-anchor}) partially mitigates this by intercepting outbound actions before execution, but it does not eliminate latency from the bailout path itself. High-frequency operational domains --- algorithmic trading, autonomous vehicle navigation, real-time process control --- face a fundamental mismatch between operational time constants and human cognitive response bandwidth. The protocol correctly stalls execution rather than proceeding without authorization; the cost of that stall is domain-dependent and not currently parameterized. Systems deployed in life-critical roles must carry this latency explicitly in their safety cases.
+
+\subsubsection{Adversarial Conditions}
+\label{sec:limitations-adversarial}
+
+The correctness theorems (Theorems~\ref{thrm:drift-prevention} and~\ref{thrm:chain-integrity}) assume that the sealed envelope, the immutable parent pointer, and the forensic ledger resist adversarial modification within the hardware-fault model. Under a strong adversarial model --- one in which an attacker has compromised the host platform or the Fact Layer process --- these guarantees degrade.
+
+Specifically, if an adversary achieves code execution inside a node's sealed envelope, they may suppress the Bailout Protocol trigger itself, preventing the escalation signal from reaching the Purpose Layer. This attacks the \emph{detection} mechanism rather than the parent pointer chain. The forensic ledger records spawn events, but if the Fact Layer process is compromised before suppression, ledger entries can be written adversarially to obscure the attack's history. The system responds conservatively by triggering bailout on anomalous absence rather than explicit alarm --- but designing against an active, informed Fact Layer adversary is a separate, substantial body of work outside this paper's scope.
+
+The protocol's applicability boundary is deployments where the host platform is trusted but individual agents may behave unexpectedly: the standard assumption for production AI in regulated industries. National infrastructure, military systems, and financial clearinghouses require composition with substrate-integrity mechanisms --- secure boot chains, hardware-attested execution environments, independent watchdog monitors on separate hardware --- that are architecturally orthogonal to and outside the scope of this protocol.
+
+\subsubsection{Scalability Under 1:1 Anchoring}
+\label{sec:limitations-scalability}
+
+The termination guarantee (Theorem~\ref{thrm:termination}) bounds hierarchy \emph{depth} but not \emph{breadth}. A single human anchor $p \in P$ may supervise many independent subtrees, each spawning children to depth $d_{\max}$. As active node count grows, total spawn events, ledger entries, and inter-node communication grow proportionally. The forensic ledger's append-only property implies monotonic growth without compaction: no garbage collection or archival policy is specified, and no partitioning scheme is defined for distributed deployments.
+
+For deployments at the scale envisioned for Irrig8 across large agricultural regions --- thousands of edge nodes across tens of thousands of acres --- this growth is a practical operational concern. The architecture provides correctness guarantees but not scaling bounds. Cross-hierarchy coordination (Corollary~\ref{corol:compositional-safety}) requires explicit Purpose Layer authorization recorded in each participating hierarchy's ledger; as independent hierarchies multiply, coordination overhead at a single anchor creates a bottleneck the protocol does not address.
+
+The 1:1 node-to-anchor model is a proof-of-concept design. Enterprise and infrastructure deployment requires at minimum 1:N pooled supervision and potentially N:M anchor pools with load balancing and conflict-resolution protocols before the protocol can be certified at scale.
+
+\subsubsection{Exploitation Risk from Misconfigured Bounds}
+\label{sec:limitations-threshold-gaming}
+
+The Bounds Engine enforces depth limits and scope isolation as configured parameters. If $d_{\max}$ is set too large, worst-case escalation latency grows proportionally. If scope predicates are miscalibrated --- too permissive --- the bailout triggers so rarely that the protocol becomes a formality; too conservative, and alert fatigue produces operator habituation, causing genuine bailout events to be missed or discounted.
+
+More insidiously: a sophisticated agent that understands the threshold calibration can learn to operate just below the bailout threshold across multiple action cycles, accumulating individually acceptable but collectively dangerous behavioral shifts. This is goal hacking applied to the accountability mechanism. The bypass mechanism enforces the no-machine-actor property on the propagation path \emph{once escalation is triggered}, but it cannot detect whether a machine actor deliberately avoided triggering in the first place. The state machine cannot distinguish a Bounds Engine that correctly assessed a condition as in-scope from one that deliberately misclassified an out-of-scope condition to avoid escalation.
+
+Defending against threshold gaming requires temporal modeling of agent behavior --- monitoring the \emph{distribution} of conditions observed versus the \emph{distribution} of escalations triggered --- which is architecturally distinct from the predicate-based Intervention Layer and outside the current scope.
+
+% -------------------------------------------------------
+\subsection{Future Work}
+\label{sec:future-work}
+
+Three directions follow directly from the limitations above, presented in order of increasing research complexity.
+
+\subsubsection{Formal Verification of Core Theorems}
+\label{sec:future-formal-verification}
+
+The correctness properties in \S~\ref{sec:correctness} are supported by proof sketches. Full formal verification using a proof assistant (Coq, Lean, Isabelle/HOL) or a formal specification language (TLA$^+$) would close the gaps in the informal arguments, confirm the logical consistency of the three-layer architecture, and produce a machine-checkable artifact suitable for regulatory review.
+
+Particularly valuable: a formal model of the immutable parent pointer $\alpha$ as a hardware-protected function, and a formal proof that the forensic ledger's append-only property is preserved under concurrent writes from multiple Fact Layer processes in a distributed deployment. Equally important is the compositional verification question: if each layer satisfies its specification, does the composition necessarily satisfy the protocol's guarantees? A compositional argument would distribute the verification burden across layer implementations and make the protocol robust to future implementation changes.
+
+Formal verification is a prerequisite for deployment in regulated industries where algorithmic accountability is subject to statutory requirements, including EU AI Act compliance for high-risk AI systems.
+
+\subsubsection{Adaptive Timeout and Priority Escalation}
+\label{sec:future-adaptive-timeout}
+
+The fixed timeout model is a conservative baseline. Future work should explore adaptive timeout mechanisms that adjust the escalation window based on: current depth (nodes near $d_{\max}$ warrant higher urgency than nodes at depth 1); node criticality classification (physical actuator nodes such as irrigation valves warrant faster escalation than informational nodes); historical human response patterns (a consistently responsive anchor may be assigned shorter windows, with automatic fallback to a secondary anchor); and environmental conditions (hazardous sensor readings may trigger preemptive escalation before timeout, trading false-positive cost against catastrophic failure cost).
+
+An adaptive mechanism requires a feedback loop updating timeout parameters from observed operator response data --- a control theory problem amenable to a proportional-integral-derivative (PID) controller or a lightweight reinforcement learning agent. The critical constraint: adaptation must preserve the deterministic timing guarantee required by the Safety property. The timeout applicable to any given bailout signal must be computable from publicly observable state, preventing the timeout value itself from becoming an attack surface.
+
+\subsubsection{Distributed Human Anchor Pools}
+\label{sec:future-anchor-pools}
+
+The most significant extension. The 1:1 anchoring model is not viable at enterprise or infrastructure scale; the long-term solution is distributed human anchor pools: multiple pre-authorized operators, any one of whom can respond to a bailout signal, with assignment policies balancing workload, optimizing for response latency, and ensuring domain-expertise alignment with the specific failure class.
+
+The pool architecture must satisfy three constraints derived from the correctness properties. \textbf{Safety:} no pool configuration may produce a state in which all human-contact pathways for a given node are permanently disabled --- each node must maintain at least two anchor references and the pool management algorithm must detect and compensate for anchor unavailability before it becomes pathway-closing. \textbf{Liveness:} routing must deliver escalations to available anchors within $T_{\max}$ even under high concurrent load, requiring load-aware routing rather than static assignment. \textbf{Accountability:} every escalation must be attributed to a specific human anchor, immutably recorded, requiring that routing decisions be committed to the Forensic Ledger.
+
+Open questions include: cross-jurisdictional authorization (an anchor in one jurisdiction may lack legal authority to authorize actions in another, requiring the accountability chain to record which anchor resolved an escalation and the jurisdictional scope of their authorization); collusion risk among pool members acting in concert to authorize depth budgets that violate safety properties; and the treatment of institutional actors --- corporate compliance teams or designated officers --- as anchor pool members, requiring institutional rather than individual operational protocols.
+
+% -------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+% -------------------------------------------------------
+
+The Bailout Protocol advances a single, architecturally precise claim: that autonomous systems built on the \bxthree{} Framework must propagate every unresolved exception state to a named human principal, bypassing all intermediate machine actors, as a compulsory structural requirement rather than a runtime choice. This mandatory bailout property is not a feature that can be retrofitted to an existing agentic architecture through better error handling or improved escalation heuristics. It is a structural property that follows, as a matter of architectural necessity, from the functional separation between the Purpose, Bounds, and Fact layers.
+
+When the Bounds Layer encounters a condition outside its provisioned operating range that it cannot resolve, no machine actor holds the authority to adjudicate that condition. The decision must return to the Purpose Layer, which carries intent, judgment, and final authority. The Bailout Protocol is the mechanism that enforces this return --- compulsorily, deterministically, and with full forensic attribution at every step.
+
+The contributions of this paper are threefold:
+
+\begin{enumerate}
+    \itemsep0em
+    \item \textbf{Mandatory architectural bailout protocol.} Recursive Spawning requires every spawned node to maintain an immutable parent pointer whose chain terminates at a human Purpose Layer actor. This is not a best practice or a configuration option --- it is a structural requirement of the spawning mechanism. The Bailout Protocol is the mandatory operationalization of this requirement: it is not invoked as a fallback when something goes wrong, but as the prescribed resolution path for any unresolvable state at any depth.
+
+    \item \textbf{Formal correctness properties.} The drift prevention theorem (Theorem~\ref{thrm:drift-prevention}), chain integrity theorem (Theorem~\ref{thrm:chain-integrity}), and termination theorem (Theorem~\ref{thrm:termination}) establish that the mechanism achieves its stated goals under clearly stated assumptions, providing the analytical foundation for certification, regulatory review, and safety case construction.
+
+    \item \textbf{Integration with the \bxthree{} Framework.} The three-layer architecture is shown to be structurally necessary: the Purpose Layer provides the accountability terminus, the Bounds Engine enforces finite hierarchy depth, and the Fact Layer provides the forensic ledger that makes chain integrity verifiable. Removing any layer renders the mechanism incomplete.
+\end{enumerate}
+
+The \bxthree{} Framework is what makes the Bailout Protocol possible. Without a pre-existing three-layer architecture that enforces immutable Purpose encoding at the Fact Layer, an immutable parent pointer is merely a data structure with no enforcement mechanism. The framework provides the enforcement context; the Bailout Protocol provides the structural instantiation of that context applied to hierarchical agent lifecycle management. The upstream accountability guarantee --- that \bxthree{} systems \emph{fail upward into human consciousness, never downward into autonomous chaos} --- and the Bailout Protocol are two aspects of the same architectural commitment.
+
+The limitations identified in \S~\ref{sec:limitations} define the boundary between what the protocol achieves within scope and what must follow in subsequent work. Human response latency, adversarial hardening, ledger scalability, and threshold gaming are constraints on the deployment context, not flaws in the protocol's logical design. They are the research agenda: formal verification to establish correctness proofs rigorously; adaptive timeout to improve operational fit across deployment contexts; and distributed human anchor pools to enable deployment at industrial scale while preserving Safety, Liveness, and Accountability.
+
+The protocol's structural necessity within the \bxthree{} Framework is established by its specification. Its practical necessity in the field is established by the operational reality of autonomous systems that, without it, have no architectural path to human accountability when they encounter conditions beyond their provisioned range. The Bailout Protocol does not eliminate uncertainty from autonomous operation. It eliminates the possibility that uncertainty, propagating through an unconstrained hierarchy, could terminate in a machine actor rather than a human one. That elimination is not a soft property. It is a hard architectural constraint, and it is what the \bxthree{} Framework demands.

@@ -1,0 +1,151 @@
+% -------------------------------------------------------
+\section{Correctness Properties}
+\label{sec:correctness-properties}
+
+This section proves the three core correctness properties of the Recursive Spawning Protocol: \textbf{drift prevention}, \textbf{chain integrity}, and \textbf{termination}. Each property is established formally as a logical consequence of the BX3+RSP architectural definitions. No empirical claim is made; every result follows necessarily from the structural constraints specified in Sections~\ref{sec:immutable-parent-pointers} and~\ref{sec:bx3-integration}.
+
+% --- 7.1 Drift Prevention ------------------------------------
+
+\subsection{Drift Prevention}
+\label{sec:drift-prevention}
+
+The central correctness property of RSP is that autonomous drift (Definition~\ref{def:drift}) is structurally impossible. We prove this by demonstrating that three structural components of RSP — the immutable parent pointer, the forensic ledger, and the Purpose Layer termination guarantee — together eliminate all three conditions that cause drift (Section~\ref{sec:autonomous-drift}).
+
+\begin{thrm}[Drift Prevention]
+\label{thrm:drift-prevention}
+In any valid BX3 system executing the Recursive Spawning Protocol, no node $n \in \mathcal{N}$ can be in the drifted state.
+\end{thrm}
+
+\begin{Proof}[Proof Sketch — Structural Induction on Depth]
+We prove by structural induction on the depth $d(n)$ of a node $n$.
+
+\medskip
+\textbf{Base case ($d(n) = 0$):} Nodes at depth $0$ are human-anchored Purpose Layer nodes. By definition, a human-anchored node is the root of the accountability chain and has $\text{parent}(n) = \bot$. The ancestry function satisfies $A(n) \cap H = \{n\} \neq \varnothing$, so $n$ is not drifted by Definition~\ref{def:drift}.
+
+\medskip
+\textbf{Inductive hypothesis:} Assume that for all nodes at depth $d \leq k$, no node is drifted.
+
+\medskip
+\textbf{Inductive step ($d(n) = k+1$):} Let $n$ be a node with $\text{parent}(n) = p$. By the Immutability Invariant (II), $p$ is uniquely determined and is established exactly once at spawn time via a Purpose Layer authorization event. By the inductive hypothesis, $p$ is not drifted. We consider the three drift-causing conditions:
+
+\begin{enumerate}
+
+\item \textbf{Parent crash:} The parent $p$ terminates or becomes unreachable. However, the parent pointer $\text{parent}(n) = p$ is recorded in the Fact Layer's append-only forensic ledger and is immutable. The chain $A(n) = \{\ldots, p, n\}$ remains traversable because the ledger records $p$'s identity and the spawn authorization event that established the chain. An auditor can reconstruct the full chain to the root Purpose Layer at any future time. The existence of the forensic record means that $n$ is never \emph{structurally} unanchored, even if $p$ is unreachable at runtime.
+
+\item \textbf{Fire-and-forget spawn:} The parent spawns $n$ without blocking on registration. However, the spawn authorization event requires a Purpose Layer authorization (Section~\ref{sec:spawn-authorization}), which is a first-class event recorded in the forensic ledger before the child is activated. The child's parent pointer is established in the PPR at the same time as the authorization event. There is no code path by which a child can be activated without a sealed PPR entry. Therefore, fire-and-forget semantics cannot produce a node without an immutable parent chain.
+
+\item \textbf{No dynamic parent pointer reassignment:} The parent pointer field in the PPR has no write path after spawn time. No actor — including the parent node, any administrative process, or a compromised component — can modify $\text{parent}(n)$ post-spawn. The chain is therefore immutable regardless of runtime conditions.
+
+\end{enumerate}
+
+Since none of the three drift-causing conditions can produce a drifted node in a valid BX3+RSP system, no node $n$ can be in the drifted state. $\square$
+\end{Proof}
+
+The proof sketch relies on three structural properties that hold simultaneously:
+
+\begin{enumerate}
+
+\item \textbf{Immutability of the parent pointer.} The Fact Layer does not implement a write path for the \texttt{parent}($c$) field after the spawn authorization event. This eliminates the possibility that the parent chain is corrupted or redirected at runtime.
+
+\item \textbf{Forensic ledger completeness.} Every spawn authorization is recorded in the forensic ledger before the child is activated. The ledger is append-only and SHA-256 sealed. Even in the event of a system crash, the ledger can be reconstructed from persistent storage, and the parent chain can be recovered deterministically.
+
+\item \textbf{Purpose Layer termination.} The accountability chain of any node $n$ terminates at the root Purpose Layer node $c_{\text{root}}$, which is a human-anchored actor with $\text{parent}(c_{\text{root}}) = \bot$. The chain cannot terminate elsewhere or loop indefinitely because the depth function $d(n)$ (Equation~\ref{eq:depth-function}) is strictly decreasing per iteration and bounded below by $0$.
+
+\end{enumerate}
+
+If any one of these properties is removed, the proof collapses. This establishes the conjunction as necessary: drift prevention is not a property of any single layer but of the three-layer synthesis.
+
+\begin{corol}[No Drift Amplification]
+\textit{If drift is impossible for all nodes (Theorem~\ref{thrm:drift-prevention}), then the drift amplification argument — that a drifted parent propagates drift to its children — cannot occur. No node can be in the drifted state, so there is no source node for drift amplification.} $\square$
+\end{corol}
+
+% --- 7.2 Chain Integrity -------------------------------------
+
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+
+The second correctness property is that the accountability chain of any node $n$ is \textbf{integrity-guaranteed}: it is complete, ordered, and forensically verifiable at any point in time.
+
+\begin{thrm}[Chain Integrity]
+\label{thrm:chain-integrity}
+For any node $n \in \mathcal{N} \setminus \{c_{\text{root}}\}$, the accountability chain $\text{Chain}(n)$ returned by the chain traversal algorithm (Algorithm~\ref{alg:chain-traversal}) satisfies:
+\begin{enumerate}
+\item \textbf{Completeness:} $\text{Chain}(n)$ contains exactly $d(n)$ parent pointer links, one for each generation between $n$ and the root.
+\item \textbf{Ordering:} The links are ordered from $n$ (deepest) to $c_{\text{root}}$ (shallowest), with each link correctly relating a child to its parent.
+\item \textbf{Integrity:} No link in $\text{Chain}(n)$ has been modified, removed, or inserted after the chain was established at spawn time.
+\end{enumerate}
+\end{thrm}
+
+\begin{Proof}[Proof Sketch]
+We prove each property in turn.
+
+\medskip
+\textbf{Completeness:} By definition of the depth function $d(n)$ (Equation~\ref{eq:depth-function}), $d(n) = k$ means that there are exactly $k$ ancestor nodes between $n$ and the root, each connected by a parent pointer edge. The chain traversal algorithm iterates exactly $d(n)$ times, moving from $n$ to its parent, then to the parent's parent, and so on. Each iteration adds exactly one link to the chain. After $d(n)$ iterations, the algorithm reaches the root (where $\text{parent}(c_{\text{root}}) = \bot$) and terminates. The chain therefore contains exactly $d(n)$ links. $\square$
+
+\medskip
+\textbf{Ordering:} The chain traversal algorithm appends each parent pointer in the order in which it is encountered: first the edge $(\text{parent}(n), n)$, then $(\text{parent}(\text{parent}(n)), \text{parent}(n))$, and so on. This is the unique topological ordering of the chain from deepest to shallowest. No other ordering is possible because each node has at most one parent (Immutability Invariant II), so there is exactly one path from $n$ to the root. $\square$
+
+\medskip
+\textbf{Integrity:} The integrity of each link in $\text{Chain}(n)$ follows from the Fact Layer write protocol. Each link corresponds to a $\text{ParentPointer}(p, c) = \text{True}$ entry established atomically at spawn time. By the Immutability Invariant, there is no write path for this entry after provisioning. Therefore, no link in $\text{Chain}(n)$ can have been modified, removed, or inserted post-spawn. $\square$
+
+\end{Proof}
+
+The chain integrity property is strong enough to satisfy the requirements of regulatory environments that require deterministic auditability of autonomous agent chains. Because each link in the chain is forensically recorded with a deterministic timestamp and authorizing actor identity, a regulator or auditor can independently verify the complete chain for any node at any future time without relying on any runtime system's honesty.
+
+% --- 7.3 Termination ----------------------------------------
+
+\subsection{Termination}
+\label{sec:termination}
+
+The third correctness property is that any RSP operation that traverses the accountability chain — including chain traversal, escalation, and bailout propagation — is guaranteed to terminate in a bounded number of steps.
+
+\begin{thrm}[Termination of Chain Traversal]
+\label{thrm:chain-termination}
+For any node $n \in \mathcal{N}$, the chain traversal algorithm (Algorithm~\ref{alg:chain-traversal}) terminates in exactly $d(n)$ iterations, where $d(n)$ is the depth of $n$ defined in Equation~\ref{eq:depth-function}.
+\end{thrm}
+
+\begin{Proof}[Proof Sketch]
+The while loop in Algorithm~\ref{alg:chain-traversal} uses $c$ as the cursor variable, initialized to $n$. Each iteration assigns $c \gets \text{parent}(c)$, moving the cursor one step upward in the chain. The depth function $d(c)$ decreases by exactly $1$ per iteration, because $d(\text{parent}(c)) = d(c) - 1$ by Equation~\ref{eq:depth-function}. The loop condition is $c \neq \bot$, and $c = \bot$ holds precisely when $c$ reaches the root node $c_{\text{root}}$, which has $\text{parent}(c_{\text{root}}) = \bot$. Since $d(c_{\text{root}}) = 0$, the loop terminates after $d(n)$ iterations. $\square$
+\end{Proof}
+
+\begin{thrm}[Termination of Escalation]
+\label{thrm:escalation-termination}
+For any node $n \in \mathcal{N}$ that triggers an escalation event, the escalation event reaches the root Purpose Layer node $c_{\text{root}}$ in at most $d(n)$ propagation steps.
+\end{thrm}
+
+\begin{Proof}[Proof Sketch]
+The Bailout Protocol (Pillar 5) propagates escalation events upward through the parent chain, one step per node, until the event reaches a Purpose Layer node capable of resolving the unresolvable state. The propagation path is identical to the chain traversal path: each step moves from a node to its parent, strictly decreasing the depth $d(\cdot)$. Because the chain terminates at $c_{\text{root}}$ (which has $\text{parent}(c_{\text{root}}) = \bot$), and because each propagation step decreases depth by exactly $1$, the event reaches $c_{\text{root}}$ in at most $d(n)$ steps. $\square$
+\end{Proof}
+
+The termination properties are not merely theoretical. In a production system, unbounded escalation latency is a safety-critical failure: an unresolvable state that cannot escalate to a human decision-maker is an uncontained failure. RSP's termination guarantee ensures that every unresolvable state has a bounded worst-case escalation latency of at most $D_{\max}$ steps, where $D_{\max}$ is the system-wide maximum generational depth configured in the Fact Layer.
+
+\begin{corol}[Bounded Escalation Latency]
+\textit{The maximum escalation latency for any node in a BX3 system with maximum generational depth $D_{\max}$ is $O(D_{\max})$. For a system with $D_{\max} = 4$ and $10{,}000$ leaf nodes, the worst-case escalation latency is $4$ steps — the same bound as in a system with $10$ nodes. Immutability of the parent pointer is what makes the depth bound a structural guarantee rather than a statistical one.} $\square$
+\end{corol}
+
+% --- 7.4 Combined Guarantee ---------------------------------
+
+\subsection{Combined Guarantee}
+\label{sec:combined-guarantee}
+
+The three correctness properties together constitute the RSP's core safety guarantee:
+
+\begin{center}
+\fbox{
+\parbox{0.92\linewidth}{
+\textbf{RSP Safety Guarantee:} In any valid BX3 system executing the Recursive Spawning Protocol, for any node $n \in \mathcal{N}$ and at any time $t$:
+
+\begin{enumerate}
+\item $n$ is not drifted (Theorem~\ref{thrm:drift-prevention}).
+\item The accountability chain $\text{Chain}(n)$ is complete, ordered, and integrity-verified (Theorem~\ref{thrm:chain-integrity}).
+\item Any escalation triggered by $n$ terminates at the root Purpose Layer node in at most $d(n)$ steps (Theorem~\ref{thrm:escalation-termination}).
+\end{enumerate}
+
+Therefore, every action taken by every node in the system is attributable to a human decision at the root of the chain, and every unresolved state in the system escalates to a human decision-maker within a bounded number of steps.
+}
+}
+\end{center}
+
+This guarantee is structural, not statistical. It does not rely on the assumption that agents behave correctly; it relies on the physical properties of the Fact Layer's append-only ledger, the immutability of the parent pointer enforced by the absence of a write path, and the logical termination of the accountability chain at the human-anchored Purpose Layer. RSP's correctness properties are therefore not empirical claims subject to observation bias or measurement error — they are logical consequences of definitions that hold in all valid instantiations of the BX3+RSP architecture.
+
+\end{document}

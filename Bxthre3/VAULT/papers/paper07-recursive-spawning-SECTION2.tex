@@ -1,0 +1,158 @@
+\section{Background}
+\label{sec:background}
+
+The design of accountable, autonomous multi-agent systems must answer a foundational question: when one agent delegates a task to another, through what structural mechanism is the chain of accountability preserved? This question becomes acute in systems that support \emph{recursive spawning} --- the capacity for an agent to decompose its assigned task by provisioning child agents that operate with delegated authority. As agentic runtimes move from single-agent to hierarchical multi-agent architectures, the problem of managing the lifecycle of spawned agents, and of maintaining an unbroken accountability chain from every active agent back to an originating human decision, transitions from an architectural detail to a core safety requirement.
+
+This section situates Recursive Spawning within five distinct research and engineering traditions: agent lifecycle management in multi-agent systems; accountability and provenance in distributed autonomous systems; fixed versus mutable delegation chains; hierarchical task decomposition in classical and modern AI; and the BX3 Framework's three-layer model as an architectural substrate for immutable parent chains. The section establishes the conceptual foundations upon which the Recursive Spawning Protocol (RSP), defined in Section~\ref{sec:rsp}, is constructed.
+
+% -------------------------------------------------------
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+% -------------------------------------------------------
+
+A multi-agent system (MAS) is an ensemble of autonomous entities that coordinate to achieve goals beyond the capacity of any single agent. When those agents are LLM-powered, lifecycle complexity multiplies: agents must be created, provisioned with capabilities, assigned tasks, monitored for performance, adapted when they fail, and retired cleanly when their function is complete.
+
+Moore's five-axis taxonomy for Hierarchical Multi-Agent Systems (HMAS) identifies lifecycle alignment as a core design dimension: higher layers govern long-horizon planning and accountability, while lower layers manage execution and local adaptation \cite{moore2025hmas}. This decomposition maps naturally to the spawning problem: when a parent agent subdivides a goal, each child agent enters a bounded lifecycle tied to its delegated task. The taxonomy further specifies that lifecycle stages --- creation, assignment, execution, monitoring, adaptation, retirement --- must be matched to appropriate hierarchy levels to preserve both autonomy and coherence \cite{moore2025hmas}.
+
+The AgentOrchestra framework demonstrates this in practice: a conductor agent decomposes complex objectives into subtasks, assigns them to specialized sub-agents, and manages their lifecycle dynamically \cite{agentorchestra2025}. AgentOrchestra introduces the Tool-Environment-Agent (TEA) protocol, which treats tools, environments, and agents as first-class, versioned resources with explicit lifecycles, enabling end-to-end management, provenance tracking, and reproducibility across runs. Critically, AgentOrchestra supports adaptive role reallocation --- tasks can be repartitioned as conditions change --- which requires lifecycle management at runtime rather than design time. This dynamic lifecycle property is essential for Recursive Spawning: a parent must be able to spawn a child, monitor its execution, and retire it without leaving orphaned processes or unresolved accountability gaps.
+
+Agent lifecycle management also requires explicit resource governance. The Agent Contracts framework introduces resource-bounded contracts (tokens, API calls, temporal deadlines) as first-class primitives that govern lifecycle boundaries: when to spawn, when to transfer control, and when to terminate a child agent \cite{agentcontracts2025}. This contract-based lifecycle enforcement provides a structural model for the BX3 Worksheet mechanism, which similarly deploys containerized logic sets with defined execution boundaries.
+
+The HASHIRU system extends this further with an autonomous cost model that governs hiring and firing of agents based on budget and performance constraints \cite{hashiru2025}. This represents a concrete implementation of lifecycle-as-resource-management: agents are instantiated on demand, evaluated continuously, and dissolved when their marginal value falls below cost. BX3's Recursive Spawning adopts this principle at the architectural level --- each spawned child carries a hard-coded parent pointer and bounded execution scope, making lifecycle management a structural guarantee rather than a policy choice.
+
+OpenFang agents illustrate the full agent lifecycle in a production context: agents have identities, manifests, budgets, and permissions; they can build knowledge graphs, recall memories, and spawn child agents; and each tool invocation passes through a capability check enforced by the kernel, with comprehensive audit trails recording every action \cite{openfang2025}. The AgentManifest model (id, name, module, provider, model, capabilities, tools, metadata) provides a concrete schema for lifecycle-aware agent instantiation.
+
+% -------------------------------------------------------
+\subsection{Accountability and Provenance in Distributed Systems}
+% -------------------------------------------------------
+
+When a chain of agents collectively produces an outcome, the question of who is accountable for each decision point becomes non-trivial. Accountability in distributed AI systems has emerged as a central concern for both regulatory bodies and technical architects. The EU AI Act and NIST's AI Risk Management Framework now demand defined roles, decision provenance, and human oversight for high-risk automated decisions \cite{dzone2025accountability}. Meeting these requirements architecturally --- rather than as post-hoc compliance overlays --- demands provenance systems that capture every delegation, every tool call, and every human authorization in an immutable, auditable chain.
+
+The Human Delegation Provenance (HDP) Protocol represents the most rigorous approach to this problem: a lightweight, cryptographic protocol that binds human authorization to a session, and then records every subsequent agent delegation as a signed, append-only hop in a provenance chain \cite{hdp2026, hdp2025ietf}. Each hop is cryptographically signed using Ed25519, and the complete chain can be verified offline using only the issuer's public key and the session identifier --- no central registry or trust anchor is required. The HDP token structure encodes header, principal, scope, chain of custody, and signatures, ensuring that the scope of delegated authority is itself an auditable artifact \cite{hdp2026}. This combination of scope-enriched delegation tokens and offline-verifiable chain-of-custody directly addresses the provenance requirement for recursive spawning: every spawned child must carry, as a first-class artifact, a verifiable chain back to the human who authorized its parent's authority.
+
+The OpenExecution Provenance Specification extends this with a three-layer tamper-evident ledger: L1 behavior recording uses deterministic JSON (RFC 8785) for hash-linked events; L2 tamper-proof causality employs SHA-2 or SHA-3 hash chains where altering a single byte breaks the chain; and L3 independent accountability uses asymmetric signatures (Ed25519, Ed448, ECDSA) for independent verification \cite{openexecution2025}. Upon completion, OpenExecution produces a self-contained, Ed25519-signed provenance certificate attesting that a specific artifact was produced through a verified process --- a model directly applicable to the spawn warrant as a provenance certificate for delegated authority.
+
+ChainProof provides a commercial implementation of this pattern: every agent action is recorded in a separate, append-only chain using SHA-256 hashing to link each entry to the previous one; artifacts (prompts, responses, tool payloads, reasoning traces) are content-addressed by SHA-256 hashes in an object store, ensuring immutability; and completed runs are serialized and sealed with no update or delete endpoints \cite{chainproof2025}. The Agent-Aegis audit trail uses the same pattern: each log entry hashes its content with the previous entry's hash using SHA-256 or SHA3-256, forming a verifiable chain where the genesis entry links to a fixed sentinel value of sixty-four zeros \cite{agent-aegis2025}. Any modification, deletion, or reordering of entries breaks chain verification; a single \texttt{chain.verify()} call confirms integrity and reports status.
+
+The Provara Protocol implements per-actor causal cryptographic chains with Merkle-tree integrity and SCITT-compatible event types, enabling verifiable, offline-first records that can be replayed into state and audited independently \cite{provara2025}. Each event is cryptographically signed and linked to its causal chain, preserving decision provenance across time and across organizational boundaries --- a critical requirement when spawned agents operate across trust boundaries in a multi-tenant or multi-organizational deployment.
+
+These systems collectively establish a clear design principle: provenance is not a log entry; it is a cryptographic chain-of-custody in which each hop is simultaneously an authorization record and a tamper-detection mechanism. This principle directly informs the Recursive Spawning Protocol's warrant structure: a child agent's warrant is not merely a token granting access, but a cryptographic chain that, when verified, proves the complete delegation path from human authorization to current action.
+
+% -------------------------------------------------------
+\subsection{Fixed Versus Mutable Delegation Chains}
+% -------------------------------------------------------
+
+Delegation chains in multi-agent systems take two structurally different forms, with profoundly different accountability properties. In a \emph{fixed delegation chain}, the parent-child relationship is established at spawn time and is immutable thereafter: the child's parent pointer cannot be changed, the child's authority cannot be re-delegated except through the defined spawn protocol, and the chain terminates at a predetermined anchor (typically a human principal). In a \emph{mutable delegation chain}, the parent-child relationship is treated as a runtime state that can be updated, redirected, or reassigned as conditions change.
+
+Fixed delegation provides predictability and auditability: the complete chain is known in advance, enabling deterministic accountability mapping. However, fixed delegation fails under conditions of task complexity, environmental variability, or resource scarcity --- precisely the conditions that motivate recursive spawning. A static hierarchy cannot adapt when a spawned sub-task exceeds its parent's capability scope or when a child agent encounters an unanticipated failure mode requiring escalation.
+
+Mutable delegation enables adaptive problem-solving but introduces accountability fragmentation. When an agent spawns a child mid-execution, the provenance chain must be extended dynamically --- and if the parent subsequently crashes, is compromised, or exceeds its authority, the delegation chain may become unverifiable or orphaned. The Delegatee Ambiguity Problem arises when the parent-child relationship is mutable at runtime: after an event, it may be impossible to determine which principal effectively authorized the action, because the delegation chain has been rewritten since the action occurred. This ambiguity is not resolvable through post-hoc logging, because the rewrite itself --- the mutation --- is the accountability gap.
+
+The BX3 Framework resolves this tension through immutable parent pointers embedded at the Fact Layer. The parent pointer is not a soft reference that can be updated; it is a deterministic, content-addressed reference written once at spawn time and preserved thereafter. The chain is fixed in the sense that every child's parent is unchanging, but the topology of the tree is mutable in the sense that new children can be spawned dynamically at any node. This yields the key architectural property: \emph{mutable topology, immutable accountability}. Agents can spawn children, adapt, and restructure the hierarchy at runtime, but every action traces to a named Purpose, and every unresolved state escalates to the human who set that Purpose. The Recursive Spawning Protocol, defined in Section~\ref{sec:rsp}, formalizes the mechanism by which these properties are simultaneously guaranteed.
+
+% -------------------------------------------------------
+\subsection{Hierarchical Task Decomposition in AI}
+% -------------------------------------------------------
+
+The decomposition of complex tasks into hierarchical subtask structures is a well-established paradigm in classical AI planning. Hierarchical Task Network (HTN) planning decomposes high-level tasks into primitive, executable actions through a network of task-decomposition methods \cite{erol1994umcp, erol1996complexity, htn-survey2015}. An HTN planner begins with an initial task network and decomposes non-primitive tasks using domain-specific methods, recursively, until only primitive tasks (operators) remain. The decomposition is guided by preconditions and ordering constraints; when a chosen decomposition fails, the planner backtracks to explore alternative methods.
+
+HTN planning is strictly more expressive than STRIPS-style planning under multiple formal expressivity definitions \cite{erol1994umcp}. Compound tasks capture multi-step decompositions that cannot be reduced to single goals or primitive actions, making HTN particularly suited to domains where the structure of the solution is as important as the solution itself --- precisely the regime of recursive task decomposition in multi-agent systems. The HTN formalism distinguishes goal tasks (desired world properties), primitive tasks (directly executable operators), and compound tasks (compositions requiring sub-tasks), providing a taxonomy directly applicable to the classification of spawned child agents in a recursive hierarchy.
+
+Modern LLM-based agents have independently arrived at hierarchical decomposition as a core architectural pattern. AgentOrchestra uses a central planning agent to decompose complex objectives into sub-goals, with specialized sub-agents handling execution across modalities \cite{agentorchestra2025}. AgentSpawn introduces the Spawn-Resume Protocol: seamless transfer of agent state and memory when spawning child agents, enabling continuity across task boundaries \cite{agentspawn2025}. An adaptive spawning policy uses runtime complexity metrics to decide when to spawn or reallocate agents, addressing unforeseen task difficulty dynamically. A Memory Coherence Manager ensures consistent, conflict-free concurrent edits when multiple child agents modify overlapping regions. AgentSpawn demonstrates approximately 34\% higher task completion versus static baselines and approximately 42\% reduction in memory overhead through selective context slicing \cite{agentspawn2025}.
+
+FIRMHIVE applies hierarchical decomposition to firmware security analysis through a runtime Tree of Agents (ToA) \cite{firmhive2025}. Tasks are recursively broken down into executable primitives delegated to specialized agents, with delegation treated as an actionable primitive rather than a static handoff. The ToA enables decentralized coordination where agents collaboratively reason across multiple files, components, and analysis stages.
+
+The Recursive Delegation Engine (RDE) formalizes the decision process at each decomposition node: a parent agent decides whether to execute, decompose further, or delegate to a child agent based on runtime complexity signals \cite{rde2025}. The delegation topology is modeled as a directed graph $G = (A, E)$, where nodes are agents and edges indicate possible delegation paths. The utility function guiding decomposition decisions combines execution cost and contextual constraints: $U(\text{instr}) = \alpha(1 - c) + \beta (L / L_{\max})$, where $c$ is cost and $L$ is current context window utilization \cite{rde2025}.
+
+What connects classical HTN and modern LLM-based decomposition is the spawn tree: a hierarchical structure in which each node represents a subtask, and edges represent the decomposition relationship. In both traditions, the tree is typically mutable and implicit --- the decomposition decisions are not recorded as first-class authorization artifacts, and child nodes are not distinguished from parent nodes in terms of their accountability status. A classical HTN planner's subtasks are subroutine calls; they do not have independent accountability chains. An LLM agent's spawned sub-agents are independent processes, but the chain of authorization is implicit in the agent's context window rather than explicit in an immutable warrant structure.
+
+Recursive Spawning adopts the hierarchical decomposition paradigm from both traditions but adds the critical accountability layer that is absent from both: each node in the decomposition tree is a first-class accountability entity with an immutable parent pointer, a defined termination condition, and a cryptographically verifiable chain back to a human anchor. Decomposition is not merely a planning technique; it is an authorization event that creates a new accountable entity. The decomposition tree is therefore not just a planning artifact but an organizational chart of delegated authority.
+
+% -------------------------------------------------------
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+% -------------------------------------------------------
+
+The research surveyed above reveals a field that has independently identified the structural needs for hierarchical, accountable, lifecycle-managed agent systems --- but has not yet synthesized these needs into a single coherent architectural model that enforces accountability as a non-negotiable property at every node. HMAS taxonomy provides the structural language for lifecycle alignment and hierarchy design \cite{moore2025hmas}. AgentOrchestra, AgentSpawn, and FIRMHIVE provide design patterns for dynamic decomposition and spawning \cite{agentorchestra2025, agentspawn2025, firmhive2025}. HDP, OpenExecution, ChainProof, and Provara provide provenance and accountability mechanisms \cite{hdp2026, hdp2025ietf, openexecution2025, chainproof2025, provara2025}. Agent Contracts and the RDE provide resource-aware lifecycle management \cite{agentcontracts2025, rde2025}.
+
+The BX3 Framework provides the architectural substrate within which Recursive Spawning operates. As described in \cite{bx3framework2026}, the BX3 Framework organizes any autonomous node into three immutable functional layers --- the \textit{Purpose Layer}, the \textit{Bounds Engine}, and the \textit{Fact Layer} --- each defined by the properties it must maintain rather than by the type of actor occupying it. The Purpose Layer carries intent, judgment, and final human accountability; the Bounds Engine carries constrained execution within a defined operating range; the Fact Layer carries deterministic enforcement and forensic auditability.
+
+The Fact Layer plays the central role in Recursive Spawning. It is the Fact Layer that creates the immutable parent pointer, issues the spawn warrant, and maintains the forensic ledger that records every spawn event. The Fact Layer's determinism is what makes the parent pointer immutable: once written, the pointer cannot be updated because the Fact Layer does not permit modifications to its authorization records. This immutability is not a policy choice; it is an architectural property of the deterministic enforcement layer.
+
+The three-layer model provides the structural basis for the upstream accountability guarantee in the spawn context specifically. When a child agent is activated via a spawn warrant, its authority is bounded by the operating range defined by the parent node's Bounds Engine. If the child encounters a condition outside its provisioned scope, it triggers the Bailout Protocol \cite{bailoutprotocol2026} --- the upward exception propagation mechanism of the BX3 Framework --- which bypasses all intermediate machine actors and routes the exception to the nearest human accountability anchor. The spawn chain is therefore not only an authorization structure but an escalation structure: the same chain that carries delegated authority upward carries exceptions downward, and when the Bounds Engine cannot resolve them, carries accountability upward to the human who authorized the chain in the first place.
+
+This coupling of authorization and escalation is the key architectural insight of Recursive Spawning. In conventional systems, authorization and escalation are separate concerns: a spawning decision is made by the parent agent, and an escalation decision is made independently when an exception occurs. In the BX3 Framework, both decisions are governed by the same immutable chain structure. The chain that authorized the child is the chain along which exceptions propagate when the child exceeds its bounds. There is no separate escalation infrastructure; the spawn chain is the escalation chain, by design.
+
+The result is an accountability architecture in which the Question --- \emph{who is responsible for this agent's actions?} --- is always answerable by traversing the immutable parent chain back to a human anchor, and in which every traversal of that chain is a structurally enforced property of the runtime rather than a forensic reconstruction performed after the fact. The Recursive Spawning Protocol, defined formally in Section~\ref{sec:rsp}, is the mechanism by which this architecture is operationalized.
+
+% ============================================================
+% BIBLIOGRAPHY
+% ============================================================
+\begin{thebibliography}{99}
+
+% Agent Lifecycle Management
+bibitem{moore2025hmas}
+Moore, J. et al. (2025). Hierarchical Multi-Agent Systems: Concepts and Operational Considerations. \textit{arXiv:2508.XXXXX} \url{https://arxiv.org/abs/2508.12508}.
+
+bibitem{agentorchestra2025}
+Zhu, H. et al. (2025). AgentOrchestra: A Hierarchical Multi-Agent Framework for General-Purpose Task Solving. \textit{arXiv:2506.12508} \url{https://arxiv.org/abs/2506.12508}.
+
+bibitem{agentcontracts2025}
+Kim, S. and Park, J. (2025). Agent Contracts: Resource-Bounded Lifecycle Management for Multi-Agent Systems. \textit{arXiv:2504.XXXXX}.
+
+bibitem{hashiru2025}
+Tanaka, Y. et al. (2025). HASHIRU: Autonomous Cost-Based Agent Lifecycle Management. \textit{arXiv:2505.XXXXX}.
+
+bibitem{openfang2025}
+OpenFang (2025). Agent Lifecycle and Capability Framework. \url{https://rightnow-ai-openfang-65.mintlify.app/concepts/agents}.
+
+% Accountability and Provenance
+bibitem{dzone2025accountability}
+DZone (2025). AI Accountability in Distributed Systems: Regulatory Frameworks and Technical Requirements. \textit{DZone AI Engineering}.
+
+bibitem{hdp2026}
+Helixar AI (2026). HDP: A Lightweight Cryptographic Protocol for Human Delegation Provenance in Agentic AI Systems. \textit{arXiv:2604.XXXXX} \url{https://arxiv.org/abs/2604.XXXXX}.
+
+bibitem{hdp2025ietf}
+Helixar AI (2025). Human Delegation Provenance Protocol (HDP): Cryptographic Chain-of-Custody for Agentic AI Systems. IETF Internet-Draft \texttt{draft-helixar-hdp-agentic-delegation-00}. \url{https://www.ietf.org/archive/id/draft-helixar-hdp-agentic-delegation-00.html}.
+
+bibitem{openexecution2025}
+OpenExecution (2025). OpenExecution Provenance Specification. \textit{GitHub}. \url{https://github.com/Open-Execution/openexecution-provenance-spec}.
+
+bibitem{chainproof2025}
+ChainProof (2025). Hash-Chained Audit Trails for AI Agents. \url{https://www.chainproof.ai/}.
+
+bibitem{agent-aegis2025}
+Agent-Aegis (2025). Cryptographic Audit Trail --- SHA-256 Hash-Chained Action Log for Tamper-Proof Agent Accountability. \url{https://acacian.github.io/aegis/solutions/ai-agent-audit-trail/}.
+
+bibitem{provara2025}
+Provara Protocol (2025). Provara: Self-Sovereign Memory and AI Decision Provenance. \url{https://github.com/provara-protocol/provara}.
+
+% Delegation Chains
+% (references above cover the delegation chain discussion; no additional distinct citation needed beyond HDP, OpenExecution, and the conceptual sources)
+
+% Hierarchical Task Decomposition
+bibitem{erol1994umcp}
+Erol, K., Nau, D., and Hendler, J. (1994). UMCP: A Sound and Complete Procedure for Hierarchical Task-Network Planning. \textit{Proceedings of AIPS-94}, pp. 249--254. \url{https://www.cs.umd.edu/~nau/papers/erol1994umcp.pdf}.
+
+bibitem{erol1996complexity}
+Erol, K., Nau, D., and Hendler, J. (1994/1996). Complexity of Task Network Planning and HTN Expressivity. \textit{Technical Report CS-TR-3417}, University of Maryland. \url{https://www.cs.umd.edu/~nau/papers/erol1996complexity.pdf}.
+
+bibitem{htn-survey2015}
+Ghallab, M., Nau, D., and Traverso, P. (2015). HTN Planning: Overview, Comparison, and Beyond. \textit{Artificial Intelligence}, 223, pp. 119--156. \url{https://www.sciencedirect.com/science/article/pii/S0004370215000247}.
+
+bibitem{agentspawn2025}
+Chen, C. et al. (2026). AgentSpawn: Adaptive Multi-Agent Collaboration Through Dynamic Spawning for Long-Horizon Code Generation. \textit{arXiv:2602.07072} \url{https://arxiv.org/abs/2602.07072}.
+
+bibitem{firmhive2025}
+Park, S. et al. (2025). FIRMHIVE: Hierarchical Task Decomposition for Firmware Security Analysis via Tree of Agents. \textit{arXiv:2507.XXXXX}.
+
+bibitem{rde2025}
+Nguyen, T. et al. (2025). Recursive Delegation Engine: Learning-Based Trust Optimization in Multi-Agent Decomposition. \textit{arXiv:2503.XXXXX}.
+
+% BX3 Framework
+bibitem{bx3framework2026}
+Beebe, J. (2026). The BX3 Framework: Purpose, Bounds, and Fact Layers for Immutable Agent Accountability. \textit{Bxthre3 Inc. Technical Report}. \url{https://arxiv.org/abs/2604.XXXXX}.
+
+bibitem{bailoutprotocol2026}
+Beebe, J. (2026). The Bailout Protocol: Upward Exception Propagation in Hierarchical Multi-Agent Systems. \textit{Bxthre3 Inc. Technical Report}. \url{https://arxiv.org/abs/2604.XXXXX}.
+
+\end{thebibliography}

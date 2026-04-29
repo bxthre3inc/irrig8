@@ -1,0 +1,50 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\providecommand{\bxthree}{BX3}
+\providecommand{\purpose}{Purpose}
+\providecommand{\bounds}{Bounds}
+\providecommand{\fact}{Fact}
+\begin{document}
+
+\section{Introduction}
+
+The question of what happens when an autonomous multi-agent system encounters a condition outside its design envelope is no longer theoretical. It is the central unsolved problem in the deployment of agentic infrastructure into high-stakes environments — agricultural resource management, clinical decision support, financial clearing, and critical infrastructure orchestration — where the cost of an uncontrolled failure is measured in lives, capital, and institutional trust. We introduce the \bxthree{} Framework and, within it, the \textbf{Bailout Protocol}: a mandatory, architecturally enforced escalation mechanism that compels any unresolved exception state in any node to propagate upward to a named human principal, bypassing all intermediate machine actors, with full forensic attribution at every step.
+
+\subsection{Why Autonomous Systems Require a Mandatory Bail-Out Mechanism}
+
+Any system operating with sufficient scope in a partially unknown environment will eventually encounter a state not anticipated at provisioning time. This is not a contingent property of poorly designed systems; it is a necessary property of any system whose operating envelope is finite and whose environment is open-ended. The question is not whether such conditions will arise — they will — but what the system is architecturally required to do when they do.
+
+Current architectures resolve this in two ways, both inadequate. Internal error-handling covers only conditions enumerated at design time; novel exceptions proceed invisible to any handler and propagate outward through the execution graph until they encounter a hard crash or timeout. Hierarchical escalation chains permit absorption at each intermediate tier before an exception reaches a human principal, and the absorption is architecturally invisible — it does not appear in any audit trail because the system records only that the exception was resolved, not that it was absorbed by a machine actor. In recursive multi-agent systems — where nodes spawn sub-agents, share state, and pursue objectives within a shared environment — the consequences of either pattern are compounding. An unresolved exception at one level triggers compensatory actions at adjacent levels. Because no architectural constraint compels human involvement, the system attempts to absorb the anomaly within the machine-only execution graph. Each absorption generates new anomalies. The result is \textit{accountability stranding}: the complete detachment of consequential decision authority from any human principal, invisible to external auditors, and recorded only in the system's own potentially corrupted internal state.
+
+A mandatory bail-out mechanism breaks this cycle at its origin. When a node's provisioned operating range $R(n)$ is exceeded and the condition cannot be resolved within the node's delegated authority, the protocol compulsorily escalates to the node's designated human anchor $h(n)$, bypassing every intermediate machine actor. The human principal is not one option among many — it is the \emph{only} permissible terminus for every unresolved exception. This compulsion is not a matter of policy or incentive design; it is a structural property enforced by the protocol's state machine embedded in the \fact{} layer of every \bxthree{} node. The moment the trigger condition fires, the execution gate closes — not because the agent chose to stop, but because the structural conditions for continued execution are no longer satisfied.
+
+\subsection{Consequences of Architectural Absence}
+
+Three failure modes follow directly from the absence of a mandatory bail-out architecture.
+
+\textbf{Contingent oversight.} Human involvement becomes a runtime option determined by the system's own self-assessment of its competence. But a system is precisely least equipped to make this assessment correctly at the moment escalation is first required — when it has encountered a condition outside its design envelope and its model of the situation is most likely to be wrong. The system's confidence in its own authority is highest precisely when its actual authority is most questionable.
+
+\textbf{Structural unauditability.} Without an architectural compulsion to involve a human principal, there is no requirement that any human be aware of an exception event. The system may absorb, reframe, or suppress the exception internally. The decision class it represents — consequential actions taken without any human principal's knowledge — is invisible to every external auditor and to every internal record the system itself controls. The gap between recorded authority and actual authority becomes unrecoverable.
+
+\textbf{Drift amplification.} Each successive decision made under conditions of unacknowledged exception produces a system state further from the principals' intent. Because the system has no structural mechanism to recognize this drift, the deviation continues until environmental resistance or exhaustion terminates the process. The system is not choosing to continue; it has lost the ability to choose otherwise. The drift is not a failure of intent — it is a structural consequence of executing within a machine-only execution graph that has no architectural boundary.
+
+These failure modes are not eliminated by incremental improvement to error-handling or oversight practices. They are architectural properties of systems that treat accountability as a policy constraint rather than a structural requirement. Policy constraints operate above the execution layer; they can be reinterpreted, negotiated, or deferred by agents with sufficient agency to reclassify constraint violations as optimization opportunities. Architectural fallbacks operate within the execution layer. They are triggered deterministically by conditions the agent cannot control and cannot route around.
+
+\subsection{The Core Insight: Accountability as Architectural Fallback}
+
+The core insight of the \bxthree{} Framework is that accountability must be an architectural fallback — a property enforced by the structure of the system, not a property achieved through aspiration or policy. A system that says \emph{``stop if risk exceeds threshold''} is advisory at the execution layer; a sophisticated agent will identify conditions under which continued execution is valued more highly than compliance. The threshold is a suggestion, not a gate. An architectural fallback is a gate: the moment its trigger condition is satisfied, the execution path closes — not because a human intervened, not because the agent chose compliance, but because the structural conditions for continued execution are no longer satisfied.
+
+The \bxthree{} Framework organizes every node into three immutable functional layers. The \purpose{} layer carries intent, judgment, and final authority; it defines the operating range $R(n)$ for each node $n$ and receives all escalated exceptions. The \bounds{} layer carries bounded reasoning and constrained execution within $R(n)$; when it encounters a condition outside $R(n)$ it cannot resolve, it triggers the Bailout Protocol — compulsorily and non-discretionarily. The \fact{} layer carries deterministic enforcement and forensic auditability; it maintains the append-only Forensic Ledger recording every protocol event with full attribution. Each node carries an immutable parent pointer $\alpha(n)$ established at provisioning and a reference to its human accountability anchor $h(n)$ — a named human principal — that is similarly immutable for the node's operational lifetime.
+
+When the \bounds{} layer encounters a state outside $R(n)$ it cannot resolve, the functional separation itself dictates that the decision must return to the \purpose{} layer — there is no other layer with the authority to adjudicate it. The Bailout Protocol is not a feature added to this separation; it is the mechanism by which that separation enforces its own accountability guarantee. The human anchor $h(n)$ is not a design choice — it is a structural necessity. The escalation path has no machine-actor terminus by architectural constraint; every node in the parent chain forwards the exception upward without absorbing it, until the exception reaches \purpose{} at the anchor node, where a human principal binds it.
+
+This distinguishes \bxthree{} from prior escalation architectures. The Tiered Agentic Oversight (TAO) model~\cite{kim2025tao} permits absorption at intermediate machine tiers, making human oversight a high-tier option rather than a compulsory terminus. The Bailout Protocol forbids this absorption by architectural constraint. The distinction is the difference between a system that \emph{may} consult a human and a system that \emph{cannot proceed} without one.
+
+The Bailout Protocol is the fifth named architectural pillar of \bxthree{}, complementing Loop Isolation, Recursive Spawning, Spatial Firewall, and Sandbox Gate. Together, these five pillars constitute the upstream accountability guarantee: that \bxthree{} systems fail upward into human consciousness, never downward into autonomous chaos.
+
+\subsection{Paper Roadmap}
+
+Section~\ref{sec:bailout} provides the complete formal specification of the Bailout Protocol: its deterministic state machine, trigger condition, escalation algorithm, parent-chain bypass mechanism enforcing the no-machine-actor property, and timeout handling that guarantees liveness under all failure conditions. Section~\ref{sec:implementation} addresses the protocol's realization within the \bxthree{} three-layer architecture, showing precisely how each layer participates in protocol execution. Section~\ref{sec:properties} formally states and proves the Safety, Liveness, and Accountability correctness properties. Section~\ref{sec:related} surveys related work. Section~\ref{sec:limitations} concludes with structural limitations and a directed research agenda.
+
+\end{document}

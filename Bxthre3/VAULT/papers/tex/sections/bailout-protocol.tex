@@ -1,0 +1,228 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is a deterministic exception-resolution mechanism that halts normal agent operations, bounds resource exposure, and surfaces actionable control to a human operator when automated recovery has failed or the cost threshold has been exceeded. It is not a recovery strategy—it is a controlled surrender protocol. Every agent operating under the BX3 AgentOS framework is subject to the Bailout Protocol; there is no opt-out.
+
+The protocol operates as a finite state machine over a typed state variable $\psi \in \Psi$, where $\Psi = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$. Transitions are governed exclusively by boolean conditions evaluated against observable runtime signals; no agent, tool, or external actor may transition $\psi$ arbitrarily.
+
+\bigskip
+
+\subsection{Formal State Definitions}
+
+\begin{table}[htbp]
+\centering
+\caption{State Ontology for the Bailout Protocol}
+\begin{tabular}{lp{0.62\linewidth}}
+\toprule
+\textbf{State} & \textbf{Formal Definition} \\
+\midrule
+IDLE & $\psi = \text{IDLE} \iff \neg \texttt{bailout\_armed} \land \neg \texttt{cost\_breach} \land \neg \texttt{escalation\_active}$ \\
+BOUNDED & $\psi = \text{BOUNDED} \iff \texttt{bailout\_armed} \land \neg \texttt{cost\_breach} \land \neg \texttt{timeout\_fired}$ \\
+BAIL\_PENDING & $\psi = \text{BAIL\_PENDING} \iff \left(\texttt{cost\_breach} \lor \texttt{timeout\_fired}\right) \land \neg \texttt{escalation\_active} \land \neg \texttt{human\_seen}$ \\
+ESCALATING & $\psi = \text{ESCALATING} \iff \texttt{escalation\_active} \land \neg \texttt{human\_seen}$ \\
+HUMAN\_ACKNOWLEDGED & $\psi = \text{HUMAN\_ACKNOWLEDGED} \iff \texttt{human\_seen} \land \neg \texttt{resolved}$ \\
+RESOLVED & $\psi = \text{RESOLVED} \iff \texttt{resolved} \lor \left(\neg \texttt{escalation\_active} \land \neg \texttt{cost\_breach} \land \neg \texttt{timeout\_fired} \land \texttt{human\_seen}\right)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each predicate ($\texttt{bailout\_armed}$, $\texttt{cost\_breach}$, $\texttt{timeout\_fired}$, $\texttt{escalation\_active}$, $\texttt{human\_seen}$, $\texttt{resolved}$) is a read-only runtime flag observable by the protocol engine. No agent may write these flags directly.
+
+\bigskip
+
+\subsection{State Machine Transitions}
+
+The state transition function is total and deterministic:
+
+\[
+\delta : \Psi \times 2^\mathcal{P} \to \Psi
+\]
+
+where $\mathcal{P} = \{\texttt{bailout\_armed}, \texttt{cost\_breach}, \texttt{timeout\_fired}, \texttt{escalation\_active}, \texttt{human\_seen}, \texttt{resolved}\}$ is the set of observable predicates.
+
+\begin{table}[htbp]
+\centering
+\caption{Transition Table}
+\begin{tabular}{cp{2.8cm}c}
+\toprule
+\textbf{From} & \textbf{Condition(s)} & \textbf{To} \\
+\midrule
+IDLE & $\texttt{bailout\_armed}$ & BOUNDED \\
+BOUNDED & $\texttt{cost\_breach} \lor \texttt{timeout\_fired}$ & BAIL\_PENDING \\
+BOUNDED & $\neg \texttt{bailout\_armed}$ & IDLE \\
+BAIL\_PENDING & $\texttt{escalation\_active}$ & ESCALATING \\
+BAIL\_PENDING & $\texttt{resolved}$ & RESOLVED \\
+ESCALATING & $\texttt{human\_seen}$ & HUMAN\_ACKNOWLEDGED \\
+ESCALATING & $\texttt{resolved}$ & RESOLVED \\
+HUMAN\_ACKNOWLEDGED & $\texttt{resolved}$ & RESOLVED \\
+RESOLVED & $\neg \texttt{bailout\_armed} \land \neg \texttt{cost\_breach}$ & IDLE \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{algorithm}[htbp]
+\caption{Bailout State Machine Transition Engine}
+\begin{algorithmic}[1]
+\State $\psi \leftarrow \text{IDLE}$
+\Loop
+  \State $\mathcal{O} \leftarrow \text{observe\_predicates}()$
+  \State $\psi' \leftarrow \delta(\psi, \mathcal{O})$
+  \If{$\psi' \neq \psi$}
+    \State $\text{log\_transition}(\psi, \psi', \mathcal{O})$
+    \State $\psi \leftarrow \psi'$
+    \State $\text{on\_enter}(\psi)$
+  \EndIf
+  \State $\text{sleep}(t_\text{tick})$
+\EndLoop
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+
+\subsection{Bail-Out Trigger Condition}
+
+The protocol initiates when any of the following trigger conditions are satisfied:
+
+\begin{definition}{Bail-Out Trigger (BOT)}
+The predicate $\texttt{bailout\_triggered}$ is defined as the disjunction:
+\[
+\texttt{bailout\_triggered} \;\equiv\; \texttt{cost\_breach} \;\lor\; \texttt{timeout\_fired} \;\lor\; \texttt{escalation\_active}
+\]
+where the constituent predicates are defined as follows:
+\end{definition}
+
+\medskip
+
+\noindent\textbf{Cost Breach.} $\texttt{cost\_breach} \;\equiv\; C_\text{accrued} > C_\text{limit}$, where $C_\text{accrued}$ is the cumulative resource cost (compute, API calls, token expenditure) accumulated by the agent's current execution context since the last resolved state, and $C_\text{limit}$ is the per-execution cost ceiling established at agent initialization or by the parent scope. $C_\text{limit}$ is immutable for a given execution context once set.
+
+\medskip
+
+\noindent\textbf{Timeout Fired.} $\texttt{timeout\_fired} \;\equiv\; T_\text{elapsed} > T_\text{deadline}$, where $T_\text{elapsed}$ is the elapsed wall-clock time since the agent began its current task, and $T_\text{deadline}$ is the maximum allowable wall-clock duration for that task. $T_\text{deadline}$ is set at task dispatch and is non-negotiable within the execution context.
+
+\medskip
+
+\noindent\textbf{Escalation Active.} $\texttt{escalation\_active} \;\equiv\; \text{the agent has attempted } N_\text{max\_retries} \text{ automated recoveries without resolution}$. Each recovery attempt increments an atomic counter $N_\text{attempts}$. When $N_\text{attempts} \geq N_\text{max\_retries}$, $\texttt{escalation\_active}$ is set to \texttt{true} and the Bailout Protocol transitions to the ESCALATING state.
+
+\begin{note}
+BOT is evaluated continuously in the IDLE and BOUNDED states. Once the protocol has entered BAIL\_PENDING or beyond, the trigger conditions are locked and do not cause re-execution of the trigger logic until RESOLVED.
+\end{note}
+
+\bigskip
+
+\subsection{Escalation Algorithm}
+
+When the state machine enters ESCALATING, the following deterministic sequence executes:
+
+\begin{algorithm}[htbp]
+\caption{Escalation Sequence}
+\begin{algorithmic}[1]
+\Function{escalate}{\text{context}: \text{ExecutionContext}}
+  \State $\text{ctx} \leftarrow \text{context}$
+  \State $\text{ctx.agent\_status} \leftarrow \texttt{PAUSED}$
+  \State $\text{ctx.tool\_permissions} \leftarrow \emptyset$ \Comment{Revoke all tool access}
+  \State $\text{ctx.resource\_ceiling} \leftarrow 0$ \Comment{Block new resource allocation}
+  \State $\text{notification\_payload} \leftarrow \text{assemble\_payload}(\text{ctx})$
+  \State $\text{deliver}(\text{notification\_payload})$ \Comment{SMS + email + Discord}
+  \State $\text{await\_human\_seen}()$
+\EndFunction
+
+\Function{assemble\_payload}{\text{ctx}: \text{ExecutionContext}}
+  \State $\text{summary} \leftarrow \text{ctx.task\_description}$
+  \State $\text{metrics} \leftarrow \langle C_\text{accrued}, T_\text{elapsed}, N_\text{attempts}, \text{last\_error} \rangle$
+  \State $\text{diagnostic\_bundle} \leftarrow \text{ctx.execution\_trace}[\text{last } 50 \text{ steps}]$
+  \State \Return $\{\text{summary}, \text{metrics}, \text{diagnostic\_bundle}\}$
+\EndFunction
+
+\Function{await\_human\_seen}{}
+  \Repeat
+    \State $\text{sleep}(t_\text{poll})$
+    \State $\text{seen} \leftarrow \texttt{human\_seen} \gets \text{check\_acknowledgment\_channel}()$
+  \Until{$\text{seen} \oplus (T_\text{elapsed} > T_\text{max\_wait})$}
+  \If{$\neg \text{seen} \land T_\text{elapsed} > T_\text{max\_wait}$}
+    \State $\text{retry\_deliver}()$ \Comment{Secondary notification path}
+  \EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+
+\subsection{Bypass Mechanism}
+
+The bypass exists to address a fundamental structural problem: when all machine actors in an agent's execution path have failed—whether due to a bug, a misconfigured tool, or a cascade of exhausted retries—there is no machine actor remaining capable of detecting or resolving the failure. The bypass is the protocol's answer to this regressio n into incoherence.
+
+\begin{invariant}{Bypass Necessity}
+Let $\mathcal{A} = \{a_1, a_2, \ldots, a_n\}$ be the set of all machine actors in an agent's execution path. If $\forall a \in \mathcal{A}, \; \text{state}(a) \in \{\text{FAILED}, \text{TIMEOUT}, \text{MISCONFIGURED}\}$, then no actor in $\mathcal{A}$ can execute the Bailout Protocol independently. A bypass mechanism, triggered by an external watchdog or a structurally isolated safety monitor, must therefore halt the execution path without relying on any actor in $\mathcal{A}$.
+\end{invariant}
+
+The bypass is implemented as a structurally isolated process external to the agent's execution context:
+
+\begin{enumerate}
+\item A \textbf{watchdog process} $W$ runs as an independent system service, not as an agent-internal actor. $W$ monitors observable resource signals (cost accumulator, wall-clock timer, retry counter) at fixed intervals $t_\text{watchdog}$.
+\item If $W$ observes $\texttt{cost\_breach} \lor \texttt{timeout\_fired} \lor (N_\text{attempts} \geq N_\text{max\_retries})$, it writes directly to the protocol state variable $\psi$, transitioning the agent's context to BAIL\_PENDING or ESCALATING without requiring any agent-internal actor to participate.
+\item $W$ is itself non-blocking: if $W$ fails, a secondary watchdog $W'$ (configured at system initialization) observes $W$'s heartbeat and escalates independently.
+\end{enumerate}
+
+The bypass bypasses all machine actors because it is structurally impossible for any actor in the failed path to observe or correct the failure. This is not a design preference—it is a logical necessity. The bypass mechanism is therefore the only path by which the protocol can guarantee progress toward RESOLVED when internal recovery has been exhausted.
+
+\bigskip
+
+\subsection{Timeout Handling}
+
+Timeouts are treated as first-class signals in the Bailout Protocol, not as error conditions. A timeout indicates that the agent's execution has exceeded its allocated wall-clock budget; it does not indicate failure of the agent itself. Timeout handling follows a strict sequence:
+
+\begin{algorithm}[htbp]
+\caption{Timeout Handling Sequence}
+\begin{algorithmic}[1]
+\Function{handle\_timeout}{\text{context}: \text{ExecutionContext}}
+  \State $\text{ctx} \leftarrow \text{context}$
+  \State $\Delta T \leftarrow T_\text{elapsed} - T_\text{deadline}$
+  \State $\text{ctx.last\_timeout\_reason} \leftarrow \text{classify\_timeout}(\Delta T, \text{ctx})$
+  \State $\text{ctx.execution\_trace}[\text{end}] \leftarrow \text{TIMEOUT\_EVENT}(\Delta T)$
+  \State $\text{flag\_timeout\_fired}()$
+  \State $\text{invoke\_delta\_engine}()$
+\EndFunction
+
+\Function{classify\_timeout}{\Delta T, \text{ctx}}
+  \If{$\Delta T \leq 30\,\text{s}$} \Return \texttt{SOFT\_TIMEOUT}
+  \ElsIf{$\Delta T \leq 300\,\text{s}$} \Return \texttt{MEDIUM\_TIMEOUT}
+  \Else{} \Return \texttt{HARD\_TIMEOUT}
+  \EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Timeout classification determines the urgency weight assigned to the notification payload delivered during escalation. All timeout classifications halt the agent immediately; the classification exists solely to communicate urgency to the human operator.
+
+\begin{note}
+After RESOLVED, the timeout flag is cleared. A new execution context begins in IDLE, with a fresh cost accumulator, fresh wall-clock timer, and zero retry counter. There is no carryover of timeout state between execution contexts.
+\end{note}
+
+\bigskip
+
+\subsection{Resolved State and Reset}
+
+The RESOLVED state is terminal within an execution context. Upon entering RESOLVED:
+
+\begin{itemize}
+\item The agent's execution trace is frozen and archived to durable storage.
+\item All resource ceilings are lifted.
+\item Tool permissions are restored to their configured defaults.
+\item The protocol state $\psi$ returns to IDLE only after a full system initialization cycle—not automatically upon human acknowledgment.
+\item A resolution report is generated and delivered to the operator, summarizing: total cost accrued, elapsed time, number of escalation attempts, and root-cause classification (if determinable).
+\end{itemize}
+
+\bigskip
+
+\subsection{Invariants}
+
+The following invariants hold for all reachable states:
+
+\begin{enumerate}
+\item $\psi \in \Psi$ at all times (no invalid states).
+\item No transition can skip RESOLVED and return to IDLE directly; RESOLVED is the only exit gateway.
+\item While $\psi \in \{\text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}\}$, no new agent task may be dispatched in the affected execution context.
+\item The bypass mechanism does not modify $\psi$ directly—it signals the transition engine, which then executes the transition deterministically.
+\item $\texttt{human\_seen}$ may only transition from \texttt{false} to \texttt{true}; it is never reset to \texttt{false} during an active protocol cycle.
+\end{enumerate}

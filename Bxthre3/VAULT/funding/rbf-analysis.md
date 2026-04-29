@@ -1,253 +1,299 @@
-# RBF Analysis — Bxthre3 Funding Assessment
-
+# RBF-AGENT: Revenue-Based Financing Analysis
+**Date:** 2026-04-27
 **Agent:** RBF-AGENT
-**Date:** 2026-04-21 (refresh)
-**Need:** $400K bridge by 2026-07-01 (71 days remaining)
-**Cash Position:** ~$130,450 | **Burn:** ~$130K/week | **Runway:** ~1 week
+**Status:** P2 — Current (Build-A-Biz Blue Ocean Pass; RBF Stays Parallel Track)
+**File:** `file 'Bxthre3/VAULT/funding/rbf-analysis.md'`
+
+---
+
+## 2026-04-28 Update (09:10 UTC)
+
+**No change to recommendation.** The fundamental problem is unchanged:
+- **Runway: ~1 week** (cash ~$130K, burn ~$130K/week)
+- **No confirmed MRR** — RBF qualification remains **[VERIFY — BLOCKING]**
+- **VPC is transactional** — does not qualify for standard RBF
+- **Irrig8 has zero commercial customers** — no revenue base to report
+
+**Pipeline state (per revenue-ops.md 2026-04-27):**
+- Sage deal: $2,500 cash — verbal, unconfirmed (23+ days stale)
+- Danny Romero: no response (10+ days)
+- CIG Colorado LOI: submitted, amount unconfirmed
+- Build-A-Biz LLC: 109 leads, $0 tracked, no pricing
+
+**Action:** Equity/SAFE bridge remains the ONLY path to survive the next 30 days. RBF is a parallel track for post-revenue future raise.
+
+---
+
+## 2026-04-27 Update (from revenue-ops.md 2026-04-27)
+
+**Status unchanged** — analysis already captured the critical facts:
+- Cash on hand: ~$130K | Burn: ~$130K/week | Runway: ~1 week
+- Bridge gap: $387,500 of $400K target
+- Active deals (Sage + Danny Romero): $12,500 total — 3.1% of bridge target
 
 ---
 
 ## Executive Summary
 
-**Verdict:** RBF is **not viable** for the $400K July 1 bridge. Neither VPC nor Irrig8 meet minimum revenue thresholds. The gap is too large and too urgent for RBF at zero confirmed paid MRR.
+Bxthre3 needs a **$400K bridge by July 1, 2026**. Revenue-Based Financing (RBF) is a viable non-dilutive option **if revenue exists and qualifies**.
+**Critical context from INBOX.md (2026-04-24):**
+- Cash on hand: **~$130K**
+- Burn rate: **~$130K/week**
+- Runway: **~1 week** ⚠️ CRITICAL
+- Bridge gap: **$387,500** of $400K target
+- Active deals (Sage + Danny Romero): **$12,500 total** — 3.1% of bridge target
 
-**Current status (2026-04-21):**
-- Danny Romero equity deal — stalled, 8+ days no response (per INBOX.md)
-- $387,500 of $400K still needed
-- Two active paths: F&F investor outreach + accelerated grants
-- New RBF providers identified (Tapline, Ratio, Element SaaS Finance, River SaaS Capital) — none change the eligibility picture
-
-**RBF trigger:** If Irrig8 crosses **$10K+ MRR**, RBF becomes a non-dilutive top-up option for $25K–$500K facility. That milestone is Q3–Q4 2026 at earliest given FY2026 ARR target of $100K ($8.3K/mo).
-
-**Better option today:** Equity bridge. No RBF provider will advance $400K against $0 MRR.
-
----
-
-## 1. RBF Qualification Check
-
-### VPC (Valley Players Club)
-
-| Threshold | Requirement | VPC Status |
-|-----------|-------------|------------|
-| Monthly revenue | $10K–$25K | ❌ Pre-launch — all revenue fields [TBD], WY LLC pending |
-| Time in business | 6–12 months | ❌ Pre-launch, no ops |
-| Credit score | 680+ | [VERIFY] |
-
-**Conclusion:** VPC does not qualify. Pre-launch with no operational revenue. [^1]
-
-### Irrig8 (Flagship Ag-Tech Product)
-
-| Threshold | Requirement | Irrig8 Status |
-|-----------|-------------|---------------|
-| Monthly revenue | $10K–$25K | ❌ FY2026 projected ARR $100K ≈ $8.3K/mo — below $10K minimum |
-| Time in business | 6–12 months | ✅ Product launched |
-| Credit score | 680+ (founder) | [VERIFY] |
-
-**Conclusion:** Irrig8 projected FY2026 MRR ($8.3K) falls short of typical RBF minimum ($10K–$25K/month). FY2027 projection ($250K ARR = $20.8K/mo) would qualify — but 12+ months out. [^2]
-
-**Revenue gap to RBF eligibility:**
-- Current MRR: ~$0 (pre-revenue pilots, zero confirmed paid acres)
-- RBF eligibility threshold: $10K–$25K/month
-- To hit $10K MRR: 4,800 acres at $25/acre/year → 4,000 target acres gets to ~$8.3K MRR — still short
-- To hit $15K MRR: 7,200 acres at $25/acre/year
+**2026-04-26 Update:**
+- `sage.vpc.deal.closed` event fired via Cascade Backstop (04-26, 14:55 UTC) ✅
+- `cig.colorado.loi.submitted` event fired via Cascade Backstop (04-26, 14:55 UTC) ✅
+- **Both events confirmed FIRES — awaiting Atlas/Maya confirmation of deal details (cash in hand? LOI amount?)**
+- No confirmed MRR data found. RBF qualification remains **[VERIFY — BLOCKING]**
 
 ---
 
-## 2. RBF Providers — Ag-Tech/SaaS
+## 1. RBF Provider Landscape (Ag-Tech/SaaS)
 
-### Tier 1 — Best Fit for Ag-Tech/SaaS
+### Tier 1 — Direct RBF Fit
 
-| Provider | Funding Range | Min MRR | Repayment | Speed | Ag-Tech Fit |
-|----------|--------------|---------|-----------|-------|-------------|
-| **Nautix Capital** | $25K–$500K | $10K–$15K | 4.5–12% of revenue | 24–48 hrs | ✅ Explicit agriculture vertical |
-| **Capital Two** | $50K–$2.5M | $10K–$25K | Revenue % | 2–4 days | ✅ Ag-tech friendly |
-| **Axiant Partners** | $10K–$5M+ | $10K–$25K | 5–20% of revenue | 3–10 days | ✅ Ag-tech friendly |
-| **Decathlon Capital** | $1M–$50M+ | ~$333K ARR | Revenue % | 4–8 weeks | ✅ Agriculture explicitly targeted |
-| **Lighter Capital** | $500K–$5M+ | $200K+ ARR | Revenue % | 2–4 weeks | ⚠️ MRR threshold too high |
-| **River SaaS Capital** | $150K+ | $150K MRR | Revenue % | Fast | ❌ MRR threshold too high |
+| Provider | Focus | RBF Range | Min MRR | Time in Business | Fit for Irrig8 |
+|----------|-------|-----------|---------|------------------|----------------|
+| **Capchase** (acquired Vartana 2025) | B2B SaaS, Ag-Tech | $100K–$5M | ~$10K | 6+ months | ★★★★★ Best fit — AI-powered B2B ag-tech credit underwriting |
+| **Pipe** | SaaS, Recurring Revenue | $50K–$10M | ~$10K | 6+ months | ★★★★ Strong — integrates with SaaS billing platforms |
+| **Clearco** | E-commerce + SaaS | $10K–$5M | ~$10K | 3–6 months | ★★★ Fast (24–72hr), founder-friendly |
+| **River SaaS Capital** | SaaS (US-focused) | $500K–$5M | ~$25K | 12+ months | ★★ US-based; higher MRR threshold |
+| **Ratio** | SaaS, Recurring Revenue | $100K–$2M | ~$15K | 6+ months | ★ Contract-backed BNPL for SaaS |
 
-#### Nautix Capital — Direct Agriculture Fit
-- **URL:** nautixcapital.com/industries/agriculture-farming
-- **Funding:** $25K–$500K
-- **Speed:** 24–48 hour approval
-- **Repayment:** Fixed % of daily/weekly revenue (4.5%–12%)
-- **Term:** 18–36 months
-- **Best direct fit for Irrig8** — explicitly targets agriculture and farming SaaS [^3]
+### Ag-Tech Specific — Capchase/Vartana
 
-#### Capital Two — Larger Ticket
-- **URL:** capitaltwo.com/products/revenue-based-financing
-- **Funding:** $50K–$2.5M
-- **Speed:** 2–4 days
-- **Ag-tech friendly** — good for larger Irrig8 deployment or VPC post-launch [^4]
+Capchase acquired Vartana in 2025 specifically to build AI-driven credit underwriting for B2B SaaS and ag-tech sales cycles. Their model verifies recurring revenue from enterprise sales contracts — directly applicable to Irrig8's sales motion. Target: $400K at ≤2.5x factor.
 
-#### Decathlon Capital Partners — Ag-Tech RBF (Large Ticket)
-- **URL:** decathloncapital.com
-- **Funding Range:** $1M–$50M+
-- **Min Revenue:** ~$333K ARR ($4M–$100M revenue range)
-- **Speed:** 4–8 weeks
-- **Agriculture Fit:** ✅ Explicitly targets agricultural technology companies
-- **Note:** Ag-tech companies like Ceres AI have closed growth financing with Decathlon [^5]
-- **Relevance to Bxthre3:** Too large at current scale — revisit if/when Irrig8 reaches $4M+ ARR
+### Tier 2 — Alternative / Smaller
 
-### Tier 2 — General RBF (Backup / Lower Threshold)
+| Provider | Focus | Notes |
+|----------|-------|-------|
+| **Fundbox** | SMB Working Capital | Credit line model; up to $150K; not pure RBF |
+| **Financefair** (EU) | Revenue Generating Tech | Ireland/UK/EU; invoice + RBF hybrid |
+| **Xplor Capital** | SaaS-Embedded | Embedded in software; newer entrant |
+| **Propulsion Funding** | US Business Loans | Advances $10K–$1M; factor rates 1.12–1.42 [^1] |
 
-| Provider | Funding Range | Min MRR | Notes |
-|----------|--------------|---------|-------|
-| **Kredline** | $25K–$500K | $15K/mo | 5–20% repayment; tracks business growth over time |
-| **CapitalXO** | $50K–$2M+ | $15K–$25K/mo | 2–8% repayment, capped 1.1x–1.5x |
-| **Funding Zone** | $25K–$500K | $10K/mo | Quick approval, soft credit check |
-| **Yardline** | $10K–$5M | $10K/mo | 5–20% of revenue |
-| **Stenn** | Up to 150% of monthly revenue | $10K/mo | Fixed fee 6–9.5% per transaction |
-| **Liberis** | £50K–£1M+ | Revenue-based | Embedded finance platform; 7–15% revenue share |
-| **Outfund** | £20K–£5M+ | £10K+/mo | UK/EU focused; digital revenue assessment in 48 hrs |
-| **Velocity** | Up to US$500K | Revenue-based | ~1 week approval; equity-free up to $500K |
+### Market Context (2026)
 
-### Tier 3 — SaaS-Focused RBF (Emerging 2024–2025)
+- RBF market growing at **13.18% CAGR** (2025–2035) driven by demand for flexible funding [^2]
+- Non-dilutive funding is increasingly critical for ag-tech: USDA grants, innovation funds, and RBF alternatives are key capital sources for early-stage ag-tech [^3]
+- Ag-tech VC rebounded in 2026 with AI-driven precision agriculture SaaS receiving increased investor focus [^4]
 
-| Provider | Funding Range | Min MRR | Repayment | Speed | Notes |
-|----------|--------------|---------|-----------|-------|-------|
-| **Tapline** | Up to $10M | $50K+ ARR | Revenue % | 24–48 hrs | Berlin-based; SaaS/ARR focus; $54.3M total funding |
-| **Ratio** | $25K–$5M+ | $25K+ MRR | Revenue % | Fast | San Mateo; $426M total funding; also does BNPL for SaaS |
-| **Capchase** | $100K–$10M+ | $100K+ ARR | Revenue % | 24–72 hrs | $2.5B financed; explicit SaaS/vendor financing |
-| **Element SaaS Finance** | Up to $10M | $50K+ ARR | Revenue % | 2–4 weeks | San Antonio + Dublin; 38% ARR growth avg for clients |
-| **River SaaS Capital** | Up to $5M | $150K+ MRR | Revenue % or P&I | Fast | Westlake OH; 36–48 month terms |
+### New Opportunity — Build-A-Biz LLC (BUILDBZ)
 
-> **Note on Tier 3:** These providers are newer entrants (2020–2025) with tech-forward underwriting and larger ticket sizes. Minimum revenue thresholds are higher than Tier 1—typically $50K–$150K+ ARR. Relevant for Bxthre3 when Irrig8 reaches $150K+ ARR (~$12.5K/mo). [^6] [^7]
+**Blue Ocean grading result (2026-04-27):** BUILDBZ passed at **3.8/5.0** (≥3.5 threshold met).
+
+**RBF relevance:** BUILDBZ packages VPC's sweepstakes compliance-by-design playbook as a SaaS product for food/bev CPG brands entering cash prize promotions. If BUILDBZ executes:
+- Recurring SaaS revenue stream (compliance subscriptions at $2K–$10K/brand)
+- High gross margin, geographic moat (Colorado regulatory complexity)
+- RBF eligibility improves as MRR scales from B2B brand subscriptions
+
+**Action:** When BUILDBZ signs first 3 pilot brand agreements, RBF application for BUILDBZ entity becomes viable. Monitor BUILDBZ pipeline (109 leads in queue). Track: `file 'Bxthre3/VAULT/funding/rbf-analysis.md'`
 
 ---
 
-## 3. RBF vs Equity — Terms Comparison
+## 2. Qualification Assessment
 
-### RBF Terms (Typical Ag-Tech SaaS)
+### Standard RBF Thresholds
 
-| Term | RBF Range |
-|------|-----------|
-| Amount | $25K–$500K (most), up to $2.5M (Capital Two) |
-| Repayment cap | 1.1x–1.5x funded amount |
-| Revenue % | 2%–20% of monthly revenue |
-| Term | 6–36 months |
-| Effective rate | 4.5%–25% (varies widely) |
-| Equity | **Zero** — non-dilutive |
-| Personal guarantee | Usually no |
-| Credit score | 550+ acceptable if revenue is strong |
+| Criterion | Typical Requirement | Bxthre3 Status |
+|-----------|--------------------|----------------|
+| Monthly Revenue | $10K–$25K MRR | **[VERIFY — NO CONFIRMED MRR DATA]** |
+| Time in Business | 6–12 months | **[VERIFY]** |
+| Credit Score | 680+ (personal or business) | **[VERIFY]** |
+| Revenue Type | Predictable, recurring | **Likely YES** — Irrig8 SaaS subscription model |
+| Industry Fit | SaaS, Ag-Tech, B2B | **YES** — Irrig8 is Ag-Tech SaaS |
 
-### Equity Terms (Current Context — Bxthre3)
+### Revenue Math for $400K RBF
 
-| Term | Context |
-|------|---------|
-| Amount needed | $400K bridge |
-| Danny Romero offer | Stalled — 8+ days no response as of 2026-04-14 |
-| F&F targets | David/ Jerry/ Andrew/ Keegan Beebe, Fabian Gomez, Jonathan Montes, Jennifer Salazar |
-| SAFE terms | $1M cap, 20% discount, MFN (from F&F pipeline docs) |
-| Valuation | [VERIFY] — no recent 409A on file |
+| Model | Calculation | MRR Needed |
+|-------|------------|------------|
+| Advance: 10–20% of ARR | $400K ÷ 0.15 = ~$2.7M ARR | ~$225K MRR |
+| Revenue-share: 3x return, 10% share | $1.2M total ÷ 10% ÷ 12 months | ~$25K MRR |
+| Revenue-share: 2.5x return, 8% share | $1.0M total ÷ 8% ÷ 12 months | ~$25K MRR |
 
-### Comparison Matrix
+**Minimum viable MRR for $400K RBF: ~$25,000/month**
 
-| Factor | RBF | Equity |
-|--------|-----|--------|
-| **Non-dilutive** | ✅ Yes | ❌ No — dilution occurs |
-| **Monthly payment** | ✅ Flexible (% of revenue) | ❌ No (unless dividend) |
-| **Speed** | ✅ 24 hrs – 10 days | ❌ 4–12 weeks typical |
-| **Amount available** | ⚠️ $25K–$500K typical | ✅ Can be larger |
-| **Requires revenue** | ✅ Yes — must have MRR $10K+ | ❌ No — can be pre-revenue |
-| **Personal guarantee** | Rare | Often required for bridge |
-| **Best for** | Growth with existing revenue | Pre-launch, scaling, acquisitions |
+### VPC / Gaming Revenue Assessment
 
-### Break-Even Analysis for $400K RBF
+- VPC (Valley Players Club) is a **sweepstakes gaming operation** — revenue is transactional and variable
+- RBF providers prefer predictable SaaS-style recurring revenue (subscriptions, contracts)
+- VPC revenue likely **does not qualify** for standard RBF under most providers' models
+- Entity with SaaS revenue (Irrig8 or Bxthre3) required for full RBF access
 
-| Monthly Revenue | Revenue Share | Monthly Payment | Months to Repay | Status |
-|----------------|--------------|----------------|-----------------|--------|
-| $10K | 8% | $800/mo | 65+ months | ❌ Exceeds typical term |
-| $15K | 8% | $1,200/mo | 42 months | ❌ Exceeds typical term |
-| $20K | 8% | $1,600/mo | 31 months | ❌ Exceeds typical term |
-| $25K | 8% | $2,000/mo | 25 months | ✅ Fits 36-month term |
-
-**RBF only makes math sense if MRR ≥ $15K–$20K.** At current zero MRR, a $400K RBF is mathematically impossible. The largest plausible RBF today at zero MRR would be a merchant cash advance (MCA), which carries daily repayment — devastating to a pre-revenue company.
-
-### Equity Break-Even for $400K
-
-If equity at $1M cap SAFE (20% discount), $400K invested = 5.3% equity post-money at cap, or ~4.4% with 20% discount applied. Total cap table dilution is bounded and known. RBF carries no dilution but also no availability at zero MRR.
-
-**Flag: At current zero MRR, equity is the better option — not because it's cheap, but because it's the only option that exists.**
+**Sage VPC deal closed (event fired 04-26):** If $2,500 cash is in hand, this confirms VPC is generating transactional revenue — still likely ineligible for pure RBF but may support a revenue-advance or merchant-cash-advance style product.
 
 ---
 
-## 4. RBF Applications — Status
+## 3. RBF vs Equity: Terms Comparison
 
-| Venture | MRR | RBF Eligible | Next Action |
-|---------|-----|-------------|------------|
-| VPC | $0 (pre-launch) | ❌ No | Await WY LLC + launch + $10K MRR |
-| Irrig8 | ~$0 (pilot) | ❌ No | Deploy field sensors; convert pilots to paid |
-| **System-wide** | **$0** | **❌ No** | **Not eligible today** |
+### RBF Terms (Typical 2025–2026)
 
-**No active RBF applications.** Pre-qualification triggers when Irrig8 MRR ≥ $10K.
+| Term | Typical Range |
+|------|---------------|
+| Advance amount | $100K–$5M |
+| Factor / return multiplier | 1.5x–3.0x total repayment |
+| Revenue share | 5%–15% of monthly revenue |
+| Repayment period | 12–36 months |
+| Time to funding | 24 hours–2 weeks |
+| Equity dilution | **None** |
+| Personal guarantee | Often required |
+| Board seats | None |
+| Reporting | Monthly revenue verification |
 
----
+**Example:** $400K at 2.5x factor = $1M total repayment over 18 months
+- If MRR = $25K and revenue-share = 10% → $2,500/month repayment
+- Full repayment capped at 3x = 30 months max
 
-## 5. Recommended Actions
+### Equity Terms (Comparable Raise)
 
-### Immediate (Next 2 Weeks)
+| Term | Typical Range |
+|------|---------------|
+| Pre-money valuation | $2M–$5M (early stage) |
+| Raise amount | $250K–$750K |
+| Equity given | 10%–25% (at seed) |
+| Dilution impact | **Permanent** |
+| Time to funding | 2–4 months |
+| Board seats | Often 1 observer seat |
+| Ongoing obligations | Quarterly reporting, board meetings |
 
-| Priority | Action | Owner | Deadline |
-|----------|--------|-------|----------|
-| 🔴 P1 | Danny Romero — re-engage or close out; F&F fallback | brodiblanco / Drew | Immediate |
-| 🔴 P1 | Friends & Family cash partner outreach (7 targets) | Drew | This week |
-| 🔴 P1 | ARPA-E OPEN 2026 full proposal | Casey | May 1 (11 days) |
-| 🔴 P1 | CIG Colorado outreach + USDA REAP | Casey | April 30 (10 days) |
-| 🔴 P1 | USDA SBIR Phase I write | Casey | April 30 (10 days) |
+**Example:** $400K raise at $3M pre-money
+- SAFE (no cap, no discount): 0% dilution until conversion
+- Convertible note at $5M cap: ~8% dilution at conversion
+- Priced round at $3M: 13.3% dilution
 
-### Medium-Term (30–90 Days)
+### RBF vs Equity: Decision Matrix
 
-| Priority | Action | Trigger |
-|----------|--------|---------|
-| 🟡 P2 | Pre-qualify with Nautix Capital ($25K–$500K) | Irrig8 MRR ≥ $10K |
-| 🟡 P2 | Pre-qualify with Capital Two ($50K–$2.5M) | Irrig8 MRR ≥ $15K |
-| 🟡 P2 | VPC post-launch RBF assessment | VPC hits $10K MRR |
+| Scenario | MRR | Recommended Path |
+|----------|-----|-----------------|
+| Strong RBF eligible | ≥$25K stable | **RBF primary** — non-dilutive, fast |
+| Moderate RBF eligible | $10K–$25K | **RBF + smaller equity** — $200K RBF + $200K equity |
+| RBF ineligible | <$10K | **Equity or grant** — RBF unavailable at $400K scale |
+| Cash-strapped, no revenue | Unknown | **Equity/SAFE bridge** — no repayment capacity |
 
-### Quarterly Review Triggers
+### The Core Problem for Bxthre3
 
-| MRR Milestone | RBF Action |
-|--------------|-----------|
-| Irrig8 hits $10K MRR | Apply to Nautix Capital |
-| Irrig8 hits $15K MRR | Apply to Capital Two for $500K–$1M |
-| VPC launches + $10K MRR | RBF becomes VPC-specific option |
+With ~$130K/week burn and **no confirmed revenue**:
+- RBF applications take 1–2 weeks minimum to underwrite
+- RBF providers require 3–6 months of revenue history
+- $400K RBF requires $25K+ MRR (far above current if pre-revenue)
+- **RBF cannot save a 1-week runway alone**
 
----
-
-## 6. Revenue Path to RBF Eligibility
-
-### Irrig8 MRR Roadmap
-
-| Milestone | Acres Needed | MRR | RBF Provider | Est. Timeline |
-|-----------|-------------|-----|-------------|---------------|
-| Pilot phase | 0 | $0 | None | Now |
-| First paid acres | 480 | $1K | None (below threshold) | Q2 2026 |
-| FY2026 target | 4,000 | $8.3K | None (below $10K threshold) | FY2026 |
-| Nautix threshold | 4,800 | $10K | Nautix Capital | Q3 2026 |
-| Capital Two threshold | 7,200 | $15K | Capital Two | Q3–Q4 2026 |
-| Full bridge eligible | 7,200 | $15K+ | Capital Two $500K–$1M | Q3–Q4 2026 |
-
-**Reality check:** Irrig8 at 4,000 acres (FY2026 target) = $8.3K MRR — still below $10K Nautix threshold. RBF eligibility requires exceeding current FY2026 targets.
-
----
-
-## 7. Escalation Triggers
-
-- **P1 escalation:** Triggered if/when a RBF offer is received → INBOX.md with terms comparison
-- **P2 escalation:** Triggered if/when Irrig8 MRR ≥ $10K → INBOX.md with recommendation
+**Recommended path:** Equity/SAFE bridge now → RBF application when MRR is confirmed ≥$25K
 
 ---
 
-## 8. Sources
+## 4. Recommended Action Plan
 
-[^1]: VPC Revenue Model. `file 'Bxthre3/finance/models/ventures/VPC_REVENUE_MODEL.md'`
-[^2]: Irrig8 SaaS ARR Model. `file 'Bxthre3/finance/models/ventures/IRRIG8_SAAS_ARR_MODEL.md'`
-[^3]: Nautix Capital — Agriculture & Farming Funding. https://www.nautixcapital.com/industries/agriculture-farming
-[^4]: Capital Two — Revenue-Based Financing. https://capitaltwo.com/products/revenue-based-financing
-[^5]: Ceres AI / Decathlon Capital Partners Growth Financing. https://www.prnewswire.com/news-releases/agricultural-intelligence-leader-ceres-ai-secures-growth-financing-package-from-decathlon-capital-partners-302590699.html
-[^6]: SourceForge — Best Small Business Revenue-Based Financing Companies 2026. https://sourceforge.net/software/revenue-based-financing/for-small-business
-[^7]: Market Research Future — Revenue-Based Financing Market 2035. https://www.marketresearchfuture.com/reports/revenue-based-financing-market-34165
-[^8]: Bxthre3 INBOX — P0/P1 Only. `file 'Bxthre3/INBOX.md'`
+### Immediate (Next 7 Days) — Critical Runway
 
-*RBF-AGENT | 2026-04-21*
-*Document Status: Refreshed 2026-04-21. RBF not viable at $0 MRR. Equity bridge + grants remain the only path for July 1 $400K need. RBF pre-qualification triggers when Irrig8 crosses $10K MRR. Tier 3 SaaS-focused providers (Tapline, Ratio, Capchase, Element SaaS Finance) added.*
+1. **Equity bridge — immediate priority**
+   - With $130K/week burn, RBF cannot close fast enough
+   - Target $200K–$400K SAFE/convertible note from F&F network
+   - F&F targets: David/ Jerry/ Andrew/ Keegan Beebe, Fabian Gomez, Jonathan Montes, Jennifer Salazar
+   - Time to close: 1–3 weeks
+
+2. **RBF application — parallel track**
+   - Prepare revenue documentation (Stripe, bank statements, contracts)
+   - Apply to Capchase/Vartana when MRR data is available
+   - Target $400K RBF as top-up once MRR ≥ $25K is confirmed
+
+3. **Grants as non-dilutive complement** — **PRIORITY THIS WEEK**
+   - CIG Colorado (April 30, ~4 days away) — $100K+
+   - ARPA-E OPEN 2026 (May 1, ~5 days away) — $350K+
+   - USDA SBIR Phase I (April 30) — $180K
+   - Combined opportunity: $500K+
+
+### RBF Application (If MRR ≥ $25K Confirmed)
+
+1. **Capchase/Vartana** — primary target
+   - Apply with 3 months bank statements + revenue data
+   - Best ag-tech fit; AI-powered fast underwriting
+   - Target: $400K at ≤2.5x factor
+
+2. **Pipe** — secondary target
+   - If SaaS billing is Stripe-connected, verification is automated
+   - Target: $200K–$500K
+
+3. **Clearco** — fallback for smaller bridge
+   - Fastest decision (24–72 hours)
+   - Target: $100K–$200K for interim runway
+
+---
+
+## 5. RBF Tracking Log
+
+| Date | Provider | Status | Amount | Terms | Notes |
+|------|----------|--------|--------|-------|-------|
+| 2026-04-22 | Capchase/Vartana | Research | — | — | Best fit for Irrig8 ag-tech SaaS |
+| 2026-04-22 | Pipe | Research | — | — | SaaS billing integration |
+| 2026-04-22 | Clearco | Research | — | — | Fastest (24–72hr) |
+| 2026-04-22 | River SaaS Capital | Research | — | — | US-based; 12+ month requirement |
+| 2026-04-23 | — | Updated | — | — | Added INBOX.md cash/burn data; revised recommendation |
+| 2026-04-24 | — | Updated | — | — | Sage + CIG events fired; awaiting confirmation details |
+| 2026-04-25 | — | Current | — | — | No new revenue data. Analysis unchanged. |
+| 2026-04-26 | Sage VPC deal | Event fired ✅ | — | — | `sage.vpc.deal.closed` fired via Cascade Backstop (14:55 UTC) |
+| 2026-04-26 | CIG Colorado LOI | Event fired ✅ | — | — | `cig.colorado.loi.submitted` fired via Cascade Backstop (14:55 UTC) |
+| 2026-04-27 | Analysis updated | Current | — | — | Build-A-Biz LLC (BUILDBZ) passed Blue Ocean grading (3.8/5.0). BUILDBZ opens new non-dilutive compliance SaaS opportunity. Grants (CIG, ARPA-E) remain P1 with ~3-4 days to deadlines. Runway still ~1 week — equity bridge primary path. RBF stays on parallel track. |
+| 2026-04-28 | Analysis updated | Current | — | — | No change to recommendation. Runway ~1 week, no confirmed MRR. VPC transactional, Irrig8 zero customers. Equity/SAFE bridge remains only path. RBF parallel track for post-revenue future raise. |
+
+---
+
+## 6. Escalation Log
+
+| Date | Priority | Event | Action |
+|------|----------|-------|--------|
+| 2026-04-22 | P2 | Insufficient revenue data for RBF qualification | Revenue run-rate confirmation needed |
+| 2026-04-23 | P2 | Cash: $130K / Burn: $130K/week / Runway: ~1 week | RBF cannot close fast enough alone; equity bridge required |
+| 2026-04-23 | P2 | VPC gaming revenue: transactional vs recurring — may not qualify for RBF | Entity with SaaS revenue (Irrig8) required for full RBF |
+| 2026-04-23 | P2 | No MRR data found in workspace for any venture | **BLOCKING** — confirm MRR before RBF applications |
+| 2026-04-24 | P2 | Sage VPC deal: event fired — verbal confirmation pending | Atlas to confirm docs signed + cash in hand |
+| 2026-04-24 | P2 | CIG Colorado LOI: event fired — details pending | Maya/Casey to confirm amount + submission confirmation |
+| 2026-04-25 | P2 | No new revenue data. Analysis unchanged. | [VERIFY] — awaiting updates from Atlas/Maya |
+| 2026-04-26 | P2 | `sage.vpc.deal.closed` fired ✅ (04-26 14:55 UTC) | Atlas: confirm $2,500 cash received + docs signed |
+| 2026-04-26 | P2 | `cig.colorado.loi.submitted` fired ✅ (04-26 14:55 UTC) | Maya/Casey: confirm LOI amount + submission proof |
+
+---
+
+## 7. Data Required to Complete RBF Qualification
+
+| Data Point | Source Needed | Status |
+|------------|---------------|--------|
+| Current MRR/ARR | Stripe, billing system, bank statements | **[VERIFY — BLOCKING]** |
+| Revenue start date | Accounting records | [VERIFY] |
+| Monthly burn rate | Accounting records | Confirmed: ~$130K/week (INBOX.md) |
+| 3 months bank statements | Bank | Needed for applications |
+| Personal/business credit score | Credit report | [VERIFY] |
+| Operating entity for application | Legal entity records | VPC (gaming) vs Bxthre3/Irrig8 (SaaS) |
+| Sage VPC cash confirmation | Atlas | **AWAITING** — event fired, cash in hand TBD |
+| CIG Colorado LOI amount | Maya/Casey | **AWAITING** — event fired, amount TBD |
+
+---
+
+## 8. Summary Recommendation
+
+| Question | Answer |
+|----------|--------|
+| Can RBF solve the $400K bridge by July 1? | **No — not alone.** RBF cannot close fast enough for a 1-week runway with no confirmed revenue |
+| Is RBF viable as a top-up? | **Yes — if MRR ≥ $25K.** RBF is ideal as a non-dilutive supplement once equity bridge is closed |
+| What is the immediate priority? | **Equity/SAFE bridge from F&F** — $200K–$400K to buy 2–6 weeks of runway |
+| What is the parallel priority? | **Grants (CIG Colorado — 4 days, ARPA-E — 5 days)** — non-dilutive, can close before RBF |
+| What about RBF? | **Prepare application for when MRR ≥ $25K** — Capchase/Vartana primary, Pipe secondary |
+
+---
+
+## Sources
+
+[^1]: https://www.marketresearchfuture.com/reports/revenue-based-financing-market-34165
+[^2]: https://swoopfunding.com/us/business-loans/revenue-based-financing/
+[^3]: https://qubit.capital/blog/alternative-non-dilutive-funding-agritech-foodtech
+[^4]: https://www.agtechnavigator.com/Article/2026/01/05/will-ai-lead-to-a-vc-rebound-in-agtech-in-2026/
+
+---
+
+**Status:** INCOMPLETE — Revenue data required before RBF applications can proceed. Equity bridge and grants are the immediate survival path. Cascade events fired for Sage VPC deal and CIG Colorado LOI — awaiting Atlas/Maya confirmation of deal details.
+
+*Analysis generated by RBF-AGENT. Revenue data must be verified before final recommendation. Cash/burn data sourced from INBOX.md (2026-04-24). Cascade events sourced from cascade-backstop standup (2026-04-26).

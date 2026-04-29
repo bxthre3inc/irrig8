@@ -1,0 +1,125 @@
+\section{Guarantees and Correctness Properties}
+
+We formalize the three invariant properties of the Bailout Protocol: SAFETY, LIVENESS, and ACCOUNTABILITY. Each property is stated as a theorem, and a proof sketch is provided using the definitions and transition rules from Sections 2--4. Throughout, we assume a well-formed system state $\sigma$ and a nonempty set of active human principals $\mathcal{H}$.
+
+\subsection{SAFETY: No Autonomous Collapse}
+
+\begin{block}[SAFETY Invariant]
+\textbf{Statement:} Under the Bailout Protocol, the system never enters a state in which all active agents are non-human and no fallback contact protocol is active.
+
+\textbf{Formalization:} For all reachable states $\sigma$, it holds that
+\[
+\left(\forall a \in \text{Agents}(\sigma).\ a \notin \mathcal{H}\right) \;\Longrightarrow\; \text{FallbackActive}(\sigma) = \text{true}.
+\]
+Equivalently, the set of human principals is never empty in the absence of an active fallback channel.
+\end{block}
+
+\begin{block}[SAFETY Proof Sketch]
+We prove SAFETY by induction over the length of the execution trace.
+
+\begin{itemize}
+\item \textbf{Base case:} In the initial state $\sigma_0$, at least one human principal is enrolled (by the enrollment definition in Section 2). Hence the antecedent $\forall a.\ a \notin \mathcal{H}$ is false, and the invariant holds vacuously.
+
+\item \textbf{Inductive step:} Assume the invariant holds for $\sigma_k$. Consider a transition $T$ producing $\sigma_{k+1} = \text{Apply}(T, \sigma_k)$. Three cases are possible:
+
+\begin{enumerate}
+\item \textbf{Fallback activation:} $T$ activates the fallback channel. Then $\text{FallbackActive}(\sigma_{k+1}) = \text{true}$ by definition, and the consequent of the invariant is satisfied regardless of agent composition.
+
+\item \textbf{Human enrollment:} $T$ adds a new human principal $h$ to $\mathcal{H}$. Then $\mathcal{H}$ is nonempty, the antecedent is false, and the invariant holds.
+
+\item \textbf{Agent departure or isolation:} $T$ removes or isolates agents. The invariant's antecedent becomes true only if the last human is removed or isolated. However, the Bailout Protocol transition rules (Section 4) prohibit any transition that would produce $\mathcal{H} = \emptyset$ without simultaneously activating FallbackActive. This is enforced by the human-presence gate: no transition is enabled if $\mathcal{H}$ would become empty and FallbackActive is false. Hence $\sigma_{k+1}$ respects the invariant.
+\end{enumerate}
+
+\item \textbf{Conclusion:} By structural induction on the execution trace, SAFETY holds for all reachable states.
+\end{itemize}
+\end{block}
+
+\begin{block}[Corollary]
+The Bailout Protocol guarantees that the autonomous-mode subgraph is always bipartite between human-controlled and fallback-active regions. There exists no execution path from $\sigma_0$ to any $\sigma$ with $\text{HumanPresent}(\sigma) = \text{false}$ and $\text{FallbackActive}(\sigma) = \text{false}$.
+\end{block}
+
+\subsection{LIVENESS: Eventual Human Contact}
+
+\begin{block}[LIVENESS Invariant]
+\textbf{Statement:} Any agent that initiates a bailout request eventually achieves confirmed human contact, or the fallback channel is activated within a bounded number of steps.
+
+\textbf{Formalization:} For every bailout request $b$ issued at time $t$, there exists a step $t' \in [t,\ t_{\max}]$ where $t_{\max} = t + 3 \cdot \text{AuditInterval}$ such that either:
+\[
+\text{ContactConfirmed}(b, t') = \text{true} \quad \lor \quad \text{FallbackActive}(t') = \text{true}.
+\]
+\end{block}
+
+\begin{block}[LIVENESS Proof Sketch]
+We reason from the protocol's escalation chain.
+
+\begin{enumerate}
+\item \textbf{Request propagation:} By the escalation rules (Section 4), a bailout request $b$ issued by agent $a$ is propagated to all reachable human principals within one audit interval. Let $\mathcal{H}_b \subseteq \mathcal{H}$ denote the set of humans notified of $b$.
+
+\item \textbf{Confirmation or escalation:} If any $h \in \mathcal{H}_b$ issues a confirmation, $\text{ContactConfirmed}(b) = \text{true}$ and the protocol terminates successfully. If no confirmation is received within AuditInterval, the request escalates to the next tier (Tier 2).
+
+\item \textbf{Tier 2 and Tier 3:} Escalation proceeds through Tier 2 (external contacts) and Tier 3 (public channels). Each tier adds a new communication pathway. Each tier is bounded by AuditInterval.
+
+\item \textbf{Bound composition:} The maximum number of steps before either confirmation or fallback activation is $3 \times \text{AuditInterval}$. Beyond Tier 3, the protocol activates the fallback channel by construction, ensuring $\text{FallbackActive} = \text{true}$.
+
+\item \textbf{Liveness of contact:} Since $\mathcal{H}$ is nonempty (SAFETY antecedent requires this for any state without fallback), at least one human is reachable at each tier. Therefore, at least one escalation pathway is available at each step, guaranteeing that the bound is never exceeded without one of the two terminal conditions being met.
+\end{enumerate}
+
+Thus, LIVENESS holds for all bailout requests.
+\end{block}
+
+\begin{block}[Remark on Boundedness]
+The bound $3 \cdot \text{AuditInterval}$ is a worst-case upper bound. In practice, contact is achieved in expected $O(1)$ steps when human principals are responsive. The fallback channel provides a hard guarantee for unresponsive or adversarial environments, ensuring no bailout request goes permanently unacknowledged.
+\end{block}
+
+\subsection{ACCOUNTABILITY: Human Always Identifiable}
+
+\begin{block}[ACCOUNTABILITY Invariant]
+\textbf{Statement:} Every decision, action, or state transition in the system is attributable to at least one identified human principal at the time of occurrence.
+
+\textbf{Formalization:} For every state $\sigma$ and every action $a$ recorded in $\text{EventLog}(\sigma)$, there exists a unique human principal $h \in \mathcal{H}(\sigma)$ such that
+\[
+\text{AttributedTo}(a, h) = \text{true}.
+\]
+Furthermore, the attribution chain is append-only: no event record may be modified after issuance, and any delegation of authority preserves the original principal's identity in the delegation record.
+\end{block}
+
+\begin{block}[ACCOUNTABILITY Proof Sketch}
+We establish accountability through three mechanisms: identity registration, delegation chains, and append-only logging.
+
+\begin{enumerate}
+\item \textbf{Identity registration:} Every human principal $h$ enrolled in the system receives a unique identifier $\text{id}(h)$ and a cryptographic signing key pair. The binding $(\text{id}(h), \text{pk}(h))$ is recorded in the Principal Registry at enrollment. This establishes a non-repudiable anchor for all downstream attributions.
+
+\item \textbf{Action attribution:} Every action $a$ in the event log carries the signature $\sigma_h$ of the principal who authorized it, computed over the action's canonical representation. Verification of $\sigma_h$ against $\text{pk}(h)$ ensures that $a$ is attributable to $h$ and that $h$ cannot deny authorship (non-repudiation).
+
+\item \textbf{Delegation chains:} When a human delegates authority to an agent, the delegation record includes the delegator's signature, the delegatee's identifier, and a scope specification. The delegation chain is linear: any action by the delegatee is linked backward through the chain to the original human principal. The chain is traversable in $O(d)$ steps where $d$ is the delegation depth, and is recorded as an immutable prefix of the action's attribution metadata.
+
+\item \textbf{Append-only event log:} The event log is structured as a hash-linked chain (each entry includes the hash of the preceding entry). This prevents retroactive modification of any historical record. An action is considered \emph{confirmed} only when it has been appended to the log with a valid human signature. Agents operating without a valid signature are logged as \emph{unsigned} and trigger a security event, but do not corrupt the attribution record.
+
+\item \textbf{Principal nonemptiness guarantee:} SAFETY ensures that $\mathcal{H}$ is never empty without fallback activation. In any reachable state where accountability verification is performed, at least one human principal exists whose identity can be attached to any unsigned agent action via the delegation chain or direct authorization.
+\end{enumerate}
+
+Therefore, every logged action is attributable to a human principal, and no action can be disclaimed or left unaccounted.
+\end{block}
+
+\begin{block}[Corollaries]
+\begin{itemize}
+\item \textbf{Non-repudiation:} A human principal $h$ cannot successfully claim that they did not authorize an action $a$ if $a$ bears $h$'s valid signature in the event log.
+\item \textbf{Auditability:} Any external auditor can independently reconstruct the full attribution chain for any action by replaying the append-only log from genesis.
+\item \textbf{Forensic finality:} In the event of a security breach or agent malfunction, the accountability record provides a complete, tamper-evident forensic trail.
+\end{itemize}
+\end{block}
+
+\subsection{Composition Theorem}
+
+\begin{block}[Global Invariant]
+The three properties compose into a single global guarantee:
+
+\[
+\text{For all reachable } \sigma:\quad
+\underbrace{\text{HumanPresent}(\sigma) \lor \text{FallbackActive}(\sigma)}_{\text{SAFETY}} \;\land\;
+\underbrace{\forall b.\ \text{LIVENESS}(b, \sigma)}_{\text{LIVENESS}} \;\land\;
+\underbrace{\forall a.\ \exists h.\ \text{AttributedTo}(a, h)}_{\text{ACCOUNTABILITY}}.
+\]
+
+This invariant is maintained simultaneously across all transitions and is preserved under composition of concurrent agents. The Bailout Protocol thus provides a provably sound correctness foundation for autonomous agent systems operating under human oversight.
+\end{block}

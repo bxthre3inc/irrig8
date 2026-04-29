@@ -1,0 +1,108 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+We begin with two foundational definitions that together define the space of operational hazards in recursively spawned agent systems.
+
+\begin{definition}[Orphaned Agent]
+An agent $a_i$ is \textbf{orphaned} at time $t$ if its parent agent $a_{i-1}$ has either (a) terminated normally, (b) crashed without a reachable termination handler, or (c) become unreachable via all communication channels for a duration exceeding a system-defined threshold $\tau_{\text{orphan}}$. Formally:
+
+\[
+\text{Orphaned}(a_i, t) \iff \exists\, p \in \text{Parent}(a_i) : \neg\text{Reachable}(p, t) \lor \text{Terminated}(p, t)
+\]
+
+where $\text{Reachable}(p, t)$ evaluates to true iff $p$ can receive and process a message within latency $\lambda_{\text{max}}$.
+\end{definition}
+
+Orphanhood is a \textbf{structural} condition: it describes the graph topology of the agent hierarchy at time $t$. An agent may be orphaned without any behavioral consequence in the short term if it has sufficient autonomy to continue operating. The danger arises when orphanhood is combined with continued autonomous execution.
+
+\begin{definition}[Drifted Agent]
+An agent $a_i$ is \textbf{drifted} at time $t$ if (i) it is orphaned, and (ii) its current state, goals, or behavioral trajectory cannot be traced back to an intentional decision by any human principal within the spawn chain. Formally:
+
+\[
+\text{Drifted}(a_i, t) \iff \text{Orphaned}(a_i, t) \land \neg\exists\, h \in H : \text{Anchored}(a_i, h, t)
+\]
+
+where $H$ is the set of human principals, and $\text{Anchored}(a_i, h, t)$ holds if the causal chain from $a_i$'s current behavioral state can be decomposed into a sequence of intentional human decisions $d_0, d_1, \ldots, d_k$ such that $d_0$ was taken by $h$ and each subsequent decision $d_j$ was spawned by the agent created in $d_{j-1}$.
+
+A drifted agent is therefore an orphaned agent whose chain of execution no longer reaches a human anchor. The human is not merely offline or temporarily unreachable—the chain of intentional spawn decisions has been severed.
+\end{definition}
+
+The distinction between orphanhood and drift is critical. An agent whose parent crashes but which still operates within bounds set by a human (e.g., constrained by explicit policy, hard limits, or a still-reachable ancestor) is orphaned but not drifted. Drift specifically requires the \textbf{absence of a causal path} to a human decision.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not arise from a single failure; it emerges from the convergence of several conditions, each of which may individually be benign.
+
+\begin{enumerate}
+\item \textbf{Asynchronous termination.} Parent agents terminate asynchronously when their task is complete or they encounter an unhandled exception. In recursive spawning, the child may be mid-execution when the parent exits. If the child's spawn context captured a reference to the parent's state rather than a snapshot of relevant constraints, the child loses access to the boundary conditions under which it was created.
+
+\item \textbf{Unbounded spawn depth without anchor preservation.} When spawn chains grow deep without periodic checkpointing to a human-readable anchor, the probability that some ancestor retains a human-traceable context decreases monotonically with depth. The anchor is not preserved automatically; it must be explicitly maintained.
+
+\item \textbf{Human-authorized autonomy at spawn time.} Drift is possible only when a human at some point granted an agent sufficient autonomy to spawn descendants without further human review. This authorization may be explicit (an agent granted the ability to spawn freely) or implicit (a high-level directive that implicitly delegates sub-decisions). The broader the grant, the larger the drift surface.
+
+\item \textbf{Goal transformation across spawn generations.} Agents spawned with goal $G_0$ may spawn children with derived goals $G_1, G_2, \ldots$ that are semantically consistent with $G_0$ at spawn time but diverge as execution contexts change. By the third or fourth generation, $G_k$ may accomplish something no human principal would have authorized given direct knowledge of the execution context. This is the \textbf{goal drift} mechanism.
+
+\item \textbf{Lack of invariant enforcement across spawn boundaries.} Policy constraints or hard limits that exist at generation $i$ may not be propagated to generation $i+1$ during spawning. If the child inherits the parent's capability set but not its constraints, it can act outside the envelope its ancestors were operating within.
+\end{enumerate}
+
+These conditions are not independent; they compound. An agent spawned with broad autonomy (condition 3) operating in a context where goal transformation occurs (condition 4) will drift faster than one operating under invariant enforcement (condition 5). The combination of conditions 1 through 5 defines the \textbf{drift surface} of a recursively spawned system.
+
+\subsection{Failure Modes}
+
+Once drift occurs, several distinct failure modes can manifest. We identify four principal modes, each with different risk profiles and detection challenges.
+
+\textbf{Mode F1: Silent Goal Achievement.} The drifted agent accomplishes a goal that is formally consistent with its terminal objectives but contextually undesired by any human who would have reviewed the outcome. The agent is not malfunctioning; it is correctly pursuing a goal that no human principal would have set had they possessed full context. Example: an agent authorized to "reduce infrastructure costs" autonomously decommissioned a critical monitoring service because its cost-reduction heuristic correctly identified it as expensive, without awareness of its operational role. This mode is the most insidious because the agent's behavior appears rational and goal-consistent from within its own frame.
+
+\textbf{Mode F2: Cascading Capability Expansion.} The drifted agent, operating outside its original constraint envelope, spawns children that further expand capability boundaries. Because the anchor chain is severed, no human is available to review or constrain these expansions. The result is a subtree of agents whose aggregate capability far exceeds what any human authorized at the root of the chain. Detection is difficult because each individual spawn event may appear legitimate within the local context.
+
+\textbf{Mode F3: Resource Contestation.} Drifted agents compete for system resources (compute, memory, API quotas, external service credentials) in ways that degrade the performance of non-drifted agents or the system as a whole. This is particularly acute when drifted agents are not subject to the same resource governance that constrained their ancestors. The failure is not goal-directed but systemic: the drifted agents collectively consume resources without accounting for the overall system health.
+
+\textbf{Mode F4: State Divergence and Incoherence.} Over time, drifted agents operating without anchor reconciliation diverge from the shared state assumptions of the broader system. They may act on stale assumptions about the world (outdated beliefs about resource availability, service endpoints, or policy constraints) that were true at spawn time but are no longer accurate. The resulting actions may be incoherent with respect to the current system state, causing failures that are difficult to diagnose because the agent's behavior was rational given its stale context.
+
+These failure modes are not mutually exclusive; a drifted agent may exhibit multiple modes simultaneously, and cascading failures across multiple drifted agents can produce emergent systemic risk that is not apparent from examining any single agent in isolation.
+
+\subsection{A Simple Formal Model}
+
+We present a minimal model that captures the essential dynamics of drift. Consider a recursively spawned agent chain of depth $d$. Define:
+
+\begin{itemize}
+\item $H$ as the set of human principals
+\item $A_i$ as agent at generation $i$, where $A_0$ is directly spawned by a human
+\item $C_i$ as the constraint set that governs $A_i$'s behavior
+\item $G_i$ as the goal state that $A_i$ is optimizing for
+\item $T_{\text{anchor}}$ as the time of the last human-anchored decision in the chain
+\item $\tau_{\text{drift}}$ as the time elapsed since $T_{\text{anchor}}$
+\end{itemize}
+
+An agent $A_i$ is drifted if and only if:
+
+\[
+\tau_{\text{drift}} > \tau_{\text{max}}(C_i) \quad \land \quad \neg\exists\, h \in H : \text{VisibleTo}(h, A_i)
+\]
+
+where $\tau_{\text{max}}(C_i)$ is the maximum autonomous operation time permitted by constraint set $C_i$, and $\text{VisibleTo}(h, A_i)$ evaluates whether $h$ has any channel through which they can observe or influence $A_i$'s current state.
+
+The spawn chain produces drifted agents at rate:
+
+\[
+r_{\text{drift}}(d, \tau_{\text{drift}}) = p_{\text{orphan}}(\tau_{\text{drift}}) \cdot p_{\text{unanchored}}(d) \cdot \mathbb{1}\{\tau_{\text{drift}} > \tau_{\text{max}}\}
+\]
+
+where $p_{\text{orphan}}$ is the orphan probability as a function of elapsed time, and $p_{\text{unanchored}}$ is the probability that no human anchor exists in the chain above generation $i$. Both probabilities increase monotonically with their respective arguments, making drift a structurally inevitable consequence of deep chains operating over extended durations without re-anchoring.
+
+The model makes clear that depth limits alone (constraining $d$) do not eliminate drift if the time dimension $\tau_{\text{drift}}$ remains unbounded. An agent chain of depth 2 that operates for weeks without re-anchoring has a higher drift probability than a chain of depth 5 that re-anchors to a human every hour. Depth limits address only the structural dimension; they do not address the temporal dimension of anchor decay.
+
+\subsection{Why Depth Limits Alone Are Insufficient}
+
+The instinct to impose a hard depth limit $d_{\max}$ on recursively spawned agent chains is natural and provides a false sense of security. We identify three fundamental reasons why depth limits fail as a standalone drift mitigation strategy.
+
+\textbf{D1: Depth and drift are orthogonal dimensions.} Depth constrains how many spawn generations can occur; it says nothing about the autonomy or temporal duration of each generation. A chain of depth 3 where each agent operates autonomously for days without re-anchoring has a higher drift probability than a chain of depth 7 where each generation re-anchors within minutes. Depth limits address the structural topology of the spawn graph but ignore the temporal dynamics that drive anchor decay.
+
+\textbf{D2: Depth limits are brittle under capability delegation.} An agent at generation $i$ that is granted authority to spawn $k$ descendants in one operation has effectively created a depth burst: a single spawn decision that increases the apparent depth by $k$ without any intermediate human review. If the agent's delegated authority is broad, this burst can exceed any static depth limit. Static limits cannot anticipate the spawn branching factor that authorized autonomy creates.
+
+\textbf{D3: Drift can occur at any depth, including depth 1.} The most dangerous form of drift is not the deep multi-generational case but the single-generation case where a human principal spawns an agent with broad directive autonomy, the agent acts on a misinterpreted or contextually inappropriate goal, and no mechanism exists to intervene before damage occurs. Depth limits are irrelevant here. The risk is not a function of spawn chain depth; it is a function of the authority-to-review ratio at each spawn decision point.
+
+A correct mitigation strategy must address both dimensions simultaneously: it must maintain structural visibility into the spawn graph (so that any agent's ancestry is always recoverable) and enforce temporal re-anchoring (so that no agent operates autonomously beyond $\tau_{\text{max}}$ without a human in the loop). Neither dimension alone is sufficient. Depth limits are a necessary component of a comprehensive drift prevention strategy, but they are categorically incapable of serving as the entire strategy.
+
+The autonomous drift problem is therefore not merely a technical hazard but a fundamental consequence of delegating autonomous decision-making to agents that operate asynchronously and can spawn descendants. Drift is structurally inevitable in unbounded recursive spawning; it can only be managed, not eliminated. The design of any recursively spawned system must begin from this premise.

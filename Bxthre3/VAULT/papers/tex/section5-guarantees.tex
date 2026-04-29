@@ -1,0 +1,127 @@
+\section{Guarantees and Correctness Properties}\label{sec:properties}
+
+The Bailout Protocol is designed to satisfy three correctness properties that together constitute the framework's accountability contract with human principals. Each property is stated formally, grounded in the state-machine specification of Section~\ref{sec:bailout}, and supported by a proof sketch that traces the causal chain from protocol mechanisms to the stated guarantee. Throughout, we assume a synchronous execution model with bounded clock drift $\Delta$ and causal ordering of events, matching the AgentOS host environment.
+
+% ---------------------------------------------------------------
+\subsection{SAFETY: No Autonomous Collapse}\label{sec:safety}
+
+\textbf{Property (Safety).} At no point in any execution of the Bailout Protocol may the system enter a state in which all human-contact pathways are permanently disabled without an explicit, ledger-verified human authorization.
+
+\textbf{Formal statement.} Let $S$ be the set of all system states and let $H \subseteq S$ denote the subspace of states in which at least one human-contact pathway remains open. Let $\alpha$ be any finite sequence of transitions none of which carries a human-authorization signature from the ledger. Then for all $s \in H$ and all such $\alpha$, the state reached by applying $\alpha$ from $s$ is also in $H$:
+\[
+\forall s \in H,\ \forall \alpha \text{ unsigned by a human}: \ \alpha(s) \in H .
+\]
+
+Equivalently: no sequence of unsigned transitions can close the last human-contact pathway.
+
+\medskip\noindent\textbf{Assumptions.}
+\begin{itemize}\itemsep0em
+    \item[(A1)] The Bailout Monitor runs as a non-preemptible supervisor thread with scheduling priority above any agent task.
+    \item[(A2)] Human-contact pathways are implemented as interruptible blocking calls; a pathway cannot be closed while any such call is in flight.
+    \item[(A3)] The authorization ledger is append-only and survives crash-restart cycles.
+    \item[(A4)] The host OS scheduler correctly enforces priority ordering.
+\end{itemize}
+
+\medskip\noindent\textbf{Proof sketch (by construction and contradiction).}
+
+The Bailout Monitor maintains an exclusive lock $L_h$ on the human-contact state variable $H$. Every system call that would modify $H$ — specifically, the closure of a communication channel or the suspension of an interrupt handler — is intercepted by a pre-call hook that (i) acquires $L_h$, (ii) inspects the ledger for a human-authorization entry covering the requested close operation, and (iii) releases $L_h$. If no such entry exists, the hook blocks the call and returns an error. This gate is enforced in the monitor thread, which runs at priority above all agent tasks (A1); no agent can preempt the monitor to bypass the check.
+
+Assume for contradiction that some agent task $T$ executes a sequence $\alpha$ of unsigned transitions that moves the system from $s \in H$ to $s' \notin H$. To modify $H$, $T$ must invoke a system call $c$ that closes the final pathway. When $c$ is processed, the monitor hook acquires $L_h$ and queries the ledger. Since $\alpha$ contains no human-authorized transitions by assumption, no ledger entry covers $c$. The hook therefore blocks $c$ and $H$ is not modified. This contradicts the existence of $s'$. Hence no such $\alpha$ exists.
+
+\medskip\noindent\textbf{External dependency.} Safety requires A1 and A4. If a co-resident process with higher priority than the monitor thread can modify $H$, the guarantee collapses. AgentOS enforces A1 via startup capability verification; the proof assumes this check passes.
+
+\medskip\noindent\textbf{Corollary.} The framework cannot enter a state in which no human can intervene, regardless of agent complexity, goal drift, or reward-hacking pressure. The monitor's priority and A2 together make autonomous collapse structurally impossible.
+
+% ---------------------------------------------------------------
+\subsection{LIVENESS: Eventual Human Contact}\label{sec:liveness}
+
+\textbf{Property (Liveness).} If a human principal initiates contact through any provisioned pathway, a responsive principal will acknowledge receipt within a bounded time $T_{\max}$ determined solely by the deployment topology.
+
+\textbf{Formal statement.} Let $t_c$ be the time at which a human issues a contact signal on any available pathway $p \in P$, where $P$ is the set of provisioned pathways. Let $t_r$ be the time at which a responsive principal acknowledges the contact. Then for all executions:
+\[
+\exists T_{\max} \in \mathbb{R}_{>0} : t_r - t_c \leq T_{\max}.
+\]
+
+The bound $T_{\max}$ is independent of agent state, exception severity, and network conditions subject to the assumptions below.
+
+\medskip\noindent\textbf{Assumptions.}
+\begin{itemize}\itemsep0em
+    \item[(B1)] At least one pathway $p \in P$ remains functionally open at all times.
+    \item[(B2)] The Pathway Health Registry (PHR) reflects actual pathway state with bounded staleness $T_{\text{health}}$.
+    \item[(B3)] Contact-routing implements exponential backoff with a fixed cap $T_{\text{cap}}$.
+    \item[(B4)] At least one human principal is available with probability $> 0$ at any given time; the protocol does not assume simultaneous unavailability of all principals.
+\end{itemize}
+
+\medskip\noindent\textbf{Proof sketch (by bound construction).}
+
+The contact sequence is analyzed in three phases:
+
+\textbf{Phase 1 — Pathway selection ($T_{\text{query}}$).} At $t_c$, the routing layer queries the PHR. By B1, the PHR returns at least one functional pathway. This lookup is a local in-memory operation with bounded latency $T_{\text{query}}$.
+
+\textbf{Phase 2 — Delivery ($T_{\text{delivery}}$).} The contact packet traverses the selected pathway. Packet delivery time is bounded by the deployment's maximum round-trip time $R_{\max}$, a known constant. We set $T_{\text{delivery}} = R_{\max}$.
+
+\textbf{Phase 3 — Failure handling.} If the initial delivery fails, B3 ensures retry with exponential backoff, capped at $T_{\text{cap}}$. Let $T_{\text{initial}}$ be the initial retry interval. The maximum number of retry attempts is $k = \lfloor \log_2(T_{\text{cap}} / T_{\text{initial}}) \rfloor + 1$, a constant. Total retry time is therefore bounded by $T_{\text{cap}}$ by construction.
+
+Summing the components:
+\[
+T_{\max} = T_{\text{query}} + T_{\text{delivery}} + T_{\text{cap}} + T_{\text{overhead}} .
+\]
+All summands are deployment constants; none depend on agent state or exception type. Therefore $T_{\max}$ is finite and well-defined for every execution.
+
+Note that the bound concerns system-side responsiveness (packet delivery and acknowledgment), not human cognitive response time. The human principal's actual deliberation time is not included in $T_{\max}$, consistent with standard liveness formulations.
+
+\medskip\noindent\textbf{External dependency.} Liveness requires B1. If all pathways fail simultaneously and permanently, the guarantee does not apply. This single-point-of-failure risk is mitigated by provisioning at least two independent pathways (e.g., primary network route and a secondary out-of-band channel). B2 ensures the PHR does not return stale entries that mask a failed pathway; the staleness bound $T_{\text{health}}$ is a parameter of $T_{\max}$.
+
+\medskip\noindent\textbf{Corollary.} Even under degraded network conditions or high-severity exception loads, the framework remains reachable by a human within a defined window. This is essential when an agent's behavior has drifted and urgent human correction is required.
+
+% ---------------------------------------------------------------
+\subsection{ACCOUNTABILITY: Human Always Identifiable}\label{sec:accountability}
+
+\textbf{Property (Accountability).} For every action executed by the framework during normal operation or during a bailout event, there exists a unique, resolvable human principal identifier recorded in the authorization ledger before the action takes effect.
+
+\textbf{Formal statement.} Let $\mathcal{A}$ be the set of all framework actions. For each $a \in \mathcal{A}$, there exists a ledger entry $r(a)$ such that:
+\begin{enumerate}\itemsep0em
+    \item[(i)] $r(a)$ contains a human principal identifier $p_a$;
+    \item[(ii)] $p_a$ is resolvable to a verified natural person or institutional actor at the time of recording;
+    \item[(iii)] for any two independently authorized actions $a_1, a_2 \in \mathcal{A}$, if both are authorized by the same human principal, the ledger entries are distinguishable and correctly attributed.
+\end{enumerate}
+Actions executed under a standing policy rather than direct authorization are attributed to the human principal who signed that policy, establishing an unbroken chain from action to accountable person.
+
+\medskip\noindent\textbf{Assumptions.}
+\begin{itemize}\itemsep0em
+    \item[(C1)] The authorization ledger is append-only, collision-resistant, and timestamped via a trusted time source.
+    \item[(C2)] Human principal identifiers are issued by a provisioning authority that performs identity verification before issuance.
+    \item[(C3)] The scope of agent-autonomous action without prior real-time authorization is defined by a signed policy document, signed by a human principal who thereby assumes accountability for the delegated scope.
+    \item[(C4)] The Fact Layer's pre-dispatch hook blocks any action for which no ledger entry exists.
+\end{itemize}
+
+\medskip\noindent\textbf{Proof sketch (by case analysis).}
+
+We consider two disjoint cases covering $\mathcal{A}$.
+
+\textbf{Case 1 — Direct authorization.} A human principal $P$ authorizes action $a$ through an interactive confirmation or explicit directive. The protocol generates a ledger entry containing: (i) the SHA-256 hash of $a$'s parameters, (ii) $P$'s principal identifier (issued under C2), (iii) a trusted timestamp from the system clock, and (iv) a digital signature over fields (i)–(iii) using $P$'s private key. This entry is written to the ledger before $a$ is dispatched (enforced by C4). Uniqueness follows from C2: no two distinct natural persons receive the same principal identifier. Because the entry is written before dispatch, no directly authorized action can execute without a corresponding, attributable record.
+
+\textbf{Case 2 — Policy-delegated authorization.} Action $a$ is executed by an agent under a standing policy $\pi$, without real-time human confirmation. The policy $\pi$ defines the scope of autonomous authority and is signed by human principal $P_\pi$ (C3). When $a$ executes, the ledger records: (i) the policy identifier for $\pi$, (ii) the SHA-256 hash of $a$'s parameters, (iii) a reference to $P_\pi$, and (iv) a trusted timestamp. The linkage to $P_\pi$ is unambiguous because $\pi$ was signed by a specific, identified human. No action executed under $\pi$ lacks an attributable principal; the policy signature provides the same accountability guarantee as direct authorization, expressed at policy-granularity rather than action-granularity.
+
+In both cases, the ledger entry is created before the action takes effect (C4), guaranteeing that no action in $\mathcal{A}$ is unattributable. The append-only property of the ledger (C1) ensures records cannot be altered retroactively, providing non-repudiability for every entry.
+
+\medskip\noindent\textbf{External dependency.} Accountability requires C2 and C3. If principal identifiers can be issued without identity verification, the mapping from identifier to real person may be unreliable. This is mitigated by configuring the provisioning authority to accept only identifiers from a verified identity provider (documented at deployment time). Unsigned policy documents are rejected at load time, enforcing C3 structurally rather than procedurally.
+
+\medskip\noindent\textbf{Corollary.} Any auditor, regulator, or affected party can reconstruct the full chain of human accountability for any framework action, without depending on the framework's own records alone: ledger entries are verifiable against external signature keys held by the signing principals.
+
+% ---------------------------------------------------------------
+\subsection{Mutual Reinforcement}\label{sec:property-interaction}
+
+The three properties form a causal chain, not merely a conjunction.
+
+\begin{itemize}
+    \item \textbf{Safety $\rightarrow$ Liveness.} If Safety were violated, a covert pathway closure could permanently block all human contact, rendering the Liveness bound moot. Safety's guarantee that $H$ never transitions to $\neg H$ without explicit human authorization is the prerequisite for Liveness to be meaningful.
+
+    \item \textbf{Liveness $\rightarrow$ Accountability.} If a human principal cannot receive accountability notifications within a bounded time, the accountability property, while formally preserved in the ledger, is operationally degraded. Liveness ensures that accountability events surface to a human within the operational decision window.
+
+    \item \textbf{Accountability $\rightarrow$ Safety.} Safety depends on human oversight of last resort. If the human who authorized a policy cannot be identified, the policy cannot be reviewed, challenged, or revoked by its author, weakening the structural guarantee that Safety requires. Accountability ensures that every Safety-critical policy has a named,reachable principal.
+\end{itemize}
+
+The combined effect is a framework that remains under continuous, identifiable human control throughout its operational lifetime — regardless of agent complexity, execution duration, or environmental adversity.
+
+\end{document}

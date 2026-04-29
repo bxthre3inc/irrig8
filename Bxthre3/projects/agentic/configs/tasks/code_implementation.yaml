@@ -1,0 +1,30 @@
+name: code_implementation
+description: "Implement system components based on design."
+version: 1.0.0
+role: engineer
+inputs:
+  - name: design_doc
+    type: document
+    source: s3://docs-bucket/design/
+outputs:
+  - name: codebase
+    type: repository
+    destination: git@github.com:org/repo.git
+steps:
+  - name: setup_repo
+    action: init
+    tool: git
+  - name: implement_components
+    action: code
+    tool: python
+    parameters:
+      framework: fastapi
+  - name: commit_code
+    action: commit
+    tool: git
+    parameters:
+      message: "Initial implementation"
+constraints:
+  max_retries: 3
+  timeout: 14400
+version: 1.0.0

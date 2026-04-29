@@ -1,0 +1,189 @@
+\section{Integration with the BX3 Framework}
+\label{sec:rs-integration}
+
+Recursive Spawning does not operate as an independent mechanism. It is embedded
+within and sustained by the BX3 three-layer architecture, which provides the
+structural enforcement infrastructure that makes the spawn tree's accountability
+guarantees unconditional.  The three layers — \purpose{}, \bounds{}, and
+\fact{} — serve distinct but mutually reinforcing roles in the Recursive
+Spawning pillar, each contributing an irreducible component to the overall
+guarantee.  This section specifies how each layer participates in the Recursive
+Spawning mechanism and how layer interactions enforce the invariants required
+for drift prevention, chain integrity, and termination.
+
+% ---------------------------------------------------------------
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:purpose-layer-anchor}
+
+The \purpose{} layer is the apex of the BX3 accountability architecture.  It
+carries the human principal's intent and serves as the exclusive terminus for any
+exception state that exceeds machine-actor provisioned authority.  In the
+Recursive Spawning pillar, the \purpose{} layer plays two distinct roles that are
+critical to the correctness of the spawn tree.
+
+First, the \purpose{} layer defines the operating range $R(n)$ for every node
+$n$ at provisioning.  This range is not merely a policy parameter — it is the
+binding constraint that the \bounds{} layer enforces at every decision point.
+The \purpose{} layer encodes the principal's intent as a structured scope that
+constrains all downstream reasoning and action.  When a node spawns a child, the
+\purpose{} layer's definition of $R(n)$ propagates downward as the upper bound
+on $R(\text{child})$: the child cannot receive authority that its parent does not
+possess.
+
+Second, and more critically, the \purpose{} layer is the structural terminus for
+the escalation chain.  Every node $n$ is assigned a human anchor $h(n)$ at
+provisioning — a specific human principal who is the ultimate accountable party
+for all actions taken under $R(n)$.  This assignment is a structural property of
+the \purpose{} layer, not a configurable parameter.  The \purpose{} layer
+carries the judgment required to resolve exceptions that exceed $R(n)$, and no
+machine actor possesses the judgment capacity to substitute for it.  This is not
+a policy choice — it is a structural consequence of what it means to carry
+intent: an agent operating under delegated authority cannot possess the
+principal's intent in sufficient completeness to serve as a substitute terminus
+for unresolved exceptions.
+
+The non-delegability of the \purpose{} layer's terminus function is the
+architectural linchpin of the Recursive Spawning pillar.  It ensures that the
+escalation chain from any node terminates at a human who is empowered to make
+binding decisions, and that no machine actor can absorb or redirect this chain.
+The \purpose{} layer is therefore the accountability anchor: the fixed point
+to which all escalation paths converge, and the layer from which all legitimate
+authority flows.
+
+% ---------------------------------------------------------------
+\subsection{Bounds Engine Depth Enforcement}
+\label{sec:bounds-engine-depth}
+
+The \bounds{} layer carries bounded reasoning and constrained execution within
+$R(n)$.  In the Recursive Spawning pillar, the \bounds{} layer enforces the
+depth constraints that prevent unbounded proliferation of the spawn tree.  This
+enforcement is structural, not advisory.
+
+At every spawn event, the \bounds{} layer evaluates whether the proposed child
+node satisfies the hierarchy finiteness constraint: its depth $d(\text{child})$
+must satisfy $d(\text{child}) \leq D_{\max}$, where $D_{\max}$ is the maximum
+spawn depth established by the framework parameters.  This check is performed by
+the \bounds{} layer's spawn state machine before the \texttt{child-provisioned}
+event is emitted.  If the depth check fails, the state machine transitions to
+\texttt{SPAWN\_LOCKED} and emits the $e_{\text{depth-exceeded}}$ event.  The
+spawn event is rejected; no child node is created.
+
+The \bounds{} layer additionally enforces the delegation scope inheritance
+constraint.  Before any spawn event is committed, the \bounds{} layer evaluates
+whether $R(\text{child}) \subset R(\text{parent})$ — whether the child's
+operating range is a proper subset of the parent's.  This check prevents
+authority expansion through recursive delegation: a parent cannot spawn a child
+with greater authority than the parent itself possesses.  If the check fails, the
+$e_{\text{scope-violation}}$ event is emitted, the spawn state machine
+transitions to \texttt{SPAWN\_LOCKED}, and the Bailout Protocol is triggered.
+The attempted expansion is both prevented and recorded.
+
+These depth enforcement mechanisms are enforced by the \bounds{} layer's state
+machine transition logic, which is itself subject to the \fact{} layer's
+pre-commit hook.  The \bounds{} layer cannot bypass its own depth checks because
+the checks are encoded in the state machine's transition guard conditions, not
+in discretionary policy code.  The state machine will not transition to
+\texttt{SPAWN\_ACTIVE} unless all guard conditions are satisfied.  This makes
+depth enforcement a structural property of the spawn state machine, not an
+operational one.
+
+The $T_{\text{bounds}}$ timeout parameter is also enforced at the \bounds{}
+layer, ensuring that bounded reasoning does not become unbounded deliberation.
+If a node's reasoning process exceeds $T_{\text{bounds}}$, the \bounds{} layer
+triggers the Bailout Protocol, preventing the node from continuing to act under
+delegated authority without human review.  The timeout is a depth-equivalent
+enforcement mechanism: it limits the operational duration of reasoning within
+$R(n)$, complementing the depth limit on the spawn tree's structural nesting.
+
+% ---------------------------------------------------------------
+\subsection{Fact Layer Forensic Ledger}
+\label{sec:fact-layer-fledger}
+
+The \fact{} layer carries deterministic enforcement and forensic auditability.
+It is the fail-safe anchor of the Recursive Spawning pillar: the only layer
+that may issue a definitive halt to autonomous action, and the layer that
+maintains the append-only Forensic Ledger that makes the spawn tree
+reconstructable and tamper-evident.
+
+The Forensic Ledger records every spawn event, every state transition of the
+spawn state machine, every exception event, and every human directive issued
+by any $h(n)$.  Each entry is a 6-tuple that includes the node identifier, the
+logical timestamp, the event type, the full diagnostic context, and the SHA-256
+hash of the preceding entry.  The cryptographic chaining ensures that no entry
+can be modified, deleted, or inserted without breaking the chain — a condition
+detectable by any auditor without access to the ledger's contents.
+
+For Recursive Spawning specifically, the Forensic Ledger records the following
+event types:
+
+\begin{itemize}
+\item \texttt{child-provisioned}$(p, c, R(c), h(c))$: records that parent $p$
+  spawned child $c$ with operating range $R(c)$ and human anchor $h(c)$.
+  This entry encodes the parent pointer $\alpha(c) = p$ and the human anchor
+  $h(c)$ for the child node.
+
+\item \texttt{spawn-locked}$(p, c, \text{reason})$: records that a spawn event
+  was rejected, including the reason for rejection (depth exceeded, scope
+  violation, or authorization failure).
+
+\item \texttt{bailout-triggered}$(n, e)$: records that the Bailout Protocol was
+  triggered at node $n$ due to exception $e$.
+
+\item \texttt{parent-pointer-write-denied}$(v, \alpha_{\text{old}},
+  \alpha_{\text{new}})$: records that a machine actor attempted to modify the
+  parent pointer of node $v$ and was rejected by the \fact{} layer's pre-commit
+  hook.
+\end{itemize}
+
+The Forensic Ledger is the sole source of truth for the runtime state of the
+Recursive Spawning pillar.  The \fact{} layer's pre-commit hooks for the spawn
+state machine query the Forensic Ledger to determine the current state —
+specifically, the current depth $d(v)$ of any node $v$ and the current
+$h(\cdot)$ assignments — before committing any state change.  This means that
+the state machine's guard conditions are evaluated against the ledger's record,
+not against a mutable in-memory state.  The ledger is the authoritative
+checkpoint for all state machine decisions.
+
+The Forensic Ledger's completeness invariant (Invariant
+\ref{inv:forensic-completeness}) ensures that every spawn event is recorded
+before subsequent actions are permitted.  This ordering constraint — record
+before act — is enforced by the \fact{} layer's pre-commit hook.  No spawn
+event can be committed without a corresponding \texttt{child-provisioned} entry
+in the ledger.  This eliminates the possibility of a spawn event that is not
+reflected in the audit record, ensuring that the chain from any node is fully
+reconstructable from the ledger at any future point in time.
+
+% ---------------------------------------------------------------
+\subsection{Three-Layer Joint Enforcement}
+\label{sec:three-layer-joint}
+
+The correctness of Recursive Spawning depends on the conjunction of all three
+layers acting in concert.  No single layer is sufficient, and no layer can
+substitute for another.
+
+The \purpose{} layer provides the accountability anchor: the human principal who
+is the ultimate terminus for all escalation paths and the source of all
+legitimate authority.  Without the \purpose{} layer, there would be no fixed
+point to terminate the chain, and no source of intent to propagate downward
+through the spawn tree.
+
+The \bounds{} layer provides the depth enforcement: the state machine guard
+conditions that prevent unbounded spawning, authority expansion, and unbounded
+reasoning.  Without the \bounds{} layer, the spawn tree could grow without
+structural limit and the escalation chain could be redirected by a machine actor
+with sufficient procedural sophistication.
+
+The \fact{} layer provides the forensic ledger: the append-only record that
+makes the spawn tree tamper-evident and reconstructable, and the pre-commit
+hooks that enforce the state machine's guard conditions at runtime.  Without
+the \fact{} layer, the spawn tree's state would be mutable, the audit record
+would be suppressible, and the state machine's guard conditions could be
+bypassed.
+
+The joint enforcement is formalized in the three-layer interaction constraints
+(IC-1 through IC-4) specified in Section~\ref{sec:layer-constraints}.  These
+constraints are structural — enforced by the \fact{} layer's pre-commit hook,
+not by convention or policy.  They ensure that each layer performs its
+designated function, that no layer can substitute for another, and that the
+accountability chain from any node to its human anchor is preserved regardless
+of what any machine actor attempts to do at runtime.

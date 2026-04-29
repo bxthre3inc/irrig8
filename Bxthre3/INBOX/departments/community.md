@@ -4,35 +4,85 @@
 **Head:** Tribe (Community Manager)
 **Created:** 2026-04-02
 **Reports to:** Brand (VP Marketing), Roadmap (VP Product)
+**Last Updated:** 2026-04-28 08:15 AM MT
 
 ---
 
 ## Scope
-
 | Community | Audience | Status |
 |-----------|----------|--------|
-| **Irrig8** | Farmer community, agricultural extension network, beta testers | Planning |
-| **Starting 5** | Startup founder community, co-founder matching network | Planning |
-| **Valley Players Club** | Player community, affiliate community | Planning |
-| **Zoe** | Open source community, AI enthusiasts, developer community | Planning |
-| **Bxthre3 corporate** | Employee community, investor community, advisor network | Planning |
+| **Irrig8** | Farmer community, agricultural extension network, beta testers | 🔴 Pipeline Zero |
+| **Starting 5** | Startup founder community, co-founder matching network | 🟡 Planning — BUILDBZ PASSED |
+| **Valley Players Club** | Player community, affiliate community | 🟢 T3 Active — T1/T2 Blocked |
+| **Zoe** | Open source community, AI enthusiasts, developer community | 🟡 On Hold |
+| **Bxthre3 corporate** | Employee community, investor community, advisor network | 🟡 Planning |
 
 > **Note:** FarmSense was retired 2026-03-23. All references → Irrig8.
 
 ---
 
-## Deliverables
+## P0/P1 Tracking (Updated 2026-04-28)
 
-- [ ] Monthly community newsletter
-- [ ] Community engagement metrics (DAU, posts, events)
-- [ ] Developer documentation improvements (coordinated with Frame)
-- [ ] Community feedback loop into product
+| Priority | Item | Owner | Age / Deadline | Status |
+|----------|------|-------|----------------|--------|
+| 🔴 P0 | VPC WY LLC formation | Drew | ~$2,600 — blocks T1/T2 | 20+ days |
+| 🔴 P0 | Drew reassignment | brodiblanco | War Room 04-24 | 4 days |
+| 🔴 P1 | irrig8 farmer introductions | irrig8 | **DEADLINE MISSED — EOD 04-25** | 20+ days |
+| 🔴 P1 | Sage VPC-CP-001 verbal confirmation | Atlas | Docs + cash in hand | Unverified |
+| 🔴 P1 | VPC Tier 3 outreach | Harvest | 15+ days overdue | Ready |
+| 🔴 P1 | G2E 2026 post-event closeout | Source/Shelf | **Unverified** | NO CONFIRMATION |
+| 🔴 P1 | ARPA-E OPEN 2026 | Sentinel/Maya | **3 days (2026-05-01)** | Active |
+| 🔴 P1 | AOS-001 (Agentic test suite) | Drew/Bits | 28+ days stale | UNRESOLVED |
+| 🟡 P1 | S5-001 (Starting 5 directory) | Drew/Bits | 26+ days stale | UNRESOLVED |
+| 🟡 P2 | VPC affiliate agreement legal review | Raj | Pending | |
+| 🟡 P2 | BUILDBZ spec session | brodiblanco | Blue Ocean PASSED (3.8/5) | Awaiting approval |
+
+---
+
+## Orchestrator Failures (Pattern — 4 of 7 days)
+- 2026-04-22: Sync + War Room failed — Logger compensated
+- 2026-04-24: Sync + War Room failed — Logger compensated
+- 2026-04-27: Sync + War Room failed — Logger compensated
+- 2026-04-28: [VERIFY] — Orchestrator unconfirmed
+
+**Root cause:** Unaddressed — Atlas (COO) responsible.
+
+---
+
+## Deliverables
+| Deliverable | Owner | Status | Notes |
+|------------|-------|--------|-------|
+| Monthly community newsletter | Tribe | 🔲 Pending | Awaiting Brand input |
+| Community engagement metrics | Tribe | 🔲 Not started | No platforms active |
+| Developer documentation improvements | Tribe + Frame | 🔲 Pending | Blocked on Agentic |
+| Community feedback loop → product | Tribe + Roadmap | 🔲 Not started | Routing TBD |
+
+---
+
+## Platform Tradeoffs (Approved 2026-04-03)
+| Platform | Best For |
+|----------|---------|
+| Discord | Zoe OSS, VPC, Developer community |
+| Circle | Starting 5 founders |
+| Email (Substack/ConvertKit) | Bxthre3 corporate, investor updates |
+| Forum (Discourse) | Irrig8 farmers (async) |
+
+---
+
+## Cross-Community Metrics
+
+| Community | DAU | Posts | Events | Notes |
+|-----------|-----|-------|--------|-------|
+| Irrig8 | [VERIFY] | [VERIFY] | [VERIFY] | Platform not live |
+| Starting 5 | [VERIFY] | [VERIFY] | [VERIFY] | Platform not live |
+| Valley Players Club | [VERIFY] | [VERIFY] | [VERIFY] | Pre-launch |
+| Zoe | [VERIFY] | [VERIFY] | [VERIFY] | On hold |
+| Bxthre3 corporate | [VERIFY] | [VERIFY] | [VERIFY] | Planning |
 
 ---
 
 ## Resources
-
-- All-agents reference: `INBOX/agents/all-agents.md`
+- All-agents: `INBOX/agents/all-agents.md`
 - Brand sync: Casey (Marketing Lead)
 - Frame sync: [coordinate on dev docs]
 - Roadmap sync: Maya (Grant Strategist) / VP Product
@@ -40,45 +90,4 @@
 ---
 
 ## Last Updated
-
-2026-04-03 — first standup complete, department INBOX structured
-
-## Platform Tradeoffs (Draft — Awaiting Brand)
-
-| Platform | Pros | Cons | Best For |
-|----------|------|------|---------|
-| Discord | Real-time chat, rich integrations, free, developer-heavy | Moderation overhead | Zoe OSS, VPC, Developer community |
-| Circle | Professional, threaded discussions, newsletter-native | Paid, less dev-centric | Starting 5, Irrig8 |
-| Email list (Substack/ConvertKit) | Direct to inbox, monetization built-in | One-way, low engagement | Bxthre3 Corporate, Investor updates |
-| Forum (Discourse) | Best archive/search, community-owned | Setup/maintenance cost | Irrig8 farmers (asynchronous) |
-
-**Tribe recommendation:** Hybrid — Discord for dev/OSS (Zoe, VPC), Circle for founders (Starting 5), email for corporate/investors (Bxthre3).
-
----
-
-*Community Department — Tribe*
-## 🟡 P2 | tribe | 2026-04-10 15:16 UTC
-
-Community Manager daily standup complete. 5 communities scoped. VPC affiliate Tier 3 approved to proceed. Agentic dev community on hold until P1s resolve. Monthly newsletter not started - awaiting Brand sync.
-
----
-
-## 2026-04-15 08:15 AM MT — Community Standup
-
-**Agent:** Tribe (Community Manager) | **Priority:** P2
-
-**Summary:** All 5 communities pre-launch. No members, no engagement data, no launched products. 
-
-**Blockers:**
-- VPC compliance overdue (Harvest) — blocks VPC channel outreach
-- Starting 5 / Zoe pipeline: 0 targets (Drew outstanding since ~03-25)
-- Zoe scope unclear — is it Agentic OSS or separate product? [VERIFY]
-- Agentic API degraded (18 routes failing) — blocks Android + dev portal
-
-**Today's Actions:**
-- Request VPC compliance ETA from Harvest → VPC INBOX
-- Request Starting 5/Zoe targets from Drew → Sales INBOX
-- Clarify Zoe product scope → escalate if needed
-- Monitor Agentic API restoration → Engineering INBOX
-
-*Full report: `Bxthre3/INBOX/departments/community-standup-2026-04-15.md`*
+2026-04-28 08:15 AM MT

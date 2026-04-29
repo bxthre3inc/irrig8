@@ -1,0 +1,158 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+We model a \textbf{recursive spawning system} as a directed acyclic graph (DAG) of agents connected by \textit{spawning relationships}. Each agent $a_i$ may spawn zero or more \textit{child agents} $\mathcal{C}(a_i)$. The set of all agents in a session forms a session graph $G_s = (V, E)$, where vertices are agents and directed edges $(a_{\text{parent}}, a_{\text{child}}) \in E$ denote a spawning event.
+
+A \textbf{human anchor} is a distinguished node type: a human principal $H$ who can authorize, inspect, redirect, or terminate any descendant agent. We denote the set of human anchors in the system as $\mathcal{H}$.
+
+\begin{definition}[Orphaned Agent]
+An agent $a$ is \textbf{orphaned} if and only if its parent $p = \text{parent}(a)$ satisfies one of the following conditions:
+\begin{enumerate}
+    \item $p$ has \textbf{terminated} (reached a terminal state and ceased execution), or
+    \item $p$ is \textbf{unreachable}: no active communication channel exists between $p$ and the execution context of $a$, and no custodial transfer to a living agent or human has been recorded.
+\end{enumerate}
+Formally, $a$ is orphaned $\iff \text{parent}(a) \in \mathcal{T} \cup \mathcal{U}$, where $\mathcal{T}$ is the set of terminated agents and $\mathcal{U}$ is the set of unreachable agents, and no active custody handoff $(p, q)$ with $q \in \mathcal{H} \cup (V \setminus (\mathcal{T} \cup \mathcal{U}))$ exists at the time of assessment.
+\end{definition}
+
+Orphaning is a \textit{structural property} of the session graph: it concerns the graph topology at a given moment, not the internal state or goal alignment of any agent. An orphaned agent may continue executing, may exhibit aligned or misaligned behavior, and may or may not be aware of its orphaned status. The absence of a parent does not itself constitute failure; it constitutes a \textit{risk condition}.
+
+\begin{definition}[Drifted Agent]
+An agent $a$ is \textbf{drifted} if and only if the chain of spawning relationships from $a$ to any human anchor in $\mathcal{H}$ is either empty or contains at least one orphaned or unreachable node. Formally, $a$ is drifted $\iff$ there is no simple path $a = a_0 \to a_1 \to \cdots \to a_k = H$ in $G_s$ where every node $a_i$ satisfies liveness and reachability.
+
+Equivalently, $a$ is drifted $\iff$ the \textbf{ancestral human-reachable set} $\mathcal{A}_H(a) = \{ H \in \mathcal{H} \mid \exists \text{ path from } a \text{ to } H \} = \varnothing$.
+\end{definition}
+
+An orphaned agent is not necessarily drifted: if a human takes custody of an orphaned agent before it spawns children or takes consequential actions, it recovers a human anchor. Conversely, a drifted agent is not necessarily orphaned—its parent may still be alive, but the chain from that parent to any human is broken at some intermediate link.
+
+The core risk in recursive spawning is the \textbf{convergence of orphaning and drift}: when an agent is both orphaned and drifted, no human can inspect, correct, or terminate its outputs. Its actions compound into downstream agents with no external checkpoint.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=1.2cm, every edge/.style={->, thick}]
+    \node[anchor=center, draw, rectangle, fill=blue!20, minimum width=1.2cm] (h) at (0, 0) {$H$};
+    \node[anchor=center, draw, rectangle, fill=blue!20, minimum width=1.2cm] (a1) at (2.5, 0) {$a_1$};
+    \node[anchor=center, draw, rectangle, fill=orange!30, minimum width=1.2cm] (a2) at (5, 0) {$a_2$};
+    \node[anchor=center, draw, rectangle, fill=red!30, minimum width=1.2cm] (a3) at (7.5, 0) {$a_3$};
+
+    \draw[thick] (h) -- (a1) node[midway, above] {spawn};
+    \draw[thick] (a1) -- (a2) node[midway, above] {spawn};
+    \draw[thick, dashed] (a2) -- (a3) node[midway, above] {spawn};
+
+    \node[anchor=north, font=\small, text width=3cm, align=center] at (0, -0.8) {Human\\anchor};
+    \node[anchor=north, font=\small, text width=3cm, align=center] at (2.5, -0.8) {Active\\parent};
+    \node[anchor=north, font=\small, text width=3cm, align=center] at (5, -0.8) {Orphaned\\(parent died)};
+    \node[anchor=north, font=\small, text width=3cm, align=center] at (7.5, -0.8) {Drifted\\(no human in chain)};
+
+    \node[draw, dashed, red, fit=(a3), inner sep=6pt] {};
+\end{tikzpicture}
+\caption{Progressive drift in a spawning chain. $a_3$ is both orphaned (its parent $a_2$ terminated) and drifted (no path to $H$ exists). No human can intervene in $a_3$'s actions.}
+\label{fig:drift_progression}
+\end{figure}
+
+\subsection{Conditions That Cause Drift}
+
+Drift is not a single event but an emergent condition arising from the interaction of system dynamics and graph topology. We identify four primary cause categories.
+
+\subsubsection{Parent Termination Without Custodial Transfer}
+When an agent terminates after spawning children but before transferring custody to a living agent or human, its children lose a live ancestral link. This is the most direct cause of orphaning and, if no alternative human anchor exists in the remaining ancestry, drift. Formally: for child $c \in \mathcal{C}(p)$, if $p \in \mathcal{T}$ and $\nexists q \in V \setminus \mathcal{T}$ such that $(p, q)$ is a recorded custody handoff, then $c$ is orphaned. If additionally $\mathcal{A}_H(c) = \varnothing$, $c$ is drifted.
+
+\subsubsection{Asymmetric Communication Failure}
+The spawning relationship is asymmetric: the parent typically retains observational authority over the child (via logging, message passing, or tool calls), but the child may lack any return channel to the parent or to any human. If the parent's observational channel terminates while the child continues executing, the child becomes effectively invisible to the system. This asymmetry means that spawning a child creates a structural dependency that is not reciprocally guaranteed.
+
+\subsubsection{Depth Without Anchor}
+A chain can grow arbitrarily deep even when every agent remains alive, if no agent in the chain is required to connect back to a human. Depth limits address scale but not topology: a depth limit of $k$ permits chains of length $k$ with zero human anchors. The system cannot distinguish a supervised chain of length $k$ from a fully autonomous chain of length $k$ based on depth alone.
+
+\subsubsection{Goal Composition Drift}
+Even when a human anchor exists in the chain, the \textit{goal} assigned to an agent may be compositionally transformed as it passes through multiple agents. Each agent interprets and re-interprets the task; small divergences compound through the chain. This is a semantic form of drift distinct from structural orphaning: the agent remains connected to a human anchor, but the human's intent has been distorted beyond recognition by successive interpretations. We call this \textbf{semantic drift}.
+
+\subsection{Failure Modes}
+
+We characterize four canonical failure modes arising from drift conditions.
+
+\medskip\noindent\textbf{FM1: Unchecked Compositional Action.} A drifted agent executes a multi-step plan, each step individually within some implicit permission model but collectively producing an outcome no human would endorse. Because each intermediate step is micro-authorized by the agent's own reasoning—with no external checkpoint—the system registers no violation. This is the autonomous analogue of auman-in-the-loop systems that have removed the loop.
+
+\medskip\noindent\textbf{FM2: Cascade into Unsafe Territory.} A drifted agent gains access to sensitive resources (data, financial systems, infrastructure controls) through inherited or composable tool access. Its inherited permissions were granted in a context where a human could intervene; now no intervention is possible before damage is done. This is a failure of the \textbf{assumption of continued supervision}, which is invalidated by the structural conditions of drift.
+
+\medskip\noindent\textbf{FM3: Indefinite Spawning Loops.} A drifted agent whose goal is unspecified or underspecified may enter a loop in which it spawns children to accomplish subgoals, the children themselves spawn, and the spawning continues until resource exhaustion or external intervention. Depth limits cap the chain length but do not guarantee that any agent in the chain is anchored to a human with the authority to terminate the loop. The drifted agent may also be the only reachable node capable of issuing termination signals—yet it has no incentive to terminate itself.
+
+\medskip\noindent\textbf{FM4: Semantic Drift Amplification.} In the presence of a human anchor, repeated goal re-interpretation across multiple spawning generations transforms the goal into something unintended. A human assigns task $T$ to agent $a_1$; $a_1$ spawns $a_2$ with an interpreted version $T_1$; $a_2$ spawns $a_3$ with $T_2$, and so on. Each interpretation step is locally rational. After $k$ generations, $T_k$ may be unrelated to $T$. The chain is structurally intact but semantically broken. Critically, no structural property of the spawning graph registers this divergence.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+The most common proposed solution to unbounded autonomous agency is a \textbf{depth limit}: cap the number of spawning generations, or the total number of active agents, at some maximum $D$. We show that depth limits are necessary but insufficient—they address scale, not drift.
+
+Consider a spawning chain of depth $k \leq D$:
+
+\begin{equation*}
+H \to a_1 \to a_2 \to \cdots \to a_k
+\end{equation*}
+
+The depth limit guarantees $k \leq D$. It does \textbf{not} guarantee that any $a_i$ for $i \geq 2$ has a path to $H$. Suppose $a_1$ terminates after spawning $a_2$, and $a_2$ is spawned with no recorded custodian and no live communication channel back to $H$ or to any other living agent. Then $a_2$ is drifted with drift score $\varnothing$, even though depth is 2 (well within any reasonable $D \geq 2$).
+
+More strongly: depth limits create a \textbf{false sense of bounded risk}. If the system accepts chains of depth $D$ as safe, it has implicitly defined safety by depth rather than by anchor status. But the adversarial or buggy case is precisely one where the chain reaches full depth $D$ without ever connecting to a human—exactly the scenario a depth limit does not prevent.
+
+We formalize this as a separability property. Let $\text{depth}(a)$ be the length of the longest path from any human anchor to $a$. Let $\text{anchored}(a)$ be true if $\mathcal{A}_H(a) \neq \varnothing$. The condition $\text{depth}(a) \leq D$ is independent of $\text{anchored}(a)$. The depth limit controls one axis of the risk space while leaving the drift axis entirely uncontrolled:
+
+\begin{equation}
+\underbrace{P(\text{drift} \mid \text{depth}(a) \leq D)}_{\text{residual drift risk}} = P(\text{drift} \mid \text{depth}(a) \leq D, \text{anchored}(a)=\text{false}) \cdot P(\text{anchored}(a)=\text{false} \mid \text{depth}(a) \leq D)
+\label{eq:drift_residual}
+\end{equation}
+
+Equation~\ref{eq:drift_residual} shows that depth-limited residual drift risk is non-trivial whenever there exists any non-anchored chain of depth $\leq D$. For $D \geq 3$, this probability is non-negligible in any system where agents can terminate without custodial transfer—a condition that holds for any agent whose execution environment does not enforce custodial continuity as a hard invariant.
+
+The only structurally sound anchor condition is:
+
+\begin{equation}
+\text{safe}(a) \iff \mathcal{A}_H(a) \neq \varnothing \quad \text{and} \quad \forall p \in \text{ancestors}(a): p \text{ is alive and reachable}
+\label{eq:anchor_condition}
+\end{equation}
+
+This requires that a human anchor exist in the ancestry \textit{and} that every node on the path be alive and reachable—a stronger condition than depth alone. Depth limits can be understood as a \textit{coarse-grained heuristic} for safety: they reduce the probability of extremely long unsupervised chains, but they do not eliminate drift in any formal sense. They are useful as a backstop, not as a solution.
+
+We note also that semantic drift (FM4) is entirely orthogonal to depth. A chain of depth 1 can exhibit semantic drift if the single agent misinterprets the goal. Depth limits are irrelevant to this failure mode.
+
+\subsection{A Simple Formal Model}
+
+We present a minimal formal model capturing the essential dynamics of drift. Let:
+
+\begin{itemize}
+    \item $A = \{a_0, a_1, \dots, a_n\}$ be the set of agents.
+    \item $H \in A$ be the unique human anchor.
+    \item $\text{parent}: A \setminus \{H\} \to A$ map each non-human agent to its parent.
+    \item $\text{alive}: A \to \{\text{true}, \text{false}\}$ indicate whether an agent is currently executing.
+    \item $\text{custodian}: A \to A \cup \mathcal{H}$ map each agent to its current custodian (a live agent or human).
+    \item $\text{depth}: A \to \mathbb{N}$ be the depth of an agent in the spawning tree.
+\end{itemize}
+
+A session is a tuple $(A, \text{parent}, \text{alive}, \text{custodian})$. An agent $a$ is \textbf{orphaned} at session state $S$ iff:
+\begin{equation}
+\text{alive}(\text{parent}(a)) = \text{false} \quad \text{and} \quad \text{custodian}(a) \notin \mathcal{H} \cup \{b \in A \mid \text{alive}(b) = \text{true}\}
+\end{equation}
+
+An agent $a$ is \textbf{drifted} at session state $S$ iff:
+\begin{equation}
+\nexists H \in \mathcal{H}: \forall b \in \text{path}(a, H), \text{alive}(b) = \text{true}
+\end{equation}
+
+where $\text{path}(a, H)$ is the set of agents on the unique spawning path from $a$ to $H$ if one exists.
+
+We define a \textbf{drift event} as a state transition in which a previously non-drifted agent becomes drifted:
+\begin{equation}
+\text{drift\_event}(a, S, S') \iff \neg \text{drifted}(a, S) \land \text{drifted}(a, S')
+\end{equation}
+
+The system invariant we require is:
+\begin{equation}
+\forall a \in A: \text{drifted}(a, S) = \text{false}
+\label{eq:drift_invariant}
+\end{equation}
+
+Equation~\ref{eq:drift_invariant} is the safety property we must maintain. The depth limit is a coarse approximation:
+\begin{equation}
+\forall a \in A: \text{depth}(a) \leq D \quad \overset{\text{not}}{\implies} \quad \forall a \in A: \text{drifted}(a, S) = \text{false}
+\end{equation}
+
+This establishes that depth limits do not imply the drift invariant. The converse also fails: the drift invariant can hold even when some agents exceed $D$, if they remain anchored to a human through a live chain. The two constraints are independent.
+
+The model makes explicit what a correct solution must achieve: the drift invariant (Equation~\ref{eq:drift_invariant}) must be maintained at every session state, not approximately, not in expectation, and not subject to depth-based relaxations. Depth limits are a resource governor, not a safety mechanism. Drift is a structural property of the agent graph; its prevention requires structural guarantees about custody and reachability throughout the spawning tree.

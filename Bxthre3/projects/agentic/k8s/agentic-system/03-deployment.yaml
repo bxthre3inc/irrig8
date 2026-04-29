@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-api
+  namespace: agentic
+  labels:
+    app: agentic-api
+    version: "1.0.0"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: agentic-api
+  template:
+    metadata:
+      labels:
+        app: agentic-api
+        version: "1.0.0"
+    spec:
+      containers:
+        - name: api
+          image: agentic/api:1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5182
+              name: http
+          envFrom:
+            - configMapRef:
+                name: agentic-config
+            - secretRef:
+                name: agentic-secrets
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5182
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5182
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: audit
+              mountPath: /audit
+            - name: telemetry
+              mountPath: /telemetry
+      volumes:
+        - name: audit
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: telemetry
+          emptyDir:
+            sizeLimit: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-ollama
+  namespace: agentic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agentic-ollama
+  template:
+    metadata:
+      labels:
+        app: agentic-ollama
+    spec:
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - containerPort: 11434
+              name: ollama
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: 4000m
+              memory: 16Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: ollama-models
+              mountPath: /root/.ollama
+      volumes:
+        - name: ollama-models
+          emptyDir:
+            sizeLimit: 20Gi

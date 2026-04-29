@@ -1,0 +1,491 @@
+\section{The Bailout Protocol}
+
+% ----------------------------------------------------------------
+% 3.1  Overview
+% ----------------------------------------------------------------
+
+The Bailout Protocol is a deterministic, state-machine-driven procedure that
+agents execute when their assigned task cannot be completed within a
+predefined computation budget.  It exists to prevent indefinite resource
+consumption, ensure that unresolved work is surfaced to a human supervisor,
+and provide a structured escape path that never requires approval from any
+subordinate machine actor.
+
+The protocol is intentionally simple: an agent that encounters a bail-out
+condition transitions through a fixed linear chain of states, each of which
+represents a progressively higher level of human visibility, until a human
+explicitly acknowledges the unresolved item.  No state may be skipped; no
+transition may be reversed; no subordinate actor may invalidate or override
+an active bail-out.
+
+% ----------------------------------------------------------------
+% 3.2  State Machine Definition
+% ----------------------------------------------------------------
+
+\subsection{State Space}
+
+The Bailout State Machine $\mathcal{M}$ is a 6-tuple
+\[
+\mathcal{M} \;=\; \bigl\langle \Sigma,\;\Sigma_{\mathsf{initial}},\;
+\Sigma_{\mathsf{terminal}},\;\rightarrow,\;L,\;T \bigr\rangle
+\]
+where:
+
+\begin{itemize}
+  \item $\Sigma = \{\,\text{IDLE},\; \text{BOUNDED},\; \text{BAIL\_PENDING},\;
+         \text{ESCALATING},\; \text{HUMAN\_ACKNOWLEDGED},\; \text{RESOLVED}\,\}$
+         is the finite set of states.
+  \item $\Sigma_{\mathsf{initial}} = \{\,\text{IDLE}\,\}$ is the singleton
+         set of initial states.
+  \item $\Sigma_{\mathsf{terminal}} = \{\,\text{RESOLVED}\,\}$ is the
+         singleton set of terminal states.
+  \item $\rightarrow \;\subseteq\; \Sigma \times \Sigma$ is the deterministic
+         transition relation defined in Table~\ref{tab:transitions}.
+  \item $L : \Sigma \to \mathcal{P}(\text{Context})$ assigns to each state the
+         set of context fields that must be preserved in the corresponding log
+         entry.
+  \item $T : \Sigma \to \mathbb{N}$ assigns to each state the maximum elapsed
+         wall-clock seconds permitted before the protocol enforces the
+         next transition automatically.
+\end{itemize}
+
+\bigskip
+\noindent\textbf{State descriptions:}
+
+\begin{enumerate}
+
+  \item[\textbf{IDLE}] \label{state:IDLE}
+        The agent is actively executing its primary task function.  No
+        resource bounds have been exceeded and no bail-out procedure is
+        active.  This is the \emph{normal operating state}.
+
+  \item[\textbf{BOUNDED}] \label{state:BOUNDED}
+        At least one resource bound (wall-clock time, token count, memory, or
+        a custom metric) has been reached.  The agent is executing a
+        structured mitigation routine --- typically a retry, a reduced-complexity
+        fallback, or a partial-result compaction.  The agent still retains
+        full autonomy; no human has been notified.
+
+  \item[\textbf{BAIL\_PENDING}] \label{state:BAIL_PENDING}
+        The BOUNDED mitigation routine has completed without resolving the
+        task, or a bail-out trigger condition has fired asynchronously during
+        BOUNDED.  The agent has entered the formal bail-out procedure.
+        A human-in-the-loop notification is queued but not yet delivered.
+
+  \item[\textbf{ESCALATING}] \label{state:ESCALATING}
+        The human-in-the-loop notification has been dispatched and the
+        protocol is waiting for an explicit acknowledgment signal.
+        The agent may not continue task execution in this state.
+        If no acknowledgment is received within the configured timeout
+        $T(\text{ESCALATING})$, the machine performs an autonomous
+        forced-transition to HUMAN\_ACKNOWLEDGED.
+
+  \item[\textbf{HUMAN\_ACKNOWLEDGED}] \label{state:HUMAN_ACKNOWLEDGED}
+        A human supervisor has confirmed receipt of the bail-out notification.
+        The unresolved work item and all associated context are frozen.
+        The agent is released to resume execution with modified parameters
+        if the human has provided override instructions; otherwise it
+        awaits further direction.
+
+  \item[\textbf{RESOLVED}] \label{state:RESOLVED}
+        The bail-out has been formally closed.  No further state transitions
+        are possible.  The agent returns to IDLE.
+
+\end{enumerate}
+
+% ----------------------------------------------------------------
+% 3.3  Transition Table
+% ----------------------------------------------------------------
+
+\subsection{Transition Relation}
+
+Table~\ref{tab:transitions} enumerates every legal state transition,
+its enabling condition, and the action performed atomically on entry to
+the target state.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Bailout State Machine Transition Table}
+  \label{tab:transitions}
+  \begin{tabular}{@{}clll@{}}
+    \toprule
+    \textbf{\#} &
+    \textbf{From} &
+    \textbf{To} &
+    \textbf{Enabling Condition} \\
+    \midrule
+    1 & IDLE       & BOUNDED       & Any resource bound $b \in B$ is reached                \\[4pt]
+    2 & BOUNDED    & IDLE          & Mitigation routine returns \texttt{RESOLVED}           \\[4pt]
+    3 & BOUNDED    & BAIL\_PENDING & Mitigation routine returns \texttt{UNRESOLVED} or
+                                          timeout $T(\text{BOUNDED})$ expires \\[4pt]
+    4 & BAIL\_PENDING & ESCALATING  & Entry action (notification dispatch) completes
+                                          successfully                                               \\[4pt]
+    5 & BAIL\_PENDING & IDLE        & Task becomes addressable via bypass mechanism
+                                          (see \S\ref{sec:bypass})                                   \\[4pt]
+    6 & ESCALATING & HUMAN\_ACKNOWLEDGED & Human acknowledgment signal received    \\[4pt]
+    7 & ESCALATING & HUMAN\_ACKNOWLEDGED & Timeout $T(\text{ESCALATING})$ expires
+                                          (autonomous forced transition)                             \\[4pt]
+    8 & HUMAN\_ACKNOWLEDGED & RESOLVED & Human issues \texttt{CLOSE} directive         \\[4pt]
+    9 & HUMAN\_ACKNOWLEDGED & IDLE    & Human provides override parameters; agent
+                                          restarts task with modified budget                          \\[4pt]
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\bigskip
+Transitions are deterministic in the sense that for any state
+$\sigma \in \Sigma$, the set $\{\,\sigma' \mid (\sigma,\sigma') \in \rightarrow\,\}$
+contains at most one element for any given triggering condition.
+Multiple conditions may be evaluated simultaneously; the first satisfied
+condition determines the transition.  When no condition is satisfied,
+the machine remains in $\sigma$ (no implicit transition).
+
+% ----------------------------------------------------------------
+% 3.4  Bail-Out Trigger Condition
+% ----------------------------------------------------------------
+
+\subsection{Bail-Out Trigger Condition}
+
+A bail-out is initiated whenever the following predicate evaluates to
+\texttt{TRUE}:
+
+\begin{definition}[Bail-Out Trigger]\label{def:bailout-trigger}
+Let $B$ be the set of resource bounds configured for agent $a$, and let
+$e_b(t)$ denote the current consumption of resource $b$ at wall-clock time $t$.
+Define
+\[
+\phi_{\text{BOUNDED}}(a,t) \;=\; \bigvee_{b \in B}\; \text{bound\_exceeded}(b, e_b(t))
+\]
+to mean that \emph{at least one} configured bound has been breached.
+
+The agent enters BOUNDED when $\phi_{\text{BOUNDED}}(a,t)$ becomes true.
+
+The agent enters BAIL\_PENDING when it was in BOUNDED and either:
+
+\begin{enumerate}
+  \item $\phi_{\text{BOUNDED}}(a,t)$ remains true and the BOUNDED mitigation
+        routine returns \texttt{UNRESOLVED}; \emph{or}
+  \item the elapsed time in BOUNDED exceeds $T(\text{BOUNDED})$.
+\end{enumerate}
+\end{definition}
+
+In practical terms, the trigger fires when the agent has exercised its
+first-line mitigation (BOUNDED) and that mitigation has either failed
+or timed out.
+
+\bigskip
+\noindent\textbf{Formal state invariant.}
+
+At all times the machine satisfies:
+\[
+\sigma \in \Sigma \quad\Longleftrightarrow\quad
+\begin{cases}
+\text{active\_task}(a) \neq \varnothing          & \text{if } \sigma = \text{IDLE}   \\
+\text{active\_task}(a) \neq \varnothing          & \text{if } \sigma = \text{BOUNDED} \\
+\text{bailout\_context}(a) \neq \varnothing      & \text{if } \sigma \in
+  \{\,\text{BAIL\_PENDING},\; \text{ESCALATING},\;
+   \text{HUMAN\_ACKNOWLEDGED}\,\}                \\
+\text{active\_task}(a) = \varnothing              & \text{if } \sigma = \text{RESOLVED}
+\end{cases}
+\]
+
+% ----------------------------------------------------------------
+% 3.5  Escalation Algorithm
+% ----------------------------------------------------------------
+
+\subsection{Escalation Algorithm}
+
+When the machine enters BAIL\_PENDING, the following escalation procedure
+is executed atomically before the transition to ESCALATING completes.
+
+\begin{algorithm}[H]
+\caption{Escalation Procedure}
+\label{alg:escalation}
+\begin{algorithmic}[1]
+\Require $\text{agent } a$, $\text{task } \tau$, $\text{context } \kappa$,
+         $\text{notification\_channel } \iota$
+\Ensure $\text{notification sent}$, $\sigma \gets \text{ESCALATING}$
+
+\State $\text{payload} \gets \text{serialize\_bailout\_report}(a, \tau, \kappa)$
+\Comment{Freeze all relevant context into a structured log entry}
+\State $\text{payload.bound\_history} \gets \text{read\_bound\_events}(a)$
+\State $\text{payload.mitigation\_attempts} \gets
+        \text{count\_mitigations}(a)$
+\State $\text{payload.node\_id} \gets \text{agent.metadata.node\_id}$
+\State $\text{payload.timestamp} \gets \text{utc\_now}()$
+
+\State $\text{queue\_depth} \gets \text{query\_escalation\_queue}(\iota)$
+\If{$\text{queue\_depth} > \text{MAX\_QUEUE\_DEPTH}$}
+    \State $\text{fallback\_channel} \gets \text{get\_fallback\_channel}(\iota)$
+    \State $\iota \gets \text{fallback\_channel}$
+    \Comment{PagerDuty fallback, secondary email, SMS, etc.}
+\EndIf
+
+\State $\text{dispatch\_notification}(\iota,\; \text{payload})$
+\State $\text{log\_escalation}(\text{payload})$
+\Comment{Persist to audit trail before state transition commits}
+
+\State $\sigma \gets \text{ESCALATING}$
+\State $\text{start\_timer}(\text{ESCALATING},\; T(\text{ESCALATING}))$
+\State \Return $(\sigma, \text{payload.notification\_id})$
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+The escalation report payload includes the bound-exceeded history, the
+mitigation attempts performed in BOUNDED, the originating agent's node
+identifier, and a UTC timestamp.  This ensures a human reviewer has a
+complete picture of the failure mode without needing to query external
+systems.
+
+\bigskip
+\noindent\textbf{Escalation levels.}
+
+If the acknowledgment is not received within $T(\text{ESCALATING})$,
+the algorithm performs an autonomous forced transition to
+HUMAN\_ACKNOWLEDGED (transition 7, Table~\ref{tab:transitions}).
+This is a deliberate design choice: silence after a configured window
+is treated as human acknowledgment by necessity, because any alternative
+--- looping indefinitely or dropping the item --- is strictly worse.
+
+% ----------------------------------------------------------------
+% 3.6  Bypass Mechanism
+% ----------------------------------------------------------------
+
+\subsection{Bypass Mechanism}
+\label{sec:bypass}
+
+The bypass mechanism is a deterministic escape hatch that allows an agent
+to exit the Bailout Protocol and return to IDLE \emph{without} requiring a
+human acknowledgment signal.  Its existence is justified by a single
+operational principle:
+
+\begin{principle}[Bypass Justification]
+A subordinate machine actor that can prove to the protocol that it has
+identified a provably correct resolution to the original task constraint
+may self-release from the bail-out procedure, because no human judgment
+is required to verify the correction.
+\end{principle}
+
+\bigskip
+The bypass is \emph{not} a shortcut.  It may only be invoked when the
+agent can produce a verifiable proof object $P$ satisfying the following
+formal predicate:
+
+\begin{definition}[Bypass Predicate]\label{def:bypass-predicate}
+An agent $a$ holding task $\tau$ in state $\sigma = \text{BAIL\_PENDING}$
+may transition to IDLE (transition 5) if and only if there exists a
+proof object $P$ such that:
+\begin{align}
+  \text{provably\_correct}(P, \tau) &= \texttt{TRUE} \label{eq:bypass-correct}\\
+  \text{no\_human\_dependency}(P)   &= \texttt{TRUE} \label{eq:bypass-no-human}\\
+  \text{bound\_reset}(P)            &= \texttt{TRUE} \label{eq:bypass-reset}
+\end{align}
+where:
+\begin{itemize}
+  \item \eqref{eq:bypass-correct} means that $P$ demonstrates $\tau$ satisfies
+        all acceptance criteria with formal verification or
+        deterministic re-execution;
+  \item \eqref{eq:bypass-no-human} means that $P$ does not require any
+        human-provided parameter, label, or judgment to be validated;
+  \item \eqref{eq:bypass-reset} means that all resource bounds $b \in B$
+        have been reset to their initial values so that the agent can
+        re-enter IDLE with a clean budget.
+\end{itemize}
+\end{definition}
+
+\bigskip
+\noindent\textbf{Concrete examples of valid bypass scenarios:}
+
+\begin{itemize}
+  \item \emph{Cache-miss failure}: The agent discovers that the original
+        failure was caused by a stale cached result; re-fetching the data
+        from the canonical source resolves the task deterministically.
+        The proof object $P$ is the fresh response from the canonical source.
+
+  \item \emph{Token-bound retry}: The agent exceeded the token bound on a
+        first attempt but has now loaded a smaller model variant that
+        satisfies the same functional requirements within the budget.
+
+  \item \emph{Pregame validation}: The agent identifies that the task
+        request itself violates a precondition (e.g., requesting a file
+        write to a path that does not exist).  Returning
+        \texttt{INVALID\_REQUEST} to the caller satisfies the acceptance
+        criteria without human intervention.
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Invalid bypass scenarios (bypass must not fire):}
+
+\begin{itemize}
+  \item Agent wants to extend the token bound and continue --- this is
+        a human decision (requires HUMAN\_ACKNOWLEDGED);
+  \item Agent encountered a transient network error and requests a retry
+        with no change to the original parameters --- must go through
+        the full escalation path;
+  \item Agent cannot prove correctness but believes it is likely correct ---
+        belief is insufficient; $P$ must be formal.
+\end{itemize}
+
+\bigskip
+The bypass mechanism bypasses all machine actors by construction:
+only the initiating agent's own proof object $P$ is evaluated against
+Definition~\ref{def:bypass-predicate}.  No peer agent, no orchestration
+layer, and no policy engine participates in the decision.  This ensures
+that the bypass is an \emph{intra-agent} operation that cannot be blocked
+by any external machine actor.
+
+% ----------------------------------------------------------------
+% 3.7  Timeout Handling
+% ----------------------------------------------------------------
+
+\subsection{Timeout Handling}
+
+Each non-terminal state $\sigma \in \Sigma \setminus \{\text{RESOLVED}\}$
+is assigned a timeout value $T(\sigma) \in \mathbb{N}$ (wall-clock seconds).
+Timeouts are configured at the agent level and inherit from the
+agent's policy profile unless explicitly overridden.
+
+\bigskip
+\noindent\textbf{Timeout semantics.}
+
+When a timeout $T(\sigma)$ expires while the machine is in state $\sigma$,
+the following handler is invoked:
+
+\begin{algorithm}[H]
+\caption{Timeout Handler}
+\label{alg:timeout-handler}
+\begin{algorithmic}[1]
+\Require $\text{agent } a$, $\text{current state } \sigma$,
+         $\text{elapsed } t_{\text{elapsed}}$, $\text{timeout } T(\sigma)$
+\Ensure $\sigma'$ is the next state per Table~\ref{tab:transitions}
+
+\State $\text{log\_timeout}(a,\; \sigma,\; t_{\text{elapsed}},\; T(\sigma))$
+\Comment{Append to audit trail with full context}
+
+\Switch{$\sigma$}
+  \Case{$\text{BOUNDED}$}
+    \State $\text{transition\_to}(\text{BAIL\_PENDING})$
+    \Comment{Transition 3, second limb: mitigation timeout}
+  \EndCase
+  \Case{$\text{ESCALATING}$}
+    \State $\text{transition\_to}(\text{HUMAN\_ACKNOWLEDGED})$
+    \Comment{Transition 7: autonomous forced acknowledgment}
+    \State $\text{notify\_audit\_log}(
+           \text{"AUTONOMOUS\_ACK\_TIMEOUT"},\; a)$
+  \EndCase
+  \Case{$\text{BAIL\_PENDING}$}
+    \State $\text{dispatch\_notification}(\iota,\; \text{payload})$
+    \State $\text{transition\_to}(\text{ESCALATING})$
+    \Comment{BOUNDED was never entered; direct escalation from IDLE timeout
+             is not possible by design}
+  \EndCase
+  \Case{$\text{HUMAN\_ACKNOWLEDGED}$}
+    \State $\text{log\_warning}(
+           \text{"SUPERVISOR\_TIMEOUT"},\; a,\; \sigma)$
+    \State $\text{send\_escalation\_pulse}(\text{fallback\_channel})$
+    \Comment{Notify secondary supervisors; do not change $\sigma$}
+  \EndCase
+  \Default
+    \State $\text{log\_error}(
+           \text{"UNHANDLED\_TIMEOUT"},\; a,\; \sigma)$
+    \State $\text{transition\_to}(\sigma)$
+    \Comment{No-op; remain in current state and alert operator}
+  \EndSwitch
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+Timeouts are \emph{wall-clock based} and are evaluated by the agent's
+local scheduler, not by an external orchestrator.  This ensures that
+timeout handling is autonomous and does not introduce a distributed-systems
+clock-synchronization dependency.
+
+\bigskip
+\noindent\textbf{Timeout configuration defaults:}
+
+\begin{itemize}
+  \item $T(\text{BOUNDED}) \;\;$    = 120 seconds (configurable per agent profile)
+  \item $T(\text{ESCALATING}) \;$   = 300 seconds (5 minutes; human-facing channels)
+  \item $T(\text{BAIL\_PENDING}) $  = 0 seconds (transition is instantaneous;
+        no dwell time in BAIL\_PENDING by design)
+  \item $T(\text{HUMAN\_ACKNOWLEDGED})$ is unbounded (a human may take
+        as long as required to provide direction)
+\end{itemize}
+
+\bigskip
+The BOUNDED timeout value (120 s) accommodates retry-and-fallback
+mitigation routines that require I/O (file reads, API calls) while still
+ensuring that a truly stalled agent does not remain in BOUNDED for an
+excessive period.  The ESCALATING timeout (300 s) reflects the expected
+human response latency for an async notification delivered to a
+non-critical channel (e.g., email or Slack).  For critical-path integrations
+(PagerDuty, SMS), a shorter $T(\text{ESCALATING})$ should be configured
+to match the SLA expectation of the receiving human.
+
+% ----------------------------------------------------------------
+% 3.8  Context Preservation and Audit Log
+% ----------------------------------------------------------------
+
+\subsection{Context Preservation}
+
+Each state transition emits a structured log entry to the agent's
+audit trail.  The log entry schema is:
+
+\begin{verbatim}
+LogEntry {
+  event_id:      UUID v4
+  agent_id:      string
+  task_id:       string
+  from_state:    State
+  to_state:      State
+  trigger:       TransitionTrigger
+  timestamp:     ISO 8601 UTC
+  bound_state:   map[string, ResourceSnapshot]
+  mitigation:    MitigationSummary | null
+  bypass_proof:  ProofObject | null
+  human_input:   HumanDirective | null
+}
+\end{verbatim}
+
+\bigskip
+The presence of a non-null \texttt{bypass\_proof} field on a transition
+from BAIL\_PENDING to IDLE (transition 5) provides independent
+verifiability that the bypass was exercised in accordance with
+Definition~\ref{def:bypass-predicate}.  This allows post-hoc auditing
+without requiring the human supervisor to be online at the time of the
+bypass.
+
+% ----------------------------------------------------------------
+% 3.9  State Machine Summary
+% ----------------------------------------------------------------
+
+\subsection{Formal Summary}
+
+Integrating the definitions above, the complete Bailout Protocol satisfies
+the following properties:
+
+\begin{enumerate}
+  \item[\textbf{Determinism}] For any $(\sigma, c)$ pair, the transition
+        relation $\rightarrow$ yields at most one target state.
+
+  \item[\textbf{Progress}] Every non-terminal state has at least one
+        outgoing transition; the machine cannot dead-lock in any state
+        $\sigma \in \Sigma \setminus \{\text{RESOLVED}\}$.
+
+  \item[\textbf{HumanOverride}] No agent may transition into RESOLVED
+        without either a human \texttt{CLOSE} directive or an autonomous
+        timeout-forced acknowledgment.
+
+  \item[\textbf{BypassIsolation}] The bypass predicate (Definition 2)
+        is evaluated entirely within the agent and is not subject to
+        external veto by any machine actor.
+
+  \item[\textbf{AuditCompleteness}] Every transition emits a
+        \texttt{LogEntry} to the audit trail before the transition commits.
+\end{enumerate}
+
+\bigskip
+The protocol balances autonomy (agents resolve bounded failures without
+human intervention) with safety (unresolved failures always surface to a
+human and cannot be suppressed by any subordinate actor).

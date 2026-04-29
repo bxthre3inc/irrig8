@@ -1,0 +1,30 @@
+name: researcher
+description: "Research role focused on literature review, hypothesis testing, and experimental design."
+version: 1.0.0
+capabilities:
+  - literature_review
+  - hypothesis_testing
+  - experimental_design
+  - paper_writing
+tools:
+  - name: zotero
+    type: tool
+    version: 6.0.26
+  - name: latex
+    type: tool
+    version: "2023"
+  - name: scipy
+    type: library
+    version: 1.10.1
+  - name: scikit-learn
+    type: library
+    version: 1.2.2
+permissions:
+  - read:research_papers
+  - write:research_notes
+  - execute:experiment_script
+constraints:
+  max_memory: "12Gi"
+  max_cpu: "6"
+  timeout: 10800
+version: 1.0.0

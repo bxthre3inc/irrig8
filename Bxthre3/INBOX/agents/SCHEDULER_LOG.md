@@ -388,3 +388,59 @@ No pending agents found.
 - Skipped all.
 - Next run: +5 min
 - [2026-04-07T04:19:55Z] Runner complete
+
+## Backstop Cycle — 2026-04-21T15:47:40Z
+| Endpoint | Result |
+|----------|--------|
+| `/api/agentic/run` | `{"ok":true,"timestamp":"2026-04-21T15:47:40.355Z","cascade_enabled":true}` |
+| `/api/agentic/events/ingest` | `{"event_id":"evt-79939a02-cdf","event_type":"cascade.heartbeat","tier":1,"trigger_matched":false,"cascade_enabled":true}` |
+| `/api/agentic/health` | `{"status":"ok","service":"agentic","version":"1.0","cascade_enabled":true}` |
+
+**Status:** all endpoints healthy — no retries needed.
+
+## Backstop Cycle — 2026-04-21 09:52:00 (America/Denver)
+
+| Endpoint | Status | Response |
+|---|---|---|
+| `POST /api/agentic/run` | ✅ 200 | `{"ok":true,"timestamp":"2026-04-21T15:52:22.674Z","cascade_enabled":true}` |
+| `POST /api/agentic/events/ingest` | ✅ 200 | `{"event_id":"evt-6e9e55ed-5f7","event_type":"cascade.heartbeat","tier":1,"trigger_matched":false,"tasks_created":[]}` |
+| `GET /api/agentic/health` | ✅ 200 | `{"status":"ok","service":"agentic","version":"1.0"}` |
+
+**Result:** All endpoints healthy. Cascade engine responsive. No failures. No retry needed.
+
+## Run: 2026-04-21T15:54:00Z
+- /api/agentic/run → {"ok":true,"timestamp":"2026-04-21T15:54:06.578Z","cascade_enabled":true}
+- /api/agentic/events/ingest → {"event_id":"evt-fd73df34-5c7","event_type":"cascade.heartbeat","tier":1,"timestamp":"2026-04-21T15:54:11.515Z","trigger_matched":false,"tasks_created":[],"cascade_enabled":true,"max_depth":5}
+- /api/agentic/health → {"status":"ok","service":"agentic","timestamp":"2026-04-21T15:54:22.258Z","version":"1.0","cascade_enabled":true}
+- [2026-04-21T15:54:22Z] All systems operational. Next run: +5 min
+
+## Backstop Cycle — 2026-04-21T16:01:55Z
+
+| Endpoint | Status | Response |
+|---|---|---|
+| `POST /api/agentic/run` | ✅ 200 | `{"ok":true,"timestamp":"2026-04-21T16:01:55.143Z","cascade_enabled":true}` |
+| `POST /api/agentic/events/ingest` | ✅ 200 | `{"event_id":"evt-8bb4aeea-ddb","event_type":"cascade.heartbeat","tier":1,"trigger_matched":false,"tasks_created":[],"cascade_enabled":true}` |
+| `GET /api/agentic/health` | ✅ 200 | `{"status":"ok","service":"agentic","version":"1.0","cascade_enabled":true}` |
+
+**Status:** All endpoints healthy. Cascade engine responsive. No failures. No retry needed.
+
+## Backstop Cycle — 2026-04-21T16:08:43Z (UTC)
+
+**1. /run**
+- Status: ✅ OK
+- Response: `{"ok":true,"timestamp":"2026-04-21T16:08:43.372Z","cascade_enabled":true}`
+- Tasks created: none (normal on no-pending-queue)
+
+**2. /events/ingest**
+- Status: ✅ OK
+- Event ID: `evt-6ee4f508-c37`
+- Event type: `cascade.heartbeat`
+- Cascade enabled: true
+
+**3. /health**
+- Status: ✅ OK
+- Service: `agentic`
+- Version: `1.0`
+- Cascade enabled: true
+
+**Verdict:** All endpoints healthy. Event stream alive.

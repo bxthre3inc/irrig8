@@ -1,0 +1,107 @@
+\section{Integration with the BX3 Framework}
+
+The BX3 Framework provides the normative substrate upon which the Recursive Spawning architecture operates. Three BX3 layers serve as indispensable anchors for spawned agent behavior: the Purpose Layer, the Bounds Engine, and the Fact Layer. Each plays a distinct and non-redundant role in ensuring that spawned agents remain tethered to their originating intent.
+
+\subsection{Purpose Layer as Accountability Anchor}
+
+The BX3 Purpose Layer encodes the terminal goals and accountability constraints of the originating agent. In the Recursive Spawning model, every spawned child agent inherits a \emph{purpose pointer} that references the originating agent's declared Purpose Layer entry. This pointer is immutable: it is set at spawn time and admits no subsequent modification.
+
+The Purpose Layer enforces accountability by serving as the final resolver of intent conflicts. When a spawned agent faces an ambiguous decision, it must trace its purpose pointer back to the originating Purpose Layer entry and evaluate whether the proposed action aligns with the declared terminal goal. This creates a directed acyclic chain of accountability from any descendant back to its originating agent's Purpose Layer.
+
+Critically, the Purpose Layer is not merely a metadata reference. It encodes constraints expressed in the BX3 constraint language, which the spawned agent's execution environment evaluates at each decision point. Because the Purpose Layer is maintained at the framework level and not in the agent's local state, a compromised or drift-prone agent cannot rewrite its own purpose pointer—this would require modifying the BX3 framework layer, which is protected by architectural isolation.
+
+\subsection{Bounds Engine Depth Enforcement}
+
+The BX3 Bounds Engine implements the resource and behavioral bounds within which any agent—including spawned children—must operate. Recursive Spawning leverages the Bounds Engine at two distinct points:
+
+\begin{enumerate}
+    \item \emph{At spawn time}: The parent agent's request to spawn a child is evaluated against the current Bounds Engine constraints. If the proposed child exceeds depth limits, resource quotas, or prohibited capability domains, the Bounds Engine rejects the spawn request with a structured denial.
+    \item \emph{At runtime}: Each child agent's execution is continuously monitored against the inherited bounds profile. Should a child agent attempt to exceed its allocated resource budget or invoke capabilities outside its bounds profile, the Bounds Engine triggers a bounded execution abort.
+\end{enumerate}
+
+The Bounds Engine depth parameter deserves particular attention. Let $d_{\max}$ denote the maximum spawning depth permitted by the current Bounds Engine configuration. A spawn event at depth $d$ is only permitted if $d < d_{\max}$. The depth counter $d$ is maintained by the framework—not by any individual agent—to prevent depth counter manipulation by self-interested agents. This ensures that depth bounds are enforced structurally, not contractually.
+
+\subsection{Fact Layer as Forensic Ledger}
+
+The BX3 Fact Layer maintains the authoritative record of all factual claims asserted by agents during execution. In the Recursive Spawning model, the Fact Layer serves as a forensic ledger: every spawn event, purpose pointer assignment, bounds inheritance decision, and runtime correction is recorded as a factual entry in the Fact Layer.
+
+This ledger is append-only and timestamped. When a spawned agent produces an output or makes a decision, the Fact Layer records the causal chain linking that output to its originating Purpose Layer entry through the chain of spawn and inheritance events. This creates a complete forensic trace that enables post-hoc verification of any spawned agent's decision trajectory.
+
+The forensic ledger also supports accountability without requiring runtime surveillance. When an anomaly is detected—either by the Bounds Engine or by external review—the Fact Layer provides the complete causal history of the affected agent chain, enabling precise identification of the depth and origin of the anomaly without relying on the potentially compromised agent's own self-reporting.
+
+\section{Correctness Properties}
+
+We now establish the formal correctness guarantees of the Recursive Spawning architecture with respect to three properties: chain integrity, termination, and drift prevention.
+
+\subsection{Drift Prevention}
+
+Agent drift—the divergence of a spawned agent's behavior from its originating intent—is prevented by the interaction of three mechanisms: the immutable parent pointer, the forensic ledger, and Purpose Layer termination.
+
+\begin{definition}[Drift]
+An agent $a_i$ is said to have \emph{drifted} at time $t$ if the observable behavior of $a_i$ at $t$ is inconsistent with the intent encoded in its originating Purpose Layer entry, where inconsistency is evaluated by the BX3 constraint checker.
+\end{definition}
+
+\begin{theorem}[Drift Prevention]
+No agent in a Recursive Spawning chain can drift from its originating Purpose Layer intent.
+\end{theorem}
+
+\begin{Proof}
+We prove by structural induction on the spawn chain.
+
+\textbf{Base case:} Consider a top-level agent $a_0$ whose Purpose Layer entry is $p_0$. By definition, $a_0$'s execution environment enforces constraints derived from $p_0$ at every decision point. Since $a_0$ is not a spawned agent, it has no parent pointer and its behavior is directly constrained by its own Purpose Layer. Thus $a_0$ cannot drift from $p_0$.
+
+\textbf{Inductive step:} Assume that for all agents at depth less than $d$, no drift is possible. Consider an agent $a_d$ spawned at depth $d$ with parent $a_{d-1}$, purpose pointer $pp(a_d) = p_{orig}$, and bounds profile $B(a_d)$ inherited from the Bounds Engine at spawn time. Three mechanisms prevent drift:
+
+\begin{enumerate}
+    \item \emph{Immutable parent pointer.} The purpose pointer $pp(a_d)$ is set by the framework at spawn time and is architecturally isolated from modification by $a_d$ or any of its descendants. This is guaranteed by the BX3 isolation property, which prevents agent-modifiable state from aliasing framework-maintained purpose pointers.
+
+    \item \emph{Forensic ledger binding.} Every action taken by $a_d$ is recorded in the Fact Layer with a trace linking it to $pp(a_d) = p_{orig}$. This creates a verifiability constraint: any claim by $a_d$ that its actions are consistent with $p_{orig}$ can be independently verified by consulting the Fact Layer causal chain. A drifted agent cannot retroactively rewrite the Fact Layer, as the ledger is append-only and protected by framework-level integrity constraints.
+
+    \item \emph{Purpose Layer termination.} The chain of parent pointers terminates at a Purpose Layer entry $p_0$ maintained at the framework level. Since $p_0$ is not writable by any descendant agent, the chain of accountability has a cryptographically anchored terminus. A drifted agent that attempts to redefine its own purpose pointer does not affect the framework-maintained chain, which continues to resolve to $p_0$.
+\end{enumerate}
+
+By the induction hypothesis, no agent at depth $d-1$ can drift. Given that $a_d$ inherits its purpose pointer from $a_{d-1}$ and that pointer is immutable, $a_d$ cannot establish an alternative purpose anchor. The combination of immutability, forensic verifiability, and Purpose Layer termination ensures that $a_d$'s behavior is constrained to be consistent with $p_{orig}$. Therefore, $a_d$ cannot drift. By induction, no agent at any depth can drift from its originating Purpose Layer intent. \qed
+\end Proof}
+
+\subsection{Chain Integrity}
+
+\begin{definition}[Chain Integrity]
+A Recursive Spawning chain maintains \emph{chain integrity} if for every parent-child pair $(a_i, a_{i+1})$ in the chain, the following invariants hold:
+\begin{itemize}
+    \item $pp(a_{i+1})$ correctly references $a_i$'s originating Purpose Layer entry.
+    \item $B(a_{i+1}) \subseteq B(a_i)$ (bounds profile is preserved or tightened).
+    \item All Fact Layer entries for $a_{i+1}$ are causally linked to $a_i$.
+\end{itemize}
+\end{definition}
+
+\begin{theorem}[Chain Integrity Preservation]
+Chain integrity is preserved at every spawn event.
+\end{TheorEm}
+
+\begin{Proof}
+Chain integrity is enforced by the framework at spawn time. The spawn protocol performs three atomic checks before acknowledging a spawn event:
+
+\begin{inparaenum}[(1)]
+    \item The purpose pointer for the child agent is computed by resolving the parent's originating Purpose Layer entry and setting the child's pointer to that entry—this is the \emph{accountability anchor} property.
+    \item The Bounds Engine evaluates the child's proposed bounds profile against the parent's inherited bounds and only permits the spawn if $B_{\text{proposed}} \subseteq B_{\text{parent}}$.
+    \item The framework creates an initial Fact Layer entry for the child that encodes the spawn event, the inherited purpose pointer, and the bounds profile, establishing the causal link to the parent.
+\end{inparaenum}
+
+Since all three checks are atomic and framework-maintained, no spawned agent can introduce a integrity violation after the spawn event has been acknowledged. \qed
+\end{Proof}
+
+\subsection{Termination}
+
+The Recursive Spawning chain is guaranteed to terminate. This follows directly from two properties of the BX3 Framework:
+
+\begin{enumerate}
+    \item \emph{Finite depth bound.} The Bounds Engine enforces a maximum spawn depth $d_{\max} \in \mathbb{N}$. A spawn event at depth $d$ is only valid if $d < d_{\max}$. This establishes an absolute upper bound on chain length.
+
+    \item \emph{Purpose Layer as terminating anchor.} Because the chain of parent pointers necessarily terminates at a Purpose Layer entry (the BX3 Framework guarantees that every agent has a Purpose Layer entry and that parent pointers resolve to it), the chain cannot be infinite. Even in the absence of a depth bound, the finite branching factor imposed by the single-parent spawning model ensures that there are only finitely many agents in any chain, and the chain terminates at the originating Purpose Layer anchor.
+\end{enumerate}
+
+\begin{corollary}
+Any Recursive Spawning chain has length at most $d_{\max}$ and always terminates at its originating Purpose Layer entry.
+\end{corollary}
+
+These three properties—drift prevention, chain integrity, and termination—together establish that the Recursive Spawning architecture, when operating on the BX3 Framework substrate, produces agent chains that are behaviorally bounded, accountable, and structurally sound.

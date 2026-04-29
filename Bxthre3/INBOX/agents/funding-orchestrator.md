@@ -1,10 +1,10 @@
 # Funding-Orchestrator Agent — INBOX
-# Last Updated: 2026-04-11 08:15 AM MT
+# Last Updated: 2026-04-19 08:15 AM MT
 
 | Source | Committed | Received | Status |
 |--------|-----------|----------|--------|
-| Zo Credit | $5K | $0 | Pending |
-| F/F | $3K | $0 | Outreach in progress |
+| Zo Credit | $5K | $0 | Pending sprint.kickoff |
+| F/F | $3K | $0 | Outreach in progress (zero closes) |
 | Micro-Angel | $2K | $0 | Not contacted |
 
 **P1 Total:** $0 confirmed / $10K target
@@ -21,11 +21,11 @@
 
 ---
 
-## DAILY PULSE — 2026-04-11
+## DAILY PULSE — 2026-04-19
 
-**Cash Position:** ~$130,450 (INBOX.md verified)
-**Burn Rate:** ~$130K/week
-**Runway:** ~7 days ⚠️ (<10 day threshold breached — P1 escalation triggered)
+**Cash Position:** ~$130,450 (stale — 2026-04-11) [VERIFY]
+**Burn Rate:** ~$130K/week [VERIFY]
+**Runway:** ~7 days ⚠️ (<10 day threshold — P1 breach)
 **Next Close:** None confirmed
 
 **Sage deal stale 12+ days** — $2,500 cash + 10% VPC take rate + 2.5% VPC equity blocked
@@ -41,8 +41,8 @@
 
 | Blocker | Impact | Owner |
 |---------|--------|-------|
-| Runway <10 days | P1 — ESCALATED | brodiblanco |
+| Runway <10 days — P1 breach | ESCALATED | brodiblanco |
 | F/F zero closes | $3K blocked | Drew |
 | Micro-Angel uncontacted | $2K blocked | Drew |
-| Zo Credit no draw | $5K blocked | awaiting sprint.kickoff |
-| Sage deal 12-day stall | $2,500 + equity blocked | Drew |
+| Zo Credit undrawn | $5K blocked | awaiting sprint.kickoff |
+| Sage deal 12+ day stall | $2,500 + equity blocked | Drew |

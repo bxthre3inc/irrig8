@@ -1,0 +1,83 @@
+% Section 2 — Background
+% "Recursive Spawning" — Bxthre3 Inc / AgentOS
+% LaTeX source for paper development
+
+\section{Background}
+\label{sec:background}
+
+Multi-agent systems (MAS) built around large language models (LLMs) are rapidly transitioning from research prototypes to production workloads. As agent count scales and autonomy deepens, two foundational challenges emerge: \emph{lifecycle management}---how agents are created, delegated, terminated, and audited across their lifespan---and \emph{provenance accountability}---how the chain of decisions, authorizations, and actions can be traced, verified, and attributed to a responsible principal. This section surveys the state of the art across both challenges, distinguishes fixed from mutable delegation topologies, reviews hierarchical task decomposition as the dominant paradigm for structuring recursive agent spawning, and introduces the BX3 Framework as a substrate designed to enforce immutable parent-chain provenance as a first-class architectural constraint.
+
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+\label{sec:lifecycle}
+
+Agent lifecycle management encompasses the creation, activation, delegation, suspension, and retirement of software agents operating within a shared environment. In traditional distributed-agent architectures, lifecycle transitions are governed by centralized registries or static role definitions~\cite{wooldridge1999agents}. Recent work has moved toward decentralized models in which any agent may spawn sub-agents dynamically, subject only to capability-based access controls.
+
+The \textbf{Agent Identity, Trust and Lifecycle Protocol} (AITLP) formalizes this shift by treating each agent as an organizational actor with a declared identity, a bounded hierarchical mandate, and cryptographic scope enforcement~\cite{draft-larsson-aitlp}. AITLP introduces generational knowledge transfer via an \emph{Agent Legacy Mode} (ALM), which preserves provenance across agent generations---critical for long-running workflows where parent agents are replaced or upgraded mid-execution. Lifecycle drift detection ensures agents operate within approved stages, providing an automated safeguard against mandate creep.
+
+The \textbf{LOKA Protocol} complements this with a Universal Agent Identity Layer (UAIL) that assigns unique, verifiable identities to agents across heterogeneous systems, paired with an Intent-centric communication layer that annotates inter-agent messages with ethical metadata~\cite{loka2025}. Together, UAIL and the decentralized ethical consensus mechanism enable context-aware, value-aligned delegation from creation through termination.
+
+Complementary to protocol-layer solutions, frameworks such as \textbf{AGENTHIVE} treat delegation itself as a first-class primitive, allowing any agent to recursively spawn and coordinate sub-agents without a central orchestrator~\cite{agenthive2025}. Task-driven topologies---trees, forests, and star structures---emerge dynamically from agent demand, and lifecycle transitions are embedded in the delegation graph rather than managed by an external supervisor.
+
+\subsection{Accountability and Provenance in Distributed Agentic Systems}
+\label{sec:provenance}
+
+Accountability in MAS requires the ability to assign responsibility for actions after they occur, auditable evidence that those actions occurred as claimed, and mechanisms to reconstruct the sequence of decisions that led to a given outcome~\cite{auditability2025}. These three concepts---responsibility, evidence, and reconstruction---map onto the broader accountability lifecycle proposed by~\cite{vasconcelos2022accountability}, which captures organizational events, propagates accounts, and triggers remedial action when obligations are unmet.
+
+\textbf{PROV-AGENT} extends the W3C PROV provenance model with agent-centric metadata, linking prompts, responses, decisions, and end-to-end context to enable fine-grained traceability across agentic workflows that span edge, cloud, and high-performance computing environments~\cite{provagent2025}. PROV-AGENT captures inter-agent handoffs and human-agent interactions, providing a foundation for governance over autonomous behavior that existing audit logs cannot supply.
+
+The \textbf{Human Delegation Provenance} (HDP) protocol addresses a narrower but high-impact problem: cryptographically recording the chain of human authorization through agentic delegation hops. HDP tokens bind a human principal, an authorization scope, and a session identifier; each subsequent delegation hop is appended as a signed record in an append-only provenance chain~\cite{draft-hdp2026}. Verification requires only the issuer's Ed25519 public key and the session identifier, enabling offline audit without centralized registries or third-party trust anchors. This design directly mitigates prompt injection attacks by providing runtime signals of legitimate delegation authorization.
+
+\textbf{Auditable design} has been systematically studied by~\cite{auditability2025}, who identify five dimensions of agent auditability: action recoverability, lifecycle coverage, policy checkability, responsibility attribution, and evidence integrity. Their \emph{Auditability Card} framework provides an evaluative checklist for designing MAS deployments where accountability is a first-class attribute rather than an afterthought. Empirical evaluation shows that pre-execution mediation with tamper-evident records adds a modest median overhead of 8.3\,ms, making comprehensive provenance collection practical for production systems.
+
+Taken together, these works establish a clear consensus: accountability is not a property that emerges from good intentions but one that must be architected into the agent system from inception, with provenance chains that are append-only, cryptographically verifiable, and bound to human principals at their root.
+
+\subsection{Fixed vs. Mutable Delegation Chains}
+\label{sec:delegation-chains}
+
+Delegation chains in multi-agent systems vary along a single critical axis: whether the parent--child relationships between agents are fixed at spawn time or mutable during execution.
+
+\textbf{Fixed delegation chains} prescribe a static topology at initialization. The root agent decomposes a task into a predetermined graph of sub-agents; each sub-agent receives its mandate and parent reference at creation and never re-delegates outside the prescribed hierarchy. Fixed chains offer simplicity and predictable audit paths---the provenance graph matches the design-time architecture---but they cannot adapt to workload characteristics, agent failures, or changing task requirements at runtime. Static topologies are the norm in early multi-agent orchestrators and in production systems that prioritize auditable simplicity over adaptive capacity.
+
+\textbf{Mutable delegation chains} allow agents to re-delegate tasks to newly spawned sub-agents during execution, dynamically growing or pruning the agent topology as conditions change. The \textbf{Recursive Delegation Engine} (RDE) exemplifies this by modeling delegation as a directed graph with utility-based decision criteria, supporting adaptive agent-selection strategies (epsilon-greedy, UCB, Thompson Sampling) that determine whether a given agent should execute a subtask or delegate it further~\cite{rde2025}. Mutable chains enable deeper exploration of solution spaces and better load distribution but introduce significant accountability risk: each delegation hop may spawn a new agent with a previously unknown identity, making end-to-end provenance reconstruction non-trivial.
+
+\textbf{IACT} (Interactive Agents Call Tree) provides a middle ground: a self-organizing, recursive model in which agents grow a hierarchical call tree dynamically during execution, but interactions are constrained to be bidirectional and stateful, enabling continuous error correction and runtime verification~\cite{iact2025}. This design limits the mutability surface by requiring every new edge to originate from an existing agent rather than an arbitrary external trigger.
+
+\textbf{FIRMHIVE} demonstrates mutable delegation in a real-world security analysis domain, where a runtime Tree of Agents (ToA) is constructed on demand and specialized agents coordinate across large, heterogeneous codebases~\cite{firmhive2024}. The framework treats delegation as an executable primitive at the agent level, enabling recursive spawning with bounded context windows while preserving a fixed root reference for provenance purposes.
+
+The fundamental tradeoff is this: mutability enables adaptive, load-sensitive delegation at the cost of provenance complexity, while fixity provides auditable simplicity at the cost of adaptability. The BX3 Framework adopts a position on this spectrum, described in Section~\ref{sec:bx3}.
+
+\subsection{Hierarchical Task Decomposition in AI Agents}
+\label{sec:task-decomposition}
+
+Hierarchical task decomposition (HTD) is the dominant paradigm for structuring complex, long-horizon tasks in LLM-based agent systems. Rather than prompting a single model to complete a multi-step goal in one pass, HTD recursively decomposes goals into subgoals, assigns each subgoal to a specialized agent node, and aggregates results upward through the hierarchy. This approach addresses the well-documented limitations of flat prompting at scale: context window saturation, error propagation in linear chains-of-thought, and the inability to exploit parallelism~\cite{structuredtesttime2026}.
+
+\textbf{ReAcTree} instantiates HTD through a dynamically constructed agent tree with control flow nodes that coordinate execution across agent nodes and episodic memory systems that guide subgoal-level decisions~\cite{reactree2025}. Empirical results show that hierarchical decomposition approximately doubles goal success rates compared to flat ReAct baselines on embodied AI tasks, demonstrating the practical value of structural recursion.
+
+\textbf{TDAG} (Task-driven Dynamic Agent Generation) generalizes this model by generating specialized sub-agents on the fly for each decomposed subtask, adapting the delegation graph as execution unfolds~\cite{tdag2024}. The framework's dynamic adaptation reduces error propagation relative to static task plans and improves context awareness in complex, interconnected task scenarios such as travel planning.
+
+\textbf{FIRMHIVE}'s Tree of Agents architecture reinforces this pattern for security analysis workloads, where a fixed root agent recursively spawns specialized sub-agents for binary analysis, script inspection, and configuration review~\cite{firmhive2024}. The runtime ToA enables exploration depths approximately 16$\times$ greater than single-agent baselines, with vulnerability identification rates 1.5$\times$ higher than state-of-the-art static analysis tools.
+
+\textbf{ReDel} provides an open-source toolkit for building recursive multi-agent systems that support dynamic, runtime-added agents with flexible delegation schemes and event-driven logging for post-hoc replay and visualization of the delegation graph~\cite{redel2024}. The toolkit's modular design makes it a practical foundation for experimenting with HTD topologies in research settings.
+
+\textbf{LCM} (Lossless Context Management) proposes an architecture-centric alternative to model-centric recursion by engine-managing memory with deterministic primitives, organized as a hierarchical DAG with an immutable store and active context~\cite{lcm2025}. Crucially, LCM replaces model-written loops with operator-level recursion primitives (\texttt{llm\_map}, \texttt{agentic\_map}) and establishes a scope-reduction invariant that guarantees termination, preventing infinite delegation chains---a failure mode that mutable HTD systems must actively prevent.
+
+Together, these systems establish HTD as a mature and empirically validated paradigm. The remaining open challenge is not whether hierarchical decomposition works but how to structure the parent--child chain so that it remains auditable and provenance-compliant as the topology grows and changes at runtime.
+
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+\label{sec:bx3}
+
+The BX3 Framework (Bxthre3 Inc) takes the convergence of HTD, mutable delegation, and provenance accountability as its organizing problem. Prior frameworks treat immutable parent chains as an optional feature layered on top of an agent runtime. BX3 treats immutable parent-chain provenance as a structural constraint: every agent in a BX3 system is assigned a unique identifier drawn from its parent's chain, and this chain is append-only and cryptographically anchored at the root to a human principal.
+
+This design reflects the accountability architecture described by~\cite{draft-hdp2026} and the identity anchoring described by~\cite{draft-beyer-agent-identity}, but generalizes beyond human-delegation tokens to arbitrary agent-to-agent delegation chains. Where HDP scopes authorization to a single session, BX3 extends the chain model to full agent lifecycles: an agent's parent reference is established at spawn time and can never be rewritten during execution. Mutable behavior---dynamic task decomposition, runtime sub-agent spawning, adaptive execution strategies---is expressed entirely through the \emph{children} of a given agent, never through retroactive changes to parent references.
+
+The practical consequences of this constraint are significant. First, full end-to-end provenance is guaranteed: any agent's lineage traces back through a fixed chain of parent references to a human principal, enabling post-hoc accountability without centralized registries. Second, lifecycle transitions are auditable: when an agent spawns a child, the spawn event is recorded with the parent's immutable identifier, creating an append-only event log that mirrors the append-only delegation chain of HDP but extends across the full agent lifecycle. Third, hierarchical task decomposition is explicitly supported: agents decompose tasks by spawning children; the decomposition tree is a consequence of the immutable chain structure, not an external orchestration layer.
+
+This stands in contrast to mutable-delegation systems where parent references may be rewritten, children may be adopted by different parent agents mid-execution, or the delegation graph may be pruned and re-rooted. In those systems, provenance reconstruction requires complex log inference or external audit infrastructure. In BX3, provenance is structural and self-certifying: the chain of parent identifiers is the audit trail.
+
+\section*{References}
+% Cited sources -- compiled from web research 2026-04-27
+\bibliographystyle{plain}
+\bibliography{references}
+
+% Source list for LaTeX build
+% To build: pdflatex → bibtex → pdflatex × 2

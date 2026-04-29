@@ -1,0 +1,76 @@
+\section{Background}
+\label{sec:background}
+
+Multi-agent systems increasingly serve as the operational substrate for complex AI workflows, yet the management of agent lifecycles, the tracking of accountability across delegation chains, and the enforcement of immutable provenance traces remain open challenges. This section situates \textbf{Recursive Spawning} within the broader landscape of prior work across four dimensions: agent lifecycle management, accountability and provenance in distributed systems, fixed versus mutable delegation chains, and hierarchical task decomposition in AI. We conclude by positioning the BX3 Framework as a novel substrate designed to natively support immutable parent-chain provenance.
+
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+\label{sec:agent-lifecycle}
+
+Agent lifecycle management encompasses the creation, delegation, execution, monitoring, and termination of agents within a multi-agent architecture. As agentic pipelines scale beyond simple orchestrator--worker patterns, the need for structured lifecycle governance intensifies. The IETF draft on human-anchored agent identity and delegation architecture~\cite{beyer2025agentidentity} formalizes this challenge by proposing explicit delegation semantics that express scope, conditions, and expiration of an agent's authority to act on a human's behalf. This work identifies three core requirements for lifecycle integrity: legitimate authority establishment, prevention of impersonation, and maintenance of a verifiable history of actions as agents operate, delegate, and interact.
+
+Complementing this, the \textit{Human Delegation Provenance} (HDP) protocol introduces a cryptographic token mechanism that binds human authorization to a session and appends a signed hop for each delegation step, forming an append-only provenance log~\cite{ietf-hdp-2026}. HDP enables offline verification using only the issuer's Ed25519 public key and the current session identifier, addressing multi-hop human-in-the-loop authorization gaps that OAuth 2.0 and JWT-based schemes do not adequately cover.
+
+The \textit{Delegation Contracts} framework further enriches lifecycle management by introducing explicit bounds on authority---budgets, deadlines, and success criteria---governing each delegation instance~\cite{arXiv2603.18043}. It distinguishes \textit{claimed quality} from \textit{attested quality}, replacing self-reported delegate capabilities with verified signals to prevent incentive misalignment during routing. Together, these works establish that robust agent lifecycle management requires not only state tracking but also cryptographically grounded, auditable delegation semantics.
+
+The \textit{PROV-AGENT} model extends the W3C PROV standard with agent-centric metadata to capture decisions, prompts, and responses across interconnected agents in near real-time~\cite{arXiv2508.02866}. By leveraging the Model Context Protocol (MCP), PROV-AGENT integrates agent activity into end-to-end provenance, enabling fine-grained lineage and impact analysis. This is particularly relevant for complex pipelines where one agent's output influences downstream decision-making.
+
+\subsection{Accountability and Provenance in Distributed Systems}
+\label{sec:accountability-provenance}
+
+Provenance in distributed systems refers to the authoritative record of an entity's lineage---the origin, custody, and transformations that data or actions undergo across system boundaries. The field has long recognized that without tamper-evident records, auditability collapses under adversarial conditions.
+
+\textit{PeerReview} provides practical accountability for distributed systems by maintaining a fault-anchored, tamper-evident record of all messages each node sends and receives~\cite{peerreview07}. Correct nodes can detect Byzantine faults observed by other correct nodes, and deviations are irrefutably linked to the faulty node. This model demonstrates how accountability requires that every action be bound to its initiator through cryptographic means, with verifiability available to third parties.
+
+\textit{Trustless Provenance Trees} formalizes provenance as an immutable, DAG-structured registration anchored on a public blockchain, addressing attribution in operator-gated registries~\cite{arXiv2604.03434}. By introducing a dual-layer cryptographic commitment scheme that binds a client-side secret key to both the tree root and each registration identifier, the framework makes false attribution strictly dominated. Correctness is proven under standard cryptographic assumptions, and honest behavior emerges as the unique Nash equilibrium without requiring operator trust.
+
+\textit{LineageChain} provides a blockchain-based provenance system with fine-grained, secure capture and querying of data lineage during contract execution on Hyperledger Fabric~\cite{lineagechain-vldb2021}. By storing provenance in a Merkle-tree structure, LineageChain ensures tamper-evidence and verifiable integrity while maintaining efficient query performance through a novel skip-list index.
+
+\textit{CATS} (Certified Accountability for Tamper-evident Storage) delivers strong accountability for network storage services where each participant can verify correct server operations without trusting others~\cite{cats-fast07}. Cryptographic proofs annotate server responses, enabling clients to audit reads and writes and expose any misbehavior. These works collectively establish that accountability infrastructure must be tamper-evident, cryptographically verifiable, and designed to survive adversarial conditions across distributed boundaries.
+
+\subsection{Fixed versus Mutable Delegation Chains}
+\label{sec:fixed-vs-mutable}
+
+A central architectural question in multi-agent delegation is whether delegation chains should be fixed at instantiation or allowed to evolve dynamically. Fixed delegation chains offer simplicity and predictability: authority is established once, scope is bounded, and no further changes propagate. Mutable chains offer flexibility but introduce auditability risks, as intermediate agents may alter scope or redirect authority without detection.
+
+The \textit{Authority Envelopes} specification (RFC-008, CapiscIO) formalizes the property of \textit{monotonic narrowing} in delegation chains~\cite{capiscIO-rfc008}. Each envelope links to its parent via \texttt{parent\_authority\_hash}, and every delegation step reduces (never expands) the prior authority. This design ensures a tamper-evident provenance trail from grantor to subject, enabling cross-hop traceability and precise access-control auditing. The monotonic property is critical: once a chain is established, no agent in the path can broaden its own authority, simplifying audit predicates.
+
+In contrast, mutable chains appear in frameworks like \textit{AGENTHIVE}, which treats delegation as a first-class, recursive primitive enabling adaptive topologies that emerge dynamically as trees, forests, or star configurations~\cite{openreview-AGENTHIVE}. AGENTHIVE supports dynamic reconfiguration as tasks evolve, but traceability becomes the responsibility of the orchestrating layer rather than the substrate. Similarly, \textit{Deep Agent} employs a hierarchical task DAG with runtime reconfiguration, enabling pause, review, and resume operations as circumstances change~\cite{arXiv2502.07056}.
+
+The tension between fixed and mutable chains maps directly to the \textbf{immutability requirement} in accountability-critical deployments. Fixed chains are preferred in regulated or high-stakes domains where every action must be attributable to an authorizing principal. Mutable chains are preferred in open-ended task decomposition where exploration of solution subspaces benefits from flexible restructuring. The SentinelAgent framework introduces a formal \textit{Delegation Chain Calculus} (DCC) with seven properties, including \textit{authority narrowing} and \textit{forensic reconstructibility}, demonstrating that even in mutable contexts, formal constraints can enforce deterministic behavioral guarantees~\cite{arXiv2604.02767}.
+
+The HDP protocol occupies a middle ground: chains are append-only (immutable in the log) but new delegation hops may be added dynamically, subject to the original scope constraints embedded in the HDP token~\cite{ietf-hdp-2026}. This design preserves flexibility while maintaining an immutable audit trail---a property directly inherited by the BX3 Framework's parent-chain mechanism.
+
+\subsection{Hierarchical Task Decomposition in AI}
+\label{sec:hierarchical-task-decomposition}
+
+Hierarchical task decomposition refers to the recursive breakdown of complex goals into subgoals managed by specialized agents, with coordination enforced through control-flow structures. This paradigm addresses the long-horizon planning limitations of flat, monolithic agent architectures.
+
+\textit{ReAcTree} introduces hierarchical LLM agent trees with control-flow nodes that coordinate strategies across dynamically expanded subtrees~\cite{arXiv2511.02424}. A complex goal is recursively decomposed into subgoals, each managed by an agent node capable of reasoning, acting, and further expanding the tree. Empirical evaluation on WAH-NL and ALFRED benchmarks demonstrates that hierarchical decomposition roughly doubles the success rate of monolithic approaches, attributable to modular decision-making and episodic memory integration at subgoal granularity.
+
+\textit{STRUCUTUREDAGENT} combines online hierarchical planning with dynamic AND/OR trees and a structured memory module, achieving state-of-the-art performance on web-browsing benchmarks including WebVoyager and WebArena~\cite{arXiv2603.05294v1}. The planner generates interpretable hierarchical plans enabling human intervention at any level, while the memory module maintains candidate solutions across extended action sequences.
+
+\textit{Task-Decoupled Planning} (TDP) reduces planning entanglement by organizing objectives as a directed acyclic graph (DAG) of sub-goals with scoped contexts for each Planner and Executor~\cite{arXiv2601.07577}. By localizing errors and corrections to the active sub-task, TDP achieves up to 82\% reduction in token usage and demonstrates improved robustness on TravelPlanner, ScienceWorld, and HotpotQA benchmarks. The DAG structure directly parallels the parent-chain model in BX3, where each spawning event creates a node whose parent reference forms the chain axis.
+
+\textit{HiPlan} bridges global milestone guidance with local step-wise adaptation, enabling LLM agents to maintain macroscopic direction while responding to microscopic environmental feedback~\cite{arXiv2508.19076}. The offline phase builds a milestone library from expert demonstrations; the online phase dynamically retrieves and adapts trajectory segments. This global--local decomposition aligns with BX3's design, where parent-level goal context propagates downward through the spawn chain while child agents retain local execution autonomy.
+
+These works collectively validate that hierarchical decomposition significantly outperforms flat planning for long-horizon tasks and that agent trees, DAGs, and milestone-guided structures are effective computational substrates for this decomposition.
+
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+\label{sec:bx3-framework}
+
+The foregoing review establishes that multi-agent systems benefit from (i) structured lifecycle management with explicit delegation semantics, (ii) cryptographic provenance that is tamper-evident and offline-verifiable, (iii) delegation chains that either enforce monotonic narrowing or support controlled, auditable mutation, and (iv) hierarchical task decomposition enabling recursive subgoal management.
+
+Existing frameworks address each of these dimensions in isolation. The BX3 Framework, introduced in this paper, unifies them by providing a \textbf{native substrate} where every spawned agent retains an immutable reference to its parent chain, enabling full retrospective traceability of any agent's origin, authorizing context, and hierarchical position within the broader execution graph.
+
+The BX3 substrate enforces the following invariants:
+\begin{enumerate}
+    \item \textbf{Immutable parent reference:} Each spawned agent's state includes a cryptographically signed reference to its immediate parent, and transitively to all ancestors. No runtime operation can modify this reference after instantiation.
+    \item \textbf{Append-only spawn log:} Spawning events are recorded as signed entries in an append-only log. The log is structurally analogous to the HDP protocol's append-only hop chain~\cite{ietf-hdp-2026} and the monotonic authority narrowing in Authority Envelopes~\cite{capiscIO-rfc008}, but extended to the full lifecycle of every agent rather than a single delegation session.
+    \item \textbf{Hierarchical accountability:} Because every agent carries its full parent chain, any action taken by a descendant agent is traceable to the root principal who initiated the top-level task. This addresses the forensic reconstructibility requirement identified in the DCC formalization~\cite{arXiv2604.02767} and the end-to-end provenance goals of PROV-AGENT~\cite{arXiv2508.02866}.
+    \item \textbf{Recursive task decomposition:} The BX3 spawn primitive supports recursive invocation, where a parent task delegates subgoals to child agents and awaits their completion before aggregating results. This mirrors the hierarchical decomposition patterns in ReAcTree~\cite{arXiv2511.02424} and TDP's DAG-based subgoal management~\cite{arXiv2601.07577}, with the added guarantee that the decomposition tree is structurally immutable.
+\end{enumerate}
+
+Unlike AGENTHIVE's adaptive topologies, which emerge dynamically and can reconfigure mid-execution, BX3's topology is append-only: new agents are added, but the edges linking them to their parents are permanent and cryptographically verifiable. Unlike mutable DAG-based planners that permit backtracking and node modification, BX3 agents cannot mutate the spawn tree after creation. This immutability-first design positions BX3 as the first multi-agent substrate to combine hierarchical task decomposition with a native, zero-overhead immutable parent chain, serving as the foundational mechanism for the \textbf{Recursive Spawning} pattern described in subsequent sections.
+
+\bibliographystyle{plain}
+\bibliography{references}

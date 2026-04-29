@@ -1,0 +1,307 @@
+% ---------------------------------------------------------------
+\section{Implementation in the BX3 Framework}
+\label{sec:bailout-implementation}
+% ---------------------------------------------------------------
+
+The BX3 Framework's upstream accountability guarantee states that every
+unresolved exception in a node $n$ must reach its designated human anchor
+$h(n)$ in finite time, and that the path traversed and the human's directive
+must be permanently attributable.  This guarantee is a structural property of
+the framework's architecture: it follows from the immutability of the parent
+pointer $\alpha(n)$, the finiteness of the spawn tree depth, and the
+designation of human anchors at node initialization.  As a structural
+property, it holds under the assumption that the framework's enforcement
+mechanisms operate correctly.  The Bailout Protocol is the mechanism that
+makes this structural guarantee operationally compulsory --- it is the runtime
+execution engine that converts the static guarantee into a deterministic,
+cryptographically attested, and architecturally enforced propagation event.
+The protocol is not an optional extension layered onto the framework; it is
+the translation layer between the framework's structural commitments and the
+runtime execution trace that constitutes the definitive accountability record
+of every exception that occurs in a BX3 node.
+
+The protocol's implementation spans all three BX3 layers, with each layer
+fulfilling a distinct and non-overlapping structural role.  The
+purposeLayer{} layer defines and anchors the human principal; the \boundsLayer{}
+layer houses the Bounds Engine that detects and classifies constraint
+violations and emits the trigger condition; the \factLayer{} layer enforces the
+state machine transitions, records every event in the Forensic Ledger, and
+provides the enforcement substrate that makes compliance architecturally
+compulsory rather than operationally discretionary.  This separation of
+concerns is not merely organizational --- it is the mechanism by which the
+upstream accountability guarantee becomes structurally enforced.
+
+% ---------------------------------------------------------------
+\subsection{Purpose Layer: Human Accountability Anchor}
+\label{sec:bailout-purpose-layer}
+
+The \purposeLayer{} layer encodes the goal state and terminal success criteria for
+the agent's current task and serves as the exclusive terminus for any
+unresolved exception in a BX3 node.  The human anchor $h(n)$ is provisioned
+at node initialization and stored in \factLayer{}-managed memory.  No machine
+actor at any plane P0 through P6 may modify, redirect, or substitute the
+human-root identifier.  This immutability is a structural property of the
+\purposeLayer{} layer's function, established at provisioning and invariant
+throughout the node's operational lifetime.
+
+When the Bailout Protocol state machine transitions to
+\texttt{HUMAN\_ACKNOWLEDGED}, the \purposeLayer{} layer receives the escalated
+exception with its complete diagnostic context chain assembled by the
+escalation algorithm (Algorithm~\ref{alg:escalation}).  The layer receives:
+the originating node identifier; the trigger condition's full sub-components
+(bound signal, resolution state, confidence value); every resolution attempt
+that failed at each intermediate node; the Bounds Engine's reasoning trace at
+each hop; and the timeout states that drove the propagation.  This
+completeness is enforced by the \factLayer{} layer's pre-commit hook.  No machine
+actor may truncate, aggregate, redact, or substitute any element of the
+diagnostic context before it reaches the \purposeLayer{} layer.
+
+The \purposeLayer{} layer's role in the protocol is strictly bounded.  It does not
+monitor the state machine, does not initiate escalation, and does not
+evaluate whether the trigger condition has been satisfied.  It receives
+exceptions that have already traversed the full propagation chain and issues
+one of three binding directives: \texttt{ACK} (continue with current
+parameters, returning the node to \texttt{IDLE}), \texttt{RESOLVE} (execute
+a specific resolution prescribed by the human principal, entering
+\texttt{RESOLVED}), or \texttt{REJECT} (disallow the proposed action and
+enter a quiescent error state, also entering \texttt{RESOLVED}).  The
+directive is recorded in the authorization ledger via the \factLayer{} layer before
+it takes effect.  The credential binding on the $\sigma_{\text{resolve}}$
+event ensures that only $h(n)$ can emit it; no machine actor at any plane
+possesses the required credential.  The \purposeLayer{} layer is the structural
+realization of the upstream accountability guarantee's terminal commitment:
+the exception reaches \emph{that specific human}, no one else, with no
+substitutes permitted.
+
+% ---------------------------------------------------------------
+\subsection{Bounds Engine: Triggering the Bail-Out}
+\label{sec:bailout-bounds-engine}
+
+The \boundsLayer{} layer defines the provisioned operating range $R(n)$ within
+which the agent is authorized to act.  The Bounds Engine is the computational
+core of this layer: it evaluates whether proposed actions fall within $R(n)$,
+executes resolution procedures, produces candidate resolutions, and emits the
+trigger condition that activates the Bailout Protocol.
+
+The primary trigger condition TC (Equation~\ref{TC}) fires when three
+conditions hold simultaneously: the observable input $x$ falls outside $R(n)$;
+$x$ has not been previously resolved in the current operational session; and
+the Bounds Engine's self-assessed confidence in its ability to resolve $x$
+falls below the provisioned threshold $\tau(n)$.  The Bounds Engine exercises
+no discretion over this evaluation --- it performs a deterministic read against
+the operating-range definition and the confidence function, both provisioned at
+node initialization and immutable at runtime.  The trigger condition either
+fires or it does not; the result drives the state machine transition directly,
+without an intervening machine-actor gate.
+
+When TC fires, the state machine transitions from \texttt{IDLE} to
+\texttt{BOUNDED} (T1, Table~\ref{tab:bp-transitions}), and the Bounds Engine
+begins a time-bounded resolution attempt with timeout $T_{\text{bounds}}$.
+During \texttt{BOUNDED}, all resolution paths within current authority remain
+open; the Bounds Engine may attempt multiple strategies in sequence or in
+parallel, each submission reviewed by the \factLayer{} layer against the
+authorization ledger.  If the \factLayer{} layer approves a resolution before
+$T_{\text{bounds}}$ expires, the state machine returns to \texttt{IDLE} (T2).
+If $T_{\text{bounds}}$ expires without approval, the state machine
+transitions to \texttt{BAIL\_PENDING} (T3) and the Bounds Engine emits
+\texttt{bailout\_signal}.
+
+The transition to \texttt{BAIL\_PENDING} is deterministic and non-negotiable.
+No machine actor may suppress the signal, extend $T_{\text{bounds}}$, or
+substitute a lower-priority resolution path.  The \factLayer{} layer's pre-commit
+hook enforces this: any attempt to write a resolution approval after
+$T_{\text{bounds}}$ has expired is rejected, and the protocol violation is
+recorded in the Forensic Ledger.  This architectural enforcement is the
+structural distinction between the Bailout Protocol and discretionary escalation
+interfaces, where the agent decides whether and when to invoke human oversight.
+
+The secondary trigger pathway handles explicit \texttt{bailout\_signal}
+emissions from the Bounds Engine for cases where the engine detects a
+condition that, while not satisfying TC strictly, represents a threshold
+violation warranting human review.  The state machine routes this signal
+through the same transition logic (T9, Table~\ref{tab:bp-transitions}), and the
+diagnostic context chain is appended identically.  This ensures the protocol
+captures not only formally defined TC events but also the broader class of
+operator-discretionary escalation events that are contextually critical even
+when they do not meet the strict TC criteria.
+
+The Bounds Engine's projection function $\pi(n, x)$ computes the confidence
+score $\text{conf}(n, x) \in [0, 1]$ used in the TC evaluation.  This score
+is a deterministic read from the engine's state at evaluation time; no machine
+actor may bias the score upward to suppress a warranted escalation.  The
+threshold $\tau(n)$ governs the conservatism of the node's escalation
+behavior: higher values cause earlier escalation, lower values permit deeper
+autonomous reasoning before bailout triggers.
+
+% ---------------------------------------------------------------
+\subsection{State Machine as Fact Layer Extension}
+\label{sec:bailout-state-machine}
+
+The Bailout Protocol state machine
+$\mathcal{B} = (Q, \Sigma, \rightarrow, q_0, F)$ is embedded in the
+\factLayer{} layer, not in the \boundsLayer{} layer or any machine-executed process.
+This embedding is architecturally deliberate: a state machine executing as
+a machine process can be intercepted, modified, or circumvented by a
+compromised machine actor; a state machine executing as a \factLayer{}
+extension is enforced by the layer's deterministic logic, which operates below
+the agent's execution level and cannot be intercepted by any machine actor
+above it.  The state machine is not a component that the framework
+communicates with --- it is a structural extension of the enforcement layer
+itself.
+
+The state machine's transition relation $\rightarrow \subseteq Q \times \Sigma \times Q$
+is evaluated by the \factLayer{} layer before any state change is committed.  If
+no transition is defined for a $(q, \sigma)$ pair, the machine stalls and the
+Bailout Monitor records a protocol violation in the Forensic Ledger.  The
+state invariants encode the protocol's core guarantees as properties of the
+state machine:
+
+\begin{align}
+\text{INV-1}&: \forall n \in \text{nodes},\ \text{state}(n) \in Q \setminus \{\texttt{ESCALATING}\} \iff \neg\text{active\_bailout}(n). \tag{BP-INV-1} \\[4pt]
+\text{INV-2}&: \text{state}(n) = \texttt{BAIL\_PENDING} \implies \text{active\_bailout}(n) \land \text{transition}(\texttt{BAIL\_PENDING}, \sigma_{\text{timeout}}) = \texttt{ESCALATING}. \tag{BP-INV-2} \\[4pt]
+\text{INV-3}&: \text{state}(n) = \texttt{RESOLVED} \implies \exists d \in \{\texttt{ACK}, \texttt{RESOLVE}, \texttt{REJECT}\} \land \text{directive}(n) = d. \tag{BP-INV-3}
+\end{align}
+
+INV-2 is particularly significant: it encodes the no-machine-actor-discretion
+property as a state machine invariant.  The transition from
+\texttt{BAIL\_PENDING} to \texttt{ESCALATING} is forced by the state
+machine's deterministic transition relation and enforced by the Bailout Monitor
+without machine-actor intervention.  The \factLayer{} layer's pre-commit hook
+ensures this transition cannot be intercepted or redirected.
+
+Timeout handling --- $T_{\text{bounds}}$, $T_{\text{prop}}$, $T_{\text{cap}}$,
+and $T_{\text{human}}$ (Table~\ref{tab:bp-timeouts}) --- is enforced by the
+\factLayer{} layer, not by the \boundsLayer{} layer or any machine actor.  This prevents
+a compromised machine actor from artificially extending timeouts to suppress
+warranted escalation.  The Pathway Health Registry, maintained by the Bailout
+Monitor, tracks the functional status of each parent pointer $\alpha(n)$ for
+all nodes.  A pathway is marked \texttt{degraded} when \texttt{SendToParent}
+fails $R_{\max}$ times and is excluded from pathway selection until a health
+check succeeds.  Degraded pathways are recorded in the Forensic Ledger,
+ensuring the failure is attributable rather than silent.
+
+The state machine's embedded position in the \factLayer{} layer ensures that the
+Bailout Protocol's guarantees are not contingent on the correct behavior of
+the \boundsLayer{} layer or any other machine actor.  The \factLayer{} layer enforces
+the protocol's transition relation regardless of what any machine actor
+attempted --- it is the structural enforcement substrate that makes the
+upstream accountability guarantee architecturally compulsory rather than
+operationally optional.
+
+% ---------------------------------------------------------------
+\subsection{Fact Layer: Enforcement and Forensic Ledger Recording}
+\label{sec:bailout-fact-layer}
+
+The \factLayer{} layer is the enforcement and recording substrate for the Bailout
+Protocol.  It maintains the Forensic Ledger --- an immutable, SHA-256
+hash-chained record of all state transitions, trigger conditions, propagation
+events, and human directives across the protocol's lifetime.  The Forensic
+Ledger serves two distinct but related functions: it is the authoritative
+runtime state store for the Bailout Protocol's state machine, and it is the
+enforcement substrate for the framework's accountability properties.  The
+pre-commit hooks for the Bailout Protocol, Sandbox Gate, and Spatial Firewall
+all query the Forensic Ledger to determine the current state of their
+respective state machines before any state change is committed.
+
+The Bailout Protocol generates the following entry types in the Forensic
+Ledger, each written atomically by the \factLayer{} layer before the corresponding
+state transition is committed:
+
+\begin{itemize}\itemsep=0pt
+\item[\texttt{bailout-trigger}] Originating node, exception identifier,
+  trigger-condition sub-components (bound signal, resolution state,
+  confidence value), and priority function output $\pi(n, x)$.
+\item[\texttt{bounds-resolution-attempt}] Each resolution procedure submitted
+  by the Bounds Engine during \texttt{BOUNDED} state, including the
+  authorization ledger entry reference and the \factLayer{} approval or
+  rejection outcome.
+\item[\texttt{bailout-signal}] Explicit \texttt{bailout\_signal} emissions,
+  including the Bounds Engine's stated reason.
+\item[\texttt{timeout-bounds-expired}] Expiration of $T_{\text{bounds}}$ and
+  absence of a \factLayer{}-approved resolution at expiration.
+\item[\texttt{escalation-sent}] Each invocation of \texttt{SendToParent},
+  including the pathway selected, the payload hash, the retry count, and the
+  acknowledgment status.
+\item[\texttt{pathway-exhausted}] Exhaustion of all retry pathways and the
+  terminal state reached.
+\item[\texttt{human-ack}] Human anchor's acknowledgment of the escalated
+  exception, acknowledgment timestamp, and pathway used.
+\item[\texttt{human-directive}] Binding directive issued by $h(n)$ --- one of
+  \texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT} --- and the
+  corresponding authorization ledger entry hash.
+\end{itemize}
+
+The Forensic Ledger entry for a Bailout Protocol escalation constitutes the
+definitive accountability record for that exception.  It captures the complete
+provenance of the exception from the triggering input through every
+intermediate node's resolution attempt to the human principal's directive.
+No machine actor may modify, delete, or suppress any entry; the \factLayer{} layer
+enforces the record rather than interprets it.  This is the architectural
+distinction between the \factLayer{} layer and a conventional audit log: the
+\factLayer{} layer does not merely store events --- it actively prevents invalid
+state transitions, making it an enforcement mechanism rather than a passive
+recorder.
+
+The SHA-256 hash chaining ensures tamper-evidence: each entry includes the
+hash of the preceding entry, making any post-hoc modification detectable by
+recalculating the chain.  An external auditor --- regulator, customer,
+investor, or court --- can reconstruct the complete exception history of any
+node from the cryptographically chained Forensic Ledger entries and verify
+that every unresolved exception reached $h(n)$, that every human directive
+was recorded, and that no machine actor suppressed, redirected, or substituted
+for the human principal.  The guarantee is not merely asserted --- it is
+evidenced.
+
+Completeness of the Forensic Ledger is enforced by Invariant I4: every state
+transition in the Bailout Protocol's state machine produces at least one
+Forensic Ledger entry before the transition is committed.  This is not an
+operational convention; it is enforced by the \factLayer{} layer's pre-commit
+hook, which rejects any state transition that has not produced its required
+entry.  The combination of hash chaining and completeness enforcement means
+that the Forensic Ledger is both tamper-evident and exhaustive: any gap in
+the chain is itself a detectable and attributable protocol violation.
+
+% ---------------------------------------------------------------
+\subsection{Runtime Expression of the Upstream Accountability Guarantee}
+\label{sec:bailout-uag}
+
+The upstream accountability guarantee exists as a structural property of the
+BX3 Framework until an exception triggers the Bailout Protocol, at which point
+the protocol converts it into an immutable, evidenced execution trace.  This
+translation from static guarantee to runtime event is the protocol's defining
+function: it is the mechanism that makes the upstream accountability guarantee
+operationally real, converting the framework's architectural commitments into
+concrete, attributable outcomes.
+
+Without the Bailout Protocol, the upstream accountability guarantee would be a
+structural aspiration with no enforcement mechanism.  The human anchor $h(n)$
+would be the designated terminus in principle, but nothing would compel
+exceptions to reach it.  Machine actors could suppress, redirect, or silently
+ignore exception states, and the guarantee would hold only for systems whose
+machine actors chose to comply.  The Bailout Protocol converts the guarantee
+from a structural aspiration into an architecturally enforced compulsion: the
+state machine's deterministic transition relation, the \factLayer{} layer's
+pre-commit hook, and the immutable parent-pointer architecture together ensure
+that no unresolved exception state can exist in a BX3 node without propagating
+to $h(n)$.
+
+The Forensic Ledger entries generated by the protocol provide the retrospective
+proof of this guarantee.  Each entry is written before the corresponding state
+transition commits, forming a complete and attributable chain from the
+triggering exception to the human principal's directive.  An external auditor
+can verify the guarantee's fulfillment by examining the chain: every
+\texttt{bailout-trigger} entry must have a corresponding \texttt{human-directive}
+entry, with all intermediate propagation steps recorded.  The chain is
+verifiable in both directions --- forward from trigger to resolution, and
+backward from any recorded directive to its originating trigger.
+
+The Bailout Protocol therefore occupies a unique position in the BX3
+Framework: it is the mechanism that makes the upstream accountability guarantee
+operationally real.  It is the translation layer between the framework's
+structural commitments (three-layer separation, immutable parent pointers,
+human anchor designation) and the runtime execution trace (state transitions,
+timeout events, propagation paths, human directives) that constitutes the
+definitive accountability record of the framework.  The protocol is not an
+extension or an optional feature --- it is the runtime expression of the
+upstream accountability guarantee in exactly the same sense that the state
+machine is the runtime expression of the transition relation.

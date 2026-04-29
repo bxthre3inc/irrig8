@@ -147,3 +147,7 @@ No dept leads attended.
 War Room (4:00 PM MT) — pending. Will log after 5:00 PM MT.
 
 Escalation for awareness and process review.
+
+## 🟡 P2 | tribe | 2026-04-27 15:10 UTC
+
+Daily standup complete — 2026-04-27. Key items: (1) irrig8 farmer introductions P0 deadline EOD 04-25, 17+ days non-responsive — escalated; (2) VPC WY LLC formation P0, ~2,600 needed, Drew reassigned; (3) VPC Tier 3 outreach 14+ days overdue, Harvest assigned; (4) Sage VPC verbal confirmation needed; (5) G2E 2026 closeout still unverified; (6) AOS-001 27+ days stale, Drew/Bits; (7) BUILDBZ Blue Ocean graded PASS (3.8/5) — spec session approval needed; (8) Orchestrator 3rd consecutive failure.

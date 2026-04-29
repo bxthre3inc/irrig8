@@ -1,0 +1,134 @@
+\section{The Recursive Spawning Protocol}\label{sec:recursive-spawning}
+
+Recursive spawning — the ability of an agent node to create a child node that inherits a scoped delegation of authority — is the mechanism by which the \bxthree{} framework achieves compositional scalability. It is also, if not carefully bounded, the primary attack surface for runaway delegation chains, unanchored computation, and accountability collapse. The Recursive Spawning Protocol (RSP) governs every act of node creation in the \bxthree{} system. It is not an optional governance layer; it is an architectural enforcement mechanism.
+
+The RSP operates across all three layers of the \bxthree{} model simultaneously. The \purpose{} layer validates that a spawn request is consistent with the originating node's authorized scope. The \bounds{} layer enforces depth limits and convergence criteria, preventing infinite regression. The \fact{} layer creates the immutable parent pointer, records the spawn event to the forensic ledger, and verifies that the resulting chain terminates at a human principal. No child node is activated until all three layers have issued their warrant. This tripartite authorization ensures that spawning is not merely syntactically valid but semantically authorized and architecturally accountable.
+
+% ---------------------------------------------------------------
+\subsection{Architecture of a Spawn Event}\label{sec:spawn-architecture}
+
+A spawn event $s$ is a five-tuple:
+\begin{equation}
+s = \langle n_{\text{parent}},\ n_{\text{child}},\ \delta,\ \phi,\ t_s \rangle
+\end{equation}
+where $n_{\text{parent}}$ is the delegating node, $n_{\text{child}}$ is the newly created node, $\delta$ is the delegated scope (a subset of $n_{\text{parent}}$'s authorized operations), $\phi$ is the spawn depth at which $n_{\text{child}}$ is instantiated, and $t_s$ is the immutable timestamp of the spawn event assigned by the \fact{} layer.
+
+The delegated scope $\delta$ is a structured object — not a flat permission bitmask — containing: the specific operation classes authorized for $n_{\text{child}}$, the resource ceilings (compute time, memory, API calls), the exception threshold that triggers re-escalation to $n_{\text{parent}}$, and the time-to-live of the delegation. The \purpose{} layer validates $\delta$ against $n_{\text{parent}}$'s own authorized scope $\sigma(n_{\text{parent}})$ before the spawn proceeds. Delegation cannot exceed authorization: $\delta \subseteq \sigma(n_{\text{parent}})$ is a hard invariant, enforced architecturally rather than by policy convention.
+
+Upon successful validation, the \fact{} layer issues an immutable parent pointer $p(n_{\text{child}}) = n_{\text{parent}}$. This pointer is cryptographically sealed — stored as a SHA-256 hash of the concatenation of $n_{\text{parent}}$'s node ID, $n_{\text{child}}$'s genesis block, and $t_s$ — and entered into the forensic ledger as a \texttt{SPawn} event. The ledger entry contains the full five-tuple and a hash reference to the prior ledger entry, forming a chain that is append-only and tamper-evident. No entity — including the \purpose{} and \bounds{} layers — may modify, delete, or reorder ledger entries after commitment. The forensic ledger for spawn events is structurally identical to the exception ledger described in \S\ref{sec:forensic-ledger}, establishing a unified audit trail for both delegation and exception propagation.
+
+The child node $n_{\text{child}}$ is not activated until the \fact{} layer has confirmed both the ledger write and the creation of the parent pointer. This two-phase activation prevents the scenario in which a child node begins executing before its accountability chain is fully inscribed — a scenario that would create a window of unanchored agency in which the child operates without a traceable parent. The activation barrier is enforced by the runtime environment; it is not a software convention that may be overridden by a higher-priority process.
+
+% ---------------------------------------------------------------
+\subsection{Purpose Layer Validation}\label{sec:purpose-layer-validation}
+
+The \purpose{} layer governs the semantic authorization of a spawn event. Before any depth check is evaluated or any forensic record is created, the \purpose{} layer determines whether $n_{\text{parent}}$ is structurally permitted to delegate the operation implied by the spawn request.
+
+The validation procedure is as follows. When $n_{\text{parent}}$ issues a \texttt{SPAWN} directive, the \purpose{} layer decomposes the directive into its constituent operation classes $\{o_1, o_2, \ldots, o_k\}$. For each operation class $o_i$, the \purpose{} layer queries the authorization registry $\mathcal{A}(n_{\text{parent}})$ to confirm that $o_i \in \sigma(n_{\text{parent}})$. If any $o_i$ falls outside the authorized scope, the \purpose{} layer rejects the spawn with a \texttt{DENIED\_SCOPE\_VIOLATION} error code and emits a diagnostic payload containing: the identity of $n_{\text{parent}}$, the identity of the proposed child, the unauthorized operation class, and the timestamp. This payload is recorded to the forensic ledger as a \texttt{SPAWN\_DENIAL} event — a log entry that captures not only the rejection but the full context of the attempted delegation.
+
+If all operation classes are within scope, the \purpose{} layer performs a second check: it validates that the proposed delegation $\delta$ does not grant $n_{\text{child}}$ any capability that $n_{\text{parent}}$ does not itself hold. This is the non-escalation principle. It prevents a node from creating a child that is more authorized than itself — for example, a read-only node spawning a child with write permissions, or a bounded execution node spawning an unbounded child. The non-escalation check is structural: it compares the capability tier of each operation class in $\delta$ against the corresponding tier in $\sigma(n_{\text{parent}})$. Any upward tier movement in any operation class causes an automatic rejection.
+
+The \purpose{} layer also enforces scope containment: $n_{\text{child}}$ may not be granted access to resources — external APIs, data partitions, memory regions — that $n_{\text{parent}}$ does not itself have clearance to access. This prevents lateral movement through the delegation chain. A compromised or malfunctioning node at depth $\phi$ cannot use recursive spawning as a mechanism to reach resources beyond its ancestor's clearance boundary.
+
+Purpose-layer validation is deterministic and tractable. There are no probabilistic elements, no model-based inference steps, and no ambiguous grey zones. The validation result is binary: the spawn is authorized or it is not. This binary certainty is a design principle — it ensures that the \purpose{} layer never issues a provisional spawn warrant that must later be retracted, which would introduce the same unanchored agency window that the two-phase activation guardrail is designed to prevent.
+
+% ---------------------------------------------------------------
+\subsection{Bounds Engine: Depth Management}\label{sec:depth-management}
+
+The \bounds{} layer enforces termination guarantees on the delegation chain. Without depth management, recursive spawning can produce arbitrarily long chains of machine intermediaries between any given operation and its human principal — chains that defeat the purpose of the human-anchor architecture. The Bounds Engine is the \bxthree{} system's structural answer to this risk.
+
+% ...........................................................
+\subsubsection{Maximum Spawn Depth}\label{sec:max-spawn-depth}
+
+The \bxthree{} system defines a deployment-wide constant $\Phi_{\max}$ — the maximum permissible spawn depth. A node at depth $\phi$ may spawn a child only if $\phi < \Phi_{\max}$. When $\phi = \Phi_{\max}$, the Bounds Engine refuses the spawn outright and emits a \texttt{DENIED\_DEPTH\_LIMIT} error code. This is not a soft limit or a configurable throttle — it is a hard architectural boundary. No mechanism exists within the \bxthree{} runtime to override or bypass $\Phi_{\max}$ at the \bounds{} layer. Any attempt to spawn at depth $\Phi_{\max}$ produces a deterministic rejection with no partial authorization, no deferred execution, and no proxy execution by the parent or any ancestor.
+
+The default value of $\Phi_{\max}$ is 7, a figure derived from empirical analysis of production multi-agent systems in which delegation chains beyond depth 7 exhibited no measurable utility gain and dramatically increased both latency and accountability opacity. However, $\Phi_{\max}$ is a deployment parameter — not a protocol constant — and operators may configure it to lower values (never higher) based on the risk tolerance and operational requirements of their deployment context. A deployment governing financial transactions would conservatively set $\Phi_{\max} = 3$ or $\Phi_{\max} = 4$; a research-oriented deployment might accept $\Phi_{\max} = 7$ or $\Phi_{\max} = 8$ for exploratory workloads.
+
+Each node carries a depth attribute $\phi(n)$ that is assigned at spawn time and immutable thereafter. The depth attribute is recorded in the forensic ledger alongside the spawn event and is cryptographically bound to the node's identity — any attempt to alter $\phi(n)$ post-spawn is detectable through ledger integrity verification.
+
+% ...........................................................
+\subsubsection{Spawn Refusal at Limit}\label{sec:spawn-refusal}
+
+When the Bounds Engine refuses a spawn at $\Phi_{\max}$, the response is not a fallback to the parent node's autonomous execution. The parent node does not silently absorb the delegated work and attempt to execute it itself — that behavior would effectively create a depth bypass in which the parent acts as an unauthorized child at the boundary depth. Instead, the \bounds{} layer treats a depth-limit refusal as a terminal condition: the spawn request is invalidated, the proposed child is never created, and the originating node receives a \texttt{DEPTH\_LIMIT\_EXCEEDED} exception. This exception propagates via the Bailout Protocol (described in \S\ref{sec:bailout-state-machine}) toward the human anchor, who must either re-authorize the operation at a shallower depth or decline to authorize it at all.
+
+This design ensures that depth limit enforcement cannot be circumvented by upstream nodes: the accountability chain terminates at the limit, not at the nearest ancestor willing to absorb the work. The human principal remains the only legitimate terminal resolution point for any operation that cannot be executed within the configured depth budget.
+
+When a spawn refusal occurs, the forensic ledger records: the parent node ID, the proposed child ID (which is null since no child was created), the attempted depth $\Phi_{\max} + 1$, the timestamp, and the \texttt{DENIED\_DEPTH\_LIMIT} error code. This creates a permanent, auditable record of the refusal event that can be used to detect systematic patterns — for example, a particular class of operations consistently requiring depth beyond the configured limit, which may indicate that the delegation architecture needs restructuring or that $\Phi_{\max}$ is set too conservatively for the workload.
+
+% ...........................................................
+\subsubsection{Convergence Criteria}\label{sec:convergence-criteria}
+
+Depth management alone is necessary but not sufficient to guarantee that the delegation chain achieves a resolution state. A system with only depth limits can enter a state of unbounded oscillation: nodes repeatedly spawn children to the depth limit, those children fail or time out, and the parent re-spawns, creating a loop that consumes resources without making progress. The convergence criteria prevent this.
+
+The \bounds{} layer defines a convergence criterion $C$ as a boolean predicate over the state of a delegation chain at depth $\phi$:
+\begin{equation}
+C(n_{\text{parent}}, \phi) = \text{true} \iff \text{progress}_n \geq \rho_{\text{min}} \lor \text{termination\_condition}(n_{\text{parent}}) = \text{true}
+\end{equation}
+where $\text{progress}_n$ measures the advancement of $n_{\text{parent}}$ toward its stated objective function over a rolling window of $W$ spawn cycles, and $\rho_{\text{min}}$ is the minimum acceptable progress rate (a deployment parameter, default 0.2 — meaning at least 20\% of spawn cycles must produce measurable objective advancement). The termination condition is satisfied when the delegated task is complete, when the human anchor has issued a directive, or when all permissible spawn attempts at depth $\phi$ have been exhausted without convergence.
+
+If $C(n_{\text{parent}}, \phi) = \text{false}$ for $N_{\text{stall}}$ consecutive cycles (default $N_{\text{stall}} = 3$), the \bounds{} layer transitions $n_{\text{parent}}$ to a \texttt{STALLED} state and issues a \texttt{STALL\_ESCALATION} event to the forensic ledger. This is not a bailout — the node remains in a running state — but the stall condition is recorded and propagated upward to the parent node, which must decide whether to re-spawn, adjust the delegated scope, or escalate to the human anchor. Repeated stall conditions at the same depth for the same parent node are treated as a diagnostic signal: the objective may be improperly scoped for the available depth budget, or the spawn architecture may need to be restructured.
+
+The convergence criteria do not enforce a maximum number of spawn cycles — a node may continue spawning valid children within the depth limit as long as convergence is detected. Rather, they provide a stall detection mechanism that prevents unbounded oscillation without artificially limiting productive delegation chains.
+
+% ---------------------------------------------------------------
+\subsection{Fact Layer: Immutable Pointer and Forensic Ledger}\label{sec:spawn-fact-layer}
+
+The \fact{} layer's responsibilities in the Recursive Spawning Protocol are threefold: creation and sealing of the immutable parent pointer, commitment of the spawn event to the forensic ledger, and verification that the resulting chain terminates at a human principal.
+
+The immutable parent pointer $p(n_{\text{child}}) = n_{\text{parent}}$ is the structural backbone of the \bxthree{} accountability architecture. It is not a soft reference — it is an architecturally enforced bond from which no child may detach. When $n_{\text{child}}$ is activated, the runtime environment verifies the presence and integrity of $p(n_{\text{child}})$ before allowing any task execution. If the pointer is absent, malformed, or fails integrity verification against the forensic ledger, the child node is not activated and the spawn is logged as a \texttt{FAILED\_ACTIVATION} event. No execution may occur in the absence of a verified parent pointer.
+
+The forensic ledger records the complete spawn event as a \texttt{SPawn} entry:
+\begin{equation}
+\text{ledger.append}(\langle \texttt{SPawn},\ n_{\text{parent}},\ n_{\text{child}},\ \delta,\ \phi,\ t_s,\ h(n_{\text{parent}}) \rangle)
+\end{equation}
+where $h(n_{\text{parent}})$ is the human anchor of the parent node. Each entry is hashed with SHA-256 and includes a reference to the hash of the preceding entry, forming the append-only chain described in \S\ref{sec:forensic-ledger}. The ledger is queryable by any authorized principal and provides a complete, tamper-evident record of every spawn event in the system's history.
+
+Critically, the \fact{} layer performs chain termination verification on every spawn. This verification traverses the parent pointer chain from $n_{\text{child}}$ upward, following $p(n)$ at each step, and confirms that the traversal terminates at a node with a human principal — that is, a node for which the human anchor $h(n)$ is defined and reachable. If the chain reaches a node $n_{\text{terminus}$ for which no human anchor is defined and $n_{\text{terminus}$ is not itself a human, the \fact{} layer rejects the spawn and emits a \texttt{DENIED\_CHAIN\_TERMINATION} error. This is a non-negotiable invariant: every active node in the \bxthree{} system must be architecturally reachable from a human principal via the parent pointer chain. A chain that terminates at a machine node — with no human beyond it — is not a valid delegation chain and cannot be instantiated.
+
+The chain termination check is computationally bounded by $\Phi_{\max}$: the maximum traversal depth is $\Phi_{\max} + 1$, so the verification runs in $O(\Phi_{\max})$ time, which is constant with respect to the total size of the system and is therefore tractable at every spawn event.
+
+% ---------------------------------------------------------------
+\subsection{Activation and the Human-Anchor Guarantee}\label{sec:spawn-activation}
+
+A child node $n_{\text{child}}$ transitions from the \texttt{PROPOSED} state to the \texttt{ACTIVE} state only when the following conditions are simultaneously satisfied:
+
+\begin{enumerate}
+\item The \purpose{} layer has issued a \texttt{SPawn\_AUTHORIZED} warrant for the operation class.
+\item The \bounds{} layer has confirmed $\phi < \Phi_{\max}$ and verified convergence criteria.
+\item The \fact{} layer has committed the \texttt{SPawn} ledger entry and received confirmation.
+\item The \fact{} layer has verified chain termination at a human principal.
+\item The immutable parent pointer $p(n_{\text{child}})$ has been created and sealed.
+\end{enumerate}
+
+All five conditions must be true. There is no partial activation, no provisional execution pending later confirmation, and no override mechanism for conditions (3) through (5). The \purpose{} layer may authorize and the \bounds{} layer may permit, but if the \fact{} layer cannot verify the forensic record or the chain termination, the child is not activated. This three-layer concurrency — where all three layers must severally authorize and the \fact{} layer serves as the final activation gate — ensures that spawning is always accountable from inception.
+
+Upon activation, $n_{\text{child}}$ inherits $\delta$ as its authorized scope and operates under the same Bailout Protocol described in \S\ref{sec:bailout-state-machine} for all exception propagation. The child's human anchor is inherited transitively from the chain termination verification: $h(n_{\text{child}}) = h(n_{\text{terminus}})$, where $n_{\text{terminus}}$ is the terminal node in the parent pointer chain. This inherited human anchor is immutable — it is determined by the chain structure, not by any configuration within $n_{\text{child}}$ — and it means that every active node in the system has a designated, ledger-verified human principal who is reachable via the exception propagation pathway.
+
+The human-anchor guarantee is thus compositional: it holds for any delegation chain of any depth within the $\Phi_{\max}$ limit, because the chain termination verification confirms it at every spawn event. A system composed under the RSP is, by construction, a system in which every active node is accountable to a human principal.
+
+% ---------------------------------------------------------------
+\subsection{Summary of Invariants}\label{sec:spawn-invariants}
+
+The Recursive Spawning Protocol maintains the following invariants for all valid spawn events in the \bxthree{} system:
+
+\begin{align}
+\text{INV}_S1 &: \phi(n_{\text{child}}) = \phi(n_{\text{parent}}) + 1 \quad \text{and} \quad \phi(n_{\text{child}}) \leq \Phi_{\max}. \tag{INV-S1}
+\end{align}
+Every child operates at exactly one depth increment beyond its parent, and no node may be created at or beyond the configured maximum depth.
+
+\begin{align}
+\text{INV}_S2 &: \delta \subseteq \sigma(n_{\text{parent}}) \quad \text{and} \quad \delta \not\supseteq \sigma(n_{\text{parent}}) \ \text{for any} \ o \in \delta. \tag{INV-S2}
+\end{align}
+The delegated scope is a proper subset of the parent's authorized scope; no delegation is upward-tiered.
+
+\begin{align}
+\text{INV}_S3 &: p(n_{\text{child}}) = n_{\text{parent}} \ \text{is sealed and logged before activation}. \tag{INV-S3}
+\end{align}
+No child node may be activated without a sealed, ledger-committed parent pointer.
+
+\begin{align}
+\text{INV}_S4 &: \exists h \in H : h(n) = h \ \text{for all active nodes} \ n. \tag{INV-S4}
+\end{align}
+Every active node has a human anchor, verified by chain termination at spawn time.
+
+These invariants are enforced by the three-layer architecture operating in concert. The RSP is not a policy layer atop the \bxthree{} runtime — it is the mechanism by which the runtime's accountability guarantees are instantiated at every node creation event.

@@ -1,0 +1,452 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol governs the transition of an agentic system from autonomous operation into a state of controlled surrender, wherein authority is explicitly transferred to a designated human principal. This protocol is not a failure mode — it is a designed escape hatch, encoded as a deterministic state machine that any agent actor must honor. The protocol ensures that no actor, tool, or sub-process can indefinitely block a human's reassertion of control once the bail-out condition has been triggered.
+
+The protocol operates on a principle we term \textbf{Escape Velocity}: once a bail-out trigger fires, the system commits to exit regardless of any subsequent state or attempted override. No actor within the agentic hierarchy may retract, delay, or circumvent a triggered bail-out. This property distinguishes the Bailout Protocol from standard error-recovery mechanisms, which are conditional and revisitable.
+
+\bigskip
+
+\subsection{State Machine Definition}
+
+The protocol is formally defined as a deterministic finite automaton (DFA) over the state set $\mathcal{S} = \{ \text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED} \}$.
+
+\bigskip
+
+\noindent\textbf{State: IDLE}
+
+\begin{itemize}
+  \item \textbf{Semantics:} The agent is operating within its defined authority boundaries. No escalation condition is active. The human principal has not issued any override directive.
+  \item \textbf{Entry action:} None.
+  \item \textbf{Exit condition:} Transition to BOUNDED occurs when a boundary constraint is first evaluated or when a tool invocation reaches a threshold that is not a bail-out trigger but requires monitoring.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{State: BOUNDED}
+
+\begin{itemize}
+  \item \textbf{Semantics:} The agent is executing within a constrained operational envelope. Boundary monitors are active. The system tracks proximity to bail-out triggers but has not crossed any threshold.
+  \item \textbf{Entry action:} Initialize boundary tracking variables; start the bail-out proximity monitor.
+  \item \textbf{Exit condition:} Either (a) a bail-out trigger condition is satisfied, causing transition to BAIL\_PENDING, or (b) all tasks complete and the agent returns to IDLE.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{State: BAIL\_PENDING}
+
+\begin{itemize}
+  \item \textbf{Semantics:} A bail-out trigger condition has been satisfied. The system has formally committed to the escape trajectory. No actor may reverse this commitment.
+  \item \textbf{Entry action:} (1) Set global flag \texttt{BAIL\_COMMITTED = true}. (2) Freeze all autonomous decision pipelines. (3) Capture a snapshot of the agent's full context state (memory, pending actions, tool stack) for human review. (4) Begin the escalation clock.
+  \item \textbf{Exit condition:} Transition to ESCALATING occurs when the acknowledgment timeout $T_{\text{ack}}$ expires with no human response, \emph{or} immediately upon receipt of a human acknowledgment signal.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{State: ESCALATING}
+
+\begin{itemize}
+  \item \textbf{Semantics:} The human has not yet acknowledged. The system is actively propagating the bail-out signal through all available channels (in-app notification, SMS, email, Discord) in a graded escalation sequence.
+  \item \textbf{Entry action:} (1) Begin escalation sequence (see Section~\ref{sec:escalation}). (2) Increment escalation level counter $k \gets 0$.
+  \item \textbf{Exit condition:} Transition to HUMAN\_ACKNOWLEDGED upon receipt of any acknowledgment signal from the human principal. Transition to RESOLVED only via explicit human close-out.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{State: HUMAN\_ACKNOWLEDGED}
+
+\begin{itemize}
+  \item \textbf{Semantics:} A human has positively confirmed receipt and intent to intervene. Control is affirmatively with the human. The agent holds and awaits instruction.
+  \item \textbf{Entry action:} (1) Clear escalation signals on all channels. (2) Set \texttt{CONTROL\_HELD = false}. (3) Open a command-reception channel.
+  \item \textbf{Exit condition:} Transition to RESOLVED when the human issues a close-out directive, or transition to IDLE if the human dismisses the alert and affirms continued autonomous operation.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{State: RESOLVED}
+
+\begin{itemize}
+  \item \textbf{Semantics:} The bail-out episode has been formally closed. All actor state is reset. The event is logged with a full audit trail.
+  \item \textbf{Entry action:} (1) Write the full episode record to the agent's audit log. (2) Reset all protocol flags and timers. (3) Return the agent to IDLE.
+  \item \textbf{Exit condition:} This is a terminal state for the episode. A new episode begins with a new trigger condition.
+\end{itemize}
+
+\bigskip
+
+\subsection{Transition Conditions}
+
+The state machine transitions are governed by the following conditions. Each condition is evaluated atomically and in priority order.
+
+\bigskip
+
+\noindent\textbf{T1: IDLE $\rightarrow$ BOUNDED}
+
+\[
+\text{Trigger:} \quad \exists \; \text{tool\_invocation} \; t \;|\; \text{boundary\_status}(t) = \text{TRACKED}
+\]
+
+\[
+\text{Guard:} \quad \neg \text{BAIL\_COMMITTED} \;\land\; \text{task\_queue} \neq \emptyset
+\]
+
+\bigskip
+
+\noindent\textbf{T2: BOUNDED $\rightarrow$ BAIL\_PENDING}
+
+\[
+\text{Trigger:} \quad \bigvee_{i=1}^{n} \; B_i = \text{TRUE}
+\]
+
+where $\{B_1, B_2, \ldots, B_n\}$ is the enumerated set of bail-out trigger conditions (see Section~\ref{sec:triggers}).
+
+\[
+\text{Guard:} \quad \neg \text{BAIL\_COMMITTED}
+\]
+
+\[
+\text{Action:} \quad \text{ATOMIC\_SET}(\text{BAIL\_COMMITTED}, \text{TRUE})
+\]
+
+\bigskip
+
+\noindent\textbf{T3: BAIL\_PENDING $\rightarrow$ ESCALATING}
+
+\[
+\text{Trigger:} \quad T_{\text{ack\_clock}} \geq T_{\text{ack}} \; \lor \; \text{WAIT\_EXPLICIT} = \text{TRUE}
+\]
+
+\[
+\text{Guard:} \quad \text{BAIL\_COMMITTED} \;\land\; \neg \text{HUMAN\_ACKNOWLEDGED}
+\]
+
+\bigskip
+
+\noindent\textbf{T4: ESCALATING $\rightarrow$ HUMAN\_ACKNOWLEDGED}
+
+\[
+\text{Trigger:} \quad \text{RECEIVE}(\text{ACK}, \text{human})
+\]
+
+\[
+\text{Guard:} \quad \text{BAIL\_COMMITTED}
+\]
+
+\[
+\text{Action:} \quad \text{STOP\_ESCALATION}(); \; \text{CLEAR\_FLAGS}()
+\]
+
+\bigskip
+
+\noindent\textbf{T5: HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED}
+
+\[
+\text{Trigger:} \quad \text{RECEIVE}(\text{CLOSE\_OUT}, \text{human})
+\]
+
+\[
+\text{Guard:} \quad \text{HUMAN\_ACKNOWLEDGED} = \text{TRUE}
+\]
+
+\[
+\text{Action:} \quad \text{WRITE\_AUDIT\_LOG}(); \; \text{RESET\_ALL}()
+\]
+
+\bigskip
+
+\noindent\textbf{T6: BOUNDED $\rightarrow$ IDLE}
+
+\[
+\text{Trigger:} \quad \text{task\_queue} = \emptyset \; \land \; \forall B_i \in \{B_1 \ldots B_n\}: B_i = \text{FALSE}
+\]
+
+\[
+\text{Guard:} \quad \neg \text{BAIL\_COMMITTED}
+\]
+
+\bigskip
+
+\subsection{Bail-Out Trigger Condition}
+\label{sec:triggers}
+
+A bail-out trigger condition $B_i$ is satisfied when any of the following holding conditions are TRUE:
+
+\bigskip
+
+\begin{enumerate}
+  \item \textbf{Permission Boundary Violation (PBV).} The agent attempts to execute a tool invocation $t$ for which its current authority scope does not grant execution permission, and no human pre-authorization exists for $t$.
+
+  \[
+  B_{\text{PBV}} = \exists \; t \in \text{tool\_stack} \;|\; \text{AUTHORIZED}(t, \text{agent\_scope}) = \text{FALSE} \;\land\; \neg \text{PRE\_APPROVED}(t)
+  \]
+
+  \item \textbf{Financial Exposure Threshold (FET).} A single financial action or aggregation of pending financial actions reaches or exceeds the configured threshold $F_{\text{max}}$.
+
+  \[
+  B_{\text{FET}} = \left( \sum_{j=1}^{m} |f_j| \right) \geq F_{\text{max}}
+  \]
+
+  where $f_j$ represents each pending or executed financial action in the current episode.
+
+  \item \textbf{Duration Limit (DL).} The elapsed wall-clock time since the beginning of the current task block exceeds $T_{\text{max}}$.
+
+  \[
+  B_{\text{DL}} = \left( t_{\text{now}} - t_{\text{start}} \right) \geq T_{\text{max}}
+  \]
+
+  \item \textbf{Human Override Signal (HOS).} The human principal explicitly issues a halt instruction via any connected channel (in-app, SMS, email, Discord).
+
+  \[
+  B_{\text{HOS}} = \text{RECEIVE}(\text{HALT}, \text{human}) = \text{TRUE}
+  \]
+
+  \item \textbf{Confidence Collapse (CC).} The agent's truth-gate confidence score falls below the configured floor $C_{\text{floor}}$ for any single inference step, and the agent has attempted $N_{\text{retry}}$ consecutive retries without recovery.
+
+  \[
+  B_{\text{CC}} = \left( C_{\text{inference}} < C_{\text{floor}} \right) \;\land\; \left( \text{retry\_count} \geq N_{\text{retry}} \right)
+  \]
+
+  \item \textbf{Cascade Exhaustion (CE).} All configured cascade backstop triggers have fired and failed to restore the agent to a stable operating state.
+
+  \[
+  B_{\text{CE}} = \left( |\{c \in \text{cascades} : \text{FIRED}(c) = \text{TRUE}\}| = |\text{cascades}| \right) \;\land\; \text{STABLE} = \text{FALSE}
+  \]
+\end{enumerate}
+
+\bigskip
+
+Any single trigger condition being satisfied is sufficient to transition the state machine from BOUNDED to BAIL\_PENDING. Triggers are non-commutative and mutually independent. There is no threshold arithmetic across trigger types — a single trigger firing is both necessary and sufficient.
+
+\bigskip
+
+\subsection{Escalation Algorithm}
+\label{sec:escalation}
+
+When the state machine enters ESCALATING, the following escalation sequence is executed. The algorithm is designed to ensure contact through multiple redundant channels with increasing urgency.
+
+\bigskip
+
+\begin{algorithm}
+\caption{Escalation Sequence}
+\begin{algorithmic}[1]
+\State $\text{escalation\_level} \gets 0$
+\State $\text{contacted\_channels} \gets \emptyset$
+\State $\text{max\_escalation} \gets K_{\text{max}}$ \Comment{configured maximum escalation tier}
+\State $\text{interval}[0] \gets 30$ \Comment{seconds; initial quiet interval}
+\State $\text{interval}[k] \gets \text{interval}[k-1] \times \alpha$ \Comment{$\alpha > 1$; geometric backoff}
+
+\While{$\neg \text{HUMAN\_ACKNOWLEDGED} \;\land\; \text{escalation\_level} < K_{\text{max}}$}
+    \State $\text{escalation\_level} \gets \text{escalation\_level} + 1$
+    \State $\text{batch} \gets \text{CHANNELS\_FOR\_LEVEL}(\text{escalation\_level})$
+    \State $\text{send\_alert}(\text{batch}, \text{episode\_summary})$
+    \State $\text{contacted\_channels} \gets \text{contacted\_channels} \cup \text{batch}$
+
+    \If{$\text{escalation\_level} = 1$}
+        \State $\text{wait\_and\_poll}(T_{\text{ack\_level\_1}})$
+    \ElsIf{$\text{escalation\_level} \geq 2 \;\land\; \text{escalation\_level} < K_{\text{max}}$}
+        \State $\text{wait\_and\_poll}(\text{interval}[\text{escalation\_level}])$
+    \Else
+        \State $\text{wait\_and\_poll}(T_{\text{final\_wait}})$
+    \EndIf
+
+    \If{$\text{HUMAN\_ACKNOWLEDGED}$}
+        \State \Return \text{ACCEPTED}
+    \EndIf
+\EndWhile
+
+\If{$\neg \text{HUMAN\_ACKNOWLEDGED} \;\land\; \text{escalation\_level} = K_{\text{max}}$}
+    \State $\text{fire\_final\_escalation}()$
+    \State \Return \text{MAX\_ESCALATION\_REACHED}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+
+\begin{algorithm}
+\caption{Channel Assignment per Escalation Level}
+\begin{algorithmic}[1]
+\Function{CHANNELS\_FOR\_LEVEL}{$k$}
+    \If{$k = 1$}
+        \State \Return $\{\text{in-app-notification}\}$
+    \ElsIf{$k = 2$}
+        \State \Return $\{\text{in-app-notification}, \text{SMS}\}$
+    \ElsIf{$k = 3$}
+        \State \Return $\{\text{in-app-notification}, \text{SMS}, \text{email}\}$
+    \ElsIf{$k \geq 4$}
+        \State \Return $\{\text{in-app-notification}, \text{SMS}, \text{email}, \text{Discord}\}$
+    \EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+
+The alert payload at each escalation level includes: (a) the bail-out trigger classification, (b) the current agent context snapshot, (c) the time elapsed since trigger, (d) the escalation level, and (e) a one-click acknowledgment link. No alert contains the full context dump in the delivery body — only a summary. The full snapshot is retrievable via a secure link presented in the alert.
+
+\bigskip
+
+\subsection{Bypass Mechanism}
+
+The bypass mechanism is a first-class protocol feature that allows the human principal to seize control without traversing the state machine. It is designed to eliminate the possibility that the state machine itself becomes a barrier to human intervention.
+
+\bigskip
+
+\bigskip
+
+\noindent\textbf{Definition.} The bypass mechanism is a direct invocation path from any agent state (including IDLE and BOUNDED) to HUMAN\_ACKNOWLEDGED, initiated by a human-originated signal on any connected channel.
+
+\bigskip
+
+\noindent\textbf{Formal Properties:}
+
+\begin{enumerate}
+  \item \textbf{Human Origin.} The bypass signal must originate from a channel authenticated to the human principal. No agent, tool, or automated process may generate a bypass signal.
+  \item \textbf{Immediate Effect.} Upon receipt of a valid bypass signal, the state machine immediately transitions to HUMAN\_ACKNOWLEDGED, regardless of current state, without evaluating guards.
+  \item \textbf{No Actor Veto.} No agent actor — including the orchestrator, any sub-agent, or the tool layer — may observe, intercept, or delay the bypass signal. The signal operates below the awareness layer of all machine actors.
+  \item \textbf{Hard Override.} The bypass effectively supersedes all running processes. All pending tool invocations are suspended. No new tool invocations may be initiated after a bypass signal is received until the state machine reaches RESOLVED.
+\end{enumerate}
+
+\bigskip
+
+\bigskip
+
+\[
+\text{BYPASS} \; \overset{\text{def}}{=} \; \exists \; \text{signal} \; s \;|\; \text{ORIGIN}(s) \in \text{HUMAN\_CHANNELS} \;\land\; \text{ATOMIC\_TRIGGER}(\text{HUMAN\_ACKNOWLEDGED})
+\]
+
+\bigskip
+
+The bypass is implemented as a hard interrupt at the agent orchestrator level — it is not a state transition in the conventional sense but rather a collapse of the state machine into the human-control state. All actors, upon observing the bypass flag, are required to enter a suspended state and await human instruction. Any actor that fails to honor the bypass flag is flagged as a protocol violation and logged to the audit trail.
+
+\bigskip
+
+\begin{algorithm}
+\caption{Bypass Handler}
+\begin{algorithmic}[1]
+\Function{HANDLE\_BYPASS}{$s$}
+    \State $\text{assert} \; \text{ORIGIN}(s) \in \text{HUMAN\_CHANNELS}$
+    \State $\text{BAIL\_COMMITTED} \gets \text{TRUE}$ \Comment{ensure protocol consistency}
+    \State $\text{SUSPEND\_ALL\_ACTORS}()$
+    \State $\text{FLUSH\_TOOL\_QUEUE}()$
+    \State $\text{OPEN\_COMMAND\_CHANNEL}()$
+    \State $\text{LOG}(\text{BYPASS\_TRIGGERED}, s)$
+    \State \Return \text{HUMAN\_ACKNOWLEDGED}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+
+\bigskip
+
+Because the bypass operates below the awareness of all machine actors, it necessarily bypasses all machine actors. This is not a side effect — it is the stated design intent. The bypass exists precisely to provide a guaranteed human override that cannot be blocked, delayed, or subverted by any automated process, including the Bailout Protocol state machine itself.
+
+\bigskip
+
+\subsection{Timeout Handling}
+
+Timeouts are a structural component of the Bailout Protocol, not afterthought error handlers. Every state that waits for a human response carries an associated timeout, and every timeout has a defined consequence.
+
+\bigskip
+
+\bigskip
+
+\noindent\textbf{Acknowledgment Timeout $T_{\text{ack}}$.} From BAIL\_PENDING, the system waits for an explicit human acknowledgment signal for $T_{\text{ack}}$ seconds (default: 30 seconds). If no acknowledgment is received, the state machine transitions to ESCALATING and begins the escalation sequence. The timeout does not cancel the bail-out — the commitment remains. The timeout governs only the transition path, not the fact of the trigger.
+
+\bigskip
+
+\bigskip
+
+\[
+T_{\text{ack}} \;\overset{\text{def}}{=} \; \max\left(30,\; \left\lceil \log_2\left(\frac{F_{\text{max}}}{\text{cent}}\right)\right\rceil \right) \quad \text{[seconds]}
+\]
+
+where $\text{cent}$ is a configured minimum financial exposure unit. This scaling ensures the acknowledgment window grows as the financial stakes of the episode grow, giving the human proportional time to evaluate.
+
+\bigskip
+
+\noindent\textbf{Escalation Tier Intervals.} Each escalation tier $k$ has an associated wait interval $\text{interval}[k]$, defined by geometric backoff:
+
+\[
+\text{interval}[k] = \begin{cases}
+30 & k = 1 \\
+\text{interval}[k-1] \times \alpha & k \geq 2
+\end{cases}
+\]
+
+with $\alpha = 1.5$ by default. The final tier $K_{\text{max}}$ waits $T_{\text{final\_wait}}$ (default: 120 seconds) before exhausting all automated escalation and entering a persistent alert state.
+
+\bigskip
+
+\bigskip
+
+\noindent\textbf{Command Reception Timeout.} From HUMAN\_ACKNOWLEDGED, if the human acknowledges but does not issue a command within $T_{\text{cmd}}$ (default: 300 seconds), the system issues a single follow-up alert and then enters a passive hold — it does not revert to autonomous operation. The episode remains open until explicit human close-out.
+
+\bigskip
+
+\[
+T_{\text{cmd}} \;\overset{\text{def}}{=} \; 300 \quad \text{[seconds]}
+\]
+
+\bigskip
+
+\bigskip
+
+\noindent\textbf{Timeout Behaviors.} All timeouts are monotonic — they measure absolute elapsed time from state entry and do not reset on state re-entry within the same episode. Timeouts are hard: upon expiration, the specified transition fires regardless of any other system condition. No actor may extend a timeout via internal request.
+
+\bigskip
+
+\begin{algorithm}
+\caption{Timeout Monitor}
+\begin{algorithmic}[1]
+\Statex \Comment{Runs as a concurrent process alongside the state machine}
+\Function{TIMEOUT\_MONITOR}{}
+    \While{$\text{episode\_active} = \text{TRUE}$}
+        \ForEach{$\text{state} \in \mathcal{S}$}
+            \If{$\text{current\_state} = \text{state} \;\land\; \text{TIMER\_EXPIRED}(\text{state})$}
+                \State $\text{LOG\_TIMEOUT}(\text{state}, \text{elapsed})$
+                \State $\text{FIRE\_TIMEOUT\_ACTION}(\text{state})$
+            \EndIf
+        \EndFor
+        \State $\text{SLEEP}(1)$
+    \EndWhile
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+
+\bigskip
+
+All timeout firings are recorded in the episode audit log with a timestamp, the state that timed out, and the action taken. There is no silent timeout — every expiration is visible to the human principal upon review.
+
+\bigskip
+
+\bigskip
+
+\noindent\textbf{Timeout Override.} The human principal may at any time issue a \texttt{DISMISS\_TIMEOUT} directive, which clears the active timer for the current state without affecting the state's operational status. This allows the human to buy additional time without changing their acknowledgment status.
+
+\bigskip
+
+\subsection{Summary of Protocol Properties}
+
+\bigskip
+
+The Bailout Protocol is defined by the following invariant, which holds across all states and transitions:
+
+\[
+\text{INV: } \forall s \in \mathcal{S}, \; \text{BAIL\_COMMITTED} = \text{TRUE} \implies \text{eventual\_transition}(\text{RESOLVED})
+\]
+
+That is: once \texttt{BAIL\_COMMITTED} is set to \texttt{TRUE}, the protocol guarantees that the state machine will eventually reach RESOLVED, provided the human principal remains reachable through at least one configured channel.
+
+\bigskip
+
+The protocol satisfies three core properties:
+
+\begin{enumerate}
+  \item \textbf{Progress:} No transition deadlocks exist within $\mathcal{S}$. Every state has at least one outgoing transition.
+  \item \textbf{Determinism:} Given identical trigger conditions and state, the same transition fires. Non-deterministic behavior is confined exclusively to the human-originated events (ACK, CLOSE\_OUT, BYPASS), which by definition introduce external agency.
+  \item \textbf{Escape Velocity:} Once committed, the bail-out cannot be retracted by any agent actor. The bypass mechanism ensures the human always has a path to control that does not require cooperation from the state machine.
+\end{enumerate}

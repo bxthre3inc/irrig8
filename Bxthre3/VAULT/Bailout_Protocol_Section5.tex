@@ -1,0 +1,67 @@
+\section{Guarantees and Correctness Properties}
+
+This section establishes the correctness guarantees provided by the Bailout Protocol and sketches proofs for each property. We assume a properly initialized protocol instance with honest human principals and well-behaved runtime components. All proofs are sketched at the architectural level; formal verification is left to future work.
+
+\subsection{SAFETY: No Autonomous Collapse}
+
+\textbf{Property.} Under the Bailout Protocol, an autonomous system can never enter a state in which all human-contact pathways are permanently blocked while the system remains in an active or goal-driven state.
+
+\textbf{Intuition.} Autonomy is defined exclusively by the absence of a reachable human-in-the-loop checkpoint. The Bailout Protocol guarantees that at least one such checkpoint always exists and remains executable. Therefore a system that is autonomous by the Protocol's own definition can never satisfy the conditions for collapse.
+
+\begin{Proof}[Sketch]
+\begin{enumerate}
+    \item \textbf{Existence of a contact pathway.} By Protocol construction, at every reachable state $S$ of the system there exists at least one transition $T$ such that $\textit{hitl\_required}(S, T) = \text{true}$. This invariant is enforced by the Bailout Gateway at initialization and preserved by every state transition.
+    \item \textbf{Human executability.} For any state $S$ where $\textit{hitl\_required}(S, T) = \text{true}$, the Protocol guarantees that the human principal $H$ can execute the transition $T$ (i.e., $\textit{can\_execute}(H, T) = \text{true}$) because $H$ is endowed with override authority at startup and this authority is never revoked without $H$'s explicit consent.
+    \item \textbf{Non-blockability.} A state $S$ is defined to be a \textit{collapse candidate} if and only if all transitions $T \in \Gamma(S)$ satisfy $\neg \textit{can\_execute}(H, T)$. By invariant (2), no such state is reachable. Hence no reachable state is a collapse candidate.
+    \item \textbf{Conclusion.} Since the property holds for the initial state and is preserved by all transitions, it holds for all reachable states. $\square$
+\end{enumerate}
+\end{Proof}
+
+\textbf{Remark.} The above sketch assumes the runtime correctly enforces the \texttt{can\_execute} check. If the runtime itself is compromised (e.g., by a hardware fault or adversarial modification of the Gateway), the guarantee degrades to probabilistic rather than deterministic. We address this limitation in Section 6 (OperationalConstraints).
+
+\subsection{LIVENESS: Eventual Human Contact}
+
+\textbf{Property.} Any autonomous system operating under the Bailout Protocol will eventually reach a state in which the human principal is able to inspect the system's current goals, internal state, and trajectory history, and can issue a directive that the system must process before continuing.
+
+\textbf{Intuition.} Liveness does not require immediate human contact at every step---it requires that the Protocol never produces a state from which human contact is forever foreclosed. Since Safety guarantees at least one contact pathway is always reachable, Liveness follows from the further guarantee that the system will eventually reach such a pathway under any fair scheduler.
+
+\begin{Proof}[Sketch]
+\begin{enumerate}
+    \item \textbf{Non-starvation condition.} The Bailout Gateway implements a priority queue over pending HITL transitions. Under any fair scheduling policy (i.e., one that does not starve any enabled transition), every transition $T$ with $\textit{hitl\_required}(S, T) = \text{true}$ will be scheduled for execution within a bounded number of steps $B$, where $B$ depends on the scheduler's fairness parameters.
+    \item \textbf{Pathway reachability.} By Safety invariant (1), for any reachable state $S$ there exists at least one HITL transition $T$. Since the scheduler is fair, $T$ will eventually be processed.
+    \item \textbf{Human-responsive execution.} When $T$ is processed, the Protocol suspends autonomous operation and waits for human input. The human principal $H$ can inspect the system state and issue a directive $D$. By Protocol definition, $D$ is processed before the system resumes autonomous operation.
+    \item \textbf{Eventual contact.} Combining (2) and (3), for any infinite execution trace there exists at least one step $t$ at which the system is in a state $S_t$ and $H$ can issue a directive. Hence eventual human contact is guaranteed. $\square$
+\end{enumerate}
+\end{Proof}
+
+\textbf{Remark.} Liveness is a property of the Protocol, not of the runtime. If the underlying execution environment halts or crashes before a HITL checkpoint is reached, Liveness is not violated---the Protocol still guarantees that, \textit{if execution continues}, human contact will occur. Runtime reliability must be established separately (Section 6).
+
+\subsection{ACCOUNTABILITY: Human Always Identifiable}
+
+\textbf{Property.} For every state transition executed by the system, there exists a single, identifiable human principal who bears contractual and operational responsibility for that transition's authorization or delegation.
+
+\textbf{Intuition.} Accountability is maintained by construction: the Protocol requires that every transition $T$ be traced back to either (a) an explicit human authorization recorded in the Audit Log, or (b) a delegation chain terminating in an authorized human principal. No transition can be executed without such a chain.
+
+\begin{Proof}[Sketch]
+\begin{enumerate}
+    \item \textbf{Direct authorization.} If a transition $T$ is executed with human authorization, the Protocol records the principal identity $H$ and the timestamp in the Audit Log. $H$ is the accountable party for $T$.
+    \item \textbf{Delegation chain.} If $T$ is executed under a delegation chain $D = (H \rightarrow A_1 \rightarrow \cdots \rightarrow A_n)$, the Protocol records the full chain and the terminal authorized agent $A_n$ that executed $T$. By the delegation constraints defined at initialization, the chain terminates in $H$, who bears ultimate responsibility.
+    \item \textbf{No unauthorized transitions.} The Bailout Gateway blocks any transition $T$ for which no authorization chain can be constructed. Therefore all executed transitions have a recorded accountability chain.
+    \item \textbf{Single principal.} By construction of the delegation chain, the chain is a total order. Hence for any transition $T$, there is exactly one principal $H$ who is the root of the chain and bears responsibility. $\square$
+\end{enumerate}
+\end{Proof}
+
+\textbf{Remark.} Accountability holds at the Protocol level. In distributed or multi-jurisdictional deployments, the legal enforceability of this accountability depends on external factors (contract law, regulatory jurisdiction) that are outside the Protocol's scope but are addressed in the companion Governance Framework (Appendix C).
+
+\subsection{Summary of Guarantees}
+
+The three properties together define the correctness contract of the Bailout Protocol:
+
+\begin{itemize}
+    \itemsep0pt
+    \item \textbf{SAFETY} ensures the human cannot be permanently locked out.
+    \item \textbf{LIVENESS} ensures the human will eventually be contacted.
+    \item \textbf{ACCOUNTABILITY} ensures every action has a named owner.
+\end{itemize}
+
+These properties are not independent: Safety is a precondition for Liveness (you cannot eventually contact someone who is permanently locked out), and both depend on Accountability (you cannot assign responsibility for a lock-out event if no identity is attached to the action that caused it). The three properties are jointly necessary and jointly sufficient to define a trustworthy human-autonomy interface.

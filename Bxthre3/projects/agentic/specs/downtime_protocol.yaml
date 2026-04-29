@@ -1,0 +1,16 @@
+ComputeThresholds:
+  Low: 30
+  High: 80
+  IdleTimeout: 300
+  MaxDowntimeTasks: 3
+SelfGeneratedTaskTemplates:
+  - Task: "Review_Old_Contracts"
+    AgentType: "LegalAgent"
+    RiskWeight: 1
+    Alignment: ["#compliance"]
+    Modalities: [Text, Data]
+  - Task: "Optimize_Supply_Chain"
+    AgentType: "OperationsAgent"
+    RiskWeight: 2
+    Alignment: ["#efficiency", "#logistics"]
+    Modalities: [Data, Interactive]

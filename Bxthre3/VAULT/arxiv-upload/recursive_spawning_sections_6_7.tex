@@ -1,0 +1,142 @@
+% ---------------------------------------------------------------
+\section{Integration with the BX3 Framework}
+\label{sec:integration}
+
+Recursive Spawning is not an isolated mechanism. Its correctness guarantees derive entirely from its tight integration with the three architectural layers of the \bxthree{} Framework: the \purpose{} Layer, the \bounds{} Layer, and the \fact{} Layer. Each layer plays a distinct and non-redundant role in sustaining the spawn chain's accountability, boundedness, and auditability from the root node to the terminal human principal. This section specifies what each layer provides and how the layers interact.
+
+% ---------------------------------------------------------------
+\subsection{The Purpose Layer as Accountability Anchor}
+\label{sec:purpose-anchor}
+
+The \purpose{} Layer is the single authoritative source of intent and accountability in the \bxthree{} architecture. Every node in a spawn chain is instrumented with a reference to its \emph{human accountability anchor} $h(n)$ — a named human principal established at node provisioning and never modified for the node's lifetime. The anchor is not a configuration parameter; it is an architectural commitment stored in the node's immutable credential set at creation time.
+
+When a spawned node is created, the spawning parent retrieves $h(\text{parent})$ from its own credential set and copies it into the child's credential set as $h(\text{child})$. This is the \textbf{accountability inheritance rule}. The rule is deterministic: there is no branching, no optionality, and no override mechanism. A spawned node cannot adopt a new accountability anchor — it inherits that of its parent, which inherits that of its own parent, tracing an unbroken chain back to the root node's originating human principal.
+
+The \purpose{} Layer additionally defines the operating range $R(n)$ for each node $n$ — the bounds of permissible action that the node is provisioned to perform. $R(n)$ is set at provisioning time and is also immutable for the node's lifetime, subject only to the root principal's explicit revision. The \purpose{} Layer receives all escalated exceptions and is the only layer with authority to resolve an exception by issuing a binding directive that overrides a child node's \bounds{} constraints.
+
+This establishes the \purpose{} Layer as the \textbf{accountability anchor}: the unique fixed point in the spawn chain to which all exception states ultimately propagate. No machine actor in the chain — at any depth — is permitted to serve as a terminal resolution point for any exception. The chain's accountability topology is therefore a rooted tree in which every node points to the same human principal at the root, and every exception propagates upward through parent pointers until it reaches that principal or the root itself.
+
+% ---------------------------------------------------------------
+\subsection{The Bounds Engine: Depth Enforcement}
+\label{sec:bounds-depth}
+
+The \bounds{} Layer is responsible for enforcing depth limits on the spawn chain. This is implemented by the \textbf{Bounds Engine}, which maintains the depth counter $d(n)$ for each node and evaluates the depth limit $D$ at spawn time.
+
+When a parent node $p$ initiates a spawn to produce child node $c$, the following sequence is enforced:
+
+\begin{enumerate}\itemsep0em
+\item The Bounds Engine computes $d(c) = d(p) + 1$.
+\item The engine evaluates the constraint $d(c) \leq D$. If the constraint holds, the spawn proceeds. If it does not hold, the engine emits a trigger event $e_{\text{trigger}}$ initiating the Bailout Protocol and the spawn is aborted.
+\item If the spawn proceeds, the parent pointer $\alpha(c) \leftarrow p$ is recorded in the Fact Layer before $c$ begins execution.
+\item The Fact Layer verifies the parent pointer's integrity by cross-checking against the authorization ledger before the child node is admitted to active state.
+\end{enumerate}
+
+The Bounds Engine operates as a stateless evaluator at spawn time — it does not maintain chain state between invocations. Chain state is the exclusive domain of the \fact{} Layer. This separation is intentional: it ensures that a Bounds Engine failure or crash does not corrupt the chain's structural integrity, which is preserved independently in the forensic ledger.
+
+The depth limit $D$ is a system-level parameter set at deployment time by the root human principal. It is enforced uniformly across all spawn chains, ensuring that no chain can exceed the configured depth regardless of the intent or malfunction of intermediate nodes. The value of $D$ is stored in the system configuration managed by the \purpose{} Layer; modification requires an explicit human directive.
+
+The combination of immutable parent pointers (set atomically at spawn time, never modified thereafter) and enforced depth limits ensures that the spawn chain is structurally bounded and that every node has a unique, traceable parent — forming the structural foundation for the drift-prevention guarantee.
+
+% ---------------------------------------------------------------
+\subsection{The Fact Layer: Forensic Ledger}
+\label{sec:fact-fordic-ledger}
+
+The \fact{} Layer provides the \textbf{Forensic Ledger}: an append-only, tamper-evident log of every spawn event, parent pointer assignment, state transition, exception condition, and resolution in the spawn chain's lifetime. The ledger is maintained as a Merkle chain — each entry is hashed using SHA-256, with each new entry incorporating the hash of the previous entry, forming a hash chain that renders any historical alteration computationally detectable.
+
+Every spawn event records the following fields:
+
+\begin{itemize}\itemsep0em
+\item $\text{spawn\_id}$: a globally unique identifier for this spawn event;
+\item $\alpha(c)$: the parent pointer, verified against the authorization ledger before recording;
+\item $h(c)$: the inherited accountability anchor;
+\item $d(c)$: the depth at creation, verified against the Bounds Engine;
+\item $\text{timestamp}$: the authoritative time of the event;
+\item $\text{hash}_{\text{prev}}$: the hash of the previous ledger entry.
+\end{itemize}
+
+The ledger is the sole source of truth for chain topology. When an exception propagates, the Fact Layer provides the complete audited path from the excepting node to the root, including all intermediate state transitions. This path is cryptographically verifiable: any party with access to the ledger can confirm the chain's structure by recomputing the hash chain and confirming each parent pointer against the recorded value.
+
+Critically, the Fact Layer enforces the \textbf{no-retroaction property}: once a parent pointer is recorded, it is permanent. There is no \texttt{update}, \texttt{delete}, or \texttt{reassign} operation on $\alpha(n)$ for any node $n$. The only mutable field in the ledger is the terminal resolution state, which is updated once when the exception is resolved by the human principal — and that update itself is a ledger entry, preserving the complete history.
+
+The three-layer integration is summarized in Table~\ref{tab:layer-roles}.
+
+\begin{table}[htbp]
+\caption{Roles of the three \bxthree{} layers in the Recursive Spawning mechanism.}
+\label{tab:layer-roles}
+\begin{tabular}{@{}lp{6.5cm}p{5cm}@{}}
+\toprule
+Layer & Role in Recursive Spawning & Key Property \\
+\midrule
+\purpose{} & Establishes and preserves the accountability anchor $h(n)$ for all nodes; receives all exceptions beyond \bounds{} scope & Immutable anchor, single resolution authority \\
+\bounds{} & Enforces depth limit $D$ at spawn time; evaluates $d(c) \leq D$ before every spawn event & Stateless evaluation, uniform depth cap \\
+\fact{} & Records every spawn event in the Forensic Ledger; maintains immutable parent pointer chain; provides cryptographically verifiable audit path & Append-only Merkle hash chain \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\section{Correctness Properties}
+\label{sec:correctness}
+
+This section establishes the formal correctness guarantees of the Recursive Spawning mechanism. We prove three properties: (1) \emph{drift prevention} — the chain cannot diverge from its originating intent; (2) \emph{chain integrity} — the parent pointer structure is maintained correctly under all conditions; and (3) \emph{termination} — the chain always terminates at the \purpose{} Layer human principal in finite time.
+
+% ---------------------------------------------------------------
+\subsection{Drift Prevention}
+\label{sec:drift-prevention}
+
+\textbf{Theorem (Drift Prevention).} \emph{Under the Recursive Spawning mechanism, no spawned node $n$ can cause the spawn chain to diverge from the intent of the root human principal $h(\text{root})$ beyond the resolution authority of any intermediate machine actor. Specifically: (a) $n$ cannot modify its accountability anchor $h(n)$; (b) $n$ cannot terminate any exception state without human acknowledgment; and (c) any exception condition propagates via the parent pointer chain $\alpha(\cdot)$ until it reaches $h(\text{root})$.}
+\begin proof}
+We prove each clause separately.
+
+\textbf{(a) Immutability of the accountability anchor.} By the accountability inheritance rule (\S\ref{sec:purpose-anchor}), $h(n)$ is copied from $h(\text{parent})$ at node creation and stored in the node's immutable credential set. The credential set is append-only: there exists no operation in the spawn protocol that modifies a field of an existing credential set. Therefore $h(n) = h(\text{parent})$ for all $n$, and by induction on the spawn chain depth, $h(n) = h(\text{root})$ for all nodes in the chain. No node has the capability to change this value.
+
+\textbf{(b) No machine-actor terminal resolution of exceptions.} The Bailout Protocol (\S\ref{sec:state-machine}) defines \texttt{RESOLVED} as the sole terminal accepting state $Q_F$. Transitions into \texttt{RESOLVED} are triggered only by $e_{\text{resolve}}$ or $e_{\text{reject}}$, both of which are human-originated directives issued by $h(\text{root})$ or a designated human deputy. The state machine has no transition from any non-terminal state to \texttt{RESOLVED} triggered by a machine-originated event. The transition relation is deterministic (Table~\ref{tab:transition-relation}), so no machine actor can produce the conditions for a machine-triggered resolution. Therefore no exception reaches a terminal state without human action.
+
+\textbf{(c) Exception propagation terminates at the human principal.} Any exception triggers the Bailout Protocol at the excepting node $e$, entering the \texttt{BAIL\_PENDING} state. From \texttt{BAIL\_PENDING}, the only defined transitions are $e_{\text{timeout}} \to \texttt{ESCALATING}$ or — if the parent node is itself the \purpose{} Layer (i.e., $\alpha(e) = \text{root}$) — $e_{\text{auth}} \to \texttt{HUMAN\_ACKNOWLEDGED}$. In the latter case, the exception has reached $h(\text{root})$ directly. In the former case, the exception propagates to the parent node, which either acknowledges (if it is the root) or escalates to its own parent, forming a strictly monotonic progression up the parent pointer chain $\alpha(\cdot)$. Since the parent pointer chain is a finite rooted tree of depth at most $D$, this progression terminates in at most $D$ steps at the root node, where it is received by $h(\text{root})$. No drift is possible: the chain cannot route around the root principal because the parent pointer is immutable and the root has no parent.
+\end proof}
+
+The drift prevention theorem establishes a stronger property than mere correctness of the spawn protocol. It establishes that the spawn chain is \textbf{intention-faithful}: every action taken by every node in the chain is either within the node's authorized scope $R(n)$ — enforced by the \bounds{} Layer — or escalated to the human principal who defined that scope. There is no structural pathway by which the chain can escape the principal's visibility or authority.
+
+% ---------------------------------------------------------------
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+
+\textbf{Definition (Chain Integrity).} The spawn chain maintains \emph{integrity} if and only if for every node $n$ in the chain, the parent pointer $\alpha(n)$ is defined, immutable, and refers to an existing node that is not a descendant of $n$ in the spawn order.
+
+\textbf{Theorem (Chain Integrity).} \emph{The Recursive Spawning mechanism preserves chain integrity under all conditions, including concurrent spawn operations, node crashes, and network partitions.}
+
+\begin proof}
+We verify each condition of the definition.
+
+\textbf{Definedness.} By the spawn protocol (\S\ref{sec:bounds-depth}), the Bounds Engine records $\alpha(c)$ in the Fact Layer before child $c$ begins execution. The Fact Layer requires a non-null parent identifier as a mandatory field of every spawn event; the event is rejected and the spawn aborted if the field is absent. Therefore $\alpha(n)$ is defined for every node $n$ that enters active state.
+
+\textbf{Immutability.} The Fact Layer enforces the no-retroaction property: $\alpha(n)$ is recorded as an immutable field at node creation and no subsequent operation can modify it. This is a property of the ledger's append-only semantics, not of any individual node's behavior. A malfunctioning or compromised node cannot retroactively alter its parent pointer because the ledger is write-once.
+
+\textbf{No cycles.} The parent pointer is set at spawn time, at which point the depth counter $d(c) = d(p) + 1$. Since $d(p) \geq 0$ for all nodes and $d(c) \leq D$ is enforced by the Bounds Engine, the depth sequence along any path from root to leaf is strictly increasing. A cycle would require a node to appear as its own ancestor along the parent pointer chain, which is impossible under strictly increasing depth. Therefore the parent pointer structure forms a directed acyclic graph with no cycles.
+
+\textbf{Non-descendant reference.} The parent pointer $\alpha(c)$ is set to $p$, the node that initiated the spawn. Spawn is a causal act: the parent must exist and be active before the child is created. A node cannot spawn a child before it exists, and the depth constraint ensures no node can spawn a descendant at a depth that would cause a cycle. Therefore $\alpha(n)$ never refers to a descendant of $n$.
+\end proof}
+
+The chain integrity theorem ensures that the spawn chain is a well-founded tree — not merely a directed acyclic graph with possible multiple roots, but a single rooted tree with a unique root node that is the origin of the chain and a single human principal $h(\text{root})$ to whom the entire tree is accountable.
+
+% ---------------------------------------------------------------
+\subsection{Termination}
+\label{sec:termination}
+
+\textbf{Theorem (Termination).} \emph{For any node $n$ in a spawn chain of maximum depth $D$, any exception condition eventually results in human acknowledgment by $h(\text{root})$ in finite time, provided the root human principal remains responsive.}
+
+\begin proof}
+The proof proceeds by analyzing the Bailout Protocol's state machine for a node $n$ at depth $d(n) \leq D$.
+
+When an exception condition arises at $n$, the trigger condition (TC) is satisfied, and $n$ enters the \texttt{BOUNDED} state. If the parent node $p = \alpha(n)$ can authorize the exception within $T_{\text{bounds}}$, then $n$ transitions directly to \texttt{HUMAN\_ACKNOWLEDGED} and the protocol resolves without escalation. This is the happy path and requires no propagation.
+
+If $p$ cannot authorize within $T_{\text{bounds}}$, a timeout occurs, and $n$ transitions to \texttt{BAIL\_PENDING}. At this point, the exception is queued for propagation to $p$. The propagation step executes atomically: the Fact Layer records the escalation, and the parent $p$ receives the exception event. The parent either acknowledges (if $p$ is the root) or escalates to its own parent.
+
+Each propagation step moves the exception state up one level in the parent pointer chain, decreasing the remaining depth by 1. Since the chain depth is bounded above by $D$, the number of propagation steps required to reach the root is at most $D - d(n)$. Each step executes within a bounded timeout $T_{\text{bounds}}$ or $T_{\text{cap}}$, both of which are finite. Therefore the total time to reach the root is bounded by $(D - d(n)) \cdot \max(T_{\text{bounds}}, T_{\text{cap}})$, a finite quantity.
+
+At the root, the exception is received by $h(\text{root})$, who acknowledges it by issuing a human directive, transitioning the root node to \texttt{HUMAN\_ACKNOWLEDGED} and breaking the escalation chain. The protocol therefore terminates at $h(\text{root})$ in finite time.
+\end proof}
+
+It is important to note that the termination guarantee depends on the root principal's responsiveness. If the human principal at the root is unresponsive — for example, due to being offline — the exception state remains in \texttt{ESCALATING} at the root level. The protocol does not silently resolve the exception in this case; it maintains the exception state and continues logging timeout events in the Forensic Ledger, providing a complete record for post-hoc review. This is the correct fail-safe behavior: the protocol prefers sustained escalation over silent resolution.
+
+The combination of these three theorems establishes the Recursive Spawning mechanism as a \textbf{provably correct} agent spawning system with respect to accountability, structural integrity, and guaranteed human oversight. These are not empirical properties confirmed by testing — they are deductive properties derived from the immutable parent pointer, the deterministic state machine, and the three-layer integration. The mechanism cannot drift, cannot corrupt its own chain structure, and cannot fail to reach the human principal, subject only to the responsiveness of the principal at the root of the chain.

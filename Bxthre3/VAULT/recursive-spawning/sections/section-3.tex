@@ -1,0 +1,220 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+In recursive spawning systems, \textbf{drift} denotes a condition in which an agent
+instance loses its causal chain back to a human anchor point. We distinguish two
+primitive states:
+
+\begin{itemize}
+\item \textbf{Orphaned agent:} an agent $a$ whose parent agent $p$ has either
+  terminated normally, crashed, or become unreachable, such that $p$ can no
+  longer observe, correct, or terminate $a$.
+
+\item \textbf{Drifted agent:} an agent $a$ for which the transitive closure of
+  the parent--child relationship does not reach any human principal $h \in H$,
+  where $H$ denotes the set of human users with oversight authority over the
+  spawning graph.
+\end{itemize}
+
+An agent may be orphaned without being drifted (if a living sibling or
+supervisor retains a handle), but any drifted agent is necessarily orphaned at
+its immediate parent level or at some higher level in its ancestry.
+
+\begin{definition}[Drift]
+Let $G = (V, E)$ be a directed acyclic graph (DAG) where each vertex $v \in V$
+represents an agent instance and each directed edge $(p, c) \in E$ represents a
+spawning relation from parent $p$ to child $c$. Let $H \subset V$ denote the set
+of human-anchored root nodes. For any node $v \in V$, define the ancestry
+function $A(v)$ as the set of all nodes reachable by following parent edges
+transitively to their origin. Then $v$ is \textbf{drifted} if and only if
+
+\[
+A(v) \cap H = \varnothing .
+\]
+
+An agent is \textbf{orphaned} if its immediate parent $p$ satisfies
+$\text{status}(p) \in \{\text{TERMINATED}, \text{UNREACHABLE}\}$.
+\end{definition}
+
+Drift can therefore be detected by traversing $G$ toward its roots; if no human
+anchor is encountered before a terminal node, the agent has drifted.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not require malicious behavior. It emerges from four routine
+operational conditions:
+
+\begin{enumerate}
+\item \textbf{Parent crash:} The spawning process completes and returns a handle
+  to the child, but the parent process terminates before the child can be
+  registered with a supervisor or logged to a stable registry. The child
+  survives and continues executing, but no living entity holds its reference.
+
+\item \textbf{Asynchronous spawn with fire-and-forget semantics:} The parent
+  spawns a child and receives a future or promise, but does not block on the
+  child's registration. If the parent is deallocated before registration
+  completes, the child's reference is lost even though the child remains active.
+
+\item \textbf{Network partition in distributed spawning:} A supervisor spawns
+  agents across multiple nodes. A child on node $B$ reports to a monitor on node
+  $C$, but the monitor's connection to the supervisor on node $A$ is severed. The
+  child continues running; the supervisor believes it is terminated; no human
+  sees the child.
+
+\item \textbf{Supervisor eviction:} A supervisor agent is itself spawned by a
+  parent and operates for a bounded window (e.g., a workflow-scoped helper). When
+  the window expires, the supervisor is terminated. All children it has not
+  independently registered with a higher authority become orphaned.
+\end{enumerate}
+
+These conditions are not pathological; they represent standard failure modes in
+any production-grade agent runtime. Drift is a structural consequence of these
+conditions in any system where child agents can outlive their parents.
+
+\subsection{Failure Modes}
+
+Once an agent is drifted, the failure modes compound:
+
+\begin{description}
+\item[Resource leak:] A drifted agent holds memory, compute, and potentially
+  external credentials (API keys, file handles) with no entity responsible for
+  cleanup. Over time, accumulated drifted agents exhaust system resources.
+
+\item[Zombie actions:] A drifted agent continues executing actions—sending
+  emails, posting to APIs, modifying state—using credentials inherited from its
+  parent chain. Because no human oversees it, these actions occur without
+  authorization, potentially causing legal, financial, or reputational harm.
+
+\item[Orphan chain propagation:] A drifted agent may itself spawn children. These
+  grandchildren have no human anchor either, propagating drift downward. A single
+  orphaned parent can generate an exponentially growing tree of drifted agents.
+
+\item[Observation gap:] Monitoring systems that track agent health by querying
+  parent processes find no parent and may incorrectly conclude the child is also
+  terminated. Drift is therefore invisible to standard liveness checks.
+\end{description}
+
+The zombie action failure mode is particularly consequential for commercial
+deployments. An agent authorized to send notifications on behalf of a user
+remains authorized after its parent dies. Nothing signals to the credential
+store that the agent should be revoked. The agent continues to act.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A common architectural response to unbounded spawning is to impose a maximum
+spawn depth. If a parent may not spawn beyond depth $D$, the reasoning goes, the
+longest possible drift chain has length $D$, and a human can simply audit depth
+$D$ agents to bound the blast radius.
+
+This reasoning is incorrect for three reasons.
+
+First, \textbf{depth limits constrain the tree's height, not its width}. A single
+drifted agent at depth $D$ that spawns breadth-first can create $N$ children at
+depth $D+1$, all of them drifted. Depth limits place no bound on the number of
+agents that can exist simultaneously at any given depth. A $D=3$ limit with a
+drifted root agent spawning 1,000 children at depth 3 produces 1,000 drifted
+agents—well within the limit and invisible to depth-based audits.
+
+Second, \textbf{depth limits do not address temporal drift}. An agent at depth
+$1$ that runs for 72 hours and performs a critical action (send \$50,000 wire
+transfer) at hour 71 is drifting not in the structural sense but in the
+temporal sense: no human has observed its behavior for an extended period. Depth
+limits place no bound on the time an agent operates between human observations.
+
+Third, \textbf{depth limits are defined relative to a spawning event, not a
+human event}. If a drifted agent at depth $D$ spawns, the new agent is at depth
+$D+1$. The human at the root may have a policy that depth $>D$ agents must be
+approved. The drifted agent does not enforce this policy. The system has no
+mechanism to enforce depth limits on descendants of drifted agents because the
+drift itself breaks the enforcement path.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Property & Depth Limit Satisfied? & Drift Prevented? \\ \midrule
+Maximum ancestry length & Yes (bounded by $D$) & No \\
+Number of drifted agents & No (unbounded breadth) & No \\
+Temporal observation gap & No (no time bound) & No \\
+Enforcement path integrity & No (broken by drift) & No \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Depth limits reduce the structural \emph{distance} of drift but do not reduce
+the \emph{probability}, \emph{extent}, or \emph{consequences} of drift once it
+occurs.
+
+\subsection{A Simple Formal Model}
+
+We formalize drift as a property of the spawning graph under a failure model.
+
+Let $G_t = (V_t, E_t)$ denote the spawning graph at time $t$. Each vertex $v$
+carries a state $s(v) \in \{\text{ACTIVE}, \text{TERMINATED}, \text{UNREACHABLE}\}$.
+Let $P(v) = \{u \in V_t \mid (u, v) \in E_t\}$ denote the set of parents of $v$,
+and let $S(v) = \{w \in V_t \mid (v, w) \in E_t\}$ denote the set of direct
+children.
+
+\begin{axiom}[Parent Failure]
+A parent $p \in P(v)$ becomes UNREACHABLE with probability $p_f$ per time unit,
+independent of the child's state.
+\end{axiom}
+
+\begin{axiom}[Child Autonomy]
+A child $v$ continues executing and may spawn descendants regardless of the
+state of any $p \in P(v)$.
+\end{axiom}
+
+\begin{axiom}[No Automatic Registration]
+There is no guarantee that a child $v$ registers with any entity outside its own
+ancestry chain upon parent failure.
+\end{axiom}
+
+\begin{definition}[Drift Event]
+A drift event occurs at time $t$ for agent $v$ if
+\[
+\bigvee_{u \in A(v)} s(u) = \text{UNREACHABLE}
+\quad \text{and} \quad
+\not\exists h \in H : h \in A(v) .
+\]
+That is, every node in the ancestry of $v$ is either unreachable or terminates
+before reaching a human anchor.
+\end{definition}
+
+\begin{定理}[Drift Probability Lower Bound]
+Let $v$ be an agent at depth $d$ with ancestry $A(v) = \{v_0, v_1, \dots, v_d\}$
+where $v_0 \in H$ and $(v_{i-1}, v_i) \in E$ for $i = 1, \dots, d$. Assuming each
+edge fails independently with probability $p_f$ per time unit, the probability
+that $v$ is drifted at time $t$ is at least
+
+\[
+P(\text{drift at } t) \geq 1 - (1 - p_f)^{d} .
+\]
+
+\textbf{Proof.} The agent is drifted if at least one edge in its ancestry chain
+fails. The complement event—no edge fails—is $(1 - p_f)^d$. Taking the
+complement yields the bound. $\square$
+\end{定理}
+
+This bound is independent of depth limits. A system with $d=5$ and $p_f = 0.01$
+per hour has $P(\text{drift}) \geq 1 - (0.99)^5 \approx 0.049$ after one hour.
+Depth limits do not change $p_f$; they only bound $d$, which appears in the
+exponent, meaning diminishing $d$ reduces drift probability only logarithmically.
+
+\begin{conjecture}[Drift Chain Growth]
+If a drifted agent $v$ spawns children at rate $\lambda$ and each child is also
+drifted, then the expected number of drifted agents $D(t)$ at time $t$ satisfies
+
+\[
+D(t) \geq D(0) \cdot e^{\lambda t} ,
+\]
+
+i.e., exponential growth in the number of drifted agents until external
+intervention or resource exhaustion occurs.
+\end{conjecture}
+
+This model establishes that drift is not an edge case: under routine failure
+conditions, it occurs with non-negligible probability even in small spawning
+trees, and once it occurs, it grows without bound in the absence of external
+intervention. Depth limits do not break the drift dynamics; they only limit the
+initial depth of the tree.

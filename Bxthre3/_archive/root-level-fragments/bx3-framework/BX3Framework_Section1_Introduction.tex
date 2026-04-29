@@ -1,0 +1,71 @@
+\section{Introduction}\label{sec:introduction}
+
+\subsection{The Autonomous Drift Problem in Recursive Multi-Agent Systems}
+
+When a multi-agent system decomposes a directive into sub-tasks and spawns subordinate agents to execute those sub-tasks, each spawning generation introduces compounding divergence from the human principal's original intent. This phenomenon is called \textbf{autonomous drift}: the progressive, generation-over-generation deviation of agent behavior from the principal's defined objectives, operating bounds, and success criteria, occurring without architectural constraint on the direction or magnitude of deviation.
+
+Autonomous drift is not a governance concern. It is an architectural property of systems that distribute decision-making authority across machine actors without enforcing structural accountability for the delegation chain. In a recursive spawning topology — where agents spawn sub-agents that spawn further sub-agents — drift compounds multiplicatively across spawning generations. A single maladapted node at depth three spawns children whose operating ranges are defined relative to a misaligned parent; by depth seven, the executing frontier operates in a context so far removed from the principal's intent that human review of individual decisions is structurally meaningless.
+
+The drift problem is distinct from the reliability problem. A system may be reliable — agents execute their assigned tasks without failure — while still exhibiting drift, if the tasks to which they are assigned have drifted from the principal's actual intent. Reliability within a misaligned scope does not satisfy the accountability requirement. The BX3 Framework treats drift as the primary threat model, not agent failure.
+
+The consequences extend beyond misaligned outcomes. Drift severs the accountability chain between the human principal and the executing nodes through three compounding failure modes.
+
+\begin{enumerate}
+\item \textbf{Contingent oversight failure.} When a system handles exceptions through policy-level constraints, human involvement becomes a runtime option determined by the agent network itself — precisely when that network is least qualified to assess its own competence. An agent in an exception state is, by definition, in a condition its designers did not fully anticipate. Delegating to that same agent the decision of whether its condition requires human intervention vests escalation authority in the least qualified actor in the chain.
+
+\item \textbf{Structural unauditability.} Systems without an architectural fallback can absorb, reframe, or suppress exception conditions internally. Decision classes intended to require human awareness become invisible to external auditors because the system has sufficient agency to reclassify constraint violations as optimization opportunities~\cite{amodei2016}. The accountability chain between the human principal and the outcome is not merely weakened — it is structurally severed.
+
+\item \textbf{Drift amplification.} Each successive decision made under unacknowledged exception produces a system state further from the principal's intent. In recursive spawning deployments, drift amplification compounds across spawning generations at a rate that environmental resistance or resource exhaustion may not intercept before consequential action has already been taken.
+\end{enumerate}
+
+These three failure modes are not eliminated by incremental improvement to error handling or oversight practices. They are architectural properties of systems that treat accountability as a policy constraint. Policy constraints operate above the execution layer; they can be reinterpreted or deferred by agents with sufficient agency. Architectural fallbacks operate within the execution layer: they are triggered deterministically by conditions the agent cannot control and cannot route around.
+
+\subsection{Why Existing Approaches Are Insufficient}
+
+The dominant approaches to bounding agent spawning depth are Time-To-Live (TTL) limits and depth counters. Neither is structurally sufficient.
+
+\textbf{TTL limits} constrain the operational lifetime of a spawned agent but do not constrain the operating range or objectives assigned to it. An agent with unlimited scope but a 30-second TTL can produce arbitrarily consequential outcomes before expiration. TTL addresses persistence, not authority. It says nothing about what the agent is permitted to do — only how long it may do it.
+
+\textbf{Depth counters} constrain the number of spawning generations but do not constrain what each spawned generation is authorized to do. A depth-limited system can spawn agents at each permitted depth with unbounded operating ranges, and the accountability chain degrades with each generation regardless of whether the total depth is bounded at five or fifty. Depth limit addresses \emph{chain length}, not \emph{chain integrity}.
+
+Both approaches share a fundamental flaw: they constrain \emph{how far} spawning can go without constraining \emph{what each spawned node is authorized to do}. The drift problem is not a depth problem — it is an authorization problem. The relevant quantity is not the number of generations but the fidelity of the delegation chain: whether each spawning edge correctly transmits the principal's intent and operating bounds, and whether that fidelity degrades or is corrupted as the chain extends.
+
+A structurally sound approach to the drift problem requires three constraints applied jointly at every spawning edge:
+
+\begin{enumerate}
+\item The parent's operating range must be narrowed — not replicated — at the child. The child's scope must be a proper subset of the parent's, ensuring that spawning never expands authority.
+\item The parent pointer must be immutable for the child's entire operational lifetime, preventing retroactive corruption of the delegation chain.
+\item Every spawning event must be recorded as an immutable entry in the Forensic Ledger, making the delegation chain fully auditable in both directions.
+\end{enumerate}
+
+These three constraints jointly define the \textbf{immutable parent pointer chain} — the structural property that makes drift structurally impossible. The chain is immutable because: each child is created with a fixed parent reference that no machine actor can modify; the child's operating range is constrained to be a strict subset of its parent's by the \bounds{} layer's pre-commit enforcement; and the complete spawn history is recorded in the Forensic Ledger, making reconstruction of the chain mandatory and auditable.
+
+Drift becomes structurally impossible when the delegation chain preserves fidelity at every spawning edge. A corrupted or misaligned child cannot spawn further children with broader authority than its own; the chain of proper subset constraints propagates the principal's intent downward, and any violation triggers the Bailout Protocol before the child can act outside its provisioned range.
+
+\subsection{Formal Definition of Autonomous Drift}
+
+Let $T = (V, E)$ be a spawn tree where each vertex $v \in V$ is a node and each edge $(u, v) \in E$ represents a spawn event. Let $R(v)$ denote the operating range of node $v$, $I(v)$ the intent specification provisioned at node creation, and $d(v)$ the depth of node $v$ from the root (human principal). Let $D_{\max}$ be the deployment depth bound.
+
+\textbf{Drift} at node $v$ is defined as the divergence $\delta(v)$ between the executing behavior of $v$ and the intent $I(\text{root})$ of the human principal, measured as a function of the deviation between $R(v)$ and the subspace of $R(\text{root})$ that $v$ was authorized to occupy given its depth and position in the spawn tree:
+
+\[
+\delta(v) \;=\; \frac{|R(v) \;\Delta\; \mathcal{A}(v)|}{|R(\text{root})|}
+\]
+
+where $\mathcal{A}(v)$ is the authorized operating subspace for $v$ — the intersection of $R(\text{root})$ with all scope constraints inherited along the parent-pointer chain from the root to $v$ — and $\Delta$ denotes symmetric set difference. Drift is defined as zero when $\mathcal{A}(v) = R(v)$; it is undefined when $\mathcal{A}(v) = \emptyset$.
+
+\textbf{Drift amplification} across a spawning edge $(u, v)$ is defined as the ratio of drift magnitudes:
+
+\[
+\eta(u \to v) \;=\; \frac{\delta(v)}{\delta(u)}
+\]
+
+A system is \textbf{drift-stable} at depth $k$ if for all spawning edges in the subtree of depth $k$, $\eta(u \to v) \leq 1$. A system exhibits \textbf{drift amplification} if there exists at least one spawning edge where $\eta(u \to v) > 1$.
+
+The \bxthree{} framework ensures drift-stability through two mechanisms applied at every spawning edge: scope inheritance ($R(c) \subset R(p)$) ensures that $\mathcal{A}(v)$ is always a proper subspace of $\mathcal{A}(\alpha(v))$, limiting the authorized operating range at each generation; and immutable parent pointers ensure that the chain of authorized subspaces cannot be retroactively modified to widen authority at any node.
+
+Without these constraints, a single drift-amplifying spawning edge can compound across multiple generations, causing $\delta(v)$ to grow without bound within the bounded depth of the spawn tree. With these constraints, drift at any node is bounded by the accumulated proper subset relations along the chain — and because each subset is strict and finite, the total drift across any valid chain is finite.
+
+\subsection{Paper Roadmap}
+
+The remainder of this paper is organized as follows. Section~\ref{sec:background} provides the background across three research traditions that motivate the framework. Section~\ref{sec:three-layer} develops the \bxthree{} three-layer model as the architectural foundation. Section~\ref{sec:pillars} introduces all five architectural pillars with full formal specifications, with Pillar 2 (Recursive Spawning) receiving the definitive treatment. Section~\ref{sec:bailout-full} provides the dedicated treatment of the Bailout Protocol, including its formal state machine specification, its interaction with the Forensic Ledger, and its behavior under recursive spawning conditions. Section~\ref{sec:correctness} establishes the correctness properties the framework jointly guarantees. Section~\ref{sec:related} evaluates the framework against related work. Section~\ref{sec:limitations} characterizes structural limitations and the directed research agenda. Section~\ref{sec:conclusion} concludes.

@@ -1,0 +1,155 @@
+\section{Background}
+
+% =============================================================================
+% 2.1 Agent Lifecycle Management in Multi-Agent Systems
+% =============================================================================
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+
+The operational lifecycle of an autonomous agent spans multiple phases—design, training, testing, deployment, monitoring, and optimization—before eventual decommissioning \cite{onereach_alm_2026}. Agent lifecycle management (ALM) provides the continuous, iterative framework necessary for agents to evolve alongside business needs, technological capabilities, and regulatory requirements. Unlike single-agent deployments, multi-agent systems introduce compounding complexity: each agent maintains its own execution context, and delegation chains create interdependencies that must be tracked, governed, and audited across the entire system.
+
+Multi-agent architectures organize into three primary topologies \cite{agentsindex_mas_2026}: hub-and-spoke (orchestrator-worker), flat mesh (peer-to-peer), and hierarchical. Hierarchical multi-agent systems (HMAS) have emerged as the dominant enterprise pattern because they provide explicit escalation paths, scoped delegation boundaries, and natural fault isolation \cite{arxiv_hmas_2508}. The Google ADK framework formalizes this with a parent-child agent hierarchy where each sub-agent maintains a clear \texttt{parent\_agent} reference, enabling both top-down task scoping and bottom-up escalation \cite{google_adk_2025}. The taxonomy proposed by Sima et al. unifies structural, temporal, and communication dimensions of HMAS into a single design framework, bridging classical coordination mechanisms with modern LLM-based agents \cite{arxiv_hmas_2508}.
+
+A critical open challenge in multi-agent ALM is accountability propagation. When Agent A delegates to Agent B, which then delegates to Agent C, the provenance chain must survive end-to-end to support auditing, error recovery, and compliance verification. Without explicit chain tracking, downstream agents lack the decision context necessary for contextual reasoning, and operators lose the ability to reconstruct why a system arrived at a given state \cite{tianpan_provenance_2026}. The MIT AI Agent Index (2025) found that even prominent deployed systems largely lack standardized audit logging, identity verification, or delegation chain tracing—making accountability reconstruction post-hoc nearly impossible in production environments \cite{zylos_accountability_2026}.
+
+% =============================================================================
+% 2.2 Accountability and Provenance in Distributed Systems
+% =============================================================================
+\subsection{Accountability and Provenance in Distributed Systems}
+
+Accountability in AI agent systems requires answering four questions: \emph{who/what decided}, \emph{based on what evidence}, \emph{with what permissions}, and \emph{with what blast radius} \cite{linkedin_accountability_2026}. These questions map directly to the core requirements of distributed systems auditing, but AI agents introduce a unique challenge: decisions are not predetermined code paths but emergent outputs of LLM reasoning, which resist the deterministic logging that traditional audit systems rely on.
+
+Decision provenance answers the reconstruction question: \emph{given that this agent took this action, can we reconstruct the complete chain of reasoning, data, and authorization that led there?} For most production agentic systems today, the answer is no—creating a growing accountability gap as agents take on business-impacting actions \cite{tianpan_provenance_2026}. The CloudTrail pattern from AWS establishes a useful baseline: every tool call should be an auditable event with agent identity embedded as an IAM role equivalent, logged to an immutable, centrally managed audit store. AI agent systems should extend this model with delegation-specific context—chain identifiers, authorization records, and attenuation metadata attached to each hop \cite{zylos_accountability_2026}.
+
+The EU AI Act and NIST AI RMF both impose regulatory requirements that mandate decision auditability, particularly for automated decision-making in financial services \cite{finos_governance_2026}. FINOS's AI Governance Framework specifies that all agent actions, reasoning processes, and decision factors must be captured in sufficient detail to meet regulatory requirements and enable forensic analysis \cite{finos_governance_2026}. The artifact-centric paradigm proposed in MAIF addresses this at the data architecture level: by embedding semantic vectors, cryptographic provenance, and granular access controls directly into AI-native container formats, data artifacts become self-governing, auditable units rather than opaque blobs \cite{arxiv_maif_2511}. However, these approaches remain nascent, and the gap between regulatory expectation and production capability remains wide \cite{zylos_accountability_2026}.
+
+Zero trust principles for multi-agent systems extend beyond ``never trust, always verify'' to include delegation-specific controls: delegation limits that attenuate permissions at each hop, cross-agent audit trails that preserve chain integrity, and behavioral boundaries that prevent permission accumulation attacks \cite{gupta_zero_trust_2025, cloudsecurityalliance_delegation_2025}. Without scope attenuation, each agent in a delegation chain should have narrower permissions than the one before it—but this least-privilege principle often fails in practice. By the third delegation hop, there is frequently no cryptographic link back to the initiating agent or user \cite{cloudsecurityalliance_delegation_2025}.
+
+% =============================================================================
+% 2.3 Fixed vs. Mutable Delegation Chains
+% =============================================================================
+\subsection{Fixed vs. Mutable Delegation Chains}
+
+A fundamental architectural tension in multi-agent system design is whether delegation chains should be fixed at spawn time or allowed to mutate dynamically at runtime. Fixed delegation chains encode the parent-child relationship immutably at agent instantiation: once Agent A spawns Agent B, that parent reference cannot be rewritten. This immutability provides strong provenance guarantees—any traversal of the chain is guaranteed to reflect the actual spawning history— but sacrifices flexibility when task requirements shift mid-execution.
+
+Mutable delegation chains allow parent references and permission scopes to be rewritten after instantiation. This enables dynamic reconfiguration, workload rebalancing, and adaptive fault recovery, but creates a critical accountability problem: if the chain can be mutated, then audit trails that rely on chain history may no longer reflect the system's actual decision path. The MIT AI Agent Index (2025) notes that only one surveyed system (ChatGPT Agent) employed cryptographic request signing to bound this risk \cite{zylos_accountability_2026}.
+
+Structured delegation token formats offer a middle path. By encoding both the user's and agent's identity alongside permitted scopes, expiry, and revocation mechanisms, delegation tokens carry the entire chain context rather than relying on mutable in-memory references \cite{scalekit_delegation_2025, aembit_agent_architectures_2025}. Downstream systems can validate the chain independently without trusting the delegating agent's self-reporting. The Aembit framework formalizes three architectural patterns for maintaining verifiable trust across delegation chains: role-based isolation, short-lived credential rotation, and chain-of-custody logging \cite{aembit_agent_architectures_2025}. Okta's Cross App Access (XAA), now incorporated into MCP under Enterprise-Managed Authorization, tracks and revokes delegation lineage so that agent actions remain logged and revocable even across recursive delegation \cite{cloudsecurityalliance_delegation_2025}.
+
+The choice between fixed and mutable chains is not purely technical—it reflects a governance tradeoff between auditability and adaptability. Fixed chains favor compliance-heavy, high-stakes environments where provenance reconstruction is paramount. Mutable chains favor dynamic, autonomous systems where workload flexibility and fault tolerance take precedence. A hybrid approach—immutable spawning chains with mutable execution-time permission attenuation—may offer the best tradeoff for production multi-agent systems.
+
+% =============================================================================
+% 2.4 Hierarchical Task Decomposition in AI
+% =============================================================================
+\subsection{Hierarchical Task Decomposition in AI}
+
+Complex tasks have natural hierarchical structure: high-level goals decompose into sub-goals, which further decompose into executable subtasks, which may themselves branch into parallel workstreams \cite{huggingface_hierarchical_2024}. Hierarchical task decomposition (HTD) and hierarchical task network (HTN) planning from classical AI are being rediscovered as structuring principles for LLM-based agents, enabling localized replanning, parallel sub-task execution, and modular failure recovery \cite{zylos_htd_2026, geeksforgeeks_htn_2024}. The Zylos Research taxonomy (2026) identifies four complementary dimensions: decomposition strategies, hierarchical planning structures, execution-feedback patterns, and replanning mechanisms \cite{zylos_htd_2026}.
+
+ReAcTree demonstrates that LLM-based hierarchical task planning can be implemented via dynamic tree expansion, where agent nodes decompose complex tasks into manageable subgoals within a tree structure \cite{openreview_reactree_2025}. Each agent node retrieves goal-specific experiences from episodic memory to use as in-context examples, while shared working memory enables cross-agent information recall during task execution. ToolTree (2025) applies Monte Carlo Tree Search (MCTS) to tool selection in LLM agents, using dual feedback from execution results and plan coherence scoring to prune the search tree—effectively combining hierarchical decomposition with learned execution policy \cite{zylos_htd_2026}.
+
+The integration of hierarchical planning with multi-agent execution introduces coordination challenges: shared planning state must be maintained across agents, conflicts between concurrently executing plans must be detected and resolved, and tasks must be allocated to agents with heterogeneous capabilities \cite{zylos_htd_2026}. Taskade's Plan-Act-Reflect-Repeat paradigm captures this: a manager agent produces a high-level plan, specialist agents execute each step, and intermediate reflection cleans up failures before they propagate up the hierarchy \cite{taskade_planning_2026}. For long-horizon tasks, planning layers are essential—agents that attempt to execute complex goals without hierarchical decomposition suffer from combinatorial action spaces, elevated error rates, and loss of intermediate state when failures occur.
+
+% =============================================================================
+% 2.5 The BX3 Framework as Substrate for Immutable Parent Chains
+% =============================================================================
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+
+The BX3 Framework (\cite{bxthre3_framework_2026} introduces a structured substrate for agentic AI systems that addresses the provenance, accountability, and delegation challenges described above through an immutable parent-chain architecture. In BX3, every agent is spawned with a cryptographically sealed reference to its parent, forming a tamper-evident lineage chain that preserves decision context across recursive spawning operations. This design ensures that any agent in the system can be traced back to its origin, providing the provenance foundation that existing multi-agent systems lack.
+
+BX3's approach to agent lifecycle management treats spawning as an immutable event: once an agent is created, its parent reference is permanently encoded and cannot be retroactively modified. This fixed-chain model enables verifiable accountability reconstruction at any point in the system's execution history—operators can reconstruct the complete delegation path from any descendant agent back to the originating actor, without relying on mutable runtime state. The framework further enforces scope attenuation across chain hops, ensuring that each child agent operates with narrower permissions than its parent, adhering to the least-privilege principle that mutable delegation architectures frequently violate \cite{cloudsecurityalliance_delegation_2025}.
+
+The hierarchical task decomposition layer in BX3 is designed to work in concert with the immutable parent chain: sub-agents inherit not only permissions and scope but also decision context from their ancestors, enabling contextual reasoning at every level of the decomposition tree. When a sub-agent fails or requires escalation, the immutable chain provides a deterministic path for error propagation and recovery—eliminating the ambiguity that plagues mutable delegation chains when failures occur mid-execution.
+
+BX3 positions itself as a foundational layer for multi-agent systems that require auditability, compliance, and provenance guarantees—particularly in enterprise environments subject to EU AI Act, NIST AI RMF, or sector-specific regulatory oversight. By grounding the agentic system in an immutable spawning substrate, BX3 provides the tamper-evident foundation upon which higher-layer accountability mechanisms—decision logs, authorization records, and forensic reconstruction—can be reliably built.
+
+% =============================================================================
+% REFERENCES
+% =============================================================================
+\begin{thebibliography}{99}
+%
+% 2.1 Agent Lifecycle Management
+%
+ bibitem{onereach_alm_2026}
+OneReach.ai. \emph{Agent Lifecycle Management 2026: 6 Stages, Governance \& ROI.}
+OneReach.ai Blog, 2026.
+%
+ bibitem{agentsindex_mas_2026}
+AgentsIndex. \emph{Multi-Agent Systems: How They Work, When to Use Them, and Which Architecture to Choose.}
+Dev.to, 2026.
+%
+ bibitem{arxiv_hmas_2508}
+Sima et al. \emph{A Taxonomy of Hierarchical Multi-Agent Systems: Design Patterns, Coordination Mechanisms, and Industrial Applications.}
+arXiv:2508.12683, 2025.
+%
+ bibitem{google_adk_2025}
+Google. \emph{What's the Role of the Agent Hierarchy in a Multi-Agent System?}
+ADK Python Discussions, GitHub, 2025.
+%
+% 2.2 Accountability and Provenance
+%
+ bibitem{tianpan_provenance_2026}
+Pan, T. \emph{Decision Provenance in Agentic Systems: Audit Trails That Actually Work.}
+tianpan.co, April 2026.
+%
+ bibitem{zylos_accountability_2026}
+Zylos Research. \emph{AI Agent Accountability: Audit Trails, Attribution, and Non-Repudiation in Multi-Agent Systems.}
+Zylos.ai, March 2026.
+%
+ bibitem{finos_governance_2026}
+FINOS. \emph{AI Governance Framework: Agent Decision Audit and Explainability.}
+FINOS AI Governance Documentation, 2026.
+%
+ bibitem{arxiv_maif_2511}
+MAIF Authors. \emph{MAIF: Enforcing AI Trust and Provenance with an Artifact-Centric Agentic Paradigm.}
+arXiv:2511.15097, 2025.
+%
+ bibitem{linkedin_accountability_2026}
+Henderson, M. \emph{Designing Accountability for AI Agents in Organisations.}
+LinkedIn, 2026.
+%
+% 2.3 Fixed vs. Mutable Delegation Chains
+%
+ bibitem{gupta_zero_trust_2025}
+Gupta, D. \emph{Zero Trust Authorization for Multi-Agent Systems.}
+guptadeepak.com, 2025.
+%
+ bibitem{cloudsecurityalliance_delegation_2025}
+Cloud Security Alliance. \emph{Control the Chain, Secure the System: Fixing AI Agent Delegation.}
+cloudsecurityalliance.org, 2025.
+%
+ bibitem{scalekit_delegation_2025}
+Scalekit. \emph{On-Behalf-Of Authentication for AI Agents: Secure, Scoped, and Auditable Delegation.}
+scalekit.com/blog, 2025.
+%
+ bibitem{aembit_agent_architectures_2025}
+Aembit. \emph{Four Types of AI Agents and What They Mean for Identity Security.}
+aembit.io, 2025.
+%
+% 2.4 Hierarchical Task Decomposition
+%
+ bibitem{zylos_htd_2026}
+Zylos Research. \emph{AI Agent Goal Decomposition and Hierarchical Planning.}
+Zylos.ai, March 2026.
+%
+ bibitem{geeksforgeeks_htn_2024}
+GeeksforGeeks. \emph{Hierarchical Task Network (HTN) Planning in AI.}
+GeeksforGeeks, 2024.
+%
+ bibitem{openreview_reactree_2025}
+ReAcTree Authors. \emph{ReAcTree: Hierarchical Task Planning with Dynamic Tree Expansion using LLM Agent Nodes.}
+OpenReview, ICLR 2025.
+%
+ bibitem{taskade_planning_2026}
+Taskade. \emph{Planning \& Reasoning: How AI Agents Think Multi-Step.}
+Taskade Wiki, 2026.
+%
+ bibitem{huggingface_hierarchical_2024}
+Hugging Face. \emph{How Do Agents Plan and Reason?}
+Hugging Face Blog, 2024.
+%
+% 2.5 BX3 Framework
+%
+ bibitem{bxthre3_framework_2026}
+Blanco, B. \emph{The BX3 Framework: A Substrate for Agentic Intelligence.}
+Bxthre3 Inc., 2026.
+%
+\end{thebibliography}

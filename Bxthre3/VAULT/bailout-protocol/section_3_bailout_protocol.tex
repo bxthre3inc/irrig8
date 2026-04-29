@@ -1,0 +1,391 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol defines the canonical mechanism by which a running agentic system transitions from autonomous operation to supervised intervention when predetermined boundary conditions are violated. It provides a deterministic, auditable pathway from anomaly detection through human acknowledgment to resolution, ensuring that no agentic operation can remain in an unacknowledged pathological state indefinitely.
+
+The protocol operates as a hierarchical state machine augmented with timeout guards and a bypass mechanism that permits override by authorized actors under well-defined conditions. All transitions are logged with timestamps, actor identity, and triggering conditions to support post-hoc audit and iterative refinement of boundary thresholds.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=2.5cm, minimum size=2cm]
+    \node[state] (IDLE) {IDLE};
+    \node[state, right of=IDLE] (BOUNDED) {BOUNDED};
+    \node[state, right of=BOUNDED] (BAIL\_PENDING) {BAIL\_PENDING};
+    \node[state, right of=BAIL\_PENDING] (ESCALATING) {ESCALATING};
+    \node[state, below of=ESCALATING] (HUMAN\_ACK) {HUMAN\_ACKNOWLEDGED};
+    \node[state, below of=BOUNDED] (RESOLVED) {RESOLVED};
+
+    \draw[arrow] (IDLE) -- node[above] {$\text{Activate}(S_0)$} (BOUNDED);
+    \draw[arrow] (BOUNDED) -- node[above] {$\phi_{\text{bail}}$} (BAIL\_PENDING);
+    \draw[arrow] (BAIL\_PENDING) -- node[above] {$t_{\text{escalate}} = 0$} (ESCALATING);
+    \draw[arrow] (ESCALATING) -- node[right] {$\text{Human\_Ack}$} (HUMAN\_ACK);
+    \draw[arrow] (HUMAN\_ACK) -- node[below] {$\text{Resolve}(S_{\text{final}})$} (RESOLVED);
+    \draw[arrow] (BAIL\_PENDING) to[out=45,in=135,loop] node[above] {$\neg\phi_{\text{bail}} \land \text{Recover}$} (BOUNDED);
+    \draw[arrow, dashed] (IDLE) to[out=225,in=315,loop] node[below] {$\text{Bypass}$} (RESOLVED);
+\end{tikzpicture}
+\caption{Bailout Protocol State Machine Diagram}
+\label{fig:bailout_state_machine}
+\end{figure}
+
+\subsection{Formal State Definitions}
+
+The state machine comprises six mutually exclusive states, each defined by a tuple of runtime properties. An agentic system at any point in time occupies exactly one state.
+
+\begin{definition}[State: IDLE]
+The \textbf{IDLE} state represents an agentic system that has been initialized but has not yet been activated within a bounded execution context. 
+
+\[
+\text{State}_{\text{IDLE}} \triangleq \langle A_{\text{active}} = \emptyset,\; T_{\text{executed}} = \emptyset,\; \Phi_{\text{constraints}} = \emptyset,\; \text{Ack}_{\text{human}} = \bot \rangle
+\]
+
+Where $A_{\text{active}}$ denotes the set of active agents, $T_{\text{executed}}$ the execution trace, $\Phi_{\text{constraints}}$ the constraint set, and $\text{Ack}_{\text{human}}$ the human acknowledgment flag.
+\end{definition}
+
+\begin{definition}[State: BOUNDED]
+The \textbf{BOUNDED} state represents normal autonomous operation within all specified constraints.
+
+\[
+\text{State}_{\text{BOUNDED}} \triangleq \langle A_{\text{active}} \neq \emptyset,\; \forall \phi_i \in \Phi_{\text{active}}: \phi_i(\tau) = \text{true},\; \text{EscalationLevel} = 0,\; T_{\text{violation}} = \emptyset \rangle
+\]
+
+Where $\Phi_{\text{active}} \subseteq \Phi_{\text{constraints}}$ denotes constraints currently under evaluation, and $T_{\text{violation}}$ tracks constraint violations.
+\end{definition}
+
+\begin{definition}[State: BAIL\_PENDING]
+The \textbf{BAIL\_PENDING} state indicates that at least one constraint has been violated and a bailout condition has been triggered, but escalation has not yet been initiated.
+
+\[
+\text{State}_{\text{BAIL\_PENDING}} \triangleq \langle \exists \phi_v \in \Phi_{\text{constraints}}: \neg\phi_v(\tau),\; \text{EscalationTimer} \geq 0,\; \text{BypassRequested} = \bot,\; \text{HumanAck} = \bot \rangle
+\]
+
+The \textbf{EscalationTimer} begins counting upon entry to this state and is bounded above by $T_{\text{escalate}}^{\max}$.
+\end{definition}
+
+\begin{definition}[State: ESCALATING]
+The \textbf{ESCALATING} state indicates that the escalation timer has expired without resolution and notification has been dispatched to human supervisors.
+
+\[
+\text{State}_{\text{ESCALATING}} \triangleq \langle \text{EscalationTimer} > T_{\text{escalate}}^{\max},\; \text{NotificationSent} = \top,\; \text{HumanAck} = \bot,\; \text{BypassActive} = \bot \rangle
+\]
+
+All machine actors in this state are suspended pending human intervention.
+\end{definition}
+
+\begin{definition}[State: HUMAN\_ACKNOWLEDGED]
+The \textbf{HUMAN\_ACKNOWLEDGED} state indicates that an authorized human actor has acknowledged the escalation and is actively reviewing or intervening.
+
+\[
+\text{State}_{\text{HUMAN\_ACKNOWLEDGED}} \triangleq \langle \text{HumanAck} = \top,\; \text{Actor}_{\text{ack}} \in \mathbb{A}_{\text{authorized}},\; \text{ReviewStartTime} = \tau_{\text{ack}},\; \text{ResolutionType} \in \{\text{CORRECT}, \text{ABORT}, \text{MODIFY}\} \rangle
+\]
+
+Where $\mathbb{A}_{\text{authorized}}$ denotes the set of human actors with bypass authority.
+\end{definition}
+
+\begin{definition}[State: RESOLVED]
+The \textbf{RESOLVED} state indicates terminal completion of the bailout protocol through either successful intervention or clean shutdown.
+
+\[
+\text{State}_{\text{RESOLVED}} \triangleq \langle \text{ProtocolComplete} = \top,\; S_{\text{exit}} \in \{ \text{NORMAL}, \text{ABORTED}, \text{SUSPENDED}, \text{BYPASSED} \},\; T_{\text{log}} = \text{full trace} \rangle
+\]
+
+The exit status $S_{\text{exit}}$ determines subsequent system behavior.
+\end{definition}
+
+\subsection{Transition Conditions}
+
+Transition between states occurs only via defined transition functions. All transitions are deterministic given the current state and triggering conditions.
+
+\begin{transitionfn}{IDLE $\rightarrow$ BOUNDED}
+\textbf{Condition:} $\text{Activate}(S_0)$
+
+\[
+\frac{\text{SystemInit} \land \Phi_{\text{constraints}} \neq \emptyset}{\text{Transition}(\text{IDLE}, \text{BOUNDED}, \tau_{\text{now}})}
+\]
+
+The system initializes with an initial configuration $S_0$ and constraint set $\Phi_{\text{constraints}}$. Upon successful initialization, the system enters the BOUNDED state and begins autonomous execution.
+\end{transitionfn}
+
+\begin{transitionfn}{BOUNDED $\rightarrow$ BAIL\_PENDING}
+\textbf{Condition:} $\phi_{\text{bail}}$
+
+\[
+\frac{\exists \phi_v \in \Phi_{\text{active}}: \neg\phi_v(\tau)}{\text{Transition}(\text{BOUNDED}, \text{BAIL\_PENDING}, \tau_{\text{now}})}
+\]
+
+The bailout trigger condition $\phi_{\text{bail}}$ evaluates to true when any active constraint $\phi_v$ is violated. This transition captures the moment of first boundary violation and initiates the bailout timer.
+\end{transitionfn}
+
+\begin{transitionfn}{BAIL\_PENDING $\rightarrow$ BOUNDED}
+\textbf{Condition:} $\neg\phi_{\text{bail}} \land \text{Recover}$
+
+\[
+\frac{\forall \phi_i \in \Phi_{\text{active}}: \phi_i(\tau) = \text{true} \land \text{RetryCondition}}{\text{Transition}(\text{BAIL\_PENDING}, \text{BOUNDED}, \tau_{\text{now}})}
+\]
+
+The system recovers autonomously when all violated constraints return to satisfaction and the retry condition is met. This supports transient violations that self-correct before escalation timeout.
+\end{transitionfn}
+
+\begin{transitionfn}{BAIL\_PENDING $\rightarrow$ ESCALATING}
+\textbf{Condition:} $t_{\text{escalate}} = 0$
+
+\[
+\frac{\text{EscalationTimer} \geq T_{\text{escalate}}^{\max} \land \neg\text{BypassRequested}}{\text{Transition}(\text{BAIL\_PENDING}, \text{ESCALATING}, \tau_{\text{now}})}
+\]
+
+When the escalation timer reaches its maximum threshold $T_{\text{escalate}}^{\max}$ and no bypass has been requested, the system enters the ESCALATING state and dispatches notifications to authorized human actors.
+\end{transitionfn}
+
+\begin{transitionfn}{ESCALATING $\rightarrow$ HUMAN\_ACKNOWLEDGED}
+\textbf{Condition:} $\text{Human\_Ack}$
+
+\[
+\frac{\text{HumanAck} = \top \land \text{Actor}_{\text{ack}} \in \mathbb{A}_{\text{authorized}}}{\text{Transition}(\text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \tau_{\text{now}})}
+\]
+
+An authorized human actor acknowledges the escalation, transitioning the system to supervised intervention mode. All autonomous execution is suspended.
+\end{transitionfn}
+
+\begin{transitionfn}{HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED}
+\textbf{Condition:} $\text{Resolve}(S_{\text{final}})$
+
+\[
+\frac{\text{ResolutionAction} \in \{\text{CORRECT}, \text{ABORT}, \text{MODIFY}\} \land \text{Validate}(S_{\text{final}})}{\text{Transition}(\text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}, \tau_{\text{now}})}
+\]
+
+The human actor performs a resolution action and the system transitions to RESOLVED with an exit status. The resolution action determines the system behavior post-bailout.
+\end{transitionfn}
+
+\begin{transitionfn}{BOUNDED $\rightarrow$ RESOLVED (Bypass)}
+\textbf{Condition:} $\text{Bypass}$
+
+\[
+\frac{\text{BypassAuthorized} \land \text{Actor}_{\text{bypass}} \in \mathbb{A}_{\text{authorized}}}{\text{Transition}(\text{BOUNDED}, \text{RESOLVED}, \tau_{\text{now}})}
+\]
+
+An authorized actor invokes the bypass mechanism, transitioning directly to RESOLVED. See Section \ref{subsection:bypass_mechanism} for detailed bypass semantics.
+\end{transitionfn}
+
+\subsection{Bail-Out Trigger Condition}
+
+The bail-out trigger condition $\phi_{\text{bail}}$ is a disjunction of constraint violations across operational dimensions. A bailout is initiated when any of the following conditions hold:
+
+\[
+\phi_{\text{bail}} \triangleq \phi_{\text{resource}} \lor \phi_{\text{temporal}} \lor \phi_{\text{semantic}} \lor \phi_{\text{safety}} \lor \phi_{\text{external}}
+\]
+
+\begin{itemize}
+\item \textbf{Resource Constraint Violation} ($\phi_{\text{resource}}$): Memory, compute, or token usage exceeds predefined thresholds.
+\[
+\phi_{\text{resource}} \triangleq \exists R \in \mathbb{R}: \text{Usage}(R) > \text{Threshold}(R)
+\]
+
+\item \textbf{Temporal Constraint Violation} ($\phi_{\text{temporal}}$): Execution time exceeds duration limits or deadline misses are imminent.
+\[
+\phi_{\text{temporal}} \triangleq \text{ElapsedTime} > T_{\text{max}} \lor \text{DeadlineMissProbability} > P_{\text{deadline}}^{\max}
+\]
+
+\item \textbf{Semantic Constraint Violation} ($\phi_{\text{semantic}}$): Agent output violates defined semantic boundaries (e.g., prohibited content, factual constraints).
+\[
+\phi_{\text{semantic}} \triangleq \exists s \in S_{\text{output}}: \neg\phi_{\text{semantic}}^s(s)
+\]
+
+\item \textbf{Safety Constraint Violation} ($\phi_{\text{safety}}$): Operation enters a defined safety-critical boundary.
+\[
+\phi_{\text{safety}} \triangleq \exists \psi \in \Psi_{\text{safety}}: \psi(\tau) = \text{TRIGGERED}
+\]
+
+\item \textbf{External Dependency Violation} ($\phi_{\text{external}}$): Required external resources or services become unavailable.
+\[
+\phi_{\text{external}} \triangleq \exists \delta \in \Delta: \text{Available}(\delta) = \bot
+\]
+\end{itemize}
+
+All constraints $\phi_i$ are defined at system initialization and are immutable during execution unless explicitly modified through the modification protocol under HUMAN\_ACKNOWLEDGED state.
+
+\subsection{Escalation Algorithm}
+
+The escalation algorithm governs the transition from BAIL\_PENDING to ESCALATING when autonomous resolution fails within the timeout window.
+
+\begin{algorithm}[htbp]
+\caption{Escalation Algorithm}
+\label{alg:escalation}
+\begin{algorithmic}[1]
+\State $\text{EscalationTimer} \gets 0$
+\State $\text{NotificationList} \gets \emptyset$
+\State $\text{RetryCount} \gets 0$
+
+\While{$\text{State} = \text{BAIL\_PENDING}$}
+    \State $\text{Elapsed} \gets \text{Now} - \tau_{\text{enter}}$
+    \If{$\text{Elapsed} \geq T_{\text{escalate}}^{\max}$}
+        \State $\text{GotoState}(\text{ESCALATING})$
+        \State $\text{DispatchNotification}(\mathbb{A}_{\text{authorized}})$
+        \State \Return
+    \EndIf$
+
+    \If{$\neg\phi_{\text{bail}}$}
+        \If{$\text{CanRecover}()$}
+            \State $\text{GotoState}(\text{BOUNDED})$
+            \State \Return
+        \EndIf$
+    \EndIf$
+
+    \If{$\text{RetryCount} < N_{\text{retry}}^{\max}$}
+        \If{$\text{ShouldRetry}()$}
+            \State $\text{ExecuteRecovery}()$
+            \State $\text{RetryCount} \gets \text{RetryCount} + 1$
+        \EndIf$
+    \EndIf$
+
+    \State $\text{Sleep}(T_{\text{check}}^{\text{interval}})$
+\EndWhile$
+
+\Function{DispatchNotification}{$A_{\text{targets}}$}
+    \For{$\text{actor} \in A_{\text{targets}}$}
+        \State $\text{SendEscalation}(\text{actor}, \text{Context}(\tau))$
+        \State $\text{NotificationList} \gets \text{NotificationList} \cup \{\text{actor}\}$
+    \EndFor
+    \State $\text{Log}(\text{ESCALATION\_DISPATCHED}, \tau_{\text{now}}, \text{NotificationList})$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm executes a bounded retry loop while monitoring the escalation timer. If the condition self-corrects within the timeout window and recovery criteria are met, the system returns to BOUNDED. Otherwise, upon timer expiry, the system transitions to ESCALATING and dispatches notifications to all authorized human actors.
+
+Notification dispatch includes full context: violated constraints, execution trace, resource utilization snapshot, and recommended corrective actions based on the violation classification.
+
+\subsection{Bypass Mechanism}
+\label{subsection:bypass_mechanism}
+
+The bypass mechanism permits authorized human actors to override the state machine directly to RESOLVED, bypassing all intermediate machine actors. This mechanism exists for three operational reasons:
+
+\begin{enumerate}
+\item \textbf{Emergency Shutdown}: When system behavior poses immediate risk and standard escalation latency is unacceptable.
+\item \textbf{Out-of-Band Intervention}: When automated state detection is itself suspected to be compromised.
+\item \textbf{Scheduled Override}: When an authorized actor with domain knowledge determines the constraint thresholds are incorrectly calibrated.
+\end{enumerate}
+
+\begin{definition}[Bypass Authorization]
+An actor $a \in \mathbb{A}$ is authorized to invoke bypass if and only if:
+\[
+\text{BypassAuthorized}(a) \triangleq a \in \mathbb{A}_{\text{authorized}} \land \text{ClearanceLevel}(a) \geq 3
+\]
+
+The clearance level is assigned during system configuration and stored in the actor registry. Bypass authorization is independent of current state.
+\end{definition}
+
+\begin{algorithm}[htbp]
+\caption{Bypass Invocation Algorithm}
+\label{alg:bypass}
+\begin{algorithmic}[1]
+\Function{InvokeBypass}{$a, S_{\text{target}}, \text{Justification}$}
+    \If{$\neg\text{BypassAuthorized}(a)$}
+        \State $\text{Log}(\text{BYPASS\_DENIED}, a, \tau_{\text{now}})$
+        \State \Return $\text{Error}(\text{UNAUTHORIZED})$
+    \EndIf$
+
+    \State $\text{Log}(\text{BYPASS\_INVOKED}, a, \tau_{\text{now}}, \text{CurrentState}, S_{\text{target}}, \text{Justification})$
+    \State $\text{SuspendAllAgents}()$
+    \State $\text{CaptureFullState}()$
+    \State $\text{GotoState}(\text{RESOLVED}, S_{\text{exit}} = \text{BYPASSED})$
+    \State $\text{DispatchPostBypassReport}(\mathbb{A}_{\text{authorized}})$
+    \State \Return $\text{Success}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Bypass invocation results in immediate suspension of all agentic actors regardless of their current state, capture of the full execution state for post-hoc analysis, transition to RESOLVED with exit status BYPASSED, and dissemination of a bypass report to all authorized actors.
+
+The bypass mechanism explicitly bypasses all machine actors in the transition path: the escalation algorithm is terminated, retry loops are abandoned, and notification dispatch is superseded by the bypass report. This ensures that bypass authority cannot be intercepted or delayed by automated systems that may themselves be in a pathological state.
+
+\begin{note}
+Bypass invocations are logged with the highest priority and are automatically flagged for review in the subsequent system calibration cycle. Consecutive bypass invocations within a sliding window $\Delta T_{\text{bypass}}$ trigger automatic constraint re-evaluation.
+\end{note}
+
+\subsection{Timeout Handling}
+
+Timeouts are fundamental to the bailout protocol, ensuring that the system cannot remain indefinitely in any non-terminal state. Timeout values are configured at system initialization and are specific to each state transition.
+
+\begin{table}[htbp]
+\centering
+\caption{Bailout Protocol Timeout Parameters}
+\label{tab:timeouts}
+\begin{tabular}{lcl}
+\toprule
+\textbf{Parameter} & \textbf{Default Value} & \textbf{Description} \\
+\midrule
+$T_{\text{escalate}}^{\max}$ & $300\text{s}$ & Max duration in BAIL\_PENDING before escalation \\
+$T_{\text{check}}^{\text{interval}}$ & $10\text{s}$ & Polling interval for condition evaluation \\
+$N_{\text{retry}}^{\max}$ & $3$ & Maximum autonomous retry attempts \\
+$T_{\text{ack}}^{\max}$ & $600\text{s}$ & Max duration in ESCALATING awaiting human ack \\
+$T_{\text{review}}^{\max}$ & $1800\text{s}$ & Max duration in HUMAN\_ACKNOWLEDGED \\
+$T_{\text{deadline}}^{\text{grace}}$ & $30\text{s}$ & Grace period after deadline miss \\
+\midrule
+$T_{\text{bypass}}^{\text{window}}$ & $3600\text{s}$ & Sliding window for bypass rate limiting \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{algorithm}[htbp]
+\caption{Timeout Monitor Algorithm}
+\label{alg:timeout_monitor}
+\begin{algorithmic}[1]
+\State $\text{StartedAt} \gets \tau_{\text{now}}$
+
+\While{$\text{State} \neq \text{RESOLVED}$}
+    \State $\text{CurrentState} \gets \text{GetCurrentState}()$
+    \State $\text{TimeoutThreshold} \gets T(\text{CurrentState})$
+
+    \State $\text{Elapsed} \gets \tau_{\text{now}} - \text{StartedAt}$
+    \If{$\text{Elapsed} \geq \text{TimeoutThreshold}$}
+        \State $\text{HandleTimeout}(\text{CurrentState})$
+    \EndIf$
+
+    \State $\text{Sleep}(T_{\text{monitor}}^{\text{interval}})$
+\EndWhile$
+
+\Function{HandleTimeout}{$S_{\text{current}}$}
+    \Switch{$S_{\text{current}}$}
+        \Case{$\text{BAIL\_PENDING}$}
+            \State $\text{TransitionTo}(\text{ESCALATING})$
+        \Case{$\text{ESCALATING}$}
+            \State $\text{RaiseSeverityLevel}()$
+            \State $\text{ExpandNotificationTargets}()$
+            \State $\text{Log}(\text{ESCALATION\_TIMEOUT}, \tau_{\text{now}})$
+        \Case{$\text{HUMAN\_ACKNOWLEDGED}$}
+            \State $\text{DispatchUrgentReminder}()$
+            \State $\text{IfExceeded}(T_{\text{review}}^{\max}): \text{TransitionTo}(\text{RESOLVED}, \text{ABORTED})$
+        \EndSwitch$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Timeout handling in BAIL\_PENDING triggers escalation per the standard escalation algorithm. Timeout handling in ESCALATING raises the severity level, expands notification targets (escalating to secondary authorized actors), and logs the timeout event. Timeout handling in HUMAN\_ACKNOWLEDGED dispatches urgent reminders to the acknowledging actor and, upon second timeout, forcibly transitions to RESOLVED with exit status ABORTED.
+
+All timeout values are configurable at runtime by authorized actors through the modification protocol, with changes logged and propagated to all active state machine instances.
+
+\subsection{Summary of State Transitions}
+
+Table \ref{tab:transition_summary} provides a consolidated view of all valid state transitions, their triggering conditions, and resulting exit status.
+
+\begin{table}[htbp]
+\centering
+\caption{State Transition Summary}
+\label{tab:transition_summary}
+\begin{tabular}{llll}
+\toprule
+\textbf{From} & \textbf{To} & \textbf{Trigger} & \textbf{Exit Status} \\
+\midrule
+IDLE & BOUNDED & System activation & N/A \\
+BOUNDED & BAIL\_PENDING & $\phi_{\text{bail}}$ & N/A \\
+BOUNDED & RESOLVED & Bypass invocation & BYPASSED \\
+BAIL\_PENDING & BOUNDED & Autonomous recovery & NORMAL \\
+BAIL\_PENDING & ESCALATING & Timer expiry & N/A \\
+ESCALATING & HUMAN\_ACKNOWLEDGED & Human acknowledgment & N/A \\
+ESCALATING & RESOLVED & Second timer expiry & SUSPENDED \\
+HUMAN\_ACKNOWLEDGED & RESOLVED & Resolution action & CORRECT/ABORTED/MODIFIED \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Bailout Protocol ensures that any agentic system operating under its framework maintains a deterministic, auditable pathway from autonomous operation through potential failure modes to supervised resolution. The combination of formal state definitions, configurable transition conditions, bounded timeouts, and override mechanisms provides both operational safety and operational flexibility.

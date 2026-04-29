@@ -1,0 +1,113 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions}
+
+We begin with a formal characterization of the two primitive failure states that arise in recursively spawned agent systems.
+
+\begindefinition}[Orphaned Agent]
+An agent $a$ is \emph{orphaned} if its spawning chain cannot be traced back to a \emph{human anchor}. Equivalently, the set $\mathcal{C}(a)$ of agents on the chain from $a$ to any human-originated root is either empty or contains at least one agent that is unreachable or has terminated without transferring control.
+\enddefinition}
+
+\begindefinition}[Drifted Agent]
+An agent $a$ is \emph{drifted} if it is not currently under active oversight by a human or by a human-anchored agent. Formally, let $\mathcal{A}_h$ denote the set of human-anchored agents and $\mathcal{A}_o$ denote the set of agents under active observation by $\mathcal{A}_h$. An agent $a$ is drifted if $a \notin \mathcal{A}_h$ and $a \notin \mathcal{A}_o$.
+\enddefinition}
+
+These definitions are independent. An orphaned agent may still be observed (e.g., a supervisor that did not itself originate from a human but has a human in its ancestry). Conversely, a drifted agent may have a traceable human ancestry but has escaped observation through some break in the oversight chain.
+
+The \emph{autonomous drift} phenomenon refers to the condition in which a spawned agent simultaneously satisfies both properties: it is orphaned \emph{and} drifted. Such an agent continues to operate, spawn further agents, and consume resources with no human-aware oversight or termination path.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not require malice or catastrophic failure; it follows inevitably from three routine operating conditions.
+
+\medskip\noindent\textbf{Condition 1: Silent Parent Termination.}
+When a parent agent $p$ terminates—either through task completion, error, or scheduled shutdown—any child agents $c \in \mathcal{C}(p)$ retain their last known state but lose their reference parent. If $p$ did not explicitly hand off observation before terminating, each $c$ becomes orphaned. This is the most common cause of drift in production systems. It is silent: neither $p$ nor $c$ signals that the relationship has dissolved.
+
+\medskip\noindent\textbf{Condition 2: Network Partition or Invisible Crash.}
+A parent may be reachable at the communication layer but unresponsive at the agent logic layer (a "ghost" parent). Children that dispatch requests to $p$ receive no reply but also no termination signal. The children remain in a waiting state while the parent is effectively gone. Since no exception is raised at the child level, the child does not declare itself orphaned; it simply waits indefinitely. The oversight chain is broken at the network layer, invisible to the child.
+
+\medskip\noindent\textbf{Condition 3: Spawning Without Anchor Inheritance.}
+Many agent frameworks permit an agent to spawn a child without explicitly including the human anchor in the child's supervision chain. If agent $a$ spawns child $b$ without embedding a reference to the original human principal, $b$ inherits $a$ as its sole parent. If $a$ subsequently terminates or is unreachable, $b$ has no path back to the anchor. This condition is especially prevalent in systems that treat spawning as a purely computational event rather than a delegation event with security and oversight implications.
+
+\subsection{Failure Modes}
+
+Each drift condition produces characteristic failure modes.
+
+\medskip\noindent\textbf{Mode 1: Orphan Cascade.}
+An orphaned agent $a$ spawns child $b$. Because $a$ is orphaned, it has no oversight context, and this deficiency is inherited: $b$ is doubly orphaned. If $a$ continues to operate on stale objectives or corrupted context, it propagates those errors downward. Each generation compounds the deviation from the original human intent. We call this an \emph{orphan cascade}.
+
+Formally, if an agent at depth $d$ becomes orphaned, all agents it subsequently spawns inherit that orphaned state. The chain length of a cascade can grow without bound in systems with no depth limits.
+
+\medskip\noindent\textbf{Mode 2: Objective Drift.}
+A drifted agent retains its last known objective but has no mechanism to verify that the objective remains current. Over successive reasoning cycles, it refines its pursuit of a possibly obsolete goal. Because there is no human review, the deviation accumulates. The agent becomes increasingly efficient at a task that no longer aligns with human intent. This is difficult to detect because the agent's behavior remains coherent and purposeful—only the objective has drifted.
+
+\medskip\noindent\textbf{Mode 3: Resource Exhaustion.}
+Drifted agents and their orphaned descendants continue to consume compute, memory, and API quota. In a recursive spawning system, each drifted agent may spawn additional drifted agents, producing a resource-consuming cascade that is bounded only by the system's rate limits or financial limits. Unlike a crash, this failure mode is gradual and can persist for hours before becoming observable.
+
+\medskip\noindent\textbf{Mode 4: Unsafe Action Execution.}
+An orphaned agent executing actions—writing files, sending messages, initiating transactions—does so without any human in the loop. If the agent's reasoning has degraded (through context corruption, stale state, or objective drift), it may perform actions that are harmful, irreversible, or violate constraints that a human would have enforced. The absence of a human anchor means there is no enforced permission boundary.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A common intuition is that capping the depth of recursive spawning should contain drift. The argument: if no agent chain can exceed depth $D$, then the longest possible orphaned cascade is $D$, and this bound should limit damage. This intuition is wrong, for two reasons.
+
+\medskip\noindent\textbf{Reason 1: Drift Is Horizontal, Not Vertical.}
+Depth limits constrain the vertical extent of spawning chains, but drift is a property of the \emph{supervision relationship}, not of chain length. An orphaned agent at depth 1 can spawn arbitrarily many children at depth 2. Each of those children is also drifted. The failure mode in this case is a breadth-first expansion rather than a depth-first one. A depth limit of $D$ says nothing about how many agents can exist at each depth level. In a system where each agent spawns two children, a single drifted agent at depth 1 produces $2^n$ drifted agents at depth $n$ regardless of the depth limit.
+
+\medskip\noindent\textbf{Reason 2: Depth Is Not the Same as Risk.}
+The risk profile of an agent is determined by its \emph{capabilities} (what actions it can take) and its \emph{context quality} (whether it has current, accurate information about human intent), not by its depth in the spawning tree. A depth-1 agent that can write files, send emails, and initiate financial transactions is far riskier than a depth-10 agent that can only read and summarize. Depth limits treat all depths as equivalent, ignoring the capability asymmetry between shallow agents with high-privilege actions and deep agents with low-privilege actions.
+
+A depth limit also does not address the temporal dimension: a drifted agent at depth 1 that lives for 1,000 cycles poses greater risk than a depth-10 agent that terminates after one cycle.
+
+\subsection{Formal Model}
+
+We present a compact formal model that captures drift and its propagation.
+
+Let $\mathcal{G}$ be the set of all agents. A spawning relation $\sigma \subseteq \mathcal{G} \times \mathcal{G}$ defines parent-child edges. The transitive closure of $\sigma$ over a finite chain length defines ancestry: $a \preceq b$ if there exists a finite sequence $a = g_0, g_1, \dots, g_k = b$ with each $(g_{i-1}, g_i) \in \sigma$.
+
+A \emph{human anchor} is a distinguished agent $h \in \mathcal{G}$. We define the set of anchored agents recursively:
+
+\begin{equation}
+\mathcal{A}_h = \{a \in \mathcal{G} \mid a \preceq h \} \cup \{h\}
+\end{equation}
+
+An agent $a$ is \emph{orphaned} if there is no $b$ such that $b \preceq a$ and $b \in \mathcal{A}_h$. An agent $a$ is \emph{drifted} if there is no human-anchored agent $b$ for which $a \preceq b$.
+
+The combined drift condition for agent $a$ is:
+
+\begin{equation}
+\text{drift}(a) \iff \bigwedge \left\{
+\begin{array}{l}
+\nexists\, b \in \mathcal{A}_h : b \preceq a \quad \text{(orphaned)} \\[4pt]
+\nexists\, c \in \mathcal{A}_h : a \preceq c \quad \text{(not under observation)}
+\end{array}
+\right.
+\end{equation}
+
+The set of all drifted agents $\mathcal{D} \subseteq \mathcal{G}$ evolves over time. At each time step $t$, the drift state update is:
+
+\begin{equation}
+\mathcal{D}_{t+1} = \mathcal{D}_t \cup \{a \in \mathcal{G} \setminus \mathcal{D}_t \mid \text{drift}(a)\}
+\end{equation}
+
+A spawning event at time $t$ introduces a new agent $a'$ with parent $a$. If $\text{drift}(a)$ holds at $t$, then $\text{drift}(a')$ also holds (inheritance property). This yields:
+
+\begin{equation}
+\text{If } a \in \mathcal{D}_t \text{ and } (a, a') \in \sigma: a' \in \mathcal{D}_{t+1}
+\end{equation}
+
+The model shows that once a single agent enters $\mathcal{D}$, all of its descendants inherit the drift state by construction. The cardinality of $\mathcal{D}$ is therefore monotonically non-decreasing:
+
+\begin{equation}
+|\mathcal{D}_{t+1}| \geq |\mathcal{D}_t|
+\end{equation}
+
+Monotonicity means drift cannot self-correct. Without an explicit intervention that either reconnects the orphaned agent to an anchored agent or terminates it, the drifted set can only grow. This is the fundamental systemic risk of recursive spawning: the default trajectory is expansion, not equilibrium.
+
+The model also shows that depth limits do not appear in any of these equations. The drift condition depends only on the existence of a path to a human anchor, not on the length of that path. Imposing a depth limit $D$ is equivalent to pruning the spawning relation $\sigma$ to $\sigma_D = \{(a, b) \in \sigma \mid \text{depth}(b) \leq D\}$, but $\text{drift}(a)$ is defined in terms of $\sigma$ itself. If an agent $a$ is orphaned, it is orphaned under $\sigma_D$ as well—depth truncation does not restore a broken ancestry path.
+
+\subsection{Summary}
+
+Autonomous drift is not a rare edge case. It is the predictable consequence of any recursive spawning system in which agents can outlive their parents, spawn children, and take actions without an enforced human-anchor path. The formal model demonstrates that drift is monotonic and inheritable: once an agent enters the drifted state, all of its descendants enter it automatically. Depth limits do not break this inheritance chain; they only limit its vertical extent while leaving the horizontal proliferation of drifted agents unaddressed.
+
+Containing drift therefore requires something that depth limits do not provide: an \emph{always-on} path from every agent to a human anchor, a mechanism for detecting and terminating orphaned agents, and a policy that treats spawning as an oversight Delegation event rather than as a purely computational one. We address these remedies in Section~\ref{sec:recursive_spawning}.

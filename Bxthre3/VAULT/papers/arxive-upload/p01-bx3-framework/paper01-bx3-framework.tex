@@ -1,0 +1,179 @@
+\documentclass[12pt]{article}
+
+% --- Encoding ---
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array,enumitem}
+\usepackage{graphicx,float}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue]{hyperref}
+
+% --- Custom commands ---
+\newcommand{\bxthree}{\textbf{BX3}}
+\newcommand{\purpose}{\textit{Purpose Layer}}
+\newcommand{\bounds}{\textit{Bounds Engine}}
+\newcommand{\fact}{\textit{Fact Layer}}
+
+% --- Title (clean, Zenodo-ready) ---
+\title{The BX3 Framework: A Universal Architecture for Accountable Autonomous Systems}
+\author{Jeremy Blaine Thompson Beebe\\[0.2em]\textit{Bxthre3 Inc. --- bxthre3inc@gmail.com --- ORCID: 0009-0009-2394-9714}}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+The current discourse around artificial intelligence presents a false binary: either AI replaces traditional software, or it is a limited novelty. Both fail engineers, architects, and decision-makers by offering no principled model for how these technologies relate. This paper proposes the \bxthree Framework --- a universal architectural model organized around three immutable functional layers: the \purpose, which provides intent, judgment, and accountability; the \bounds, which provides bounded reasoning and constrained proposal; and the \fact, which provides deterministic enforcement and forensic auditability. Critically, the framework is actor-agnostic: any entity --- human, AI, mechanical, or institutional --- may occupy any layer provided it satisfies the layer's functional requirements. The framework's core safety property is an upstream accountability guarantee: when any node encounters a condition it cannot resolve, accountability escalates recursively upward through the hierarchy, bypassing machine actors, until it reaches a human anchor. The system fails upward into human consciousness. It never fails downward into algorithmic chaos. The \bxthree Framework is demonstrated as a universal structural pattern observable across law, medicine, autonomous vehicles, organizational design, and biological cognition.
+\end{abstract}
+
+\medskip
+\noindent\textbf{Keywords:} BX3 Framework, Purpose Layer, Bounds Engine, Fact Layer, autonomous systems, AI governance, human-in-the-loop, deterministic systems, sociotechnical systems, accountability, recursive orchestration
+
+\newpage
+
+\section{Introduction}
+\label{sec:intro}
+
+The rapid deployment of large language models and AI-based systems has generated significant confusion about the appropriate role of AI within engineered systems. A prevalent narrative suggests AI will progressively replace traditional deterministic software. A counter-narrative dismisses AI as inadequate for production reliability demands. Both positions offer no principled model for how these technologies relate in practice.
+
+This paper proposes the \bxthree Framework. The framework organizes any complex system into three immutable functional layers --- \purpose, \bounds, and \fact --- each defined by the properties it must maintain rather than by the type of actor occupying it.
+
+This actor-agnostic definition is the framework's most important architectural property. A human, an AI system, a mechanical process, an institution, or any combination thereof may legitimately occupy any layer, provided the functional requirements of that layer are satisfied. The framework does not prescribe \textit{who} belongs in each layer but \textit{what properties} each layer must maintain for the system as a whole to be reliable, governable, and certifiable.
+
+The framework synthesizes well-established principles --- separation of concerns \cite{dijkstra1982}, sociotechnical systems theory \cite{trist1981}, control theory \cite{wiener1948}, and human-in-the-loop design \cite{bansal2019} --- applied to the specific challenge of AI integration in the current technological moment.
+
+\medskip
+\textit{Note: The first-person plural ``we'' is used in the conventional academic sense, consistent with single-author scholarly writing.}
+
+\section{Defining the Three Functional Layers}
+\label{sec:layers}
+
+The \bxthree Framework defines three functional layers, each defined by the \textit{properties it must maintain}, not by the type of actor occupying it.
+
+\subsection{Layer 1: Purpose Layer}
+The Purpose Layer is responsible for \textit{intent}, \textit{judgment}, and \textit{accountability}. Whatever occupies this layer must be capable of defining the goals the system exists to achieve, making trade-off decisions under genuine uncertainty where no algorithmic optimum exists, holding accountability for outcomes, and updating goals when context changes in ways the system was not designed to anticipate.
+
+In the current technological moment, the Purpose Layer must remain anchored to a \textit{human accountability anchor} --- an individual or institution capable of bearing legal and ethical responsibility. This is the \textbf{Human Root Mandate}: in the event of system failure, accountability does not dissipate into the algorithm. It remains fixed to the human at the root.
+
+\textbf{Key property:} The Purpose Layer must be \textit{accountable} --- its decisions must be attributable to an actor who can be questioned, overridden, and held responsible.
+
+\subsection{Layer 2: Bounds Engine}
+The Bounds Engine is responsible for \textit{interpretation}, \textit{bounded reasoning}, and \textit{constrained execution}. It performs cognitive work --- analysis, pattern recognition, simulation, and optimal path proposal --- but is architecturally \textit{limbless}: it can propose but cannot execute. It lacks authority to commit actions to the physical world unilaterally.
+
+This layer is most commonly occupied by an AI agent. It operates within a sandboxed cognitive environment, separated from physical execution authority, and escalates to the Purpose Layer when situations exceed its capability or authority.
+
+\textbf{Key property:} The Bounds Engine must be \textit{bounded} --- it proposes but never executes; its authority is constrained by the Safety Envelope.
+
+\subsection{Layer 3: Fact Layer}
+The Fact Layer is responsible for \textit{deterministic enforcement}, \textit{hard physical constraint}, and \textit{forensic auditability}. Whatever occupies this layer must produce consistent, reproducible outcomes given identical inputs, enforce physical constraints that cannot be overridden by the Bounds Engine, and maintain an immutable record of all physical events.
+
+The Fact Layer is the only layer that can act on the physical world. It is structurally incapable of reasoning --- it executes, it does not deliberate.
+
+\textbf{Key property:} The Fact Layer must be \textit{deterministic} --- same inputs, same outputs, every time, without exception.
+
+\subsection{Layer Comparison}
+
+\begin{center}
+\begin{tabular}{>{\bfseries}p{2.8cm} p{3.2cm} p{3.2cm} p{4.5cm}}
+\toprule
+\textbf{Property} & \textbf{Purpose Layer} & \textbf{Bounds Engine} & \textbf{Fact Layer} \\
+\midrule
+Function & Intent, judgment, accountability & Reasoning, proposal, simulation & Enforcement, constraint, audit \\
+Default occupant & Human / institution & AI agent / heuristic & Software / mechanism \\
+Key obligation & Accountability anchor & Boundedness (limbless) & Determinism (no drift) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The Five Pillars}
+\label{sec:pillars}
+
+The three functional layers define \textit{what} a \bxthree-compliant system must contain. The Five Pillars define \textit{how} those layers must behave in practice to maintain their properties under real-world conditions including network failures, scale, security threats, and exception states.
+
+\subsection{Pillar 1: Loop Isolation}
+\textbf{Problem solved:} Logic Collision --- when the Bounds Engine and Fact Layer occupy the same functional plane, enabling un-vetted autonomous actions that bypass physical constraint.
+
+\textbf{Solution:} Strict isolation of the three functional layers into discrete planes. Each \bxthree loop is self-contained. A Logic Collision is architecturally impossible because the Bounds Engine never shares a functional plane with physical execution. The Bounds Engine proposes; the Fact Layer decides. These are never the same operation.
+
+\subsection{Pillar 2: Recursive Spawning}
+\textbf{Problem solved:} Logic Rigidity --- static edge devices that cannot adapt to local conditions without constant cloud connectivity.
+
+\textbf{Solution:} A parent Bounds Engine births a child loop by generating a \textit{Worksheet} --- a containerized, self-contained logic set encapsulating the parent's Purpose for a specific local context --- deployed over-the-air to the child node. Each Worksheet carries a hard-coded pointer to the parent's Purpose, preventing autonomous drift. The child loop applies the parent's intent to local sensor data independently without requiring a constant cloud heartbeat.
+
+\subsection{Pillar 3: Spatial Firewall}
+\textbf{Problem solved:} Cross-tier data leakage --- a compromised or unauthorized node accessing data at a resolution or scope beyond its provisioned tier.
+
+\textbf{Solution:} Physical isolation of data planes by resolution tier. A node provisioned at 50-meter resolution cannot access 1-meter data because the 1-meter data plane does not exist in the node's provisioned environment. Isolation is enforced by architecture, not by permissions.
+
+\subsection{Pillar 4: Sandbox Gate}
+\textbf{Problem solved:} Premature execution --- the Bounds Engine proposing actions that, if executed, would violate Safety Envelope parameters before the system has an opportunity to evaluate them.
+
+\textbf{Solution:} All proposed actions are evaluated in a digital twin before physical execution. The Sandbox Gate runs the proposed action against a simulation of the Fact Layer's current state and confirms it falls within all Safety Envelope parameters before unlocking physical execution.
+
+\subsection{Pillar 5: Bailout Protocol}
+\textbf{Problem solved:} Accountability orphaning --- an autonomous system encountering a condition it cannot handle and either halting without notification or continuing without authorization.
+
+\textbf{Solution:} Every node carries the complete Bailout Protocol. When a node encounters a condition it cannot resolve, it propagates an exception asynchronously up the recursive tree, bypassing all intermediate machine actors, until it reaches a Human Accountability Anchor. The system fails upward into human consciousness.
+
+\section{Applications}
+\label{sec:applications}
+
+The \bxthree Framework is not merely a software engineering principle. Its three-layer structure is a universal structural pattern observable across many complex domains.
+
+\subsection{Autonomous Systems}
+In sensor-driven autonomous systems, human engineers occupy the Purpose Layer defining mission parameters and safety constraints. AI processing layers occupy the Bounds Engine interpreting sensor data and proposing decisions within constraints. Deterministic control systems occupy the Fact Layer enforcing hard constraints --- collision avoidance thresholds, actuator limits, safety interlocks --- that cannot be overridden by the Bounds Engine.
+
+\subsection{Legal Systems}
+Legislatures and judges occupy the Purpose Layer --- defining law, exercising judgment, bearing institutional accountability. AI systems increasingly occupy the Bounds Engine --- assisting with legal research and pattern recognition. The written law, procedural rules, and enforcement mechanisms occupy the Fact Layer --- applying consistently regardless of parties involved.
+
+\subsection{Medicine}
+Physicians occupy the Purpose Layer --- exercising judgment incorporating patient context and ethical considerations. AI systems occupy portions of the Bounds Engine --- imaging analysis, drug interaction checking. Drug dosage protocols, surgical checklists, equipment specifications, and regulatory requirements occupy the Fact Layer --- deterministic constraints binding both physician and AI.
+
+\subsection{Biological Cognition}
+The \bxthree Framework mirrors the layered architecture of biological cognition \cite{kahneman2011}. The autonomic nervous system and reflexes occupy the Fact Layer --- deterministic, fast, non-negotiable. Learned heuristics and pattern recognition occupy the Bounds Engine --- efficient responses to familiar situations. Conscious deliberative reasoning occupies the Purpose Layer --- slow, deliberate, engaged only for genuinely novel high-stakes situations.
+
+\section{Why Determinism Is Not Compensable}
+\label{sec:determinism}
+
+Determinism provides properties that probabilistic systems cannot replicate:
+
+\begin{itemize}[noitemsep]
+\item \textbf{Reproducibility:} Same inputs produce same outputs, enabling debugging, auditing, and legal accountability.
+\item \textbf{Formal verification:} Mathematical proof that a system satisfies properties under all possible inputs.
+\item \textbf{Certification:} Regulatory frameworks in aviation, medical devices, and safety-critical infrastructure require deterministic behavior as a precondition for approval.
+\item \textbf{Latency:} Hard real-time requirements are achievable with deterministic systems and not with current AI inference pipelines.
+\end{itemize}
+
+Every AI system in production today runs on top of vast deterministic infrastructure: operating systems, databases, networking stacks, authentication systems. The claim that AI will replace deterministic software is structurally self-refuting --- AI systems are themselves dependent on deterministic software.
+
+\section{Related Work}
+\label{sec:prior}
+
+The \bxthree Framework synthesizes established ideas from separation of concerns, sociotechnical systems theory, cybernetics, systems safety, and human-in-the-loop design, but departs from prior work by defining immutable functional layers according to required properties rather than actor type.
+
+The intelligent sociotechnical systems framework \cite{xu2024} similarly emphasizes structured coordination between human and technical components. \bxthree extends this by explicitly isolating a deterministic Fact Layer and specifying an actor-agnostic architecture where any occupant of a layer is bound by that layer's functional obligations.
+
+Tiered Agentic Oversight (TAO) \cite{kim2025tao} demonstrates that hierarchical supervision among specialized agents reduces error propagation. \bxthree differs by making human accountability the required terminal endpoint of unresolved escalation rather than a high-tier supervisory option.
+
+Recent work on production-grade agent architectures \cite{alenezi2026} recommends fail-safe behavior, sandbox-first execution, and human approval gates. \bxthree incorporates these as named architectural pillars rather than implementation heuristics.
+
+BX3 sits naturally alongside ISO/IEC 42001 \cite{iso2023} and the NIST AI RMF \cite{nist2023}, which require translation across governance, design-time, runtime, and assurance layers. \bxthree provides one candidate architecture for that translation.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+The question of how humans, AI, and traditional software should relate is an architectural, organizational, ethical, and regulatory question with significant practical consequences.
+
+The \bxthree Framework proposes a principled, universal answer: organize any complex system into three functional layers --- Purpose, Bounds Engine, and Fact --- each defined by the properties it must maintain rather than the actor type occupying it. Any actor capable of satisfying a layer's functional requirements may occupy that layer: human, AI, mechanical, institutional, or hybrid.
+
+This actor-agnostic definition is the framework's most important contribution. It makes \bxthree applicable to human-only organizations, fully automated pipelines, multi-agent AI architectures, and hybrid compositions that do not yet have names. In each case, the framework asks the same three questions: Is there an accountable layer? Is there a bounded layer that reasons and proposes? Is there a deterministic layer that enforces and audits? If any layer is missing, the system is architecturally incomplete --- regardless of how capable its components are individually.
+
+The pattern is visible in legal systems, medical practice, autonomous vehicles, biological cognition, and organizational design --- wherever reliable systems have been built to handle a world that is simultaneously rule-bound and unpredictable. What is new is the urgency of making the pattern explicit at a moment when the temptation to collapse these roles, and the cost of doing so, have never been higher.
+
+\section*{Acknowledgments}
+The author acknowledges the foundational contributions of researchers cited herein, whose work across control theory, sociotechnical systems, and computer science provides the foundation for this synthesis.
+
+\bibliographystyle{plainnat}
+\bibliography{bx3framework}
+
+\end{document}

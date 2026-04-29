@@ -1,0 +1,307 @@
+% ---------------------------------------------------------------
+\section{Guarantees and Correctness Properties}
+\label{sec:guarantees}
+% ---------------------------------------------------------------
+
+The Bailout Protocol's correctness properties are expressed as three
+fundamental guarantees---SAFETY, LIVENESS, and ACCOUNTABILITY---each derived
+directly from the state machine's structural invariants and the \fact{}
+layer's pre-commit enforcement semantics.  These guarantees are not
+operational aspirations; they are architectural properties that hold
+provided the \fact{} layer operates correctly, the parent-pointer chain
+$\alpha(\cdot)$ remains intact, and the human anchor $h(n)$ is reachable.
+We prove each guarantee through a small-step argument that traces the
+state machine's transition structure, the immutability of the parent pointer,
+and the credential binding on resolution events.
+
+% ---------------------------------------------------------------
+\subsection{Guarantee 1: SAFETY --- No Autonomous Collapse}
+\label{sec:safety}
+
+\begin{definition}[Safety Property (SAFETY)]
+\label{def:safety}
+The \bxthree{} Framework guarantees that no node $n$ can remain in a state
+permitting consequential action without a human principal in the causal
+authorization chain.  Equivalently: the system cannot undergo autonomous
+collapse---a condition in which an agent continues consequential action
+indefinitely without a human principal's knowledge or approval.
+\end{definition}
+
+\begin{maintheorem}[SAFETY]
+\label{th:safety}
+For all nodes $n$ in the spawn tree, for all reachable states $q$ of the
+Bailout Protocol state machine $\mathcal{B}$, if $q \in Q_{\text{consequential}}$
+then a human principal $h \in H$ lies on the causal authorization chain for
+$n$.
+
+\medskip
+\noindent Here $Q_{\text{consequential}} = \{\,\texttt{IDLE}\,\}$ is the set of
+states in which the \fact{} layer permits consequential action at $n$, and
+$H$ is the set of human principals provisioned as anchors in the framework.
+\end{maintheorem}
+
+\begin{Proof}[Proof Sketch]
+The proof proceeds by structural induction over the state machine's
+transition graph.
+
+\textbf{Base.}  The initial state $q_0 = \texttt{IDLE}$ is reachable only
+from \texttt{HUMAN\_ACKNOWLEDGED} via the resolution event
+$\sigma_{\text{resolve}}(\texttt{ACK})$ issued by the human anchor $h(n)$
+(Transition T9).  This requires authentication against the exclusive human
+credential $C_{h(n)}$, which no machine actor possesses.  Therefore,
+$q_0$ implies human presence on the authorization chain by construction.
+
+\textbf{Inductive step.}  We examine each non-terminal state $q$ and show
+that every path leading to a state in $Q_{\text{consequential}}$ must pass
+through \texttt{HUMAN\_ACKNOWLEDGED} with a human-issued directive.
+
+\begin{itemize}
+\item \texttt{BOUNDED}: Consequential action is blocked by the pre-commit
+gate.  The only outgoing transitions are T2 (return to \texttt{IDLE} via
+human \texttt{ACK}) and T3 (forced timeout, proceeds to
+\texttt{BAIL\_PENDING}).  No transition from \texttt{BOUNDED} directly permits
+consequential action without human resolution.
+
+\item \texttt{BAIL\_PENDING}: Consequential action is blocked.  The sole
+transition T4 is timeout-forced to \texttt{ESCALATING}.  No machine actor can
+suppress or redirect this transition (SP-2, Section~\ref{sec:bp-state-machine}).
+
+\item \texttt{ESCALATING}: Consequential action is blocked.  The machine
+exits this state only via T6 (propagation reaches anchor node, transitions
+to \texttt{HUMAN\_ACKNOWLEDGED}) or T7 (pathway exhausted, terminal failure).
+Neither exit path permits consequential action without human acknowledgment.
+
+\item \texttt{HUMAN\_ACKNOWLEDGED}: Consequential action is blocked.  The
+machine exits via T8 (human issues binding directive) or T10 (human timeout
+expires, terminal failure).  Only T8 produces a non-terminal accepting state.
+\end{itemize}
+
+\textbf{Consequences.}  The only non-terminal accepting state is
+\texttt{RESOLVED}, reachable exclusively via T8 from
+\texttt{HUMAN\_ACKNOWLEDGED} with a $\sigma_{\text{resolve}}$ event
+authenticated against $C_{h(n)}$.  \texttt{IDLE} (the state permitting
+consequential action) is reachable only by returning through this same human
+credentialed path.  No cycle exists in the transition graph that permits a
+machine actor to re-authorize consequential action after the state machine
+has exited \texttt{IDLE} without human intervention.  $\square$
+\end{Proof}
+
+The SAFETY guarantee is structurally enforced by the non-regression property
+(SP-1) and the human-only resolution property (SP-3) established in
+Section~\ref{sec:bp-state-machine}.  It does not depend on any machine actor
+choosing to comply with the protocol; it follows from the deterministic
+transition relation alone.
+
+% ---------------------------------------------------------------
+\subsection{Guarantee 2: LIVENESS --- Eventual Human Contact}
+\label{sec:liveness}
+
+\begin{definition}[Liveness Property (LIVENESS)]
+\label{def:liveness}
+The \bxthree{} Framework guarantees that every exception state $e$ that
+triggers the Bailout Protocol at a node $n$ reaches the designated human
+anchor $h(n)$ in finite time.  Formally: for all nodes $n$ and all exception
+states $e$ satisfying the trigger condition $\text{TC}(n, x)$, the escalation
+path $C(n)$ generated by Algorithm~\ref{alg:escalation} terminates at $h(n)$
+within a bounded number of state machine transitions.
+\end{definition}
+
+\begin{maintheorem}[LIVENESS]
+\label{th:liveness}
+For all nodes $n$ and all exception states $e$ at $n$, the Bailout Protocol
+state machine reaches the state \texttt{HUMAN\_ACKNOWLEDGED} within at most
+$T_{\max}$ transitions, where $T_{\max} = 4 + (d(n) - d(h(n)))$ and
+$d(\cdot)$ denotes depth in the spawn tree.
+
+\medskip
+\noindent Equivalently: the human anchor $h(n)$ is contacted in finite time for
+every genuine exception, regardless of the state or reasoning strategy of any
+machine actor on the escalation path.
+\end{maintheorem}
+
+\begin{Proof}[Proof Sketch]
+The proof proceeds by analyzing the state machine's transition sequence from
+the trigger condition firing to human acknowledgment.
+
+\begin{itemize}
+\item \textbf{Trigger to escalation (bounds timeout).}  When TC fires at $n$,
+the state machine transitions IDLE $\rightarrow$ BOUNDED (T1) and $\tau_{\text{bounds}}$
+is armed.  By SP-2 (timeout-forced progression), the machine transitions to
+\texttt{BAIL\_PENDING} (T3) when $\tau_{\text{bounds}}$ expires, regardless of
+any machine actor's assessment.  This is the first forced transition; it occurs
+within at most $T_{\text{bounds}}$ time units.
+
+\item \textbf{Escalation initiation (propagation timeout).}  From
+\texttt{BAIL\_PENDING}, the sole transition is to \texttt{ESCALATING} (T4),
+forced by $\tau_{\text{prop}}$ timeout expiration.  No machine actor can suppress
+this transition.  The state enters \texttt{ESCALATING} within at most
+$T_{\text{prop}}$ additional time units.
+
+\item \textbf{Propagation along the parent chain.}  The escalation loop
+(Algorithm~\ref{alg:escalation}, T5 self-loop) advances the propagation path
+one hop per successful \texttt{SendToParent} invocation.  Each hop moves from a
+node $v$ to its parent $\alpha(v)$, strictly decreasing depth:
+$d(\alpha(v)) = d(v) - 1$ for all $v$ with $v \neq h(n)$.  The chain terminates
+at $h(n)$ where $d(h(n))$ is minimal.  The maximum number of hops is
+$d(n) - d(h(n)) \leq D_{\max}$, a finite structural bound established at root
+initialization.  Each hop is bounded by $\tau_{\text{prop}}$ timeout; retries
+do not extend the total hop count beyond $D_{\max}$.
+
+\item \textbf{Human acknowledgment.}  When propagation reaches the anchor node,
+the state machine transitions to \texttt{HUMAN\_ACKNOWLEDGED} (T6).  This
+completes the escalation path.
+\end{itemize}
+
+\textbf{Combined bound.}  The total number of transitions from the first
+trigger to \texttt{HUMAN\_ACKNOWLEDGED} is at most:
+\begin{equation}
+T_{\max} \leq 1 \;(\text{T1}) \;+\; 1 \;(\text{T3}) \;+\; 1 \;(\text{T4}) \;+\;
+\bigl(d(n) - d(h(n))\bigr) \;(\text{T5 loops}) \;+\; 1 \;(\text{T6})
+= 4 + \bigl(d(n) - d(h(n))\bigr).
+\end{equation}
+Since $d(n) - d(h(n))$ is bounded by $D_{\max}$, a finite constant,
+$T_{\max}$ is finite for all nodes.  $\square$
+\end{Proof}
+
+The LIVENESS guarantee depends on two structural preconditions: the parent
+pointer chain $\alpha(\cdot)$ must be computationally intact (each hop resolves
+to a valid parent node), and the spawn tree depth must be bounded by $D_{\max}$.
+Both are established at node initialization and enforced by the \fact{} layer's
+pre-commit hook.  The guarantee does not require that machine actors cooperate
+voluntarily; propagation is structurally compelled at each hop by the
+pre-commit enforcement at the \fact{} layer.
+
+% ---------------------------------------------------------------
+\subsection{Guarantee 3: ACCOUNTABILITY --- Human Always Identifiable}
+\label{sec:accountability}
+
+\begin{definition}[Accountability Property (ACCOUNTABILITY)]
+\label{def:accountability}
+The \bxthree{} Framework guarantees that every exception state that reaches
+the Bailout Protocol produces a Forensic Ledger entry that (i) uniquely
+identifies the human principal $h(n)$ responsible for the exception's resolution,
+(ii) records the complete causal chain from the triggering event to the human
+directive, and (iii) is cryptographically sealed against post-hoc modification.
+The human principal who authorized the resolution is attributable in the
+framework's immutable record for all time.
+\end{definition}
+
+\begin{maintheorem}[ACCOUNTABILITY]
+\label{th:accountability}
+For every exception state $e$ that triggers the Bailout Protocol at a node
+$n$, the Forensic Ledger entry chain generated by the protocol satisfies:
+\begin{enumerate}
+\item[(i)] the human anchor $h(n)$ is uniquely determined by the spawn tree
+structure and is recorded in the \texttt{bailout-trigger} entry at the
+originating node;
+\item[(ii)] every state transition in the protocol's execution is recorded
+in the Forensic Ledger before the transition commits (Invariant I4, Section~
+\ref{sec:bailout-fact-layer}), forming a complete causal chain; and
+\item[(iii)] the entry chain is SHA-256 hash-chained, making any post-hoc
+modification of any entry detectable by hash verification.
+\end{enumerate}
+Consequently, for every exception that entered the Bailout Protocol, the human
+principal responsible is uniquely identifiable from the immutable record,
+and the complete propagation history is attributable.
+\end{maintheorem}
+
+\begin{Proof}[Proof Sketch]
+We prove each clause separately.
+
+\medskip
+\noindent\textbf{Proof of (i): Unique human anchor identification.}
+The human anchor $h(n)$ is provisioned at node $n$'s initialization and stored
+in \fact{} layer-managed memory.  It is immutable: the \fact{} layer's
+pre-commit hook rejects any runtime attempt to modify $h(n)$ (Invariant I3).
+The \texttt{bailout-trigger} Forensic Ledger entry records $h(n)$ explicitly
+as part of the entry's structured payload, along with the originating node
+$n$ and the trigger condition sub-components.  Because $h(n)$ is established
+once and never modified, it is unique and permanent for the node's lifetime.
+No machine actor can substitute a different human principal, because no
+machine actor at any plane possesses the credential provisioning authority
+required to designate or change $h(n)$.  $\square$
+
+\medskip
+\noindent\textbf{Proof of (ii): Complete causal chain.}
+Invariant I4 (Section~\ref{sec:bailout-fact-layer}) enforces that every state
+transition in $\mathcal{B}$ produces at least one corresponding Forensic
+Ledger entry \emph{before} the transition commits.  This is enforced by the
+\fact{} layer's pre-commit hook: any state transition attempted without a
+preceding ledger entry is rejected.  The entry types generated by the protocol
+(\texttt{bailout-trigger}, \texttt{timeout-bounds-expired},
+\texttt{escalation-sent}, \texttt{human-ack}, \texttt{human-directive})
+together form a causally ordered chain: each entry references the node and
+state at the time of writing, and propagation entries reference the previous
+hop's pathway identifier.  The causal ordering is guaranteed by the
+pre-commit enforcement timing: the entry is written and hashed before the
+state transition commits, so the record of state $q$ is causally prior to
+state $q'$.  $\square$
+
+\medskip
+\noindent\textbf{Proof of (iii): Cryptographic sealing.}
+Each Forensic Ledger entry $E_i$ contains $\hash{E_{i-1}}$, the SHA-256 hash
+of the preceding entry $E_{i-1}$, forming the chain
+$E_0, E_1, E_2, \ldots, E_k$.  The genesis entry $E_0$ contains its own hash
+as a self-sealing bootstrap.  A post-hoc modification of any entry $E_j$
+changes $\hash{E_j}$, which breaks the hash reference in $E_{j+1}$ and all
+subsequent entries.  Verification is performed by recomputing the chain hash
+forward from $E_0$ and comparing against the stored hash in $E_k$; any
+discrepancy indicates tampering.  The hash function is pre-image resistant
+and collision resistant under standard cryptographic assumptions, making it
+computationally infeasible for a machine actor to modify an entry without
+detection.  $\square$
+\end{Proof}
+
+The ACCOUNTABILITY guarantee is the conjunction of the two preceding guarantees
+plus the \fact{} layer's integrity mechanisms.  SAFETY ensures the human is
+present on the authorization chain; LIVENESS ensures the human is contacted;
+ACCOUNTABILITY ensures the contact is recorded, attributable, and tamper-evident.
+Together, they establish that the \bxthree{} Framework's upstream accountability
+guarantee is not merely a design principle but a formally evidenced property of
+the runtime execution trace.
+
+% ---------------------------------------------------------------
+\subsection{Combined Correctness Statement}
+\label{sec:combined-correctness}
+
+The three guarantees are not independent; they form a combined correctness
+statement for the Bailout Protocol.
+
+\begin{maintheorem}[Combined Correctness]
+\label{th:combined-correctness}
+For all nodes $n$ in the spawn tree and all exception states $e$ at $n$:
+
+\begin{enumerate}
+\item[SAFETY:] the system cannot execute consequential action without a human
+principal on the authorization chain;
+\item[LIVENESS:] the exception reaches the designated human anchor $h(n)$ in
+finite time; and
+\item[ACCOUNTABILITY:] the complete propagation path and the human principal's
+resulting directive are recorded in an immutable, cryptographically sealed
+Forensic Ledger entry chain.
+\end{enumerate}
+\end{maintheorem}
+
+The combined statement follows directly from Theorems~\ref{th:safety},
+\ref{th:liveness}, and~\ref{th:accountability}.  It establishes that the
+upstream accountability guarantee is not an operational convention but an
+architecturally enforced property that holds unconditionally within the
+framework's stated assumptions.
+
+\begin{conditions-list}[Model Assumptions]
+\item The \fact{} layer's pre-commit enforcement operates correctly: the
+state machine transitions are evaluated and enforced as specified.
+\item The parent-pointer chain $\alpha(\cdot)$ is computationally intact:
+each node in the chain resolves to a valid parent node up to the human anchor.
+\item The human anchor $h(n)$ is provisioned and reachable at node
+initialization.
+\item The SHA-256 hash function remains pre-image and collision resistant.
+\end{conditions-list}
+
+The assumptions are structural; violations represent failures of the
+enforcement substrate rather than failures of the protocol itself.  The
+Forensic Ledger records evidence of any assumption violation, enabling
+detection and external auditing.  The research agenda motivated by relaxing
+these assumptions---particularly the investigation of Byzantine fault
+tolerance in the propagation chain and distributed human anchor pools---is
+discussed in Section~\ref{sec:bailout-environmental}.

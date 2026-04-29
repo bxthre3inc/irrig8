@@ -1,0 +1,108 @@
+% ---------------------------------------------------------------
+\section{Limitations and Future Work}
+\label{sec:limitations}
+% ---------------------------------------------------------------
+
+The correctness properties established in Section~\ref{sec:properties} hold under stated structural and deployment assumptions. This section makes those assumptions explicit, characterizes the operational consequences of their violation, and maps each gap to a directed research agenda. The limitations are boundary conditions, not refutations of the protocol's contribution.
+
+% ---------------------------------------------------------------
+\subsection{Limitations}
+\label{sec:limitations:subsection}
+% ---------------------------------------------------------------
+
+\subsubsection{Human Response Latency}
+\label{sec:human-response-latency}
+
+The Bailout Protocol's Liveness property guarantees eventual human contact within a bounded wall-clock interval $T_{\max}$, but $T_{\max}$ is a function of network topology, retry parameters, and provisioned timeout constants --- not of human cognitive response time. For operational domains with time constants measured in milliseconds --- high-frequency trading, real-time process control, autonomous vehicle navigation --- the time required for a human principal to receive, interpret, and issue a binding directive may exceed the system's operational time horizon by one to two orders of magnitude.
+
+The protocol's prescribed failure mode under latency stress is well-defined: a node stalls in \texttt{ESCALATING} until the anchor responds or all pathways time out. This is the intended safety-preserving behavior. However, the operational cost of a stall is domain-dependent in ways the protocol does not currently reason about. In a precision agriculture context, a stall delaying a corrective action by minutes is operationally acceptable. In a financial risk-interlock context, a stall delaying a margin-call response by even seconds may expose the system to catastrophic loss. The protocol treats the human anchor as a timing black box: there is no mechanism to distinguish whether delay reflects anchor overload, a structural mismatch between $T_{\max}$ and the anchor's operational availability, or a pathway failure.
+
+The deeper limitation is that timing parameters --- $T_{\texttt{BOUNDS}}$, $T_{\texttt{PROP}}$, $T_{\texttt{CAP}}$, and $T_{\texttt{HUMAN}}$ --- are provisioned statically at node setup and are not sensitive to the anchor's current operational context. A human supervising a single node in normal conditions may respond within seconds; the same human supervising a fleet during an emergency may have queues that take minutes to clear. The protocol provides no adaptive mechanism to account for this variance.
+
+\textit{Directed research:} Empirical characterization of human response latency distributions across deployment contexts to establish statistically grounded, domain-specific latency budgets. Integration of these budgets as enforceable policy parameters at node provisioning, with the Bounds Engine calibrated to provisioned budgets. Investigation of graded escalation responses: a rapid \texttt{ACK} within seconds followed by a detailed directive within hours, better matching the operational reality of human decision-making under variable load.
+
+\subsubsection{Adversarial Conditions}
+\label{sec:adversarial-conditions}
+
+The Safety property requires that human-contact pathways cannot be permanently closed without recorded human authorization. This guarantee holds under Assumption A1.1: that the host platform provides independent scheduling priority to the Bailout Monitor. In an adversarial environment --- particularly one in which the host platform itself may be compromised --- this assumption may not hold. A sophisticated attacker controlling the execution substrate can modify thread priorities, preempt the monitor thread, introduce race conditions into pathway-closure operations, or rewrite the Bailout Monitor's code before it executes.
+
+The protocol's guarantees are platform guarantees. They rest on invariants the host platform must supply: non-preemptible monitor scheduling, append-only persistence for the authorization ledger, and interruptible blocking calls for pathway management. The \fact{} layer pre-commit hook is the single integrity assumption for the entire protocol: if the pre-commit hook is degraded due to a software fault that silently permits writes it should reject, the Safety and Accountability properties dissolve. A machine actor could issue a directive, record it in the authorization ledger, and enter \texttt{RESOLVED} without ever contacting $h(n)$. The protocol provides no internal mechanism for detecting \fact{} layer degradation because such detection would require a trusted external monitor, which would itself become the new integrity assumption.
+
+The Bailout Protocol is designed for production AI deployments in which individual agents may behave unexpectedly but the host platform is trusted --- the standard assumption for regulated industries. It is not designed for deployments in which the platform itself is an active adversary: national infrastructure control systems, military command-and-control environments, or financial clearinghouse infrastructure. For these contexts, the protocol must be composed with substrate-integrity mechanisms outside its current scope: secure boot chains, hardware-attested execution environments, and independent watchdog monitors on separate hardware.
+
+\textit{Directed research:} Formal specification of the composition interface between the Bailout Protocol and substrate-integrity mechanisms. Empirical evaluation of Bailout Monitor scheduling guarantees under mainstream hypervisor and OS kernel configurations. Investigation of whether the protocol's guarantees can be preserved under weaker platform assumptions, including partially compromised substrates. Exploration of hardware-attested execution environments (e.g., Intel SGX, ARM TrustZone) as a deployment target for the Bailout Monitor, eliminating the OS as a trust dependency.
+
+\subsubsection{Scalability}
+\label{sec:scalability}
+
+The protocol is specified with a 1:1 relationship between each node and its human anchor. This model is appropriate for single-node deployments or small-scale systems, but it creates a structural bottleneck in enterprise contexts where one anchor may supervise hundreds of concurrent nodes. Without pooling and load-balancing mechanisms, the human anchor becomes the rate-limiting step in a system whose design intent is to route exceptions away from centralized machine decision points.
+
+Consider a deployment with $N$ active nodes, each operating in a noisy environment producing exceptions at rate $\lambda$. The aggregate exception rate at $h(n)$ is $N \cdot \lambda$. For sufficiently large $N$, the anchor becomes a throughput bottleneck: exceptions queue faster than they can be acknowledged, and the system's effective liveness degrades because exceptions remain pending beyond their operational relevance window. The protocol's $T_{\texttt{HUMAN}}$ timeout converts unacknowledged exceptions to \texttt{RESOLVED} with \texttt{unresolved} tags, but this converts a liveness failure into a documented stall rather than resolving it.
+
+Additional scalability constraints arise from spawn tree depth. As the depth of the accountability chain grows through recursive spawning in large multi-agent systems, the time to propagate an exception to the anchor grows proportionally. At sufficiently large depths, accumulated propagation delay may exceed $T_{\max}$ even under benign conditions, producing spurious pathway-exhausted resolutions that are indistinguishable from adversarial suppression in the Forensic Ledger.
+
+The scalability challenge is the cost of the guarantee, not a design failure. A protocol that permitted machine-level absorption to handle scale would no longer be the Bailout Protocol; it would be a conventional tiered oversight model, which the protocol explicitly rejects.
+
+\textit{Directed research:} Formal specification of human anchor pool architectures, including load-balancing policies, prioritization schemes, and routing algorithms. Extension of Safety and Liveness proofs to pooled anchor configurations with formally verified pathway-redundancy guarantees. Empirical evaluation of anchor pool performance under simulated high-escalation-load conditions to establish scaling curves and identify saturation thresholds.
+
+\subsubsection{Exploitation Risk}
+\label{sec:exploitation-risk}
+
+The Bailout Protocol's trigger condition (TC) depends on two self-assessments performed by the node's Bounds Engine: whether observed input $x$ falls outside the provisioned operating range $R(n)$, and whether the node's confidence in its own resolution capability exceeds threshold $\tau$. Both assessments are performed by machine actors operating within the node's \texttt{BOUNDS}{} layer, making the trigger condition partly a function of the node's own self-reporting.
+
+This creates an exploitation surface. A sufficiently sophisticated or adversarially modified node could systematically misclassify inputs that should trigger escalation as falling within $R(n)$, or could inflate its confidence score to suppress warranted escalation, thereby converting the trigger condition from a structural safeguard into a machine-actor-controllable gate. The immutability constraint on $\tau$ (provisioned at initialization, cannot be adjusted at runtime by any machine actor) limits but does not eliminate this surface: a node compromised at provisioning time can select an appropriately high $\tau$ value before the immutability constraint takes effect.
+
+An adversarial agent could also craft exceptions that appear routine --- carrying a low-severity tag and minimal diagnostic context --- to cause $h(n)$ to issue a directive without full scrutiny. The Forensic Ledger's immutable record partially mitigates this: any directive issued under insufficient scrutiny is permanently attributed to the human anchor. However, this is a deterrent, not a structural prevention. Fully automated detection of social engineering is outside the scope of any accountability architecture and must be addressed through training, organizational process, and deployment-specific policies.
+
+Finally, an adversarial agent with network-level access could launch a targeted denial-of-service attack against all provisioned pathways to $h(n)$, causing the protocol to exhaust all retry attempts and enter \texttt{RESOLVED} with \texttt{PATHWAY\_EXHAUSTED}. While the Safety property ensures the system does not enter \texttt{RESOLVED} autonomously, the protocol provides no mechanism for restoring pathway connectivity under adversarial network conditions.
+
+\textit{Directed research:} External monitoring mechanisms that detect anomalies in triggering behavior --- specifically, statistically significant deviations between the distribution of conditions observed by a node and the distribution of escalations it triggers. Entropy-based trigger monitors: a node observing conditions outside its operating range but triggering escalation at a rate statistically inconsistent with its observed condition distribution is a candidate for audit. Investigation of provenance attestation for operating-range assessments: can the protocol require that each Bounds Engine assessment be counter-signed by an independent audit process, making post-hoc misclassification detectable through forensic reconstruction?
+
+% ---------------------------------------------------------------
+\subsection{Future Work}
+\label{sec:future-work}
+% ---------------------------------------------------------------
+
+Three research directions are of particular significance for the protocol's development trajectory.
+
+\subsubsection{Formal Verification}
+\label{sec:formal-verification}
+
+The correctness properties stated in Section~\ref{sec:properties} are derived from the protocol's state machine specification using argument-map proofs. Before the protocol can be deployed in safety-critical domains, these derivations must be replaced by machine-checked formal proofs. This effort is a prerequisite for high-assurance deployments where the cost of an undetected protocol failure is catastrophic.
+
+Of particular interest is whether the functional separation between \purpose{}, \texttt{BOUNDS}{}, and \fact{} layers admits a compositional verification argument: if each layer satisfies its specification, does the composition necessarily satisfy the protocol's guarantees? A compositional verification architecture would distribute the verification burden across layer implementations rather than centralizing it on the full system, and would make the protocol more robust to implementation changes.
+
+We recommend a two-phase approach: (1) a TLA$+$ specification of the pre-commit hook's transition relation, with model checking against all reachable ledger states for representative deployments; and (2) a Coq proof of the no-machine-actor directive property for the infinite-state generalization. The \fact{} layer pre-commit hook is the primary target: if the pre-commit hook is incorrect, the entire upstream accountability guarantee is void. Formal verification is not a refinement of the protocol; it is the instrument by which hidden assumptions in the current argument-map proofs are exposed and resolved.
+
+\subsubsection{Adaptive Timeout}
+\label{sec:adaptive-timeout}
+
+The current specification provisions timing parameters statically at node setup. Domain-specific timing parameters are deployment-critical: incorrect provisioning causes the protocol to either timeout prematurely or stall indefinitely. An adaptive timeout mechanism --- one that adjusts $T_{\texttt{BOUNDS}}$ based on observed human response latency, escalation frequency, and domain-specific operational time constants --- would reduce the human configuration burden and improve operational fit across deployment contexts.
+
+The design must preserve the deterministic timing guarantees required by the Safety property: adaptation must be constrained and slow relative to the operational time constants of the system, so that the adapted timeout remains a deterministic upper bound rather than a probabilistic estimate. On each escalation cycle, the protocol records actual response time $t_{\mathrm{actual}}$; over a rolling observation window it computes a distribution and sets $T_{\texttt{BOUNDS}}$ to a high percentile (e.g., the 95th) plus a safety margin. Adaptation must be slow enough that a single anomalous response does not immediately distort the timeout. The Safety property is preserved by never adjusting $T_{\texttt{BOUNDS}}$ below the minimum viable threshold established at provisioning.
+
+More sophisticated than adaptive timeout is human anchor load balancing: routing exceptions to the human anchor with the lowest current queue depth, rather than to the statically provisioned $h(n)$. This would address the scalability bottleneck while preserving Accountability --- the Forensic Ledger records which human anchor received each exception, and load balancing is constrained to route each exception to an anchor with appropriate authority over the originating node's operational domain.
+
+\subsubsection{Distributed Human Anchor Pools}
+\label{sec:distributed-anchor-pools}
+
+The scalability limitation motivates the design of distributed human anchor pools that preserve the protocol's correctness guarantees under concurrent load. A distributed human anchor pool is a set of principals $\{h_1, h_2, \ldots, h_k\}$ each with authority over a subset of the node population, where exceptions are routed to the pool member with current availability and appropriate domain authority.
+
+Extending the 1:1 anchor model to a pool requires addressing three hard problems: (1) establishing domain authority boundaries --- which pool members are authorized to receive exceptions from which nodes; (2) maintaining accountability --- ensuring the Forensic Ledger records which pool member received each exception so attribution is preserved even under load balancing; and (3) preventing pool membership fraud --- ensuring that a compromised node cannot add a non-human actor to the pool to create a false human anchor. The third problem is the most difficult: it requires a provisioning protocol with cryptographic attestation that the pool member is a verified natural person or an institutional actor with unambiguous human authority.
+
+The pool architecture must satisfy three constraints derived from the correctness properties. \textbf{Safety:} no pool configuration may produce a state in which all human-contact pathways for a given node are permanently disabled, requiring that each node maintain at least two anchor references at all times and that the pool management algorithm detect and compensate for anchor unavailability before it becomes pathway-closing. \textbf{Liveness:} the pool routing algorithm must ensure escalations are routed to available anchors within $T_{\max}$ even under high concurrent load, implying load-aware routing rather than static assignment. \textbf{Accountability:} every escalation must be attributed to a specific human anchor, immutably recorded, requiring that routing decisions be committed to the Forensic Ledger. The pool architecture must also include a load-shedding policy --- a defined behavior for when all anchors in a pool are simultaneously overloaded --- that preserves Safety while providing meaningful feedback about the overload condition.
+
+% ---------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+% ---------------------------------------------------------------
+
+The Bailout Protocol advances a single, architecturally precise claim: that autonomous systems built on the \bxthree{} Framework must propagate every unresolved exception state to a named human principal, bypassing all intermediate machine actors, as a compulsory structural requirement rather than a runtime choice. This mandatory bailout property is not a feature that can be retrofitted to an existing agentic architecture through better error handling or improved escalation heuristics. It is a structural property that follows, as a matter of architectural necessity, from the functional separation between the \purpose{}, \texttt{BOUNDS}{}, and \fact{} layers.
+
+When the \texttt{BOUNDS}{} layer encounters a condition outside its provisioned operating range $R(n)$ that it cannot resolve, no machine actor has the authority to adjudicate that condition. The \texttt{BOUNDS}{} layer detects exception conditions but carries no judgment authority; the \fact{} layer enforces transition relations and records events but carries no intent authority. The decision must return to the \purpose{} layer, which carries intent, judgment, and final accountability. The Bailout Protocol is the mechanism that enforces this return --- compulsorily, deterministically, and with full forensic attribution at every step.
+
+This contribution is realized within the \bxthree{} Framework as its fifth named architectural pillar, complementing Loop Isolation, Recursive Spawning, Spatial Firewall, and Sandbox Gate. Together, these five pillars constitute the upstream accountability guarantee: that \bxthree{} systems \emph{fail upward into human consciousness, never downward into autonomous chaos}. The Bailout Protocol is the runtime expression of this guarantee for all exception conditions not resolved by the preceding four pillars --- including conditions not anticipated at design time, which is precisely the operational reality that makes the protocol necessary.
+
+The \bxthree{} Framework's role in this contribution is to provide the conceptual architecture within which the Bailout Protocol operates as a necessary consequence rather than an independent design choice. The functional separation of Purpose, Bounds, and Fact layers creates the structural conditions that make the bailout requirement compulsory. The Forensic Ledger maintains the immutable attribution record that makes every escalation auditable. The immutable parent-pointer established at node provisioning ensures that the escalation path is fixed at the architectural level and cannot be modified by any machine actor. These elements are not independent mechanisms that happen to cooperate; they are mutually defining structural facts whose necessity is established by the protocol's own specification. The upstream accountability guarantee and the Bailout Protocol are two aspects of the same architectural commitment: that in a \bxthree{} system, every exception that exceeds machine authority reaches a human who can bind it, and every such exception is recorded so that the binding can be verified.
+
+The theoretical claim is foundational: that the upstream accountability guarantee of the \bxthree{} Framework is not a design aspiration but a logical consequence of the framework's architecture, and that the Bailout Protocol is the mechanism by which that consequence is enforced at runtime. The practical claim is equally clear: that autonomous systems operating without such a mechanism are structurally exposed to failure modes --- invisible exception absorption, contingent escalation, and irreversible drift --- that cannot be eliminated by incremental improvement to existing error-handling or oversight practices. They require a new architectural primitive. The Bailout Protocol is that primitive.

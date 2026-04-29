@@ -1,0 +1,185 @@
+\section{Guarantees and Correctness Properties}
+\label{sec:guarantees}
+
+This section establishes the three foundational guarantees of the Bailout Protocol—Safety, Liveness, and Accountability—and provides formal proof sketches for each. Each guarantee is expressed as a theorem over the state machine defined in Sections 3 and 4, drawing on the invariants established by the BX3 three-layer architecture. The proof sketches are rigorous but executable at the paper's abstraction level; full formal proofs appear in the technical appendix referenced in Section~\ref{sec:future-work}.
+
+% ---------------------------------------------------------------
+\subsection{Formal Preliminaries}
+% ---------------------------------------------------------------
+
+Let $\mathcal{A}$ denote the set of all agent tasks managed by AgentOS. Each task $a \in \mathcal{A}$ is a 4-tuple $(id, type, resource\_budget, owner)$ as defined in Section 3. Let $S = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$ be the state space with transition relation $T$ defined by conditions T1–T8. Let $\tau(a)$ be the monotonic elapsed-time counter for task $a$, initialized to zero at each state entry. Let $\psi(a)$ be the bail-out trigger condition evaluated by the kernel at every tick. Let $\mathcal{H}$ denote the set of human-occupied Purpose Layer nodes; every task $a$ has $owner(a) \in \mathcal{H}$ by construction of the task registration procedure.
+
+We define the following additional predicates used in the guarantees:
+
+\begin{itemize}
+\item $State(a) = s$: task $a$ occupies state $s \in S$.
+\item $Terminated(a)$: task $a$ has reached state RESOLVED through any resolution path.
+\item $Acknowledged(a)$: a human owner has explicitly logged $ack(a, owner(a))$.
+\item $Collapsed(a)$: task $a$ is executing autonomously with no recoverable escalation path and no human in the decision loop.
+\item $Contacted(a)$: the human owner has received and processed the escalation notification.
+\end{itemize}
+
+% ---------------------------------------------------------------
+\subsection{Guarantee 1: Safety — No Autonomous Collapse}
+\label{sec:safety}
+% ---------------------------------------------------------------
+
+\textbf{Theorem 1 (Safety).} For every task $a \in \mathcal{A}$, it is impossible for $a$ to reach a state $s \in S$ in which $Collapsed(a) = \text{true}$.
+
+\bigskip
+\noindent\textbf{Interpretation.} Autonomous collapse means the task continues executing without a human in the decision loop, with no recoverable escalation path, and with bounded safety guarantees invalidated. Safety requires that no sequence of state transitions—regardless of trigger conditions, resource exhaustion, or adversarial tooling—can produce a collapse state. The human is always either (a) in the loop, (b) queued for contact via the escalation path, or (c) the task is terminated.
+
+\bigskip
+\noindent\textbf{Invariants relied upon.}
+
+\begin{enumerate}
+\item[\textbf{I1}] $\psi(a)$ is evaluated by the kernel, not by task $a$. The task's own execution context cannot suppress, contest, or falsify $\psi$.
+\item[\textbf{I2}] Every task $a$ has $owner(a) \in \mathcal{H}$ by the deterministic task registration procedure of the Fact Layer. No task is dispatched without a named human anchor.
+\item[\textbf{I3}] The escalation notification path from the kernel to $owner(a)$ is independent of task $a$'s own communication stack. If the task has corrupted its messaging, the kernel direct-notify channel still operates.
+\item[\textbf{I4}] $T_7$ (auto-termination) fires at $\tau(a) > T_\text{max}$ regardless of task $a$'s internal state or will. This transition is enforced by the Fact Layer, not by the task.
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Proof Sketch.} We prove by exhaustive analysis over $S$ that no state in $S$ satisfies $Collapsed(a)$.
+
+\begin{itemize}
+\item \textbf{IDLE}: Task is not executing. $Collapsed(a) \equiv \bot$ by definition — no execution context exists in which collapse is meaningful.
+\item \textbf{BOUNDED}: Task executes within its resource budget. By \textbf{I1}, $\psi$ is re-evaluated every tick. If any trigger condition in $\{\rho_\text{resource}, \rho_\text{deadlock}, \rho_\text{loop}, \rho_\text{trust}, \rho_\text{scope}\}$ fires, $\psi(a) = \top$ forces transition to \texttt{BAIL\_PENDING} via T2. There is no path from \texttt{BOUNDED} to a collapsed state without passing through \texttt{BAIL\_PENDING} first, which is a non-collapsed state by construction. Thus $Collapsed(a) \equiv \bot$.
+\item \textbf{BAIL\_PENDING}: Task continues to execute but is marked for potential termination. Critically, no new child tasks may be spawned (enforced by the escalation algorithm, Step 5), and all existing child tasks receive termination signals. By \textbf{I2}, $owner(a) \in \mathcal{H}$. The task is in a recoverable state — it may self-resolve via T6, or transition to \texttt{ESCALATING} via T3. There is no condition under which a task in \texttt{BAIL\_PENDING} continues executing without a defined escalation path and a human owner. Thus $Collapsed(a) \equiv \bot$.
+\item \textbf{ESCALATING}: The human owner has been directly notified via the kernel-reserved channel. $owner(a)$ has received the full context log and the acknowledgment window is open. The task is suspended. $Collapsed(a) \equiv \bot$ by \textbf{I3}.
+\item \textbf{HUMAN\_ACKNOWLEDGED}: Human owner has explicitly acknowledged. The task is suspended; the human holds full decision authority. $Collapsed(a) \equiv \bot$.
+\item \textbf{RESOLVED}: Terminal state. Task has either completed, been force-terminated, or auto-terminated via timeout. No execution context remains. $Collapsed(a) \equiv \bot$ trivially.
+\end{itemize}
+
+Since all six states in $S$ are exhaustive and mutually exclusive, and $Collapsed(a) \equiv \bot$ in every state, Theorem 1 holds. $\square$
+
+\bigskip
+\noindent\textbf{Corollary 1 (Bounded resource guarantee).} No task $a$ can consume compute resources beyond $resource\_budget(a)$ without triggering $\rho_\text{resource}$ and entering \texttt{BAIL\_PENDING} before exceeding the budget. Formally:
+
+\[
+\forall a \in \mathcal{A}, \forall \text{tick } t: consumed(a, t) \leq resource\_budget(a)
+\]
+
+This is a direct consequence of the Fact Layer's resource monitoring enforcement, which atomically evaluates $\rho_\text{resource}$ at every kernel tick and triggers T2 before budget-exceeding instructions are dispatched.
+
+% ---------------------------------------------------------------
+\subsection{Guarantee 2: Liveness — Eventual Human Contact}
+\label{sec:liveness}
+% ---------------------------------------------------------------
+
+\textbf{Theorem 2 (Liveness).} For every task $a \in \mathcal{A}$ that transitions to \texttt{ESCALATING}, it is guaranteed that $Contacted(a) = \top$ within at most $T_\text{max}$ elapsed time units, or $Terminated(a) = \top$ via auto-termination.
+
+\bigskip
+\noindent\textbf{Interpretation.} Liveness requires that the escalation path is not only structurally defined but guaranteed to execute. A human owner might be unavailable, might fail to acknowledge, or might be offline. The protocol handles this by enforcing an upper bound: within $T_\text{max}$ seconds of entering \texttt{ESCALATING}, either the human acknowledges (contact confirmed) or the Fact Layer enforces forced termination. There is no state in which a task remains in \texttt{ESCALATING} beyond $T_\text{max}$ without resolution.
+
+\bigskip
+\noindent\textbf{Invariants relied upon.}
+
+\begin{enumerate}
+\item[\textbf{I5}] The kernel tick handler evaluates timeout conditions at every $\Delta_\text{tick}$ tick with $100\%$ coverage. No tick is skipped for any active task.
+\item[\textbf{I6}] $\tau(a)$ is a monotonically increasing counter stored in the forensic ledger. It is never reset, never paused, and never writable by any task or agent at any privilege level.
+\item[\textbf{I7}] T7 fires unconditionally when $\tau(a) > T_\text{max}$ for a task in \texttt{ESCALATING}. The Fact Layer enforces this transition as a deterministic state change, not a policy decision.
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Proof Sketch.} Let $t_0$ be the timestamp at which $a$ transitions to \texttt{ESCALATING} via T3. We consider two disjoint cases:
+
+\begin{enumerate}
+\item[\textbf{Case 1}] $ack(a, owner(a))$ fires at some $t_c$ where $t_0 < t_c < t_0 + T_\text{max}$. By T4, this transitions $a$ to \texttt{HUMAN\_ACKNOWLEDGED}. The predicate $Contacted(a) = \top$ holds. No further transitions from \texttt{HUMAN\_ACKNOWLEDGED} can return to \texttt{ESCALATING}, so $a$ never re-enters the escalation path. Termination occurs only via human-directed forced termination (T5) or natural completion. $\tau(a)$ stops advancing at $t_c$.
+
+\item[\textbf{Case 2}] $ack(a, owner(a))$ never fires before $t_0 + T_\text{max}$. At tick $t^*$ where $\tau(a) > T_\text{max}$ (which occurs exactly at elapsed time $T_\text{max}$ by \textbf{I6}), T7 fires unconditionally. By I7, this transition is enforced by the Fact Layer and is not suppressible by any task-level actor. $a$ transitions to \texttt{RESOLVED} with resolution path \texttt{TIMEOUT\_AUTO\_TERMINATE}. $Terminated(a) = \top$.
+\end{enumerate}
+
+Since the two cases cover all possible paths (ack fires or it does not), and both cases produce a resolution state within $T_\text{max}$ time units, the theorem holds. $\square$
+
+\bigskip
+\noindent\textbf{Corollary 2 (No indefinite suspension).} No task $a$ can remain in state \texttt{ESCALATING} for longer than $T_\text{max}$. Formally:
+
+\[
+\forall a \in \mathcal{A}: State(a) = \text{ESCALATING} \implies \tau(a) \leq T_\text{max}
+\]
+
+This follows directly from the proof of Theorem 2: the only terminal transitions from \texttt{ESCALATING} are T4 (human acknowledgment) and T7 (auto-termination), both of which are bounded by $T_\text{max}$.
+
+\bigskip
+\noindent\textbf{Corollary 3 (Progress guarantee).} Every task in \texttt{BAIL\_PENDING} either self-resolves via T6 within $T_\text{escape}$ or transitions to \texttt{ESCALATING}. There is no path from \texttt{BAIL\_PENDING} to a terminal state without passing through either T6 or T3. This ensures that the grace window is bounded and that no task escapes escalation through infinite self-resolution attempts.
+
+% ---------------------------------------------------------------
+\subsection{Guarantee 3: Accountability — Human Always Identifiable}
+\label{sec:accountability}
+% ---------------------------------------------------------------
+
+\textbf{Theorem 3 (Accountability).} For every task $a \in \mathcal{A}$ and for every action $x$ taken by $a$ that produces an external effect or a state change recorded in the forensic ledger, there exists a unique human principal $h \in \mathcal{H}$ such that $h = owner(a)$, and the ledger entry for $x$ contains $h$ as the accountable party.
+
+\bigskip
+\noindent\textbf{Interpretation.} Accountability requires traceability: every material action in the system must be traceable to a human who bears final responsibility. No action can be attributed to an anonymous agent, an empty placeholder, or a system process with no principal. The human owner is not just a label on the task — it is the authoritative responsible party written into every forensic ledger entry, making the human the non-renouncible answerable party for everything the task does.
+
+\bigskip
+\noindent\textbf{Invariants relied upon.}
+
+\begin{enumerate}
+\item[\textbf{I8}] Task registration is deterministic in the Fact Layer. The procedure $register(a, owner)$ fails atomically if $owner \notin \mathcal{H}$. No task enters the active task set $\mathcal{A}$ without a verified human principal.
+\item[\textbf{I9}] Every forensic ledger entry records at minimum: $task\_id$, $timestamp$, $action\_type$, $pre\_state$, $post\_state$, $triggering\_condition$, and $owner(a)$. The ledger schema enforces the presence of $owner(a)$ in all entries; entries without this field are rejected by the Fact Layer's append validator.
+\item[\textbf{I10}] The $owner(a)$ field in a ledger entry is immutable after append. It cannot be retroactively modified, redacted, or anonymized by any actor — including the kernel, privileged system processes, or the human owner themselves (after the entry is committed). Corrections are expressed as new counter-entry transactions, not in-place edits.
+\item[\textbf{I11}] The escalation notification sent to $owner(a)$ in the ESCALATING state contains a full context dump including all preceding ledger entries for $a$. The human receives complete traceability, not a summary.
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Proof Sketch.} We prove by construction over the lifecycle of any task $a \in \mathcal{A}$.
+
+\begin{enumerate}
+\item[\textbf{Step 1 — Registration:} ] By \textbf{I8}, task registration succeeds only if $owner(a) \in \mathcal{H}$. The Fact Layer's deterministic registration procedure verifies this by checking $owner(a)$ against the Purpose Layer registry. The resulting ledger entry $e_0$ (task created) contains $owner(a)$ as its accountable field. Thus at creation, accountability is established and recorded.
+
+\item[\textbf{Step 2 — State transitions:} ] Each transition $T_i$ generates a ledger entry $e_i$ with fields prescribed by the schema. The Fact Layer's append validator enforces that $owner(a)$ is present in $e_i$. Since $owner(a)$ was verified at registration and the task identifier is immutable, the accountable party in every entry is identical to the accountable party in $e_0$.
+
+\item[\textbf{Step 3 — External actions:} ] Any action $x$ taken by $a$ that produces an external effect (outbound communication, financial transaction, state change in an external system) is mediated by the Fact Layer's actuator interface. The Fact Layer requires that every actuator call is preceded by a ledger entry that records the action, the task, the owner, and the pre-/post-state. There is no actuator path that bypasses the ledger. Thus for every external effect $x$, there exists a ledger entry $e_x$ with $owner(a)$ as accountable party.
+
+\item[\textbf{Step 4 — Escalation path:} ] When $a$ transitions to \texttt{ESCALATING}, the escalation notification carries the full context log. By \textbf{I11}, the human owner receives complete traceability of all actions, decisions, and state transitions, confirming that $owner(a)$ remains the identifiable responsible party throughout the escalation.
+
+\item[\textbf{Step 5 — Resolution and audit:} ] The terminal ledger entry (resolution) records the resolution path (natural completion, forced termination, or auto-termination) and the final $\tau(a)$. Since all prior entries carry the same $owner(a)$, the full execution trace is attributable. No entry in the chain is anonymized or unattributed by \textbf{I10}.
+\end{enumerate}
+
+Since every action in the task's lifecycle generates a ledger entry containing the same $owner(a)$ (verified human), accountability is maintained without exception across the entire execution history. $\square$
+
+\bigskip
+\noindent\textbf{Corollary 4 (Non-repudiation).} The human owner $owner(a)$ cannot renounce accountability for any action taken by $a$ before the task reached \texttt{RESOLVED}. The immutable ledger entries constitute an undeniable record of delegation. This is particularly important in the context of Root Tunneling: when a human principal projects Purpose Layer authority directly into a descendant task (Section~\ref{sec:purpose-layer}), the tunneled action is recorded with the human's identity as both the originating accountable party and the executing principal, closing the attribution chain.
+
+% ---------------------------------------------------------------
+\subsection{Theorem Relationships and Systemic Implications}
+% ---------------------------------------------------------------
+
+The three guarantees are not independent — they form a causal chain that constitutes the full correctness specification of the Bailout Protocol:
+
+\begin{enumerate}
+\item Safety (Theorem 1) establishes the negation of the bad outcome: no task can be in a state without a human in the loop or without a bounded resolution path. This is the foundational property.
+
+\item Liveness (Theorem 2) builds on Safety by guaranteeing that the recovery path is not merely defined but guaranteed to execute within a bounded time. If Safety held but Liveness failed, tasks could be in a non-collapsed state with a human in the loop but with no guarantee that contact ever occurs — producing an eternal suspension instead of collapse. Liveness closes this gap.
+
+\item Accountability (Theorem 3) operates orthogonally to Safety and Liveness but is reinforced by them: the human is always identifiable as the accountable party because (a) the system prevents the scenario where an unidentifiable actor is in control (Safety), (b) the human is guaranteed to be contacted in any escalation scenario (Liveness), and (c) the forensic ledger immutably records the chain of delegation from the human to every action.
+\end{enumerate}
+
+Formally, the three guarantees jointly imply:
+
+\[
+\forall a \in \mathcal{A}, \forall s \in S: \neg Collapsed(a) \land \text{resolution\_bounded}(a) \land \text{owner\_attributable}(a)
+\]
+
+where $resolution\_bounded(a)$ follows from Theorem 2 and $owner\_attributable(a)$ follows from Theorem 3. This conjunction constitutes the complete correctness specification of the Bailout Protocol.
+
+% ---------------------------------------------------------------
+\subsection{Discussion: Limitations and Boundary Conditions}
+% ---------------------------------------------------------------
+
+The guarantees above hold under the following assumptions, which are enforced by the BX3 Framework's architectural constraints but are not automatically guaranteed by the protocol alone:
+
+\begin{itemize}
+\item \textbf{Time source integrity.} The kernel tick counter and the $\tau(a)$ counter depend on a monotonic hardware clock or an equivalent monotonic software counter. If the clock is externally manipulated (not by any software in the container environment), timeout guarantees degrade. The Fact Layer monitors clock monotonicity and raises a security event if non-monotonic steps are detected.
+
+\item \textbf{Human availability.} Liveness (Theorem 2) guarantees that the escalation notification is \textit{sent} within $T_\text{max}$, not that the human reads or acts on it within $T_\text{max}$. If the human is unreachable (e.g., off-grid, incapacitated), the protocol enforces termination but does not guarantee productive outcome. This is the correct tradeoff: the protocol prioritizes boundedness over optimistic human availability.
+
+\item \textbf{Registry integrity.} The Purpose Layer registry mapping human principals to their accounts must be accurate and tamper-resistant. If $owner(a)$ is deprovisioned or if a Purpose Layer node is subverted, the escalation path degrades. The BX3 Framework addresses this through separate authentication and authorization for the registry, with multi-party recovery procedures (beyond the scope of this paper).
+\end{itemize}
+
+These boundary conditions are not failures of the protocol — they are the defined limits of what the protocol can guarantee given the assumptions of the BX3 Framework's threat model. The protocol does not assume a perfect or infallible system; it guarantees that failure is always bounded, visible, and attributable.
+
+\end{document}

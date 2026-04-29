@@ -1,0 +1,41 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Multi-agent systems built on large language model (LLM) reasoning have demonstrated significant capability in decomposing and executing complex, hierarchical tasks. As agent graphs grow in depth and branching factor, a structural pathology emerges that we term \emph{autonomous drift}: the progressive disconnection of spawned agents from their originating authority, resulting in orphaned sub-agents that continue to execute, consume resources, and produce outputs with no resolvable link to the initiating process or its controlling context.
+
+Drift is not a failure of individual agent capability. It is a failure of \emph{graph provenance}. In conventional multi-agent architectures, child agents are spawned with reference to a parent context stored in memory or passed as state. When that context is dropped, garbage-collected, or overwritten by a subsequent reasoning cycle, all descendant agents lose their authoritative anchor. The system knows that an agent exists; it cannot determine \emph{who authorized it}, \emph{for what purpose}, or \emph{under what constraints it should operate}. The result is a population of zombie agents---active but unanchored---whose continued execution is not directed by any living intent.
+
+The severity of drift scales nonlinearly with graph depth. At depth one, the loss of a parent context severs a single branch. At depth $n$, it orphans an entire subtree. In production deployments where agent counts reach into the thousands per session, a single unmitigated drift event can silently spawn resource leaks that degrade system performance over hours, with no provenance trail to reconstruct the fault chain.
+
+\subsection{Why Existing Approaches Are Insufficient}
+
+The dominant mitigation strategies in current multi-agent frameworks are per-agent TTL (time-to-live) constraints and hard depth limits. Neither addresses the root cause of drift; both impose collateral constraints that cripple the expressiveness of deep agent graphs.
+
+\textbf{TTL mechanisms} enforce a maximum agent lifetime but do not distinguish between a child agent that has completed its task and one that has lost its parent context mid-execution. An agent whose parent dies before it finishes is indistinguishable from one that simply ran long enough to expire. TTL treats all orphans the same, discarding productive agents alongside zombie agents, without structural basis for discrimination. Furthermore, TTL does not propagate: a child agent's lifetime is set independently of its parent's, so a short-TTL parent can spawn a long-TTL child whose execution outlives the parent's contextual relevance by an order of magnitude.
+
+\textbf{Depth limits} cap the maximum depth of the agent graph, bounding the blast radius of drift at the cost of limiting hierarchical task decomposition. A depth-10 graph whose root context is lost at depth 2 still orphans all descendants at depths 3 through 10. Depth limits interact poorly with parallel spawning: a breadth-first agent graph with depth 5 and branching factor 10 produces 100,000 terminal agents at the frontier, none of whom are drift-free if any ancestor in the chain is disposable.
+
+Both approaches are reactive: they constrain what agents can do \emph{after} spawning, rather than guaranteeing the structural integrity of the spawn relationship itself. They do not answer the question \emph{how do we know which agent authorized this agent?} with a verifiable, immutable answer.
+
+\subsection{The Immutability Core: A Structural Solution to Drift}
+
+The BX3 Framework introduces a primitive that makes autonomous drift not merely unlikely but \emph{structurally impossible}: the immutable parent pointer chain. In BX3, every agent is assigned a stable, cryptographically signed identity at spawn time. This identity includes an immutable pointer to its parent's canonical ID, sealed into the agent's own identity record. The chain from any agent back to the root authority is not a reference that can be nullified by context loss---it is a property of the agent itself, verifiable against the BX3 identity registry at any point in its lifecycle.
+
+This immutable chain produces a structural guarantee that no prior approach has achieved: an agent \emph{cannot} lose its parent. The parent pointer is not a soft reference stored in ephemeral context; it is a sealed component of the agent's identity contract. If the agent exists, its parent is retrievable. If the parent is revoked, the revocation propagates as a sealed property of the child and renders the child immediately non-operational---not because its TTL expired or because it exceeded a depth limit, but because its identity chain is verifiably broken. The child dies because its provenance is provably severed, not because a timer fires.
+
+This turns the provenance problem inside out. Rather than asking \emph{how do we prevent agents from outliving their authority?}, BX3 guarantees that an agent \emph{cannot outlive its authority} because the authority relationship is immutably encoded in the agent's identity, not in any external context store.
+
+\subsection{Formal Definition of Drift}
+
+We formalize autonomous drift within the BX3 Framework as follows. Let $A_i$ denote an agent with identity $\mathrm{id}(A_i)$ and parent pointer $\mathrm{parent}(A_i) = \mathrm{id}(A_j)$ where $A_j$ is the spawning agent. A drift event is defined as a state in which:
+
+\begin{enumerate}
+    \item $A_i$ is in the \texttt{ACTIVE} operational state, and
+    \item $\mathrm{parent}(A_i)$ is in the \texttt{REVOKED} state, or $\mathrm{parent}(A_i)$ is not registered in the BX3 identity registry.
+\end{enumerate}
+
+Because BX3 enforces that $\mathrm{parent}(A_i)$ is an immutable, sealed property of $\mathrm{id}(A_i)$, condition (2) is detectable at any time by querying the identity registry. An agent in \texttt{ACTIVE} state with a revoked or unregistered parent is a \emph{drifted agent}. BX3 eliminates drift by construction: the revocation of a parent immediately propagates a sealed non-operational flag to all descendants via the immutable chain, rendering the \texttt{ACTIVE} state unreachable for any $A_i$ whose chain contains a revoked node.
+
+\subsection{Roadmap}
+
+The remainder of this paper is organized as follows. Section~\ref{sec:background} establishes the formal model of the BX3 spawn graph and the identity chain protocol. Section~\ref{sec:drift_problem} presents the autonomous drift problem in detail, including formal characterizations of orphaned and drifted agents and the failure modes drift produces. Section~\ref{sec:immutable_parent_pointers} details the immutable parent pointer mechanism, including the signing schema, registry architecture, and revocation propagation algorithm. Section~\ref{sec:evaluation} evaluates drift resistance against TTL-based and depth-limited baselines across synthetic stress tests and production workloads. Section~\ref{sec:limitations} discusses limitations, trade-offs, and the conditions under which the immutable chain introduces operational constraints. Section~\ref{sec:conclusion} concludes with related work and open questions.

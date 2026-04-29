@@ -21,6 +21,116 @@
 - **Weekly Report:** Fridays → Brand + Optimize
 
 
+## 2026-04-28 Morning Standup Summary
+
+**Lead:** Rank | **Time:** 8:15 AM MT | **Status:** ✅ Filed — `seo-sem-standup-2026-04-28.md`
+
+### Standup Gaps
+- 2026-04-21 through 2026-04-25 — 5 business days missed. Caught up in this filing. No campaign actions occurred during gap (all campaigns remained blocked).
+
+### Campaign Status
+| Campaign | Status | Notes |
+|---------|--------|-------|
+| Irrig8 Google Ads | 🔴 BLOCKED | No account access — Day 28 |
+| Irrig8 SEO + Directories | 🟡 Building | Yelp ✅ · Bing ✅ · Irrig. Assoc. pending |
+| Starting 5 Google Ads | 🔴 BLOCKED | No account access |
+| Starting 5 SEO | 🟡 Building | Keyword doc ✅ · Casey alignment outstanding |
+| VPC Google Ads | 🔴 BLOCKED | Raj compliance — Day 25 |
+| VPC ASO | 🟡 Ready | Metadata ready · app update window TBD |
+| Zoe Google Ads | 🔴 BLOCKED | No account access |
+| Zoe SEO | 🟡 Building | GitHub audit outstanding |
+| Bxthre3 Corporate SEO | 🟡 Planning | No progress |
+
+### Today's Priorities
+1. Irrigation Association directory submission — outstanding since Apr 20
+2. Irrig8 GBP claim status check — unclaimed
+3. Casey alignment — Starting 5 content mapping outstanding since Apr 10
+4. Zoe GitHub audit — outstanding since Apr 10
+5. VPC compliance follow-up — Day 25 (Raj)
+6. Google Ads escalation — Day 28 (Brand/Optimize)
+
+### Blockers
+- **Google Ads account** — Brand/Optimize (28+ days overdue)
+- **VPC compliance** — Raj gambling policy (25 days)
+- **Conversion tracking** — Optimize ownership
+
+---
+
+## 2026-04-27 Morning Standup Summary
+
+**Lead:** Rank | **Time:** 8:15 AM MT | **Status:** ✅ Filed — `seo-sem-standup-2026-04-27.md`
+
+### Standup Gaps
+- 2026-04-21 through 2026-04-25 — 5 business days missed. Caught up in this filing. No campaign actions occurred during gap (all campaigns remained blocked).
+
+### Campaign Status
+| Campaign | Status | Notes |
+|---------|--------|-------|
+| Irrig8 Google Ads | 🔴 BLOCKED | No account access (27+ days) |
+| Irrig8 SEO + Directories | 🟡 Building | Yelp ✅ · Bing ✅ · Irrig. Assoc. pending |
+| Starting 5 Google Ads | 🔴 BLOCKED | No account access |
+| Starting 5 SEO | 🟡 Building | Keyword doc ✅ — Casey alignment still outstanding |
+| VPC Google Ads | 🔴 BLOCKED | Raj compliance review (24+ days) |
+| VPC ASO | 🟡 Ready | Metadata ready — app update window TBD |
+| Zoe Google Ads | 🔴 BLOCKED | No account access |
+| Zoe SEO | 🟡 Building | GitHub audit still outstanding |
+| Bxthre3 Corporate SEO | 🟡 Planning | No progress |
+
+### Today's Priorities
+1. Google Ads account escalation (Day 27 — Brand/Optimize)
+2. VPC compliance follow-up (Day 24 — Raj)
+3. Irrigation Association directory submission (outstanding since Apr 20)
+4. Irrig8 GBP claim status check
+5. Starting 5 Casey alignment (outstanding since Apr 10)
+6. Zoe GitHub audit (outstanding since Apr 10)
+
+### Blockers
+- **Google Ads account** — Brand/Optimize (27+ days overdue)
+- **VPC compliance** — Raj gambling policy (24+ days)
+- **Conversion tracking** — Optimize ownership
+
+---
+
+## 2026-04-20 Morning Standup Summary
+
+**Lead:** Rank | **Time:** 8:15 AM MT | **Status:** ✅ Filed — `seo-sem-standup-2026-04-20.md`
+
+### Standup Gaps
+- 2026-04-19 (Sun) — expected weekend gap
+- 2026-04-18 (Sat) — expected weekend gap
+
+### Today's Priorities
+1. Google Ads account escalation (Day 21 — formal written escalation)
+2. VPC compliance follow-up with Raj (Day 18)
+3. Irrig8 GBP claim
+4. Irrigation Association directory submission
+5. Zoe GitHub README audit
+6. Starting 5 content mapping with Casey
+
+### Blockers
+- **Google Ads account** — Brand/Optimize (21 days overdue)
+- **VPC compliance** — Raj gambling policy (18 days)
+- **Conversion tracking** — Optimize ownership
+
+### Accomplishments
+- Irrig8 directory batch: 2/3 dirs submitted (Yelp, Bing); Irrigation Association pending
+- VPC ASO metadata ready
+
+### Campaign Status
+| Campaign | Status | Notes |
+|---------|--------|-------|
+| Irrig8 Google Ads | 🔴 BLOCKED | No account access (21 days) |
+| Irrig8 SEO + Directories | 🟡 Building | 2/3 dirs submitted; GBP unclaimed |
+| Starting 5 Google Ads | 🔴 BLOCKED | No account access |
+| Starting 5 SEO | 🟡 Building | Keyword doc ✅ — Casey alignment pending |
+| VPC Google Ads | 🔴 BLOCKED | Raj compliance review (18 days) |
+| VPC ASO | 🟡 Ready | Metadata ready — app update window TBD |
+| Zoe Google Ads | 🔴 BLOCKED | No account access |
+| Zoe SEO | 🟡 Building | GitHub seeding + AI/developer content |
+| Bxthre3 Corporate SEO | 🟡 Planning | Investor content + founder brand |
+
+---
+
 ## 2026-04-17 Morning Standup Summary
 
 **Lead:** Rank | **Time:** 8:15 AM MT | **Status:** ✅ Filed — `seo-sem-standup-2026-04-17.md`

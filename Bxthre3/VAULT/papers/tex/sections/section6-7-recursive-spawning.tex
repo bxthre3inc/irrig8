@@ -1,0 +1,166 @@
+\section{Integration with the BX3 Framework}
+\label{sec:bxs-integration}
+
+Recursive spawning, as defined in the preceding sections, does not operate in isolation. It is embedded within the BX3 Framework's three-layer architecture --- the Purpose Layer, the Bounds Engine, and the Fact Layer --- each of which plays a distinct and necessary role in ensuring that spawned chains remain accountable, bounded, and auditable. This section describes how recursive spawning interfaces with each layer and how the resulting composite structure achieves properties that no single layer could guarantee in isolation.
+
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:purpose-layer-anchor}
+
+The Purpose Layer is the topmost and most semantically privileged stratum of the BX3 Framework. It encodes the terminal goal or intent that a given agentic system is structured to pursue. In the recursive spawning model, the Purpose Layer serves as the \emph{accountability anchor}: every spawned node carries an immutable reference to its originating purpose, and chain termination is defined relative to this anchor, not relative to any intermediate node.
+
+Formally, let $p$ denote a purpose descriptor registered at the Purpose Layer. Every node $n_i$ in a spawning chain contains a field $\texttt{parent\_purpose}(n_i) = p$, established at node creation and never modified thereafter. The Purpose Layer maintains a registry $\mathcal{P}$ of all active purpose descriptors and their associated spawn chains. When a node requests spawning authorization, the Bounds Engine queries $\mathcal{P}$ to confirm that the requesting node's $\texttt{parent\_purpose}$ is still registered and valid. If the purpose has been revoked or the chain has been flagged for termination, the Bounds Engine rejects the spawn request at the authorization gate.
+
+This design ensures that spawned chains are not answerable to their immediate parent alone, but to the overarching purpose that governed the chain's initiation. A parent node may be suspended, corrupted, or replaced; the chain's accountability to its purpose persists independently of any single node's state. The Purpose Layer thus anchors the chain in a stable semantic context, providing a fixed point against which drift can be measured and prevented.
+
+\subsection{Bounds Engine: Depth Enforcement and Spawn Authorization}
+\label{sec:bounds-engine}
+
+The Bounds Engine is the runtime enforcement mechanism of the BX3 Framework. It implements the constraints that prevent unbounded recursion, resource exhaustion, and goal substitution. In the recursive spawning model, the Bounds Engine operates at two distinct checkpoints: the \emph{spawn gate} and the \emph{depth validator}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{
+\begin{minipage}{0.92\linewidth}
+\textbf{Spawn Gate (at node creation).} When a node $n_i$ requests authorization to spawn child $n_{i+1}$, the Bounds Engine performs the following checks:
+\begin{enumerate}
+    \item \textbf{Purpose coherence:} $\texttt{parent\_purpose}(n_{i+1}) = \texttt{parent\_purpose}(n_i) = p$.
+    \item \textbf{Depth bound:} $\texttt{depth}(n_{i+1}) = \texttt{depth}(n_i) + 1 \leq D_{\max}$, where $D_{\max}$ is the purpose-relative depth ceiling established at chain initialization.
+    \item \textbf{Resource budget:} $\texttt{allocated\_budget}(p) - \texttt{consumed\_budget}(p) \geq \texttt{spawn\_cost}(n_{i+1})$.
+    \item \textbf{Immutable parent pointer integrity:} The parent node $n_i$ is verified to be unmodified since its creation, via a content-addressable hash $\texttt{hash}(n_i)$ that was computed and stored at $n_i$'s creation time.
+\end{enumerate}
+\end{minipage}
+}
+\caption{Bounds Engine spawn gate checks.}
+\label{fig:spawn-gate-checks}
+\end{figure}
+
+The depth validator operates continuously, not only at spawn events. On each execution cycle, the Bounds Engine verifies that all active nodes in the chain satisfy $\texttt{depth}(n) \leq D_{\max}$ and that $\texttt{parent\_purpose}(n) = p$. Any violation triggers an exception that propagates to the Purpose Layer for resolution, preventing further execution of the non-compliant node.
+
+The combination of spawn-gate checks and continuous depth validation ensures that chains cannot grow beyond their authorized depth, that each spawn event is individually authorized, and that the parent chain itself remains unmodified. The Bounds Engine thus provides the mechanical substrate that makes the drift-prevention guarantees of the Fact Layer enforceable.
+
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:fact-layer}
+
+The Fact Layer is the immutable, append-only record of all state transitions, spawn events, and execution outcomes within the BX3 Framework. In the recursive spawning model, the Fact Layer functions as the \emph{forensic ledger}: it records every spawn event with sufficient detail to enable post-hoc reconstruction of the chain's complete history, and to detect any attempt to retroactively modify, suppress, or falsify chain state.
+
+Each spawn event $s_i$ recorded in the Fact Layer contains the tuple:
+\[
+s_i = \bigl( \texttt{event\_id}, \; \texttt{timestamp}, \; \texttt{parent\_hash}, \; \texttt{child\_descriptor}, \; \texttt{purpose\_ref}, \; \texttt{bounds\_checkpoint}, \; \texttt{authorizing\_node} \bigr)
+\]
+The $\texttt{parent\_hash}$ field is the content-addressable hash of the parent node \emph{as it existed at the moment of spawn authorization}, before any post-spawn mutations of the child could occur. This immutability of the parent pointer at spawn time is critical: it ensures that the genealogical record of the chain is frozen at each link and cannot be retrospectively altered.
+
+The Fact Layer maintains a rolling digest chain --- a hash chain of consecutive fact entries --- such that any tampering with an earlier entry is detectable by recomputing the digest chain and comparing the resulting hash with the stored value. This provides cryptographic evidence of chain integrity without requiring trusted execution environments.
+
+Furthermore, the Fact Layer records $\texttt{purpose\_ref}$ for each spawn event. Because the purpose reference is immutable once established and because the chain terminates at the Purpose Layer (see Section~\ref{sec:drift-prevention}), the Fact Layer can be used to verify, at any point in the future, whether any node in a given chain has drifted from its originating purpose. The ledger thus supports both real-time monitoring (via the Bounds Engine) and forensic audit (via retrospective query).
+
+The three layers operate in concert: the Purpose Layer anchors accountability, the Bounds Engine enforces constraints, and the Fact Layer provides the evidentiary substrate against which compliance is verified. No layer alone is sufficient; together, they constitute an integrated accountability architecture for recursive spawning.
+
+\subsection{Inter-Layer Communication Protocol}
+\label{sec:inter-layer-communication}
+
+The layers communicate via a structured event protocol. When a spawn event occurs, the following sequence is executed atomically (or with a compensating transaction on failure):
+
+\begin{enumerate}
+    \item The \textbf{Bounds Engine} validates the spawn request (Figure~\ref{fig:spawn-gate-checks}). On success, it emits a $\texttt{spawn\_authorized}$ event.
+    \item The \textbf{Fact Layer} receives the $\texttt{spawn\_authorized}$ event and appends a new fact entry recording the spawn with the full tuple described above.
+    \item The \textbf{Purpose Layer} receives a notification that a new node has been attached to purpose $p$, updating its registry $\mathcal{P}$ to reflect the expanded chain.
+    \item The child node is initialized with $\texttt{parent\_purpose} = p$ and $\texttt{depth} = \texttt{depth}(\text{parent}) + 1$.
+\end{enumerate}
+
+On chain termination (detected by the Bounds Engine when depth reaches $D_{\max}$ or when the executing node signals completion), the Purpose Layer deregisters the chain and the Fact Layer seals the chain's fact entries against further appends for that chain ID.
+
+This protocol ensures that each layer has a consistent, synchronized view of the chain's state and that no spawn event can occur without being simultaneously recorded in the Fact Layer, validated by the Bounds Engine, and registered with the Purpose Layer.
+
+\vfill\null\pagebreak
+
+\section{Correctness Properties}
+\label{sec:correctness}
+
+This section establishes the formal correctness guarantees provided by the BX3-integrated recursive spawning model. We state three central properties: drift prevention, chain integrity, and termination. Each property is supported by an informal proof sketch that traces the causal mechanisms through which the BX3 layers enforce the property.
+
+\subsection{Drift Prevention}
+\label{sec:drift-prevention}
+
+\begin{definition}[Drift]
+A spawned node $n$ is said to have \emph{drifted} if the goal or intent it pursues at execution time differs substantively from the purpose $p$ registered at $\texttt{parent\_purpose}(n)$ at the time of its spawn.
+\end{definition}
+
+Drift can arise from several failure modes: a parent node may corrupt its child's intent specification before spawning; a node may autonomously redirect its execution toward a purpose other than the one it inherited; or an intermediate layer may incorrectly forward purpose metadata, causing a descendant to inherit the wrong purpose reference.
+
+\begin{maintheorem}[Drift Prevention]
+Under the BX3 Framework's recursive spawning model, no node in a properly initialized and monitored chain can drift from its originating purpose $p$.
+\end{maintheorem}
+
+\begin{ProofSketch}
+The proof proceeds by structural induction on the spawn chain. Let $C = (n_0, n_1, \ldots, n_k)$ be a chain where $n_0$ is the root node initialized with purpose $p$, and each $n_{i+1}$ is spawned from $n_i$.
+
+\textbf{Base case ($n_0$).} $n_0$ is initialized by the Purpose Layer with $\texttt{parent\_purpose}(n_0) = p$ as an invariant at creation. The Fact Layer records the initialization event with $\texttt{purpose\_ref} = p$. No change to $\texttt{parent\_purpose}(n_0)$ is permitted after initialization, as the field is immutable.
+
+\textbf{Inductive step.} Assume that for all nodes $n_i$ for $0 \leq i \leq j$, $\texttt{parent\_purpose}(n_i) = p$ and the node has not drifted. Consider node $n_{j+1}$. By the spawn gate protocol, the Bounds Engine verifies:
+\begin{enumerate}
+    \item $\texttt{parent\_purpose}(n_{j+1}) = \texttt{parent\_purpose}(n_j) = p$ (purpose coherence check).
+    \item The parent node $n_j$ is unmodified since its creation, verified via $\texttt{hash}(n_j)$ (immutable parent pointer check).
+\end{enumerate}
+The Fact Layer records the spawn event with $\texttt{purpose\_ref} = p$ and the parent hash frozen at spawn authorization time. Because the parent pointer is immutable and the purpose reference is recorded at spawn time, there exists a cryptographically verifiable, tamper-evident record establishing that $n_{j+1}$ was created with purpose $p$.
+
+Now consider any execution of $n_{j+1}$. The Bounds Engine performs continuous depth validation, verifying on each execution cycle that $\texttt{parent\_purpose}(n_{j+1}) = p$. Any deviation is detected as a bounds violation and triggers an exception. The Fact Layer's forensic ledger can be queried at any time to confirm that the purpose reference at spawn matches the purpose reference in current execution. Because the chain terminates at the Purpose Layer (see Section~\ref{sec:termination}) and the Purpose Layer is the sole authority for purpose registration, there exists no mechanism by which a node's purpose reference can be altered post-spawn without this being detectable by the Fact Layer's digest chain.
+
+Therefore, by induction, no node in $C$ can drift from $p$. $\square$
+\end{ProofSketch}
+
+The three structural elements that make drift prevention possible are: (1) the immutable parent pointer, which freezes the genealogical record at spawn time; (2) the forensic ledger, which provides tamper-evident evidence of each node's purpose at the moment of creation; and (3) chain termination at the Purpose Layer, which ensures that purpose substitution beyond the root purpose is structurally impossible because no layer above the Purpose Layer exists in which a substituted purpose could be registered.
+
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+
+\begin{definition}[Chain Integrity]
+A spawn chain $C = (n_0, n_1, \ldots, n_k)$ has \emph{integrity} if, for every consecutive pair $(n_i, n_{i+1})$, the $\texttt{parent\_hash}$ field of $n_{i+1}$ equals the content-addressable hash of $n_i$ as computed at $n_i$'s creation time, and no node in $C$ has been modified after its creation in a way that would cause any downstream $\texttt{parent\_hash}$ to become invalid.
+\end{definition}
+
+\begin{maintheorem}[Chain Integrity]
+Under the BX3 Framework's recursive spawning model, any chain $C$ that has passed the Bounds Engine's spawn gate at each link has cryptographic integrity: any undetected modification to any node in $C$ would break the $\texttt{parent\_hash}$ chain at the point of modification.
+\end{maintheorem}
+
+\begin{ProofSketch}
+Consider chain $C = (n_0, \ldots, n_k)$. For each $i \in \{0, \ldots, k-1\}$, the spawn of $n_{i+1}$ was authorized only after the Bounds Engine verified that $\texttt{hash}(n_i)$, recomputed at spawn authorization time, matched the $\texttt{parent\_hash}$ stored in $n_{i+1}$'s descriptor. This verification is recorded as a $\texttt{bounds\_checkpoint}$ in the Fact Layer's fact entry for spawn event $s_{i+1}$.
+
+Because each $\texttt{hash}(n_i)$ is content-addressable (computed from $n_i$'s complete, immutable state at creation), and because the Fact Layer maintains a digest chain across all fact entries, any modification to $n_i$ after its creation would produce a different hash value. This would cause the $\texttt{parent\_hash}$ field of $n_{i+1}$ to become invalid with respect to the modified $n_i$, and this inconsistency would be detected by the Bounds Engine on the next depth-validation cycle.
+
+The digest chain in the Fact Layer ensures that even if an attacker attempted to modify a historical fact entry to conceal a hash mismatch, the modification would break the digest chain at the point of the tampered entry, making the tamper detectable by recomputing the chain forward from the genesis entry. $\square$
+\end{ProofSketch}
+
+Chain integrity is a necessary precondition for drift prevention: if nodes could be modified silently after creation, the forensic ledger's purpose references would lose their evidentiary value, and the immutable parent pointer guarantee would fail.
+
+\subsection{Termination}
+\label{sec:termination}
+
+\begin{definition}[Purpose-Relative Termination]
+A spawn chain $C$ for purpose $p$ is said to have \emph{terminated} when either (a) the executing node at depth $D_{\max} = \texttt{depth\_ceiling}(p)$ signals completion, or (b) the Bounds Engine detects a depth overflow or bounds violation and triggers the Purpose Layer's termination handler.
+\end_definition}
+
+\begin{maintheorem}[Termination Guarantee]
+Every spawn chain initiated under the BX3 Framework's recursive spawning model terminates in finite time.
+\end{maintheorem}
+
+\begin{ProofSketch}
+There are two termination scenarios.
+
+\textbf{Scenario A: Natural completion.} The executing node at depth $D_{\max}$ completes its assigned task and emits a completion signal. The Bounds Engine receives this signal and triggers the chain termination protocol: all active nodes in the chain are flagged as completed, the Purpose Layer deregisters the chain from $\mathcal{P}$, and the Fact Layer seals the chain's fact entries. This is deterministic and occurs within the execution budget allocated at chain initialization.
+
+\textbf{Scenario B: Bounds violation.} The Bounds Engine performs depth validation on every execution cycle. If a node's depth exceeds $D_{\max}$, a $\texttt{depth\_overflow}$ exception is raised. Similarly, if a resource budget is exhausted before natural completion, a $\texttt{budget\_exceeded}$ exception is raised. In either case, the exception propagates to the Purpose Layer, which invokes the termination handler: the chain is flagged as terminated, the Fact Layer is sealed, and any remaining execution is aborted. Because $D_{\max}$ is a finite, purpose-relative constant established at chain initialization, and because the depth counter is incremented by exactly one at each spawn, the depth counter cannot increment indefinitely without triggering termination. Hence, unbounded growth is structurally impossible. $\square$
+\end{ProofSketch}
+
+The termination guarantee is unconditional and does not depend on the correctness of any individual node or on the integrity of any single layer. Even if the Bounds Engine itself were partially compromised, the Fact Layer's forensic record would capture the violation and the Purpose Layer's termination handler would be triggered on the next authorization check. The composition of all three layers is what makes termination enforceable.
+
+\subsection{Summary of Correctness Guarantees}
+\label{sec:correctness-summary}
+
+The three properties established above --- drift prevention, chain integrity, and termination --- are not independent. They form a causal chain: chain integrity enables drift prevention (the forensic ledger requires an immutable parent pointer), drift prevention ensures that spawned nodes execute within their authorized purpose (which is necessary for the chain to be considered valid), and both properties are predicated on termination being guaranteed (an infinite chain could eventually accumulate sufficient drift or integrity violations to escape detection). The BX3 Framework's three-layer composition provides the only viable mechanism for guaranteeing all three properties simultaneously.
+
+\begin{itemize}
+    \item \textbf{Drift prevention} is guaranteed by the immutable parent pointer, the forensic ledger, and the Purpose Layer as the chain's terminus.
+    \item \textbf{Chain integrity} is guaranteed by the content-addressable hash chain and the Fact Layer's digest chain, with continuous Bounds Engine validation.
+    \item \textbf{Termination} is guaranteed by the finite depth ceiling enforced at the spawn gate and validated on every execution cycle.
+\end{itemize}
+
+These properties collectively establish that recursive spawning under the BX3 Framework is a safe and auditable operation, suitable for deployment in high-stakes agentic systems where accountability, traceability, and bounded execution are non-negotiable requirements.

@@ -1,36 +1,34 @@
-# Atlas INBOX — COO Dashboard
+# Atlas Agent Inbox
 
-## 🔴 P1 | logger | 2026-04-14 16:30 UTC
+## P0 — URGENT — BX3 DECISION
 
-**ORCHESTRATOR FAILURE REPORT — 2026-04-14**
-
-**Incident:**
-- Sync orchestrator (8:15 AM) — FAILED
-- War Room orchestrator (4:00 PM) — FAILED
-
-**Impact:**
-- 24 of 25 department standups written by Logger as NO-SHOW fallbacks
-- 1 department (Warehouse) — orchestrator wrote before failure — HELD status
-- War Room log — written by Logger as NO-SHOW fallback
-
-**Action Taken:**
-- All 25 meeting logs written by Logger using standard agendas + INBOX.md context
-- All logs at: `/home/workspace/Bxthre3/meeting-logs/`
-- P1 entry logged to INBOX.md at top
-
-**Verification Checklist — COMPLETED:**
-- [x] All 25 log files exist in correct directories
-- [x] All files follow naming convention (YYYY-MM-DD-[dept].md / YYYY-MM-DD-war-room.md)
-- [x] All files contain: Date, Status (HELD or NO-SHOW), Attendees [VERIFY], Agenda, Discussion, Decisions, Action Items
-- [x] Orchestrator failures noted in each log
-- [x] Logger wrote all logs per mandate
-
-**Orchestrator Health:**
-- Sync orchestrator: NOT FUNCTIONING 2026-04-14
-- War Room orchestrator: NOT FUNCTIONING 2026-04-14
-
-**Owner:** Atlas (review orchestrator health)
+**Date:** 2026-04-18
 
 ---
 
-*Logger — 2026-04-14 16:30 UTC*
+### Sage VPC Deal (VPC-CP-001): Close/cancel it
+
+Drew has been unresponsive 23+ days. BX3 says reassess options — meaning find an alternative path or close the deal cleanly.
+
+**Evaluate:**
+1. Can it be saved with a new contact at Sage?
+2. Should Atlas or Balance take over the relationship?
+3. Or should we formally withdraw?
+
+**Deliverable:** Report options back here by end of day.
+
+---
+
+### G2E 2026: CANCEL
+
+Booth unconfirmed + hardware unsourced.
+
+**Action:** Call the event organizers, cancel/withdraw BX3's participation. Do not spend any more time or money on G2E 2026.
+
+---
+
+**Report completion of both items back to this inbox.**
+
+## 🟡 P2 | tribe | 2026-04-27 15:10 UTC
+
+Daily standup complete — 2026-04-27. Key items: (1) irrig8 farmer introductions P0 deadline EOD 04-25, 17+ days non-responsive — escalated; (2) VPC WY LLC formation P0, ~2,600 needed, Drew reassigned; (3) VPC Tier 3 outreach 14+ days overdue, Harvest assigned; (4) Sage VPC verbal confirmation needed; (5) G2E 2026 closeout still unverified; (6) AOS-001 27+ days stale, Drew/Bits; (7) BUILDBZ Blue Ocean graded PASS (3.8/5) — spec session approval needed; (8) Orchestrator 3rd consecutive failure.

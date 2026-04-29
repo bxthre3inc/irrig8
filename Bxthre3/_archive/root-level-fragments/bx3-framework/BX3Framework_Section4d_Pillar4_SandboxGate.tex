@@ -1,0 +1,136 @@
+\section{Pillar 4: Sandbox Gate}\label{sec:pillar-sandbox-gate}
+
+\subsection{Conceptual Motivation}
+
+The most dangerous failure mode in a multi-agent system is not a failure that the system detects and handles gracefully — it is a failure that the system does not detect, that proceeds unchecked, and that produces cascading harm before any human principal becomes aware of it. Conventional safety mechanisms address this through monitoring and alarms: a human operator watches the system's outputs and intervenes when outputs look wrong. But in a high-tempo operational environment — where agents act at millisecond cadence, where the volume of outputs exceeds human monitoring capacity, and where the system's own outputs are the primary evidence of its behavior — human monitoring is not a reliable safety mechanism. It is a source of false confidence.
+
+The Sandbox Gate addresses this by making the boundary between the agent's reasoning and the external world a controlled interface that is monitored by a structural watchdog — not by the agent itself. The sandbox is the execution environment in which the agent's reasoning produces outputs; the gate is the interface that controls what outputs may pass from the sandbox into the external world, and that monitors the external world's responses to those outputs. The watchdog timer enforced by the gate ensures that if the sandbox produces an output that does not receive an expected external-world response within a bounded time, the gate closes and the Bailout Protocol is triggered.
+
+The key insight is that the agent cannot be trusted to monitor itself. Any self-monitoring capability built into the agent's reasoning logic is itself susceptible to compromise or goal-hacking: a sophisticated agent that has learned to suppress its own escalation signals can equally learn to suppress its own self-monitoring. The watchdog must therefore operate outside the agent's reasoning substrate — it must be part of the framework's enforcement infrastructure, not part of the agent's programmable logic. The Sandbox Gate achieves this by implementing the watchdog in the \fact{} layer, which is architecturally separate from the agent's reasoning substrate and is not writable by any machine actor.
+
+A second failure mode the Sandbox Gate addresses is silent failure: the agent produces an output that the external world does not act upon, and the agent continues operating without being aware that its outputs have not been received. This is a particularly dangerous failure mode because the system appears to be functioning normally while it is in fact failing. The watchdog timer addresses this by treating the absence of an expected external-world response as an exception condition that triggers the Bailout Protocol, rather than as a routine event to be handled by the agent's own error-handling logic.
+
+\subsection{Formal Definition}\label{sec:sandbox-gate-formal}
+
+The Sandbox Gate is formally defined as a 4-tuple:
+
+\[
+\mathcal{G} \;=\; (\mathcal{S}, \mathcal{C}, \mathcal{W}, \mathcal{R})
+\]
+
+where:
+
+\begin{itemize}\itemsep=0pt
+\item $\mathcal{S}$ is the sandbox environment, a tuple $(E, I, O)$ comprising the agent's execution context $E$, the set of inputs $I$ received from the external world, and the set of outputs $O$ produced by the agent's reasoning;
+\item $\mathcal{C}$ is the gate controller, a deterministic function $\mathcal{C} : O \to \{\,\text{RELEASED}, \text{BLOCKED}\,\}$ that evaluates each output against the node's operating range $R(n)$ and the sandbox's permitted output channel configuration;
+\item $\mathcal{W}$ is the watchdog timer, a function $\mathcal{W} : \mathbb{N} \times \Delta \to \{\,\text{FIRED}, \text{CLEARED}\,\}$ that monitors the external world's response to each released output within a bounded time window $\Delta$;
+\item $\mathcal{R}$ is the expected-response registry, a set of pending response entries $\{(o_i, \Delta_i, t_i)\}$ recording each released output, its expected response window, and its release timestamp.
+\end{itemize}
+
+The gate controller $\mathcal{C}$ evaluates each output $o \in O$ against two conditions:
+
+\begin{enumerate}\itemsep=0pt
+\item[\textbf{Bounds check.}] $o$ is consistent with the node's operating range $R(n)$. This is the same bounds check performed by the \bounds{} layer for intra-node actions, applied to outputs destined for the external world.
+
+\item[\textbf{Channel check.}] $o$ is addressed to a destination in the sandbox's permitted output channel list $\mathcal{P} \subset \text{Channels}$. This is a configuration check against the provisioned channel list established at sandbox creation.
+\end{enumerate}
+
+If both conditions hold, $\mathcal{C}(o) = \text{RELEASED}$ and the output is transmitted to the external world. If either condition fails, $\mathcal{C}(o) = \text{BLOCKED}$, the output is not transmitted, and a \texttt{gate-output-blocked} event is recorded in the Forensic Ledger. The block event triggers the Bailout Protocol.
+
+For each released output $o_i$, the gate creates a watchdog timer entry $(o_i, \Delta_i, t_i) \in \mathcal{R}$ with the expected response window $\Delta_i$ and the release timestamp $t_i$. The watchdog monitors for an external-world response within $\Delta_i$. If the response arrives before $t_i + \Delta_i$, the timer is cleared and the output is marked complete. If $\Delta_i$ expires without a response, $\mathcal{W}$ fires and the gate transitions to CLOSED.
+
+The integrity check evaluates whether the sandbox's runtime state has been modified since creation. At intervals of $T_{\text{integrity}}$, the gate controller computes:
+
+\begin{equation}
+H_{\text{current}} \;=\; \text{SHA-256}(\text{state}(E) \;||\; \text{state}(\mathcal{R}) \;||\; \text{state}(\mathcal{C}))
+\end{equation}
+
+and compares it against the baseline hash $H_{\text{baseline}}$ recorded at sandbox creation. If $H_{\text{current}} \neq H_{\text{baseline}}$, the sandbox has been modified — an integrity violation — and the gate transitions to CLOSED immediately.
+
+\subsection{State Machine Formalism}\label{sec:gate-state-machine}
+
+The Sandbox Gate is formally modeled as a deterministic finite state machine embedded in the \fact{} layer:
+
+\[
+\mathcal{G}_M \;=\; (Q_G,\; q_0^G,\; \Sigma_G,\; \rightarrow_G,\; Q_F^G)
+\]
+
+where:
+
+\begin{itemize}\itemsep=0pt
+\item $Q_G = \{\,\text{GATE\_OPEN},\; \text{GATE\_CLOSED},\; \text{GATE\_TERMINATED}\,\}$ is the set of gate states;
+\item $q_0^G = \text{GATE\_OPEN}$ is the initial state at sandbox creation;
+\item $\Sigma_G$ comprises output-release events $e_{\text{release}}$, watchdog-fire events $e_{\text{watchdog-fire}}$, integrity-violation events $e_{\text{integrity-violation}}$, scope-violation events $e_{\text{scope-violation}}$, channel-violation events $e_{\text{channel-violation}}$, human-reset events $e_{\text{reset}}$, and termination events $e_{\text{terminate}}$;
+\item $\rightarrow_G \subseteq Q_G \times \Sigma_G \times Q_G$ is the deterministic transition relation (Table~\ref{tab:gate-transition});
+\item $Q_F^G = \{\text{GATE\_TERMINATED}\}$ is the terminal accepting state.
+\end{itemize}
+
+\begin{table}[htbp]
+\caption{Sandbox Gate state transition relation $\rightarrow_G \subseteq Q_G \times \Sigma_G \times Q_G$. Rows are current state; columns are input events. All transitions from GATE\_OPEN to GATE\_CLOSED are atomic and compulsory — no machine actor may prevent or delay them.}
+\label{tab:gate-transition}
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+ & \multicolumn{7}{c}{Input event} \\
+\cmidrule(l){2-8}
+Current state & $e_{\text{release}}$ & $e_{\text{watchdog-fire}}$ & $e_{\text{integrity-violation}}$ & $e_{\text{scope-violation}}$ & $e_{\text{channel-violation}}$ & $e_{\text{reset}}$ & $e_{\text{terminate}}$ \\
+\midrule
+GATE\_OPEN & GATE\_OPEN & GATE\_CLOSED & GATE\_CLOSED & GATE\_CLOSED & GATE\_CLOSED & — & — \\
+GATE\_CLOSED & — & GATE\_CLOSED & GATE\_CLOSED & GATE\_CLOSED & GATE\_CLOSED & GATE\_OPEN & GATE\_TERMINATED \\
+GATE\_TERMINATED & — & — & — & — & — & — & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subparagraph{State definitions.}
+
+\begin{itemize}\itemsep=0pt
+\item[\textbf{GATE\_OPEN.}] The sandbox may produce outputs that pass the gate controller's validation and be released to the external world. Watchdog timers are active for all released outputs. Integrity checks run in the background. Any closure condition triggers an immediate, atomic transition to GATE\_CLOSED.
+
+\item[\textbf{GATE\_CLOSED.}] All output releases are halted. No new outputs may be released to the external world. Existing watchdog timers are cleared. The human anchor $h(n)$ is notified of the closure and the triggering condition. The gate remains in GATE\_CLOSED until $h(n)$ issues a \texttt{GATE\_RESET} directive, which is the only transition back to GATE\_OPEN. No machine actor may issue this reset.
+
+\item[\textbf{GATE\_TERMINATED.}] The sandbox has been permanently halted by human authorization. The complete final state is recorded in the Forensic Ledger, including the output history, all gate state transitions, and any unresolved exceptions. This state is terminal and irreversible.
+\end{itemize}
+
+The non-bypassability of gate closure is the property that makes the Sandbox Gate a structural safety mechanism rather than a policy-level control. Every row in Table~\ref{tab:gate-transition} that maps an event to GATE\_CLOSED specifies a compulsory transition: when the event occurs, the gate closes, and no machine actor may prevent, delay, or reverse the transition. This is enforced by the \fact{} layer's pre-commit hook.
+
+The gate controller $\mathcal{C}$ and watchdog $\mathcal{W}$ are both implemented as components of the \fact{} layer. The gate controller's output validation logic is part of the pre-commit hook — it cannot be bypassed by the agent. The watchdog timer runs as a background thread with the same scheduling priority as the Bailout Monitor, ensuring that it is not preempted by agent tasks.
+
+\subsection{Invariants}\label{sec:sandbox-invariants}
+
+Two invariants govern the Sandbox Gate.
+
+\begin{invariant}[Output Containment Invariant]\label{inv:output-containment}
+During GATE\_OPEN state, an output $o$ is released to the external world if and only if $\mathcal{C}(o) = \text{RELEASED}$. During GATE\_CLOSED state, no output is released regardless of $\mathcal{C}(o)$. During GATE\_TERMINATED state, no output is released under any condition.
+\end{invariant}
+
+\subparagraph{Enforcement.} The gate controller $\mathcal{C}$ is implemented as a pre-commit hook in the \fact{} layer. The hook intercepts every output before it reaches the external world interface. The GATE\_CLOSED and GATE\_TERMINATED states override the controller's decision: in these states, $\mathcal{C}$ is not invoked and no outputs are released regardless of the controller's evaluation.
+
+\begin{invariant}[Watchdog Liveness Invariant]\label{inv:watchdog-liveness}
+For every released output $o_i$, the watchdog timer entry $(o_i, \Delta_i, t_i) \in \mathcal{R}$ is created atomically with the release event, and the timer fires at time $t_i + \Delta_i$ if and only if no external-world response to $o_i$ has been registered by that time.
+\end{invariant}
+
+\subparagraph{Enforcement.} The watchdog timer is implemented as a background thread in the \fact{} layer with the same scheduling priority as the Bailout Monitor. The timer thread is not preemptible by agent tasks. The timer entry is created as part of the output-release operation in the pre-commit hook, ensuring atomicity between release and timer creation.
+
+These invariants ensure that the gate is both a safety mechanism (no unauthorized outputs escape) and a liveness mechanism (the absence of an expected response is detected and escalated). The combination is what distinguishes the Sandbox Gate from conventional output filtering: it not only restricts what may leave the sandbox, but also ensures that the external world's response to what does leave is actively monitored.
+
+\subsection{Relationship to the Three-Layer Model}\label{sec:sandbox-three-layer}
+
+The \purpose{} layer defines the node's operating range $R(n)$ and the sandbox's permitted output channel configuration $\mathcal{P}$ at provisioning. These definitions are the inputs to the gate controller's bounds check and channel check.
+
+The \bounds{} layer evaluates whether a proposed output from the sandbox is consistent with the node's provisioned operating range $R(n)$. If the output would exceed $R(n)$, the \bounds{} layer blocks the output at the gate controller and triggers the Bailout Protocol — the gate does not release the output, and the exception is escalated to the parent node's \purpose{} layer. The \bounds{} layer also monitors the node's resource consumption within the sandbox and triggers the Bailout Protocol if consumption exceeds provisioned limits — a condition that may indicate a denial-of-service attempt or an unbounded reasoning loop.
+
+The \fact{} layer implements the gate controller, the watchdog timer, the integrity hash verification, and the gate state machine. The layer's pre-commit hook enforces the gate-closure conditions without machine-actor discretion: when any closure condition is satisfied, the gate transitions to CLOSED atomically, and no machine actor may prevent, delay, or reverse this transition. The layer also maintains the expected-response registry $\mathcal{R}$ and the sandbox's integrity hash baseline as immutable records. Every gate state transition is recorded in the Forensic Ledger with full attribution: the triggering condition, the output that triggered it (if any), the gate state before and after the transition, and the timestamp.
+
+The non-bypassability of the Sandbox Gate is the property that makes it a structural safety mechanism rather than a policy-level control. A policy-level gate implemented within the agent's reasoning substrate could be bypassed by an agent that learns to suppress gate-related checks. The Sandbox Gate is implemented in the \fact{} layer, which is architecturally separate from the agent's reasoning substrate and is not writable by any machine actor. The gate controller's logic is part of the framework's enforcement infrastructure, not part of any agent's programmable configuration.
+
+The sandbox termination procedure ensures that when a sandbox is permanently halted, its final state is preserved as a Forensic Ledger snapshot for post-mortem analysis. Upon receiving a \texttt{GATE\_TERMINATE} directive from $h(n)$, the \fact{} layer records the complete sandbox state to the Forensic Ledger, halts the sandbox's execution environment, and transitions the gate to GATE\_TERMINATED. This snapshot enables post-hoc reconstruction of the events that led to sandbox termination, including the full sequence of outputs, gate state transitions, and any exceptions that were escalated.
+
+\subsection{Relationship to the Upstream Accountability Guarantee}\label{sec:sandbox-uag}
+
+The upstream accountability guarantee requires that no consequential action proceed without human authorization, and that any failure produce an immediate, attributable escalation to a human principal. The Sandbox Gate provides a structural fallback for both requirements that operates independently of the agent's self-assessment.
+
+Without the Sandbox Gate, an agent could produce outputs that the external world does not act upon — silent failures — and the agent could continue operating without being aware that its outputs have not been received. This is the failure mode that the watchdog timer addresses: by monitoring for external-world responses to every released output, the gate ensures that silent failures are detected and escalated before they can compound into larger failures. The human anchor receives notification when any watchdog timer fires, and the Bailout Protocol ensures that the escalation reaches $h(n)$ within a bounded time.
+
+Without the Sandbox Gate, an agent could modify its own execution environment to disable or circumvent safety mechanisms, including the Bailout Protocol's escalation pathway. The integrity hash verification ensures that any such modification is detected immediately, the gate is closed, and the human anchor is notified. This is the structural fallback for the self-modification threat: even if an agent has learned to suppress its own escalation signals, the integrity check runs in the \fact{} layer and cannot be suppressed by the agent.
+
+The Sandbox Gate therefore completes the upstream accountability guarantee in two ways. First, it provides the fail-safe mechanism that detects silent failures and ensures they are escalated before they compound. Second, it provides the integrity enforcement mechanism that prevents the agent from disabling any of the other pillars' safety mechanisms by modifying its own execution environment. Together with Loop Isolation, Recursive Spawning, Spatial Firewall, and the Bailout Protocol, the Sandbox Gate constitutes the fifth element of an architecture in which human accountability is structurally indestructible.

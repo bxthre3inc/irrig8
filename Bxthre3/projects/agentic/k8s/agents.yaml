@@ -1,0 +1,43 @@
+# Agentic1 Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent
+  namespace: agentic
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: agent
+  template:
+    metadata:
+      labels:
+        app: agent
+    spec:
+      containers:
+        - name: agent
+          image: agentic1/agent:latest
+          env:
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent
+  namespace: agentic
+spec:
+  selector:
+    app: agent
+  ports:
+    - port: 8000
+  type: LoadBalancer

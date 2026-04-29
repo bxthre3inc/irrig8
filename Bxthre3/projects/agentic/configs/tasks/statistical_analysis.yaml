@@ -1,0 +1,39 @@
+name: statistical_analysis
+description: "Perform statistical analysis on processed data."
+version: 1.0.0
+role: analyst
+inputs:
+  - name: processed_data
+    type: dataset
+    source: s3://data-bucket/processed/
+outputs:
+  - name: analysis_results
+    type: report
+    destination: s3://data-bucket/reports/
+steps:
+  - name: load_processed_data
+    action: load
+    tool: pandas
+    parameters:
+      file_format: parquet
+  - name: descriptive_stats
+    action: analyze
+    tool: pandas
+    parameters:
+      stats: ["mean", "median", "std"]
+  - name: hypothesis_testing
+    action: test
+    tool: scipy
+    parameters:
+      test_type: t-test
+      alpha: 0.05
+  - name: generate_report
+    action: generate
+    tool: matplotlib
+    parameters:
+      report_format: pdf
+      charts: ["histogram", "boxplot"]
+constraints:
+  max_retries: 2
+  timeout: 1800
+version: 1.0.0

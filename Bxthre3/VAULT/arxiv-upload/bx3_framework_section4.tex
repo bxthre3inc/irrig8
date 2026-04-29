@@ -1,0 +1,300 @@
+% ----------------------------------------------------------------
+\section{Immutable Parent Pointers}
+\label{sec:immutable-parent-pointers}
+
+In a BX3 system that employs Recursive Spawning (Pillar 2), each spawned node is not initialized and then left to operate as an independent entity. It is architecturally bound to its parent by design, and this binding is implemented through the \textit{Immutable Parent Pointer}: a directional link from every child node to its parent that, once established at spawn time, cannot be modified by any actor in the system --- including the child itself, its Bounds Engine, any Purpose Layer node, and any external attacker who might compromise the child node's software environment.
+
+The immutability of the parent pointer is the structural linchpin of the BX3 accountability architecture. Without it, the recursive accountability chain degenerates into a convention that can be broken at the moment it matters most. With it, every node in the system can trace its full Chain of authorization to a named human principal, and every unresolved exception is guaranteed to propagate upward until it reaches one.
+
+This section defines the formal data model, the Immutability Invariant, the enforcement mechanism at the Fact Layer, the Purpose Layer's role in spawn authorization, and the chain traversal algorithm that implements upward accountability propagation.
+
+% ----------------------------------------------------------------
+% 4.1  Formal Definition
+% ----------------------------------------------------------------
+\subsection{Formal Definition: The ParentPointer Relation}
+\label{sec:parent-pointer-relation}
+
+Let $\mathcal{N}$ denote the set of all nodes in a BX3 system. Every node occupies one of three functional layers: Purpose Layer ($n^{\ Purpose}$), Bounds Engine ($n^{\ Bounds}$), or Fact Layer ($n^{\ Fact}$). For any two nodes $p, c \in \mathcal{N}$, we define the parent-pointer relation:
+
+\begin{equation}
+\text{ParentPointer}(p, c) \coloneqq \text{True}
+\iff p \text{ authorized the creation of } c \text{ via Recursive Spawning}
+\label{eq:parent-pointer-def}
+\end{equation}
+
+The relation is established \textit{exactly once}, at the moment of $c$'s spawn, and carries the following invariant, which we call the \textit{Immutability Invariant}:
+
+\begin{itemize}
+\item[\textbf{Immutability Invariant (II):}] For all nodes $c \in \mathcal{N} \setminus \{c_{\ root}\}$, there exists exactly one node $p \in \mathcal{N}$ such that $\text{ParentPointer}(p, c) = \text{True}$. This assignment is made \textit{exactly once} at spawn time and is never modified, re-assigned, deleted, or bypassed by any subsequent operation at any layer, in any execution context, or under any conditions of node compromise.
+\end{itemize}
+
+The root node $c_{\ root}$ is the sole exception. As the originating human principal, it has no parent:
+
+\begin{equation}
+\text{ParentPointer}(p, c_{\ root}) = \text{False} \quad \forall p \in \mathcal{N}
+\qquad\text{and}\qquad
+\text{parent}(c_{\ root}) \coloneqq \text{null}
+\label{eq:root-null-parent}
+\end{equation}
+
+Taken together, the Immutability Invariant and Equation~\ref{eq:root-null-parent} imply that the ParentPointer relation over $\mathcal{N}$ forms a \textit{strict forest} --- a set of rooted trees in which every non-root node has exactly one parent, no node has multiple parents, and no node is an ancestor of itself. These constraints are not enforced by convention; they are enforced by the Fact Layer, as described in \S\ref{sec:fact-layer-enforcement}.
+
+The parent pointer for any node $c$ is accessed via a read-only accessor:
+
+\begin{equation}
+\text{parent}(c) \coloneqq
+\begin{cases}
+\text{null} & \text{if } c = c_{\ root} \\
+p \text{ where } \text{ParentPointer}(p, c) = \text{True} & \text{otherwise}
+\end{cases}
+\label{eq:parent-accessor}
+\end{equation}
+
+% ----------------------------------------------------------------
+% 4.2  The Accountability Chain
+% ----------------------------------------------------------------
+\subsection{The Accountability Chain}
+\label{sec:accountability-chain}
+
+The full upward accountability path from any node $a$ to the root human is defined recursively as the \textit{Accountability Chain} $\text{Chain}(a)$:
+
+\begin{equation}
+\text{Chain}(a) \coloneqq
+\begin{cases}
+\{\} & \text{if } a = c_{\ root} \quad \text{(base case: root has no parent)} \\[0.8em]
+\{\,\text{ParentPointer}\bigl(\text{parent}(a),\, a\bigr)\,\} \;\cup\; \text{Chain}\bigl(\text{parent}(a)\bigr) & \text{if } a \neq c_{\ root}
+\end{cases}
+\label{eq:chain-definition}
+\end{equation}
+
+Expanding Equation~\ref{eq:chain-definition} for a non-root node $a$ at depth $d(a) = k$:
+
+\begin{equation}
+\text{Chain}(a) = \left\{
+\text{ParentPointer}\bigl(\text{parent}(a),\, a\bigr),\;
+\text{ParentPointer}\bigl(\text{parent}^{(2)}(a),\, \text{parent}(a)\bigr),\;
+\ldots,\;
+\text{ParentPointer}\bigl(c_{\ root},\, \text{parent}^{(k)}(a)\bigr)
+\right\}
+\label{eq:chain-expanded}
+\end{equation}
+
+where $\text{parent}^{(i)}(a)$ denotes the $i$-fold composition of $\text{parent}$ (with $\text{parent}^{(1)}(a) = \text{parent}(a)$).
+
+The chain is a totally ordered set with respect to generational depth. We define the \textbf{generational depth} $d(n)$ of any node $n$ as the number of edges in $\text{Chain}(n)$:
+
+\begin{equation}
+d(n) \coloneqq
+\begin{cases}
+0 & \text{if } n = c_{\ root} \\[0.4em]
+d\bigl(\text{parent}(n)\bigr) + 1 & \text{otherwise}
+\end{cases}
+\label{eq:generational-depth}
+\end{equation}
+
+The depth $d(n)$ is always a non-negative integer and is bounded above by the system's \textit{maximum generational depth} $D_{\ max}$, a Fact Layer configuration parameter set at deployment time:
+
+\begin{equation}
+0 \leq d(n) \leq D_{\ max} \quad \forall n \in \mathcal{N}
+\label{eq:depth-bound}
+\end{equation}
+
+A system's \textbf{generations} are the set of all depth levels present in its node tree:
+
+\begin{equation}
+\mathcal{G} \coloneqq \{\, d(n) \mid n \in \mathcal{N} \,\}
+\label{eq:generations-set}
+\end{equation}
+
+The depth bound in Equation~\ref{eq:depth-bound} is critical for two runtime properties: (1) the chain traversal algorithm always terminates in at most $D_{\ max}$ steps, providing a hard worst-case latency bound for escalation propagation; (2) the maximum number of recursive hops between any node and its human accountability anchor is statically known, enabling deterministic audit and compliance analysis at design time. For a system with $D_{\ max} = 4$, the worst-case escalation from the deepest edge node to the root human requires exactly four hops.
+
+% ----------------------------------------------------------------
+% 4.3  Base Case: Root Human
+% ----------------------------------------------------------------
+\subsection{Base Case: The Root Human Node}
+\label{sec:root-human-base-case}
+
+The root human node $c_{\ root}$ is the only node in the system that is not itself spawned. It is the origin of authority: the only actor capable of authorizing the creation of Purpose Layer nodes, and therefore the only node from which all legitimate parent-pointer chains derive.
+
+The root human occupies the Purpose Layer by definition. Their accountability is self-referential and terminal: they answer to themselves, to the law, and to contractual obligations. No further upward chain exists. This is not an arbitrary design choice --- it reflects the observable structure of legitimate authority in human institutions. Every accountable organization has a human being at its head who bears final legal and moral responsibility. The BX3 Framework makes this structure explicit and enforceable rather than merely conventional.
+
+When a system is initialized, the root human's node is created with the following invariant-initializing attributes:
+
+\begin{align}
+\text{id}(c_{\ root}) &\coloneqq \text{canonical identifier (legal name, biometric hash, or institutional DID)} \label{eq:root-id} \\
+\text{parent}(c_{\ root}) &\coloneqq \text{null} \label{eq:root-parent} \\
+\text{layer}(c_{\ root}) &\coloneqq \text{Purpose Layer} \label{eq:root-layer} \\
+\text{depth}(c_{\ root}) &\coloneqq 0 \label{eq:root-depth}
+\end{align}
+
+No spawn operation is permitted in a BX3 system until the root human node has been established. The root must be created first; all other nodes are descendants of it.
+
+% ----------------------------------------------------------------
+% 4.4  Immutability Enforcement
+% ----------------------------------------------------------------
+\subsection{Immutability Enforcement: The Fact Layer as the Enforcement Boundary}
+\label{sec:fact-layer-enforcement}
+
+The Immutability Invariant cannot be reliably maintained by software permissions alone. Software permissions can be bypassed through privilege escalation, memory manipulation, supply-chain compromise, or simple implementation error. The BX3 Framework enforces the Immutability Invariant at the \textbf{Fact Layer} --- the deterministic, physically-constrained enforcement layer --- because this is the only layer whose constraints cannot be circumvented by reasoning or proposal. The Fact Layer is the only layer that implements physical write suppression: it does not provide any code path by which an existing parent-pointer entry can be modified.
+
+\subparagraph{Spawn-time enforcement.}
+At node creation, the Purpose Layer authorizes the creation of child node $c$ via a structured spawn authorization containing $\text{id}(p)$ (the parent's identifier) and $\text{id}(c)$ (the proposed child's identifier). The Fact Layer records the tuple:
+
+\begin{equation}
+\langle\ \text{id}(c),\ \text{id}(p),\ \text{timestamp}(t),\ \text{authorizing\_purpose\_node}\ \rangle
+\label{eq:ppr-tuple}
+\end{equation}
+
+in the \textit{Parent Pointer Registry} (PPR) --- a dedicated, append-only segment of the forensic ledger --- and atomically sets $\text{parent}(c) \coloneqq p$. This assignment is written once and never rewritten.
+
+\subparagraph{Post-spawn enforcement.}
+After spawn, any request $r$ targeting an existing PPR entry for $\text{id}(c)$ is processed by the Fact Layer according to Algorithm~\ref{alg:pp-enforcement}.
+
+\begin{algorithm}[htbp]
+\caption{Parent Pointer Immutability Enforcement (Fact Layer)}
+\label{alg:pp-enforcement}
+\begin{algorithmic}
+\Statex \textbf{Input:} A request $r$ targeting node $c$'s parent pointer entry in the PPR
+\Statex \textbf{Output:} $\{\text{ALLOW}, p_{\text{recorded}}\}$ or $\{\text{DENY}, \text{escalation\_event}\}$
+
+\Function{ProcessPPRRequest}{$r$, $c$}
+  \Let{$t$}{\text{current timestamp}}
+  \Let{$p_{\text{recorded}}$}{\text{Fact Layer ledger: } \text{parent}(c)}
+  \Statex
+
+  \If{$r$.\text{type} \text{ is } \texttt{READ}}
+    \State \Return $\{\text{ALLOW},\ p_{\text{recorded}}\}$
+    \Comment{Read-only access is always permitted}
+  \ElsIf{$r$.\text{type} \text{ is } \texttt{WRITE} \textbf{or} \texttt{DELETE}}
+    \State \Comment{\textbf{Physical block:} No write path exists for existing PPR entries}
+    \State \LogToLedger{\texttt{CONSTRAINT\_VIOLATION}, $c$, $r$, $t$}
+    \State \TriggerEscalationEvent{\texttt{PARENT\_POINTER\_MODIFICATION\_ATTEMPT}, $c$, $r$, $t$}
+    \State \Return $\{\text{DENY},\ \bot\}$
+  \EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The critical property of Algorithm~\ref{alg:pp-enforcement} is that it has \textit{no code path for successful write modification} of an existing parent pointer. The Fact Layer's ledger is append-only by architectural definition: it implements the mathematical property of immutability through physical constraint, not software policy. The distinction is important. A software policy that says ``do not modify'' can be overridden by a later software patch. A physical append-only ledger has no \texttt{update} operation in its interface; there is simply no function call that could achieve the modification, regardless of what privilege level the caller possesses.
+
+\subparagraph{On restart or state recovery.}
+The Fact Layer re-initializes the PPR from its stored append-only ledger. The parent pointer for every node is \textit{deterministically reproduced} from the ledger --- it is never recomputed, never re-assigned, and never defaulted to a new value. There is no code path by which a parent pointer can be nullified, re-pointed, or overwritten outside of the spawn-time authorization event. This is the sense in which the parent pointer is not merely ``immutable by policy'' but ``immutable by construction.''
+
+% ----------------------------------------------------------------
+% 4.5  Spawn Authorization
+% ----------------------------------------------------------------
+\subsection{Spawn Authorization: Purpose Layer Authority}
+\label{sec:spawn-authorization}
+
+The immutability of the parent pointer is only as trustworthy as the process that established it. If any actor other than the Purpose Layer could authorize spawns, then parent pointers could be assigned to illegitimate children --- nodes whose chains of accountability trace back to an unauthorized or fabricated parent rather than to the genuine root human.
+
+The BX3 Framework resolves this by requiring that \textbf{all spawn operations must be authorized by the Purpose Layer}. No Bounds Engine, no child node, and no external system can independently authorize the creation of a new BX3 node. The spawn authorization flows downward through the functional layers as a four-stage protocol:
+
+\begin{enumerate}
+
+\item \textbf{Authorization request.} A Purpose Layer node $p^{\ Purpose}$ (or the root human acting through their Purpose Layer interface) issues a spawn authorization containing: the proposed child identifier $\text{id}(c)$, the authorizing parent identifier $\text{id}(p)$, and the child node's provisioned capabilities --- layer assignment, Fact Layer tier, and scope of authority.
+
+\item \textbf{Validation gate.} The Purpose Layer confirms three conditions before authorizing:
+\begin{itemize}
+\item \textbf{Existence and authority:} The parent node $p$ exists and is authorized to bear spawn responsibility within its current scope.
+\item \textbf{Uniqueness:} The child identifier $\text{id}(c)$ has not already been assigned to any node in the system.
+\item \textbf{Scope conformance:} The proposed spawn does not create a child with authority exceeding that of the parent (authority narrowing is enforced by construction; a parent cannot spawn a more empowered child).
+\end{itemize}
+
+\item \textbf{Fact Layer execution.} Upon receiving a validated authorization from the Purpose Layer, the Fact Layer:
+\begin{itemize}
+\item Creates the child node record with $\text{id}(c)$ and $\text{layer}(c)$.
+\item Atomically writes the tuple in Equation~\ref{eq:ppr-tuple} to the PPR, establishing $\text{parent}(c) \coloneqq p$.
+\item Records the full authorization chain in the forensic ledger with the Purpose Layer's signature.
+\item Activates the child's Fact Layer with the provisioned constraint set.
+\end{itemize}
+
+\item \textbf{Audit confirmation.} The Fact Layer returns a cryptographically signed receipt confirming the successful establishment of the parent pointer. This receipt is the forensically verifiable record that the parent pointer existed and was set correctly at spawn time.
+
+\end{enumerate}
+
+The Purpose Layer's role in spawn authorization is not ceremonial. It is the accountability checkpoint that ensures every node in the system can trace its Chain back to a deliberate Purpose Layer decision made by a named, accountable actor. Without this checkpoint, a compromised Bounds Engine could spawn arbitrary child nodes, each inheriting a parent pointer to a legitimate-seeming parent --- creating a shadow hierarchy of unauthorized nodes operating under the apparent authority of the genuine system. The Purpose Layer's validation gate prevents this by ensuring that the only permitted spawn authorizations are those traceable to a genuine Purpose Layer node acting within its provisioned scope.
+
+The spawn authorization mechanism guarantees that the Chain of every node is not merely a data structure but a \textbf{forensically auditable chain of deliberate Purpose Layer decisions}, each logged and attributable to a named actor.
+
+% ----------------------------------------------------------------
+% 4.6  Chain Traversal Algorithm
+% ----------------------------------------------------------------
+\subsection{Chain Traversal Algorithm}
+\label{sec:chain-traversal-algorithm}
+
+Given a node $a$, traversing its accountability chain to locate the root human requires iterating upward through parent pointers until the root is reached. The algorithm must be:
+\begin{itemize}
+\item \textbf{Bounded:} guaranteed to terminate within $D_{\ max}$ steps;
+\item \textbf{Deterministic:} identical result on every invocation with the same input;
+\item \textbf{Cycle-immune:} correct even if implementation errors or memory corruption violate the Immutability Invariant.
+\end{itemize}
+
+Algorithm~\ref{alg:chain-traversal} implements this traversal.
+
+\begin{algorithm}[htbp]
+\caption{Chain Traversal: Locate Accountability Root for Node $a$}
+\label{alg:chain-traversal}
+\begin{algorithmic}
+\Statex \textbf{Input:} Node identifier $a$
+\Statex \textbf{Output:} Ordered list $\text{Chain}(a)$ from $a$ to root, and root identifier $r$
+
+\Function{TraverseChain}{$a$}
+  \State $\text{chain} \gets \text{empty ordered list}$
+  \State $c \gets a$
+  \State $D_{\ max} \gets \text{system maximum generational depth (Fact Layer config)}$
+  \State $tries \gets 0$
+
+  \While{$c \neq \text{null} \ \textbf{and} \ tries \leq D_{\ max}$}
+    \State $\text{parent} \gets \text{Fact Layer Ledger: parent}(c)$ \Comment{Read-only PPR access}
+    \Statex \Comment{\textbf{Immutable read:} Write/delete to parent field are physically blocked}
+    \State
+
+    \If{$\text{parent} = \text{null}$}
+      \Comment{$c$ is the root human --- chain terminates}
+      \State \Return $(\text{chain},\ c)$
+    \EndIf
+    \State
+
+    \State $\text{Append } \text{ParentPointer}(\text{parent}, c) \text{ to } \text{chain}$
+    \State $c \gets \text{parent}$
+    \State $tries \gets tries + 1$
+  \EndWhile
+
+  \Statex \Comment{\textbf{Termination guarantees:}}
+  \Statex \Comment{(1) $\text{parent}(c) = \text{null}$ only at $c_{\ root} \Rightarrow$ loop terminates at root}
+  \Statex \Comment{(2) Each iteration moves to $\text{parent}(c) \Rightarrow$ depth decreases by 1 per iteration}
+  \Statex \Comment{(3) Depth is a non-negative integer bounded below by $0 \Rightarrow$ loop terminates}
+
+  \If{$tries > D_{\ max}$}
+    \Comment{Defensive: activation of overshoot guard}
+    \State \LogToLedger{\texttt{CHAIN\_TRAVERSAL\_DEPTH\_EXCEEDED}, $a$, $tries$}
+    \State \TriggerEscalationEvent{\texttt{POSSIBLE\_CYCLE\_OR\_CORRUPTION}, $a$, $tries$}
+    \State \Return $(\text{chain},\ \bot)$ \Comment{$\bot$ indicates error condition}
+  \EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subparagraph{Termination proof.}
+The while loop in Algorithm~\ref{alg:chain-traversal} terminates for three reasons:
+\begin{enumerate}
+\item The ParentPointer relation forms a strict forest by the Immutability Invariant; each node has at most one parent, and no node can be an ancestor of itself.
+\item Each iteration sets $c \gets \text{parent}(c)$, strictly decreasing $d(c) \in \mathbb{N}$.
+\item $d(c)$ is a non-negative integer bounded below by $0$; therefore it cannot decrease indefinitely.
+\end{enumerate}
+Consequently, the loop terminates in exactly $d(a)$ iterations when the cursor reaches $c_{\ root}$, or earlier if a null parent is encountered.
+
+\subparagraph{Overshoot guard.}
+The $tries > D_{\ max}$ check is a defensive measure that activates if the traversal iterates more times than the system's configured maximum depth --- an impossibility under a correct implementation but possible under memory-corruption or data-integrity failures. When triggered, the algorithm halts, logs a \texttt{CHAIN\_TRAVERSAL\_DEPTH\_EXCEEDED} event to the forensic ledger, and fires a \texttt{POSSIBLE\_CYCLE\_OR\_CORRUPTION} escalation to the Purpose Layer. The anomaly is never silently ignored.
+
+\subparagraph{Escalation path.}
+When a node $a$ encounters an unresolvable state (the triggering condition for the Bailout Protocol, Pillar 5), it calls $\text{TraverseChain}(a)$ to obtain its ordered chain, then sends an escalation event carrying the full chain to its immediate parent. The parent repeats the process, propagating the escalation upward, until it reaches a Purpose Layer node capable of resolving the conflict. The root human is guaranteed to be the terminal recipient of any unresolved escalation, because $\text{Chain}(c_{\ root}) = \{\}$ by definition, and the upward traversal terminates precisely at $c_{\ root}$.
+
+This upward propagation is the runtime mechanism that implements the BX3 Framework's core safety guarantee:
+
+\begin{center}
+\textit{The system fails upward into human consciousness --- never downward into algorithmic silence.}
+\end{center}
+
+The Immutable Parent Pointer is what makes this guarantee structurally reliable rather than merely conventional. Without it, an escalation has no guaranteed destination. With it, the escalation path is determined, bounded, and forensically auditable at every hop.

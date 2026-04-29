@@ -1,0 +1,144 @@
+% ============================================================
+% SECTION 6 — INTEGRATION WITH THE BX3 FRAMEWORK
+% ============================================================
+\section{Integration with the BX3 Framework}
+\label{sec:bx3-integration}
+
+Recursive Spawning is designed as a first-class mechanism within the BX3 Framework, not a standalone add-on. Each spawn event operates under mandatory joint governance across all three BX3 layers, yielding a delegation system that is simultaneously expressive and structurally non-negotiable. This section describes how the Purpose Layer, Bounds Engine, and Fact Layer each contribute a distinct and irreplaceable function to the spawning protocol.
+
+% ---------------------------------------------------------------------------
+\subsection{Purpose Layer as Accountability Anchor}
+\label{sec:purpose-layer-anchor}
+
+The BX3 Purpose Layer is the sole authoritative source of agent intent and mission scope. For recursive spawning, it serves two structural roles that no other layer can substitute.
+
+\textbf{Mandate propagation.} When a root agent spawns a child, the child's mandate certificate carries the \emph{terminalPurpose} pointer to the root's Purpose Layer commitment—not to the parent, not to any intermediate node. This pointer is set once at instantiation and is immutable thereafter. Each successive spawn copies this same terminalPurpose downward, ensuring that every agent in the chain, regardless of depth, is directly answerable to the same root Purpose Layer mandate. The terminalPurpose pointer cannot be reassigned by any actor, including the agent itself.
+
+\textbf{Spawn authorization gate.} The Purpose Layer controls whether an agent may spawn at all. An agent whose mandate explicitly withholds recursive spawning authority cannot initiate a spawn event—this is enforced by the Bounds Engine intercepting the spawn request before instantiation. Because the mandate is signed and recorded in the Fact Layer, there is no mechanism by which an agent can overwrite its own spawning authority post-instantiation. The Purpose Layer thus terminates the chain at its source: a mandate that does not grant spawning authority produces a leaf node by construction, with no bypass available.
+
+The Purpose Layer also serves as the shared governance surface for multi-agent collaboration within a spawned subgraph. All agents in the chain reference the same mandate, enabling any agent to query whether a requested action falls within the collective scope. This cross-agent accountability is transitive: a grandchild agent is accountable to the root mandate, and any sibling that observes out-of-scope behavior can reference the shared Purpose Layer to confirm the violation.
+
+% ---------------------------------------------------------------------------
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:bounds-engine}
+
+The Bounds Engine enforces quantitative and qualitative constraints on agent behavior. For recursive spawning, it implements depth limiting and action-space bounding as two independent, jointly required enforcement mechanisms.
+
+\textbf{Depth limiting.} The Bounds Engine maintains a spawn depth counter initialized to a configurable maximum $D_{\max}$ at system initialization. The counter increments atomically on each successful spawn and decrements on agent termination. Any spawn request submitted when $\text{depth} \geq D_{\max}$ is rejected with a \texttt{BOUNDS\_EXCEEDED} error. This is a structural enforcement, not a configurable policy—the Bounds Engine has no authority to exceed $D_{\max}$ regardless of operational urgency. Depth limiting prevents unbounded recursion before it can begin.
+
+\textbf{Action-space bounding.} Every agent's Purpose Layer mandate specifies an authorized action set $\mathcal{A}$. The Bounds Engine intercepts all tool-invocation requests and blocks any action $a \notin \mathcal{A}$, irrespective of depth. This prevents recursive spawning from being used as a permission-escalation path: a child agent spawned into a constrained action space cannot spawn a sibling with broader authority, because the child's own spawning authority is gated by its mandate, not by its own preferences.
+
+\textbf{Resource decay.} Each child receives $\delta \cdot \text{parent's remaining budget}$ as its resource ceiling ($\delta \in (0,1)$). The geometric decay ensures that resource consumption across the chain diminishes monotonically and cannot accumulate to the point of exhausting system capacity. When a child's resource budget reaches zero, it cannot instantiate further agents—providing a third independent termination path.
+
+% ---------------------------------------------------------------------------
+\subsection{Fact Layer as Forensic Ledger}
+\label{sec:fact-layer-ledger}
+
+The BX3 Fact Layer provides an immutable, append-only record of all agent actions, spawn events, and state transitions. For recursive spawning, it functions as the forensic ledger that makes post-hoc accountability verification possible and makes tampering structurally detectable.
+
+Every spawn event generates a \texttt{SPAWN\_EVENT} record in the Fact Layer:
+
+\begin{itemize}
+    \itemsep0em
+    \item Spawner agent ID and Purpose Layer mandate hash
+    \item Newborn agent ID and inherited action-space $\mathcal{A}$
+    \item Spawn depth at time of instantiation
+    \item SHA-256 hash of the preceding Fact Layer record, creating a chain
+\end{itemize}
+
+The hash-chaining scheme is the tamper-evidence mechanism. Each record $i$ contains $\text{SHA-256}(R_i \oplus h_{i-1})$, where $h_{i-1}$ is the hash of record $i-1$. The genesis record contains the hash of the root mandate. Modifying any record $R_i$ invalidates $h_i$, and because all subsequent records embed $h_i$, the invalidation propagates forward deterministically. Any observer with ledger read access can detect the first point of chain breakage by recomputing hashes. Silent tampering is structurally impossible.
+
+The Fact Layer records all subsequent agent actions within the spawned subgraph, maintaining a unified audit trail from root to leaf. Two capabilities follow: (1) \emph{retrospective attribution}—given any observed behavior, the chain of responsible agents is recoverable to the root; (2) \emph{counterfactual analysis}—the ledger can be replayed to determine whether alternative spawn decisions would have been more aligned with the root mandate. Both capabilities are necessary for compliance auditing and regulatory review.
+
+Revocation events are also recorded in the Fact Layer. When a higher-authority agent revokes a child's mandate—whether due to drift detection, resource exhaustion, or policy violation—the revocation is written as a permanent, auditable ledger entry. This creates a complete, tamper-evident lifecycle record for every agent in the chain.
+
+% ============================================================
+% SECTION 7 — CORRECTNESS PROPERTIES
+% ============================================================
+\section{Correctness Properties}
+\label{sec:correctness-properties}
+
+This section establishes the formal correctness guarantees of the Recursive Spawning mechanism operating within the BX3 Framework. We prove three core properties: drift prevention, chain integrity, and termination. Each theorem is proved via structural reasoning over the spawn chain, relying only on architectural constraints and the layer specifications from \S\ref{sec:bx3-integration}.
+
+% ---------------------------------------------------------------------------
+\subsection{Drift Prevention}
+\label{sec:drift-prevention}
+
+\begin{theorem}[Drift Prevention]
+Let $R$ be a root agent with Purpose Layer mandate $M_R$. Let $C_1, C_2, \ldots, C_k$ be the chain of agents spawned recursively from $R$, where each $C_i$ inherits $M_R$ via mandate propagation and carries an authorized action set $\mathcal{A}_i$. Then for all $i \in \{1, \ldots, k\}$, no action performed by $C_i$ falls outside the scope of $M_R$.
+\end{theorem}
+
+\medskip\noindent
+\textbf{Proof.} The proof proceeds by structural induction over the spawn chain.
+
+\begin{itemize}
+    \item[\textbf{Base case ($i=1$).}] $C_1$ receives a mandate certificate derived directly from $M_R$, signed by $R$ and verified by the Bounds Engine before instantiation. Its authorized action set $\mathcal{A}_1$ satisfies $\mathcal{A}_1 \subseteq \mathcal{A}_R$, where $\mathcal{A}_R$ is the action space authorized by $M_R$. By the Bounds Engine's action-space bounding (\S\ref{sec:bounds-engine}), any invocation $a \notin \mathcal{A}_1$ is blocked at intercept time. Therefore $C_1$ cannot act outside $M_R$.
+
+    \item[\textbf{Inductive step.}] Assume for all agents up to depth $d$ that each $C_j$ ($1 \leq j \leq d$) satisfies $\mathcal{A}_j \subseteq \mathcal{A}_R$. Consider $C_{d+1}$, a child of $C_d$. $C_{d+1}$ receives a mandate certificate with terminalPurpose pointing to $M_R$ and an authorized action set $\mathcal{A}_{d+1}$ such that $\mathcal{A}_{d+1} \subseteq \mathcal{A}_d$ (enforced by the Bounds Engine at spawn time). By the inductive hypothesis, $\mathcal{A}_d \subseteq \mathcal{A}_R$. Hence $\mathcal{A}_{d+1} \subseteq \mathcal{A}_R$, and $C_{d+1}$ is constrained to $M_R$. The terminalPurpose pointer is immutable post-instantiation—no actor, including $C_{d+1}$ itself, can reassign it.
+
+    \item[\textbf{Immutable parent pointer.}] The parent pointer $\alpha(C_i)$ is set once at instantiation and cannot be modified thereafter. An agent cannot re-parent itself to a different Purpose Layer, and no child can sever its linkage to the root. This eliminates the primary drift mechanism by which an agent could escape its original accountability anchor.
+
+    \item[\textbf{Forensic ledger detection.}] The Fact Layer records every action taken by every agent in the chain. Any deviation from $M_R$ that bypasses the Bounds Engine would be recorded as an unexplained action in the ledger. Mandatory periodic audit verifies ledger consistency; any action not attributable to an authorized mandate is flagged as anomalous. Because audit is enforced by the governance substrate, drift cannot persist undetected.
+\end{itemize}
+
+\medskip\noindent
+\textbf{Corollary.} Drift is not merely detected—it is structurally prevented. An agent in the spawn chain cannot reach a state in which its actions are ungoverned by $M_R$, because the conjunction of immutable parent pointers, mandate propagation, and Bounds Engine action-space enforcement makes drift structurally impossible. An agent would need to simultaneously forge a mandate, overwrite its terminalPurpose pointer, and alter the Fact Layer hash chain—operations that are individually impossible and collectively undetectable. $\square$
+
+% ---------------------------------------------------------------------------
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+
+\begin{theorem}[Chain Integrity]
+The spawn audit chain maintained in the Fact Layer is tamper-evident: any modification to a spawn record at depth $i$ invalidates the hash chain for all descendant records at depths $j > i$, and the breach is detectable by any observer with ledger read access.
+\end{theorem}
+
+\medskip\noindent
+\textbf{Proof.} Each \texttt{SPAWN\_EVENT} record $R_i$ contains $\text{SHA-256}(R_i \oplus h_{i-1})$, where $h_{i-1}$ is the hash of the preceding record and $h_0$ is the SHA-256 hash of the root mandate. The chain is initialized with the root mandate hash as $h_0$.
+
+Suppose a tampered record $R'_i$ is substituted for $R_i$ at depth $i$. Recomputing the hash at depth $i$ yields $h'_i = \text{SHA-256}(R'_i \oplus h_{i-1}) \neq h_i$ (collision resistance of SHA-256 ensures $R'_i \neq R_i \implies h'_i \neq h_i$). Since $R_{i+1}$ contains $h_i$ as part of its hash computation, the subsequent hash $h_{i+1} = \text{SHA-256}(R_{i+1} \oplus h_i)$ cannot be reproduced using $h'_i$. The mismatch propagates to all $h_j$ for $j > i$. Verification of the chain at any point after the tampered record fails, and the first mismatching index identifies the depth of the tamper. $\square$
+
+\medskip\noindent
+\textbf{Corollary (Non-repudiation).} Each spawn record is cryptographically attributed to the spawner's identity via the mandate signature embedded in the record. Because the chain is hash-linked and immutable post-write, no agent can truthfully deny having authorized a descendant's instantiation. The chain constitutes non-repudiable evidence of every spawn decision and its encoded constraints, enforceable in any compliance or regulatory proceeding.
+
+% ---------------------------------------------------------------------------
+\subsection{Termination at the Purpose Layer}
+\label{sec:termination}
+
+\begin{theorem}[Purpose-Layer Termination]
+Every recursive spawning chain terminates at the Purpose Layer: there exists a finite depth $T \leq D_{\max}$ such that no agent at depth $T$ can spawn further agents, and the chain's sole accountability fixed point is the root Purpose Layer mandate $M_R$.
+\end{theorem}
+
+\medskip\noindent
+\textbf{Proof.} Three independent mechanisms ensure finite termination.
+
+\begin{enumerate}
+    \item[\textbf{Depth bound.}] The Bounds Engine enforces a hard architectural maximum $D_{\max}$. Any spawn request evaluated when $\text{depth} \geq D_{\max}$ is rejected with \texttt{BOUNDS\_EXCEEDED}. The spawn counter is incremented atomically before instantiation, ensuring no race condition can bypass the limit. Therefore the chain cannot grow beyond $D_{\max}$ layers.
+
+    \item[\textbf{Mandate-based spawning authority.}] An agent may spawn only if its Purpose Layer mandate explicitly grants recursive spawning authority. Mandates that withhold this grant produce terminal leaf nodes by construction—there is no alternative path to spawn. This is a structural constraint enforced by the Bounds Engine at spawn-request evaluation, not a configurable policy.
+
+    \item[\textbf{Geometric resource decay.}] Each child receives $\delta \cdot B_{\text{parent}}$ as its resource ceiling, where $\delta \in (0,1)$ and $B_{\text{parent}} > 0$. The sequence of resource budgets $\{B_i\}$ across the chain satisfies $B_i \leq \delta^i \cdot B_0$, a decreasing geometric series bounded below by zero. When $B_i = 0$, no further instantiation is possible. Since $\delta < 1$, termination occurs within $\lceil \log_\delta \epsilon \rceil$ steps for any positive resource resolution $\epsilon$, guaranteeing a finite leaf.
+\end{enumerate}
+
+In all three cases, the terminal node of the chain is an agent whose sole remaining accountability relationship is to the shared Purpose Layer mandate of the root. The root Purpose Layer mandate $M_R$ is the \emph{sole fixed point} of the spawning relation: no spawn operation can escape $M_R$, and the chain terminates precisely when it cannot be extended without violating $M_R$ or a structural bound derived from it. $\square$
+
+% ---------------------------------------------------------------------------
+\subsection{Summary of Correctness Guarantees}
+\label{sec:correctness-summary}
+
+The three theorems establish the following guarantees for the Recursive Spawning mechanism operating within the BX3 Framework:
+
+\begin{center}
+\begin{tabular}{llp{7.5cm}}
+\toprule
+\textbf{Property} & \textbf{Mechanism} & \textbf{Guarantee} \\
+\midrule
+Drift prevention & Immutable parent pointer + mandate propagation + Bounds Engine action-space enforcement & No agent in the chain can act outside the root mandate scope; drift requires simultaneous forge of three independent structural constraints \\
+Chain integrity & SHA-256 hash-chained Fact Layer spawn records & Any tampering invalidates the chain deterministically; non-repudiable spawn attribution for all depths \\
+Termination & Depth bound $D_{\max}$ + mandate-based spawning authority + geometric resource decay & Chain always terminates at finite depth $\leq D_{\max}$; root Purpose Layer is the sole fixed point of the spawning relation \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These guarantees are mutually reinforcing. Drift prevention ensures that the chain never escapes governance. Chain integrity ensures that any attempt to subvert governance is detectable. Termination ensures that unbounded resource consumption or infinite recursion is structurally impossible. Together, they constitute a provably sound recursive spawning system in which every agent at every depth is accountable to exactly one Purpose Layer mandate—anchored at the root, propagated without exception, and enforced by all three BX3 layers in concert.
+
+\endinput

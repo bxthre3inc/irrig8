@@ -1,0 +1,115 @@
+\section{Implementation in the BX3 Framework}
+\label{section:bailout-implementation}
+
+The Bailout Protocol is the runtime enforcement layer of BX3's upstream accountability commitment. It does not introduce accountability as a new property—it makes an already-existing governance commitment operative after agent initialization. Every agent in a BX3 deployment operates under a Purpose Mandate authored by a human principal; the Bailout Protocol is the mechanism that ensures deviations from that mandate are detected, recorded, and surfaced to a human before they propagate. This section describes how the protocol is instantiated across the three architectural layers of the BX3 Framework—Purpose, Bounds, and Fact—and how the forensic ledger and state machine formalize its guarantees.
+
+\subsection{Integration with the Purpose Layer: The Human Accountability Anchor}
+\label{subsection:bailout-purpose-layer}
+
+The Purpose Layer is BX3's foundational governance tier. It encodes the \emph{why} of each agent's operation: the mission context, the operational constraints imposed by human principals, and the delegable action space that the agent is authorized to exercise. Critically, the Purpose Layer does not execute actions. It \emph{authorizes} them, establishing the governance record against which all subsequent agent behavior is evaluated.
+
+Each agentic entity in a BX3 deployment carries a structured record called a \texttt{Purpose Mandate}. The Mandate specifies the agent's authorized domain, decision thresholds, stakeholder boundaries, and the identity of the human principal to whom the agent is accountable. This record is authored by the human principal at agent initialization and stored as an immutable fact in the Fact Layer at the moment of activation.
+
+The Purpose Mandate serves as the accountability anchor for the Bailout Protocol. When a bail-out event is triggered, the event record includes a \texttt{MandateRef} field that identifies the specific Mandate under which the agent was operating at the time of the event. This reference connects the runtime interruption to the governance structure that authorized the agent's activity in the first place. Without this anchor, a bail-out would be an isolated interrupt with no traceable connection to the human intent behind the agent's deployment.
+
+The \texttt{MandateRef} field contains three elements: the canonical identifier of the active Purpose Mandate, a SHA-256 hash of the Mandate's content at initialization time, and an ISO-8601 timestamp of Mandate activation. The triplet makes it computationally verifiable that the Mandate has not been altered between initialization and the bail-out event, and that the bail-out occurred while the agent was operating under a specific, identifiable governance record. This structure is what gives the Bailout Protocol its non-repudiation property: the human principal who authored the Mandate cannot plausibly disavow awareness of the agent's operational domain, because the Mandate is cryptographically linked to every action the agent took, including those that preceded the bail-out.
+
+\subsection{The Bounds Engine: Bail-Out Triggering Authority}
+\label{subsection:bailout-bounds-engine}
+
+If the Purpose Layer encodes what an agent is \emph{authorized} to do, the Bounds Engine encodes what an agent is \emph{not permitted} to do, what conditions constitute a violation, and what response is mandatory when a violation is detected. The Bounds Engine is the triggering authority for the Bailout Protocol: it holds the boundary conditions, monitors agent behavior against those conditions in real time, and issues the bail-out signal when any boundary is crossed.
+
+The Bounds Engine operates on a three-stage model: \textbf{Bound Encoding}, \textbf{Bound Monitoring}, and \textbf{Bound Enforcement}.
+
+In the Bound Encoding stage, boundary conditions are expressed as executable predicates over the agent's observable state and action space. These predicates are authored during agent configuration and stored in the Bounds Registry. Example bounds include: ``do not authorize transactions exceeding \$10,000 without human confirmation,'' ``halt if factual inconsistency confidence drops below 0.85,'' and ``do not send communications outside the defined stakeholder list.'' Each bound is assigned a severity classification—\texttt{HARD\_STOP} or \texttt{GRACEFUL\_STOP}—reflecting the human principal's judgment about the criticality of the boundary.
+
+In the Bound Monitoring stage, the Bounds Engine runs as a sidecar process that receives telemetry from the agent's action pipeline. Telemetry is evaluated against encoded predicates at configurable frequency: per-action for high-stakes boundaries, periodic for behavioral boundaries. The Engine evaluates asynchronously to minimize latency impact on the agent's primary operation.
+
+In the Bound Enforcement stage, when a predicate evaluates to \texttt{true}, indicating a boundary violation, the Bounds Engine emits a \texttt{BoundViolationEvent} and simultaneously dispatches the bail-out signal to the agent's execution context. The bail-out signal is a structured event with the following schema:
+
+\begin{verbatim}
+{
+  "event_type": "BOUND_VIOLATION",
+  "bound_id": "<canonical-bound-identifier>",
+  "predicate": "<encoded-predicate-expression>",
+  "observable_state": { ... },
+  "timestamp": "<ISO-8601>",
+  "mandate_ref": "<mandate-identifier>",
+  "severity": "HARD_STOP | GRACEFUL_STOP"
+}
+\end{verbatim}
+
+A \texttt{HARD\_STOP} requires immediate termination of all agent processes and a state freeze. A \texttt{GRACEFUL\_STOP} permits the agent to complete in-flight sub-tasks that do not themselves violate bounds, but prevents initiation of new actions. The agent's execution context is required to honor the bail-out signal as a hard interrupt—the agent must enter a halted state immediately upon receipt, with no graceful degradation that might delay or obscure the interrupt.
+
+\subsection{The Fact Layer: Audit Trail Enforcement}
+\label{subsection:bailout-fact-layer}
+
+The Fact Layer is BX3's immutable record-keeping tier. It serves as both the source of truth for agent state and the permanent archive for all governance-relevant events, including the complete lifecycle of every bail-out event. The Fact Layer enforces the audit trail through two mechanisms: \emph{event immutability} and \emph{causal tracing}.
+
+Every event flowing through the BX3 system—agent actions, bound evaluations, Mandate activations, and bail-out signals—is recorded in the Fact Layer as an \texttt{ImmutableFact}. An \texttt{ImmutableFact} is a signed, hash-chained data structure: each fact contains a cryptographic hash of the immediately preceding fact, forming a chain that makes retroactive tampering computationally infeasible. The hash includes the fact's payload, the prior fact's hash, and a timestamp, ensuring that any modification to historical records would require recalculation of all subsequent hashes.
+
+For the Bailout Protocol, the Fact Layer records the following sequence for each bail-out event:
+
+\begin{enumerate}
+  \item \textbf{Pre-Bailout State}: The agent's full observable state immediately prior to the bail-out signal, including action queue, in-flight requests, resource utilization, and decision context.
+  \item \textbf{Bail-Out Signal}: The structured \texttt{BoundViolationEvent} emitted by the Bounds Engine, including the bound identifier, predicate, Mandate reference, and severity classification.
+  \item \textbf{Agent Acknowledgment}: The agent's confirmation of bail-out receipt, logged with a timestamp to enable verification of signal delivery latency.
+  \item \textbf{Post-Bailout State}: The agent's state at the moment of halt—active processes terminated, resources released or frozen, incomplete actions logged with their degree of completion.
+  \item \textbf{Root Cause Annotation}: A field in which the Bounds Engine or a human reviewer records the probable cause of the violation that triggered the bail-out. This field requires either a human annotation or a certified root-cause analysis model—it is not machine-generated without qualification.
+\end{enumerate}
+
+This sequence creates a \texttt{causal closure}: the full chain from authorized Mandate, through bound violation, to agent halt, is permanently recorded in an unalterable ledger. Any retrospective analysis—whether conducted by a human auditor, a compliance system, or an autonomous governance agent—can reconstruct the complete causal path without ambiguity.
+
+\subsection{Forensic Ledger Recording}
+\label{subsection:bailout-forensic-ledger}
+
+The forensic ledger is the operational instantiation of the Fact Layer's audit trail, specifically provisioned for the Bailout Protocol. It is a designated partition within the Fact Layer's hash-chained record store, optimized for bail-out event retrieval and cryptographic verification. The forensic ledger records every bail-out event as a \texttt{BailoutLedgerEntry}, a composite record that consolidates the full bail-out context into a single queryable entity.
+
+A \texttt{BailoutLedgerEntry} contains:
+
+\begin{itemize}
+  \item \textbf{Entry Identifier}: A unique, monotonically increasing identifier assigned at the moment of ledger write, enabling strict temporal ordering of bail-out events across all agents in the system.
+  \item \textbf{Agent Identity}: The canonical identifier of the agent that received the bail-out signal, along with its active Purpose Mandate reference.
+  \item \textbf{Bound Violation Record}: The full \texttt{BoundViolationEvent} payload, including the predicate expression and the observable state snapshot that triggered the violation.
+  \item \textbf{Accountability Chain}: A compact representation of the hash chain from the agent's Mandate activation fact through all intermediate facts to the bail-out event fact, enabling cryptographic verification of the entry's position within the global fact chain.
+  \item \textbf{Resolution Record}: The outcome of the bail-out event—whether the agent was terminated, suspended, or returned to human review—and any subsequent remediation actions.
+  \item \textbf{Audit Metadata}: Fields for auditor identity, review timestamp, and any annotations recorded during post-bailout review.
+\end{itemize}
+
+The forensic ledger supports two critical operational queries. \emph{Forward tracing}: given an agent or a Mandate, retrieve all associated bail-out events across the full history of the agent's operation. This enables longitudinal analysis of agent reliability and boundary adequacy. \emph{Backward verification}: given a specific ledger entry, verify its cryptographic integrity by recomputing the hash chain and confirming that the entry's hash is consistent with the chain it claims to belong to. This verification can be performed by any party with access to the public verification key—no privileged access is required—making the audit trail publicly verifiable without compromising confidentiality.
+
+The forensic ledger is append-only. Entries are written at the moment of bail-out activation and are never modified or deleted. Corrections or annotations are added as new entries referencing the original entry by identifier, preserving the original record's integrity while extending the audit narrative.
+
+\subsection{State Machine as Fact Layer Extension}
+\label{subsection:bailout-state-machine}
+
+The Bailout Protocol's runtime behavior is formally modeled as a state machine whose states correspond to the agent's operational status relative to the bail-out lifecycle. This state machine is implemented as an extension of the Fact Layer—not a separate execution engine, but a structured set of fact records that encode state transitions. This means the agent's operational lifecycle itself is an auditable fact, subject to the same immutability and cryptographic chaining as the agent's operational facts.
+
+The Bailout Protocol state machine comprises five states:
+
+\begin{enumerate}
+  \item \textbf{AUTHORIZED}: The agent is operating within its active Purpose Mandate, all encoded bounds are satisfied, and no bail-out condition is present. This is the default operational state.
+  \item \textbf{BOUND\_VIOLATION\_DETECTED}: A predicate in the Bounds Engine has evaluated to \texttt{true}, indicating a boundary violation. A \texttt{BoundViolationEvent} has been emitted. The agent remains in its pre-bail-out operational state until the bail-out signal is received and acknowledged. This transitional state captures the window between detection and acknowledgment.
+  \item \textbf{BAIL\_OUT\_SIGNALLED}: The agent has received and acknowledged the bail-out signal. The agent's execution context has entered a halted state. The \texttt{BailoutLedgerEntry} is written to the forensic ledger. The agent is not permitted to initiate new actions.
+  \item \textbf{IN\_REVIEW}: The bail-out event has been forwarded to human review or autonomous compliance analysis. The agent remains suspended. The forensic ledger entry is updated with a \texttt{review\_initiated} timestamp and reviewer identifier.
+  \item \textbf{REMITTED\_OR\_TERMINATED}: The review process has concluded. The agent is either remitted to operation (returned to the \texttt{AUTHORIZED} state with an updated Mandate if the violation was determined to be correctable) or terminated (marked as permanently non-operational, with all active sessions closed and credentials revoked).
+\end{enumerate}
+
+State transitions are themselves recorded as facts in the Fact Layer. Each transition produces an \texttt{ImmutableFact} with the transition type, source and destination states, triggering event identifier, and timestamp. There is no privileged execution path that bypasses the fact chain. The state machine's own behavior is subject to the same immutability guarantees as the agent's operational facts.
+
+The state machine is deliberately decoupled from the agent's primary execution context. Rather than embedding bail-out logic within the agent's action loop—where it could be subject to the same faults or compromised conditions that necessitate the bail-out—the state machine is implemented as a fact-driven observer. The Bounds Engine and forensic ledger operate as independent processes that observe the agent's telemetry and record facts about its state. The agent's own execution context is unaware of the state machine; it simply receives and honors bail-out signals. This architectural separation ensures that the bail-out mechanism cannot be circumvented by a compromised or malfunctioning agent.
+
+\subsection{The Bailout Protocol as Runtime Expression of Upstream Accountability}
+\label{subsection:bailout-upstream-accountability}
+
+BX3's accountability guarantee is established at the moment a Purpose Mandate is authored and activated: a human principal defines the agent's authorized domain, and the system commits to operating within that domain. This commitment is \emph{upstream} because it is made at the governance layer, before any agentic action occurs. The Bailout Protocol is the \emph{runtime} mechanism that makes this upstream guarantee enforceable after the fact.
+
+The relationship can be expressed as a logical invariant:
+
+\begin{center}
+\textit{If an agent operates under an active Purpose Mandate $M$, and all bounds in the Bounds Registry are satisfied, then the agent's actions are accountability-preserving with respect to $M$. If any bound is violated, then the Bailout Protocol guarantees that the agent transitions to a halted state and the event is recorded in the forensic ledger.}
+\end{center}
+
+This invariant is maintained by the joint operation of the three layers: the Purpose Layer establishes the Mandate, the Bounds Engine detects violations, and the Fact Layer records the outcomes. The Bailout Protocol closes the loop between governance commitment at the Purpose Layer and operational accountability at runtime. Without it, the Purpose Mandate would be a static declaration with no runtime teeth—the agent's actions could deviate from its Mandate with no automated mechanism to detect or record the deviation.
+
+The upstream accountability guarantee implies a \emph{non-repudiation} property: because every bail-out event is recorded with a Mandate Reference, the human principal cannot plausibly disavow awareness of the agent's operational domain. The Mandate was authored, activated, and is cryptographically linked to every action the agent took—including the actions that preceded the bail-out event. This non-repudiation property distinguishes BX3's accountability model from conventional agent frameworks, where the chain of authorization between human principal and autonomous agent is typically implicit and unrecorded.

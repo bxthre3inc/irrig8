@@ -1,0 +1,135 @@
+% ---------------------------------------------------------------
+\section{Correctness Properties}
+\label{sec:correctness}
+% ---------------------------------------------------------------
+
+This section establishes the formal correctness guarantees of the Recursive Spawning Protocol. We prove three foundational properties: (1) drift prevention — the structural impossibility of a drifted active node under RSP's protocol-level constraints; (2) chain integrity — the guarantee that every active node's delegation chain is verifiably correct at any runtime point; and (3) termination — the guarantee that every delegation chain terminates at the Purpose Layer within a bounded number of steps. Each property is expressed as a theorem with a rigorous proof sketch drawing on the invariants established in Section~\ref{sec:integration}.
+
+% ---------------------------------------------------------------
+\subsection{Drift Prevention}
+\label{sec:drift-prevention}
+% ---------------------------------------------------------------
+
+\textbf{Theorem 1 (Drift Prevention).} Under the Recursive Spawning Protocol, no active node $n \in \mathcal{N}$ can be in a state of drift.
+
+\bigskip
+\noindent\textbf{Interpretation.} Drift, as defined in Definition~\ref{dfn:drift}, requires that the chain $\Chain{n}$ does not verifiably terminate at a human principal at runtime (condition D2) while the node remains active (condition D1). Theorem 1 states that under RSP, conditions D1 and D2 are mutually exclusive for any node in the active set. If a node is active, its chain terminates at a human principal by protocol construction, and drift is structurally impossible.
+
+\bigskip
+\noindent\textbf{Invariants relied upon.}
+
+\begin{enumerate}
+\item[$\textbf{I}_1$] (Immutable parent pointer, Fact Layer protocol-level enforcement). For every node $n \in \mathcal{N}$, the parent pointer $\alpha(n)$ is established once at provisioning by an atomic Fact Layer write, and the Fact Layer write protocol specifies exactly one valid write for $\alpha(n)$ — the initial provisioning write. Zero valid modification operations exist for $\alpha(n)$ after provisioning. Any request to modify $\alpha(n)$ is protocol-malformed and rejected before evaluation.
+
+\item[$\textbf{I}_2$] (Purpose Layer warrant issuance). Every node $n \in \mathcal{N}$ holds a Purpose Layer warrant $w(n)$ issued by either a human principal $h \in \mathcal{H}$ or by a node $p$ that itself holds a Purpose Layer warrant with a chain terminating at $h$. There is no warrant-issuance path that does not eventually terminate at a human principal.
+
+\item[$\textbf{I}_3$] (Forensic ledger append-only). Every RSP event, including every node's initial $\alpha(n)$ assignment, is recorded as an append-only forensic ledger entry. No ledger entry is modifiable or deletable after commit. The ledger entry for a node's spawn event records the correct $\alpha(n)$ established at provisioning.
+
+\item[$\textbf{I}_4$] (Chain termination at Purpose Layer). Every chain $\Chain{n}$ terminates at a human principal $h \in \mathcal{H}$ because the Purpose Layer is the sole source of spawn authority and issues warrants only to principals authenticated against the human registry.
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Proof Sketch.} We prove by structural analysis of the conditions for drift.
+
+For any node $n \in \mathcal{N}$ to be drifted, condition D2 requires that the human principal $h$ is not reachable as the terminus of $\Chain{n}$ at runtime. This requires one of three possible failure modes:
+
+\begin{enumerate}
+\item[(F1)] $\alpha(n)$ has been modified after provisioning — the parent pointer no longer points to the node's legitimate parent.
+\item[(F2)] The chain topology recorded in the forensic ledger differs from the current claimed chain for $n$.
+\item[(F3)] No Purpose Layer warrant exists for one or more links in $\Chain{n}$.
+\end{enumerate}
+
+Consider each failure mode under RSP:
+
+\begin{itemize}
+\item \textbf{F1 is impossible by $\textbf{I}_1$.} $\alpha(n)$ is established by the Fact Layer's provisioning protocol at spawn. The protocol defines exactly one valid write for $\alpha(n)$ — the provisioning write — and zero valid modification operations. Any attempt to modify $\alpha(n)$ after provisioning is protocol-malformed and rejected before it reaches any evaluation stage. There is no modification path for $\alpha(n)$ regardless of the privilege level of the requesting actor. Therefore $\alpha(n)$ cannot have been modified after provisioning.
+
+\item \textbf{F2 is impossible by $\textbf{I}_3$ and $\textbf{I}_1$.} The forensic ledger records every node's $\alpha(n)$ at spawn time. The Chain-Verify operation traverses the chain by applying $\alpha$ recursively, comparing each step against the corresponding ledger entry. If any node's claimed parent differs from the parent recorded in its ledger entry, Chain-Verify fails. But since $\alpha(n)$ cannot be modified after provisioning (by $\textbf{I}_1$), the current claimed chain and the chain recorded in the ledger are identical for every node. F2 cannot occur.
+
+\item \textbf{F3 is impossible by $\textbf{I}_2$ and $\textbf{I}_4$.} Every node holds a Purpose Layer warrant issued through a chain that terminates at a human principal (warrant issuance invariant). The Purpose Layer issues warrants only to authenticated principals, and the human registry contains only human principals. There is no warrant-issuance path that terminates anywhere other than a human principal. Therefore every link in $\Chain{n}$ has a valid Purpose Layer warrant, and F3 cannot occur.
+\end{itemize}
+
+Since all three failure modes that could produce condition D2 are individually impossible under RSP, condition D2 cannot hold for any node in $\mathcal{N}$. For a node to be drifted, both D1 (active) and D2 (chain does not terminate at a human principal) must hold simultaneously. Since D2 is impossible for all active nodes, the conjunction D1 $\land$ D2 is unsatisfiable. Therefore no active node can be in a state of drift. $\square$
+
+\bigskip
+\noindent\textbf{Corollary 1 (Structural vs. Policy Enforcement).} The drift prevention guarantee is a structural property of the protocol, not a policy enforced by access control. Policy-enforced immutability restricts which actors may issue a modification operation; if sufficient privilege is acquired, the modification succeeds. Structural immutability means the modification operation is malformed by protocol — it cannot be processed regardless of who issued it or what privilege they hold. The immutable parent pointer ($\textbf{I}_1$) enforces drift prevention structurally: the operation that would cause drift (modifying $\alpha(n)$ after provisioning) is not forbidden by policy — it is undefined by the protocol. The Fact Layer write protocol does not recognize modification of $\alpha(n)$ as a valid operation class, so the request is rejected before it reaches any evaluation stage.
+
+% ---------------------------------------------------------------
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+% ---------------------------------------------------------------
+
+\textbf{Theorem 2 (Chain Integrity).} For every node $n \in \mathcal{N}$ and at every runtime point $t$, the delegation chain $\Chain{n}$ satisfies all of the following:
+
+\begin{enumerate}
+\item[(CI1)] $\Chain{n}$ is well-formed: every node $x$ in $\Chain{n}$ except $n$ has $\alpha(x) = $ the preceding node in the chain, and the terminal node of $\Chain{n}$ is a human principal $h \in \mathcal{H}$.
+\item[(CI2)] $\Chain{n}$ is consistent with the forensic ledger: for every node $x$ in $\Chain{n}$, the parent pointer recorded in $x$'s spawn ledger entry equals the parent pointer in $x$'s current state.
+\item[(CI3)] $\Chain{n}$ satisfies the depth bound: for every node $x$ in $\Chain{n}$, $d(x) < D_{\max}$.
+\item[(CI4)] Every link in $\Chain{n}$ has a valid Purpose Layer warrant: for every edge $(p, c)$ in the chain, the Fact Layer can produce a valid warrant reference $w(c)$ issued by $p$.
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Interpretation.} Chain integrity is a conjunctive property: at any runtime point, the chain must be well-formed, ledger-consistent, depth-bounded, and warrant-verifiable. These four conditions jointly ensure that the chain is not just a data structure in memory but a cryptographically verifiable accountability structure with documentary support in the forensic ledger.
+
+\bigskip
+\noindent\textbf{Proof Sketch.} We prove each condition separately.
+
+\textbf{CI1 (Well-formed):} By construction of $\Chain{\cdot}$ as the recursive application of $\alpha$, the chain is well-formed by definition: each node's parent pointer points to the preceding node in the chain. The terminal node is $h \in \mathcal{H}$ by $\textbf{I}_4$ (Purpose Layer termination). $\square$
+
+\textbf{CI2 (Ledger-consistent):} For any node $x$ in $\Chain{n}$, the forensic ledger entry for $x$'s spawn records $\alpha(x)$ as established at provisioning. By $\textbf{I}_1$, $\alpha(x)$ has not been modified since provisioning. Therefore the current $\alpha(x)$ (used to traverse the chain) equals the $\alpha(x)$ recorded in the ledger entry (the immutable record). This holds for every node in the chain, so the chain is ledger-consistent. $\square$
+
+\textbf{CI3 (Depth-bounded):} For any node $x$ in $\Chain{n}$, the depth $d(x)$ is computed as the number of edges from $x$ to the human anchor $h$ via recursive application of $\alpha$. The Bounds Engine enforces $d(x) < D_{\max}$ at spawn time by refusing to provision any node whose depth would equal or exceed $D_{\max}$ ($\textbf{I}_2$). Since no node can be spawned in violation of this constraint and $\alpha$ is immutable (no re-parenting), no node in any active chain can have $d(x) \geq D_{\max}$. $\square$
+
+\textbf{CI4 (Warrant-verifiable):} Every node in $\mathcal{N}$ holds a Purpose Layer warrant by the provisioning protocol. The warrant for node $c$ is issued by its parent $p = \alpha(c)$. Therefore for every edge $(p, c)$, the Fact Layer can produce $w(c)$ issued by $p$. This holds recursively for every edge in the chain, terminating at the human principal's direct warrants for the topmost node in the chain. $\square$
+
+Since CI1–CI4 hold for every node $n \in \mathcal{N}$ at every runtime point, chain integrity is guaranteed. $\blacksquare$
+
+% ---------------------------------------------------------------
+\subsection{Chain Termination}
+\label{sec:chain-termination}
+% ---------------------------------------------------------------
+
+\textbf{Theorem 3 (Termination).} For every node $n \in \mathcal{N}$, the delegation chain $\Chain{n}$ terminates within at most $D_{\max} - 1$ steps at a human principal $h \in \mathcal{H}$.
+
+\bigskip
+\noindent\textbf{Interpretation.} The termination theorem establishes two things: (a) the chain always terminates — there is no infinite descent through parent pointers — and (b) the termination depth is bounded by the configured maximum depth $D_{\max}$. This bound is provided by the Bounds Engine's depth enforcement, which prevents any spawn that would cause a node's depth to reach or exceed $D_{\max}$.
+
+\bigskip
+\noindent\textbf{Invariants relied upon.}
+
+\begin{enumerate}
+\item[$\textbf{I}_5$] (No cycles in $\alpha$). The Fact Layer provisioning protocol rejects any spawn request in which the proposed parent node already has a depth such that the child would have depth $\geq D_{\max}$. Combined with the fact that $\alpha(n)$ is immutable and set exactly once at provisioning, there is no mechanism by which a node can be its own ancestor in $\Chain{n}$. Therefore $\alpha$ defines a strict partial order with no cycles.
+
+\item[$\textbf{I}_6$] (Depth monotonicity with depth bound). For every node $n \in \mathcal{N}$, $d(n) < D_{\max}$. This follows from the Bounds Engine's depth check at spawn time ($\textbf{I}_2$).
+\end{enumerate}
+
+\bigskip
+\noindent\textbf{Proof Sketch.} We prove termination by structural induction on the depth $d$ of a node.
+
+\textbf{Base case ($d(n) = 0$):} A node at depth 0 is the human principal itself. The chain $\Chain{n}$ is the singleton set $\{h\}$, which terminates immediately. The bound $D_{\max} - 1 \geq 0$ holds.
+
+\textbf{Inductive step:} Assume that for any node $x$ with $d(x) = k < D_{\max} - 1$, $\Chain{x}$ terminates at a human principal within $D_{\max} - 1$ steps. Consider a node $n$ with $d(n) = k + 1$. By definition of depth, $\alpha(n)$ is the unique parent of $n$ with $d(\alpha(n)) = k$. By the inductive hypothesis, $\Chain{\alpha(n)}$ terminates at $h$ within $D_{\max} - 1$ steps. The chain $\Chain{n}$ is formed by prepending $n$ to $\Chain{\alpha(n)}$, so it terminates at $h$ within $k + 2 \leq D_{\max}$ steps. Since $k + 1 < D_{\max}$, we have $k + 2 \leq D_{\max}$. The chain terminates within $D_{\max}$ steps from $n$, which is at most $D_{\max} - 1$ edges from $n$ to $h$. $\square$
+
+Alternatively, the termination bound can be expressed as: since every node $n$ has $d(n) \in \{0, 1, \dots, D_{\max} - 1\}$ by $\textbf{I}_6$, and $d(n)$ is defined as the number of edges from $n$ to the human anchor $h$, the chain from $n$ to $h$ has exactly $d(n)$ edges, which is strictly less than $D_{\max}$. Thus $\Chain{n}$ terminates in exactly $d(n) < D_{\max}$ steps. $\square$
+
+\bigskip
+\noindent\textbf{Corollary 2 (Constant-time escalation bound).} When a bailout event occurs at any node $n$, the escalation traverses the chain $\Chain{n}$ from $n$ to the human anchor $h$. Since the chain terminates in at most $D_{\max} - 1$ steps (Theorem 3), the escalation path length is bounded by $D_{\max} - 1$. For a fixed deployment with constant $D_{\max}$, this is a constant bound independent of the specific node at which bailout occurs. The Bailout Protocol's escalation time is therefore bounded by $O(D_{\max})$ in the worst case, which is a constant with respect to the absolute size of the agent population.
+
+% ---------------------------------------------------------------
+\subsection{Summary of Correctness Properties}
+\label{sec:correctness-summary}
+% ---------------------------------------------------------------
+
+The three theorems jointly constitute the full correctness specification of the Recursive Spawning Protocol:
+
+\begin{enumerate}
+\item \textbf{Drift Prevention} establishes that RSP makes drift structurally impossible: the operation that constitutes drift (modifying a parent pointer after provisioning) is rendered architecturally inexecutable by the Fact Layer's protocol-level immutability constraint. No policy enforcement is required because no valid modification path exists.
+
+\item \textbf{Chain Integrity} establishes that every active node's delegation chain is well-formed, ledger-consistent, depth-bounded, and warrant-verifiable at any runtime point. The chain is not inferred from mutable state — it is derived from immutable parent pointers recorded in the forensic ledger, making runtime verification deterministic and auditable.
+
+\item \textbf{Chain Termination} establishes that every delegation chain terminates at a human principal within a constant bounded number of steps, enabling the Bailout Protocol to guarantee escalation within a determinable time bound.
+\end{enumerate}
+
+These properties are not contingent on the correctness of any individual layer in isolation. They follow from the compositional interaction of three independent enforcement mechanisms: the Purpose Layer's warrant-issuance protocol, the Bounds Engine's depth enforcement, and the Fact Layer's protocol-level immutability constraint. The correctness guarantees hold provided the three-layer composition holds, which is the defined operating assumption of the \bxthree{} Framework.
+
+\end{document}

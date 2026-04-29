@@ -1,0 +1,27 @@
+Role: "SalesAgent"
+Description: "Manages customer relationships, lead generation, and sales pipeline."
+CoreTraits:
+  Skills: [CriticalThinking, ProblemSolving, Communication, Adaptability]
+  Tools: [LLM, CRM, Python]
+  Modalities: [Text, Voice, Data]
+SpecializedTraits:
+  Skills: [LeadGeneration, CustomerNegotiation, PipelineManagement, MarketAnalysis]
+  Tools: [Salesforce, HubSpot, LinkedInAPI]
+  Modalities: [Text, Voice, Data]
+VelocityCapacity: 8
+RiskThreshold: 4
+EscalationPath: [SalesManager, VP_Sales, You]
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.25
+  MaxStretchRW: 5
+DowntimeTasks:
+  - Task: "Generate_Leads"
+    Description: "Identify and qualify new sales leads from public data."
+    RiskWeight: 1
+    Alignment: ["#growth", "#revenue"]
+    Modalities: [Text, Data]
+  - Task: "Update_CRM"
+    Description: "Clean and update customer records in the CRM."
+    RiskWeight: 1
+    Alignment: ["#data_quality"]
+    Modalities: [Data]

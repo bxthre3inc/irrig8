@@ -1,0 +1,39 @@
+name: data_processing
+description: "Process raw data into structured format for analysis."
+version: 1.0.0
+role: analyst
+inputs:
+  - name: raw_data
+    type: dataset
+    source: s3://data-bucket/raw/
+outputs:
+  - name: processed_data
+    type: dataset
+    destination: s3://data-bucket/processed/
+steps:
+  - name: load_data
+    action: load
+    tool: pandas
+    parameters:
+      file_format: csv
+  - name: clean_data
+    action: clean
+    tool: pandas
+    parameters:
+      drop_na: true
+      fill_na: mean
+  - name: transform_data
+    action: transform
+    tool: pandas
+    parameters:
+      normalize: true
+      encode_categorical: true
+  - name: save_data
+    action: save
+    tool: pandas
+    parameters:
+      file_format: parquet
+constraints:
+  max_retries: 3
+  timeout: 3600
+version: 1.0.0

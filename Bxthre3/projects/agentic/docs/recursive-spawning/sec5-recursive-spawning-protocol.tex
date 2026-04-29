@@ -1,0 +1,132 @@
+\section{The Recursive Spawning Protocol}
+
+\subsection{Overview and Design Objectives}
+
+The Recursive Spawning Protocol (RSP) is the operational mechanism by which the BX3 Framework converts multi-agent spawning from a forensic reconstruction problem into a runtime-verified structural property. Every spawn event is governed by a mandatory five-stage sequence executed across all three BX3 layers. No stage is advisory; no layer may be bypassed; no operational urgency constitutes an exception to any protocol requirement. The result is that every agent in any spawn chain is, by architectural construction, traceable to a human principal, constrained to a scope narrower than its parent, and recorded in an immutable forensic ledger before it enters operational state.
+
+RSP is not a spawn primitive. It is a governed protocol that enforces cryptographic provability, purpose alignment, and forensic accountability at every step of the spawning chain. The protocol assumes that agents may behave arbitrarily and that the system must be constructed to enforce its constraints regardless of agent cooperation. This adversarial framing is intentional and reflects the operational reality of autonomous AI systems operating in open environments.
+
+The design objectives of RSP are:
+
+\begin{itemize}
+    \item \textbf{Termination at Human.} Every spawning chain must provably terminate at a verified human principal. The chain must not rely on an agent's self-reporting of its parentage; it must be cryptographically verified at spawn time.
+    \item \textbf{Purpose Coherence.} Each spawn event must be validated against the parent agent's declared purpose scope. Agents spawned outside their purpose scope are refused activation.
+    \item \textbf{Immutable Lineage.} Once a child agent is activated, its parent pointer cannot be altered, revoked, or reassigned by any actor, including the parent agent, any administrator, or any downstream agent.
+    \item \textbf{Complete Forensic Coverage.} Every spawn event and every refusal event must produce a signed, append-only entry in the forensic ledger. No event is unlogged. No actor can suppress or modify a ledger entry after inscription.
+\end{itemize}
+
+These objectives are jointly satisfied by the three-layer architecture described in the sections that follow.
+
+\subsection{Purpose Layer: Purpose Validation}
+
+The Purpose Layer is the first gate in any spawn request. It serves two distinct roles in the Recursive Spawning Protocol: purpose-coherence validation and human-anchor propagation.
+
+When a parent agent issues a spawn instruction, it submits a purpose declaration to the Purpose Layer stating the task scope, intended outcome, and tool access requirements for the proposed child. The Purpose Layer cross-references this declaration against the parent agent's registered purpose charter—a document that defines the operational boundaries of the parent agent as agreed upon at activation time. The charter defines the set of allowable actions, the acceptable tool categories, and the scope boundaries within which the parent agent may operate. If the proposed child's intended scope falls outside the parent's charter, the Purpose Layer rejects the spawn with a \texttt{PURPOSE\_VIOLATION} error code and logs the refusal as a first-class protocol event.
+
+If the scope is within charter, the Purpose Layer issues a signed \texttt{PURPOSE\_ATTESTATION} token that accompanies the spawn request to the next sublayer. This token encodes the child's declared purpose scope, the parent agent's identity, the parent charter version, and a timestamp. The token is signed by the parent agent's cryptographic key, which itself is bound to the parent's human anchor via the BX3 Purpose Layer's anchor chain.
+
+The Purpose Layer's second role is the propagation of human anchors. Each agent $a$ in the system carries a human anchor $h(a)$ — a reference to the specific human principal who authorized the agent's existence. When a parent agent spawns a child, the Purpose Layer verifies that the parent carries a valid human anchor and that the child's declared purpose scope is consistent with that anchor's authority. The child's human anchor is set to the same value as the parent's human anchor, establishing an unbroken chain of human authorization from the root agent to the deepest descendant. An agent whose purpose chain cannot be traced to a human principal is, by architectural definition, unauthorized — the Purpose Layer rejects activation for any agent that lacks a verifiable human anchor.
+
+The Purpose Layer does not execute spawn logic. It provides a purpose-coherence gate that is enforced before any agent identity is provisioned. This gate is non-negotiable: no agent may be activated without a valid Purpose Attestation token from the Purpose Layer.
+
+\subsection{Bounds Engine: Depth Management}
+
+The Bounds Engine is the second gate and governs depth management. It maintains a spawn depth counter for every active agent in the system, initialized to zero at human-to-agent spawn events and incremented by one at each subsequent agent-to-agent spawn. The depth counter is stored as an immutable attribute of each agent and is included in all spawn requests for verification.
+
+The Bounds Engine enforces three depth-management rules.
+
+\textbf{Maximum Spawn Depth.} The system-wide maximum spawn depth is a configurable parameter $D_{\max}$, defaulting to a value of $5$ for standard agent operations. This parameter may be tightened or relaxed by system policy, but it is enforced at the Bounds Engine level and cannot be overridden by individual agents. The choice of $D_{\max} = 5$ as the default reflects an empirical balance: deeper chains allow more sophisticated task decomposition, but each additional depth level introduces compounding uncertainty in purpose propagation and human-anchor traceability. In high-stakes domains, operators may lower $D_{\max}$ to $2$ or $3$; in research contexts where decomposition depth is architecturally necessary, operators may raise it with the understanding that audit complexity increases accordingly.
+
+\textbf{Spawn Refusal at Limit.} When a spawn request arrives at the Bounds Engine and the requesting agent's current depth equals or exceeds $D_{\max}$, the Bounds Engine refuses the spawn and returns a \texttt{DEPTH\_LIMIT\_REACHED} error. The requesting agent receives no child identity, no tool grants, and no task delegation. The refusal is logged to the forensic ledger with full context: the requesting agent's identity, its current depth, the attempted spawn parameters, and the timestamp. The refusal entry is signed by the Bounds Engine and is immutable.
+
+\textbf{Convergence Criteria.} Depth management is not solely counter-based. The Bounds Engine evaluates a convergence check before approving a spawn at any depth $d > 0$. The convergence criteria require that the proposed child agent represents a substantive task decomposition from its parent — that is, the child's assigned task must be narrower, more granular, or otherwise structurally distinct from the parent's active task scope. Agents may not spawn children that perform work identical or equivalent to their own active scope, as this constitutes depth gaming rather than genuine task decomposition.
+
+The convergence check is implemented as a lightweight classifier that evaluates the child's purpose declaration against the parent's active scope. It operates along two axes:
+
+\begin{itemize}
+    \item \textbf{Scope Narrowing.} The child's assigned task scope must be a proper subset of the parent's active task scope. An agent performing general farm irrigation planning may spawn a child scoped to soil moisture sensor calibration, because calibration is a proper subset of the irrigation planning domain. An agent performing data synthesis may not spawn a child that performs equivalent data synthesis on the same dataset, because the child's scope is not a proper subset — it is a lateral replication.
+    \item \textbf{Task Decomposition.} The child's task must introduce structural distinction from the parent. Structural distinction means the child operates in a different information domain, uses different tools, addresses a different epistemic object, or produces a different output type than the parent. This prevents spawning chains where agents iteratively refine the same output without adding new capabilities or perspectives.
+\end{itemize}
+
+The classifier produces a binary \texttt{CONVERGENT} or \texttt{NON\_CONVERGENT} decision accompanied by a confidence score in the range $[0.0, 1.0]$. Confidence scores below $0.6$ trigger the \texttt{NON\_CONVERGENT\_SPAWN} escalation and are logged to the forensic ledger for policy review. The classifier is a rule-based system that evaluates structural keywords, tool set overlap, and output type specification — not a neural model. This is intentional: convergence assessment must be interpretable and auditable, and its logic must be comprehensible to human reviewers who adjudicate disputed spawn events.
+
+If the spawn passes the convergence check and depth is below $D_{\max}$, the Bounds Engine issues a signed \texttt{DEPTH\_CLEARANCE} token and forwards the request to the Fact Layer.
+
+\subsection{Fact Layer: Immutable Pointer Creation and Forensic Ledger Recording}
+
+The Fact Layer is the final gate and the operational core of the Recursive Spawning Protocol. Once the Purpose Layer has issued its attestation and the Bounds Engine has cleared the depth check, the Fact Layer executes the following sequence:
+
+\begin{enumerate}
+    \item \textbf{Immutable Pointer Creation.} The Fact Layer generates a cryptographic pointer for the child agent. This pointer is a content-addressed identifier derived from the SHA-256 hash of a canonical tuple: \texttt{(parent\_id, child\_purpose\_attestation, spawn\_timestamp, child\_public\_key)}. The hash output is the child's immutable parent pointer $\alpha(\text{child})$, so named because it is structurally impossible to alter the parent association without breaking the hash integrity of the chain. This pointer is the architectural embodiment of the immutable parent chain guarantee.
+    \item \textbf{Forensic Ledger Inscription.} The Fact Layer creates a forensic ledger entry encoding the complete spawn record. This entry includes: the child agent's immutable parent pointer $\alpha(\text{child})$, the child agent's identity, the parent agent's identity, the Purpose Attestation token, the Depth Clearance token, the child agent's human anchor $h(\text{child})$, the spawn timestamp, and the Bounds Engine's convergence result. The entry is signed by the Fact Layer's cryptographic key and appended to the append-only forensic ledger. Because the ledger is append-only, no actor — including the Fact Layer itself — can modify or delete any entry after inscription.
+    \item \textbf{Chain Verification.} Before returning the spawn confirmation, the Fact Layer performs a synchronous chain verification traversing the parent pointer chain upward from the newly created child, following each immutable pointer to its parent, until it reaches either a human principal or the genesis block. The chain must terminate at a human principal within $D_{\max}$ steps. If the chain traversal fails to reach a human within the depth limit, the spawn is invalidated and the child is never activated. This is not a background audit — it is a synchronous precondition for spawn confirmation.
+    \item \textbf{Ledger Entry ID Issuance.} Upon successful chain verification, the Fact Layer returns a ledger entry ID to the parent agent as part of the spawn confirmation. This ID serves as the child's birth certificate in the forensic record and is the child's authoritative evidence of its own lineage.
+\end{enumerate}
+
+The Fact Layer's forensic ledger records four event types: \texttt{child-provisioned}$(p, c, R(c), h(c))$, which encodes the immutable parent pointer $\alpha(c) = p$ and the human anchor $h(c)$; \texttt{spawn-locked}$(p, c, \text{reason})$, recording a rejected spawn with its violation reason; \texttt{bailout-triggered}$(n, e)$, recording the activation of the Bailout Protocol at node $n$ due to exception $e$; and \texttt{parent-pointer-write-denied}$(v, \alpha_{\text{old}}, \alpha_{\text{new}})$, recording that a machine actor attempted to modify the parent pointer and was rejected by the pre-commit hook.
+
+The forensic ledger entry schema is:
+
+\begin{lstlisting}[language=json, caption={Forensic Ledger Entry Schema}]
+{
+  "entry_id": "<UUIDv7>",
+  "event_type": "SPAWN_APPROVED | SPAWN_REFUSED",
+  "child_id": "<agent-id or null>",
+  "parent_id": "<agent-id>",
+  "parent_pointer": "<SHA-256 hash>",
+  "purpose_attestation": "<signature>",
+  "spawn_depth": <integer>,
+  "convergence_result": "PASS | FAIL",
+  "timestamp": "<ISO-8601 millis>",
+  "fact_layer_instance": "<instance-id>",
+  "chain_termination_verified": <boolean>,
+  "refusal_code": "<code or null>",
+  "refusal_context": "<string or null>"
+}
+\end{lstlisting}
+
+The forensic ledger supports read-only queries by authorized auditors and human principals. Agents may append to the ledger but may not read or modify existing entries. Queries against the ledger may be used to answer accountability questions: \emph{Which agents were active in a given time window?}, \emph{What is the full spawning chain for agent X?}, \emph{How many times did a given agent attempt to spawn at depth limit?} These queries are the operational mechanism by which the termination-at-human constraint is made auditable to human principals and external reviewers.
+
+\subsection{Child Activation and Inheritance}
+
+Upon successful completion of all three layer gates, the child agent is activated with the following immutable inherited state:
+
+\begin{itemize}
+    \item \texttt{parent\_pointer}: The immutable cryptographic pointer created by the Fact Layer, binding the child to its parent in a tamper-evident, non-reassignable relationship.
+    \item \texttt{spawn\_depth}: The incremented depth value approved by the Bounds Engine, representing the child's position in the spawning chain.
+    \item \texttt{purpose\_scope}: A constrained task scope derived from the parent's charter, as validated by the Purpose Layer. The child may not operate outside this scope.
+    \item \texttt{lineage\_chain}: An ordered list of all ancestor agent IDs from the human principal to the immediate parent, derived from chain verification and stored as an immutable attribute of the child.
+    \item \texttt{human\_anchor}: The human principal who authorized the root of this spawning chain, propagated unchanged through all intermediate agents.
+    \item \texttt{forensic\_ledger\_id}: The ledger entry ID returned by the Fact Layer at spawn time, serving as the child's birth certificate in the forensic record.
+\end{itemize}
+
+The child agent is granted tool access and state mutation authority only after all three layer gates have cleared and the chain verification has succeeded. There is no provision for conditional, partial, or provisional activation — all gates must pass completely before the child receives any operational capability.
+
+\subsection{Refusal Conditions and Exception Handling}
+
+RSP defines a small number of explicit refusal conditions. Each refusal is a first-class protocol event, not an error string or a caught exception. Every refusal produces a signed ledger entry, even when the spawn did not complete, because the refusal itself is a forensic record of system state.
+
+\begin{itemize}
+    \item \texttt{PURPOSE\_VIOLATION}: The proposed child's purpose scope falls outside the parent agent's declared charter. The child is not activated. The refusal is logged.
+    \item \texttt{DEPTH\_LIMIT\_REACHED}: The parent agent's current depth equals or exceeds $D_{\max}$. The child is not activated. The refusal is logged.
+    \item \texttt{NON\_CONVERGENT\_SPAWN}: The proposed child does not represent a substantive task decomposition from the parent. The spawn is flagged and logged for policy review; it is not blocked unless depth is also at limit.
+    \item \texttt{CHAIN\_TERMINATION\_FAILURE}: The Fact Layer's chain verification traversed the parent pointer chain and failed to reach a human principal within $D_{\max}$ steps. The child is not activated. This condition may indicate a fault in the forensic recording infrastructure.
+    \item \texttt{FORENSIC\_LEDGER\_UNAVAILABLE}: The Fact Layer cannot inscribe the spawn record to the forensic ledger. The child is not activated. This condition indicates an infrastructure fault and requires operator intervention.
+\end{itemize}
+
+There are no graceful degradations, fallback modes, or provisional activations for refusal conditions. An agent that receives a refusal code must report it to its own forensic ledger entry and may not attempt to re-spawn the same child without first resolving the condition that caused the refusal.
+
+\subsection{Protocol Invariants}
+
+The Recursive Spawning Protocol enforces the following invariants throughout its operation:
+
+\begin{itemize}
+    \item \textbf{No orphan activation.} Every child agent is activated only after all three layer gates (Purpose Layer, Bounds Engine, Fact Layer) have issued approval. There is no activation path that bypasses any gate.
+    \item \textbf{Immutable parentage.} Once a child agent is created, its parent pointer cannot be altered by any agent, administrator, or system process. The parentage relation is permanent.
+    \item \textbf{Provable chain termination.} The Fact Layer's chain verification is synchronous and must succeed before spawn confirmation is issued. Every active agent in the system has a verified chain to a human principal.
+    \item \textbf{Complete ledger coverage.} Every spawn event and every refusal event produces a signed entry in the forensic ledger. No event is unlogged.
+    \item \textbf{Depth limit is hard.} The Bounds Engine's depth limit is a hard ceiling, not a soft guideline. No agent may spawn a child at a depth equal to or exceeding $D_{\max}$ under any circumstance.
+    \item \textbf{Convergence enforcement.} Spawn approvals at depth $d > 0$ require a positive convergence determination. Depth gaming — spawning children that replicate the parent's task scope — is structurally blocked.
+\end{itemize}
+
+These invariants together ensure that the Recursive Spawning Protocol provides a trustworthy, auditable, and purpose-aligned mechanism for agent multiplication — one where every agent's existence is justified, bounded, and permanently traceable to a human principal.

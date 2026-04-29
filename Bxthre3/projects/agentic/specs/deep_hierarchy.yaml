@@ -1,0 +1,212 @@
+# Deep Hierarchy YAML for Agentic1
+# Multi-tiered organizational structure: CEO → C-Suite → Divisions → Teams → Agents → Sub-Agents
+
+Hierarchy:
+  CEO:
+    role: "CEO"
+    description: "Chief Executive Officer - Ultimate decision authority"
+    level: 0
+    children: ["C-Suite"]
+
+  C-Suite:
+    role: "ExecutiveTeam"
+    description: "C-Level executives reporting to CEO"
+    level: 1
+    children:
+      - CFO
+      - CTO
+      - COO
+      - CMO
+      - CHRO
+      - CLO
+
+  CFO:
+    role: "ChiefFinancialOfficer"
+    description: "Financial strategy, investments, fiscal health"
+    level: 2
+    divisions: ["Financial", "Legal", "Compliance"]
+    children: ["FinancialDivision", "LegalDivision", "ComplianceDivision"]
+
+  CTO:
+    role: "ChiefTechnologyOfficer"
+    description: "Technology strategy, R&D, innovation"
+    level: 2
+    divisions: ["R&D", "Engineering", "Operations"]
+    children: ["RDDivision", "EngineeringDivision", "OperationsDivision"]
+
+  COO:
+    role: "ChiefOperationsOfficer"
+    description: "Operations, logistics, supply chain"
+    level: 2
+    divisions: ["Operations", "Sales", "Marketing", "Support"]
+    children: ["OperationsDivision", "SalesDivision", "MarketingDivision", "SupportDivision"]
+
+  CMO:
+    role: "ChiefMarketingOfficer"
+    description: "Marketing, brand, communications"
+    level: 2
+    divisions: ["Marketing"]
+    children: ["MarketingDivision"]
+
+  CHRO:
+    role: "ChiefHumanResourcesOfficer"
+    description: "HR, talent, culture"
+    level: 2
+    divisions: ["HR"]
+    children: ["HRDivision"]
+
+  CLO:
+    role: "ChiefLegalOfficer"
+    description: "Legal affairs, compliance, risk"
+    level: 2
+    divisions: ["Legal"]
+    children: ["LegalDivision"]
+
+  # Divisions
+  FinancialDivision:
+    role: "FinancialDivision"
+    description: "Financial operations and analysis"
+    level: 3
+    teams: ["InvestmentTeam", "AccountingTeam"]
+    children: ["InvestmentTeam", "AccountingTeam"]
+
+  RDDivision:
+    role: "RDDivision"
+    description: "Research and Development"
+    level: 3
+    teams: ["PatentResearchTeam", "AITeam", "PlatformTeam"]
+    children: ["PatentResearchTeam", "AITeam", "PlatformTeam"]
+
+  OperationsDivision:
+    role: "OperationsDivision"
+    description: "Operations and logistics"
+    level: 3
+    teams: ["SupplyChainTeam", "LogisticsTeam", "QualityTeam"]
+    children: ["SupplyChainTeam", "LogisticsTeam", "QualityTeam"]
+
+  SalesDivision:
+    role: "SalesDivision"
+    description: "Sales and business development"
+    level: 3
+    teams: ["EnterpriseTeam", "SMBTeam", "PartnershipsTeam"]
+    children: ["EnterpriseTeam", "SMBTeam", "PartnershipsTeam"]
+
+  MarketingDivision:
+    role: "MarketingDivision"
+    description: "Marketing and brand management"
+    level: 3
+    teams: ["ContentTeam", "DigitalTeam", "EventsTeam"]
+    children: ["ContentTeam", "DigitalTeam", "EventsTeam"]
+
+  SupportDivision:
+    role: "SupportDivision"
+    description: "Customer support and success"
+    level: 3
+    teams: ["TechnicalSupportTeam", "CustomerSuccessTeam"]
+    children: ["TechnicalSupportTeam", "CustomerSuccessTeam"]
+
+  HRDivision:
+    role: "HRDivision"
+    description: "Human resources and talent management"
+    level: 3
+    teams: ["RecruitingTeam", "TrainingTeam", "CultureTeam"]
+    children: ["RecruitingTeam", "TrainingTeam", "CultureTeam"]
+
+  LegalDivision:
+    role: "LegalDivision"
+    description: "Legal affairs and compliance"
+    level: 3
+    teams: ["CorporateTeam", "IPTeam", "ComplianceTeam"]
+    children: ["CorporateTeam", "IPTeam", "ComplianceTeam"]
+
+  ComplianceDivision:
+    role: "ComplianceDivision"
+    description: "Regulatory compliance and audit"
+    level: 3
+    teams: ["AuditTeam", "RiskTeam", "PrivacyTeam"]
+    children: ["AuditTeam", "RiskTeam", "PrivacyTeam"]
+
+  # Teams
+  PatentResearchTeam:
+    role: "PatentResearchTeam"
+    description: "Patent research and analysis"
+    level: 4
+    agents: ["ResearchAgent"]
+    agent_count: 5
+
+  InvestmentTeam:
+    role: "InvestmentTeam"
+    description: "Investment strategy and portfolio management"
+    level: 4
+    agents: ["FinancialAgent"]
+    agent_count: 3
+
+  SupplyChainTeam:
+    role: "SupplyChainTeam"
+    description: "Supply chain optimization"
+    level: 4
+    agents: ["OperationsAgent"]
+    agent_count: 4
+
+  SalesTeam:
+    role: "SalesTeam"
+    description: "Sales operations"
+    level: 4
+    agents: ["SalesAgent"]
+    agent_count: 10
+
+  MarketingTeam:
+    role: "MarketingTeam"
+    description: "Marketing campaigns"
+    level: 4
+    agents: ["MarketingAgent"]
+    agent_count: 6
+
+  SupportTeam:
+    role: "SupportTeam"
+    description: "Customer support"
+    level: 4
+    agents: ["SupportAgent"]
+    agent_count: 8
+
+  HRTeam:
+    role: "HRTeam"
+    description: "HR operations"
+    level: 4
+    agents: ["HRAgent"]
+    agent_count: 4
+
+  ComplianceTeam:
+    role: "ComplianceTeam"
+    description: "Compliance monitoring"
+    level: 4
+    agents: ["ComplianceAgent"]
+    agent_count: 3
+
+  LegalTeam:
+    role: "LegalTeam"
+    description: "Legal operations"
+    level: 4
+    agents: ["LegalAgent"]
+    agent_count: 4
+
+  # Agent Configuration
+  AgentConfig:
+    max_sub_agents: 10
+    idle_timeout_seconds: 300
+    default_velocity: 5
+    risk_threshold: 7
+
+  # Sub-Agent Configuration
+  SubAgentConfig:
+    max_pool_size: 100
+    monetization_enabled: true
+    hourly_rate_usd: 50.0
+    idle_revenue_share: 0.7
+
+  # Downtime Protocol
+  DowntimeProtocol:
+    compute_threshold_low: 30
+    compute_threshold_high: 80
+    max_self_generated_tasks: 3
+    spawn_interval_seconds: 60

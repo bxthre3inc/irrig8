@@ -1,0 +1,176 @@
+\section{Immutable Parent Pointers}\label{sec:immutable-parent-pointers}
+
+The Recursive Spawning Protocol (RSP) enforces accountability across agent generations through a single architectural primitive: the \textbf{immutable parent pointer}. Once assigned at spawn, this pointer cannot be modified by any actor in the system—parent, child, orchestrator, or runtime substrate. This section specifies the pointer assignment semantics, the chain traversal interface, the enforcement mechanisms in the Fact Layer, the authorization logic in the Purpose Layer, and the algorithm that enables forensic reconstruction of any agent's ancestry.
+
+\subsection{Parent Pointer Assignment}\label{sec:parent-pointer-assignment}
+
+At the moment an agent $c$ is successfully spawned, the AgentOS kernel assigns a parent pointer $p(c)$ that references the agent $p$ that authorized the spawn. The assignment is atomic with respect to child activation: no agent receives an activation warrant until its parent pointer is sealed in its state block. The formal assignment relation is given by the \texttt{Spawn} predicate:
+
+\begin{equation}
+\text{Spawn}(p, c) \;\triangle\; \bigl( \text{state}(c).\text{parent} \assign p \bigr) \;\land\; \bigl( \text{warrant}(c) = \text{GenerateWarrant}(p, c, t_{\text{spawn}}) \bigr)
+\end{equation}
+
+where $\text{state}(c).\text{parent}$ is stored in $c$'s sealed state block (Section~\ref{sec:fact-layer-enforcement}) and $\text{warrant}(c)$ is the cryptographic activation warrant produced by the Fact Layer. The assignment $p(c) = p$ is the sole permitted write to $\text{state}(c).\text{parent}$; after this assignment, the field is sealed and no subsequent write is permitted.
+
+The root spawn event is the exception that terminates every chain. When a human principal $h$ directly spawns a root agent $a_0$, the parent pointer of $a_0$ is assigned the sentinel value $\bot$ (null), denoting that $a_0$ has no ancestor:
+
+\begin{equation}
+\text{Spawn}(h, a_0) \;\triangle\; \bigl( p(a_0) = \bot \bigr) \;\land\; \bigl( \text{state}(a_0).\text{type} = \text{root} \bigr) \;\land\; \bigl( \text{warrant}(a_0) = \text{GenerateWarrant}(h, a_0, t_{\text{spawn}}) \bigr)
+\end{equation}
+
+This null pointer is as immutable as any non-null assignment. There is no operation—spawn, rollback, administrative override, or runtime repair—that may reassign $p(a_0)$ from $\bot$ to any other value. The root's null parent is a sealed property of the chain's origin.
+
+\subsection{The Ancestry Chain}\label{sec:ancestry-chain}
+
+Given the parent pointer function $p : \mathcal{A} \to \mathcal{A} \cup \{\bot\}$, we define the ancestry chain of an agent $a$ as the set of all ancestor references reachable by iterating $p$ until $\bot$ is encountered. Formally:
+
+\begin{equation}
+\text{Chain}(a) \;\triangle\; \bigl\{ (p(a), a) \bigr\} \;\cup\; \bigl\{ (p(p(a)), p(a)) \bigr\} \;\cup\; \cdots \;\cup\; \bigl\{ (\bot, a_{\text{root}}) \bigr\}
+\label{eq:chain-definition}
+\end{equation}
+
+Equivalently, $\text{Chain}(a)$ is the set of ordered pairs $(p^i(a), p^{i-1}(a))$ for $i = 1, 2, \ldots, k$ where $p^k(a) = \bot$ and $p^0(a) = a$. Each pair records one link in the parent-child relationship. The chain is always finite: $k$ is the depth of $a$, bounded by the \textbf{Bounds Engine} (Section~\ref{sec:bounds-engine}) and by the chain-termination guarantee that $p^k(a) = \bot$ for some finite $k$.
+
+An agent $b$ is an ancestor of $a$ if and only if $b \in \{p^i(a) : i \geq 0\}$; equivalently, $b$ appears as the first element of some pair in $\text{Chain}(a)$. The set $\text{Chain}(a)$ is a subset of $\mathcal{A} \times \mathcal{A}$, a directed acyclic graph (DAG) with exactly one path terminating at the root. The properties of $\text{Chain}(a)$ are:
+
+\begin{enumerate}
+    \item \textbf{Immutability.} Every pair $(p_i, c_i) \in \text{Chain}(a)$ is a sealed fact. No runtime operation modifies any pair in any agent's chain.
+    \item \textbf{Uniqueness.} For any agent $c$, there exists exactly one pair $(p, c) \in \text{Chain}(c)$. An agent has exactly one parent.
+    \item \textbf{Finite depth.} Every chain terminates at a root agent whose parent is $\bot$. No cyclic parent pointers can exist.
+    \item \textbf{Traceability.} For any pair $(p, c) \in \text{Chain}(a)$, the warrant $\text{warrant}(c)$ cryptographically binds $c$ to $p$ at the moment of spawn.
+\end{enumerate}
+
+\subsection{Fact Layer Enforcement: Sealed State Blocks}\label{sec:fact-layer-enforcement}
+
+The immutability of parent pointers is architecturally enforced in the \textbf{Fact Layer} of the BX3 stack. The Fact Layer is the integrity substrate: it maintains the cryptographic seal on each agent's state block and rejects any operation that would modify a sealed field.
+
+Each agent $a$ in the AgentOS runtime is provisioned with a \textbf{sealed state block} at spawn. The state block is a data structure containing immutable fields and mutable fields:
+
+\begin{itemize}
+    \item \textbf{Immutable fields} (written once, at spawn, then sealed): $\text{agent\_id}$, $\text{parent}$, $\text{spawn\_timestamp}$, $\text{warrant}$, $\text{initial\_scope}$.
+    \item \textbf{Mutable fields} (updated throughout agent lifetime): $\text{current\_state}$, $\text{execution\_log}$, $\text{resource\_usage}$.
+\end{itemize}
+
+The $\text{parent}$ field is classified as immutable. The Fact Layer implements this classification through two mechanisms:
+
+\begin{enumerate}
+    \item \textbf{Hardware-enforced write protection.} The sealed state block resides in a memory region that the AgentOS kernel marks as read-only after the spawn operation completes. Any attempt by the agent, parent, or external process to write to $\text{state}(a).\text{parent}$ after sealing triggers a hardware exception caught by the kernel, which logs the violation event and halts the offending process. This prevents modification at the lowest architectural level, independent of software trust assumptions.
+    \item \textbf{Cryptographic commitment.} At spawn, the Fact Layer generates a \textbf{spawn warrant} for the child agent. This warrant is a signed data structure containing the child's agent ID, the parent's agent ID, the spawn timestamp, and a hash of the child's initial state block. The warrant is signed by the parent's Fact Layer instance and stored in both the child's sealed state block and the forensic ledger $\mathcal{L}$. Because the warrant is cryptographically bound to the parent identity, any attempt to create a warrant for a child with a different parent would produce a signature that fails verification against the authentic parent key.
+\end{enumerate}
+
+The forensic ledger $\mathcal{L}$ provides an additional layer of tamper evidence. Every spawn event produces a ledger entry containing the pair $(p(a), a)$, the warrant, and the full chain context. The ledger is structured as a Merkle tree; modifying any historical entry breaks the hash chain and is detectable at constant time by any observer with read access. The combination of hardware write protection and cryptographic ledger commitment ensures that parent pointer immutability cannot be bypassed by software-level attacks, hardware memory corruption, or post-hoc log tampering.
+
+\subsection{Purpose Layer: Spawn Authorization}\label{sec:purpose-layer-spawn-auth}
+
+The \textbf{Purpose Layer} governs the \emph{authorization} of spawn events, determining whether a parent agent $p$ is permitted to spawn a child $c$ at a given point in time. Purpose Layer authorization is a prerequisite gate that must pass before the Fact Layer records the parent pointer. The Purpose Layer evaluates whether the proposed spawn is consistent with the purpose propagated from the agent's ancestry—a check that anchors spawn authorization to intent, not merely to technical permission.
+
+The Purpose Layer maintains a \textbf{purpose chain} for each agent, parallel in structure to the parent pointer chain but encoding intent rather than identity:
+
+\begin{equation}
+\text{PurposeChain}(a) \;\triangle\; \bigl\{ (p^i(a), \text{purpose}(p^i(a))) : i = 0, 1, \ldots, k \bigr\}
+\end{equation}
+
+where $\text{purpose}(a)$ is the encoded intent objective passed from parent to child at spawn. When $p$ requests to spawn $c$, the Purpose Layer evaluates the following authorization predicate:
+
+\begin{equation}
+\text{AuthorizeSpawn}(p, c, \text{req}) \;\triangle\; \bigl( \text{ScopeConforms}(\text{req}.\text{scope}, \text{purpose}(p)) \bigr) \;\land\; \bigl( \text{IntentAligned}(\text{req}.\text{objective}, \text{PurposeChain}(p)) \bigr)
+\label{eq:authorize-spawn}
+\end{equation}
+
+where $\text{req}$ is the spawn request payload containing the requested child scope and objective. The two predicates have the following semantics:
+
+\begin{itemize}
+    \item $\text{ScopeConforms}(\text{req}.\text{scope}, \text{purpose}(p))$ verifies that the requested operational scope of $c$ is a valid refinement of $p$'s own purpose scope. The scope defines what $c$ is permitted to do; it cannot expand beyond what $p$ is authorized to delegate.
+    \item $\text{IntentAligned}(\text{req}.\text{objective}, \text{PurposeChain}(p))$ verifies that the proposed objective of $c$ is consistent with the cumulative intent recorded in the full ancestry chain. This prevents a parent from circumventing ancestor-level constraints by spawning a child with a superficially innocent objective that collectively violates ancestral intent.
+\end{itemize}
+
+If both predicates hold, the Purpose Layer issues an authorization token and the spawn request proceeds to the Fact Layer for warrant generation and pointer sealing. If either predicate fails, the spawn is denied and the denial event is recorded in the forensic ledger $\mathcal{L}$, enabling retrospective audit of denied spawn attempts. This layered authorization ensures that immutability of parent pointers is paired with immutability of spawn authorization records: a child agent exists in the system only if both layers explicitly approved its creation.
+
+The Purpose Layer also enforces the \textbf{delegateability constraint}: a parent may only spawn a child if the parent's own purpose authorization chain is unbroken. If any ancestor in $p$'s chain lacks a valid purpose warrant—due to a prior Purpose Layer failure, an expired authorization, or a revocation event—the parent cannot spawn, regardless of its own current authorization state. This prevents the propagation of spawn privileges through a chain that has itself experienced an authorization failure.
+
+\subsection{Bounds Engine: Depth and Branching Constraints}\label{sec:bounds-engine}
+
+The \textbf{Bounds Engine} complements the Purpose Layer's intent-based authorization with quantitative constraints on spawn topology. It enforces three bounds on the chain:
+
+\begin{enumerate}
+    \item \textbf{Maximum depth $D_{\max}$.} The depth of any agent $a$, denoted $\text{depth}(a)$, is the number of edges from the root to $a$ in the parent pointer chain. The Bounds Engine rejects any spawn that would produce $\text{depth}(c) > D_{\max}$. This bounds the length of any ancestry chain, ensuring that the recursive attribution terminates within a fixed number of hops.
+    \item \textbf{Maximum children $C_{\max}(p)$.} Each parent $p$ is subject to a per-parent child limit. The Bounds Engine maintains a child count $\text{children}(p)$ incremented at each successful spawn of $p$'s child. A spawn request for $p$ is rejected if $\text{children}(p) \geq C_{\max}(p)$.
+    \item \textbf{Aggregate spawn budget $B_{\max}$.} The total number of active agents across the entire system is bounded by a global spawn budget $B_{\max}$. The Bounds Engine decrements $B_{\max}$ at each successful spawn and increments it upon agent termination, ensuring that resource commitment to agent proliferation remains within configured limits.
+\end{enumerate}
+
+These constraints are evaluated atomically at the spawn gate. The Fact Layer records the depth, child count, and budget state in the forensic ledger as part of each spawn event, enabling post-hoc verification that all spawns satisfied all three bounds.
+
+\subsection{Chain Traversal Algorithm}\label{sec:chain-traversal-algorithm}
+
+The ancestry chain enables efficient traversal for both operational and forensic queries. We present the core traversal primitive and three representative query operations.
+
+\bigskip
+\noindent\textbf{Algorithm \ref{alg:traverse-chain}: } \texttt{TraverseChain}$(a)$
+
+\begin{algorithm}
+\caption{TraverseChain$(a)$: Returns the full ancestry chain of agent $a$ as an ordered list from immediate parent to root.}
+\label{alg:traverse-chain}
+\begin{algorithmic}
+\Require Agent identifier $a$
+\Ensure Ordered list $\ [(p_1, a), (p_2, p_1), \ldots, (\bot, a_{\text{root}})]$ or $\bot$ if $a$ not found
+\State $chain \gets [\ ]$
+\State $current \gets a$
+\State $seen \gets \emptyset$
+\Loop
+    \If{$current \in seen$}
+        \State \Return $\bot$ \Comment{Cycle detected — invariant violation}
+    \EndIf
+    \State $seen \gets seen \cup \{current\}$
+    \State $parent \gets \text{ReadParent}(current)$
+    \If{$parent = \bot$}
+        \State $chain.\text{append}((\bot, current))$
+        \State \Return $chain$
+    \EndIf
+    \State $chain.\text{append}((parent, current))$
+    \State $current \gets parent$
+\EndLoop
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+The $\text{ReadParent}(a)$ operation reads the immutable $\text{state}(a).\text{parent}$ field. In the AgentOS kernel implementation, this is a constant-time read from the sealed state block. The cycle detection guard ($current \in seen$) is a defensive check: under correct Fact Layer enforcement, cycles cannot form, but the guard provides invariant monitoring and fail-fast behavior in the presence of hardware faults or implementation bugs.
+
+Three representative chain queries are defined on top of \texttt{TraverseChain}:
+
+\begin{enumerate}
+    \item \textbf{Root lookup:} $\text{RootOf}(a) \triangleq \text{last}(\text{TraverseChain}(a))[0]$. Returns the root agent of $a$'s chain, which is always the agent whose parent is $\bot$. This is the terminal query for questions of ultimate provenance.
+    \item \textbf{Depth query:} $\text{DepthOf}(a) \triangleq |\text{TraverseChain}(a)| - 1$. Returns the generational depth of $a$.
+    \item \textbf{LCA (Lowest Common Ancestor):} For agents $a$ and $b$, $\text{LCA}(a, b)$ returns the unique agent $z$ that lies on both $\text{Chain}(a)$ and $\text{Chain}(b)$ at the greatest depth. This is computed by traversing both chains to their roots, hashing the ancestor sets, and finding the intersection at maximum depth. The LCA is the most recent shared point of delegation authority between two agents and is useful for determining shared responsibility in multi-agent tasks.
+\end{enumerate}
+
+All three queries are deterministic: given the same agent identifier, they always return the same result because the underlying chain is immutable. The time complexity of \texttt{TraverseChain} is $O(k)$ where $k = \text{depth}(a)$. Since $k \leq D_{\max}$ (bounded by the Bounds Engine), worst-case traversal time is $O(D_{\max})$, a constant upper bound for any given deployment configuration.
+
+\subsection{Forensic Reconstruction}\label{sec:forensic-reconstruction}
+
+The immutable parent pointer chain enables post-hoc reconstruction of any agent's full decision lineage with cryptographic confidence. Given an agent identifier $c$, a forensic auditor can reconstruct the complete sequence of spawn decisions, parent-child relationships, and authorization events that preceded $c$'s activation by traversing $\text{Chain}(c)$ and cross-referencing each pair with its corresponding forensic ledger entry.
+
+For each $(p, \text{child}) \in \text{Chain}(c)$, the auditor retrieves $\text{ledger}[\text{spawn\_event}(\text{child})]$, which contains:
+\begin{itemize}
+    \item The parent identifier $p$ and child identifier $\text{child}$.
+    \item The spawn timestamp $t_{\text{spawn}}$.
+    \item The Purpose Layer authorization token for the spawn.
+    \item The Fact Layer warrant for $\text{child}$.
+    \item The depth and child count state at spawn.
+\end{itemize}
+
+By composing these records for all pairs in $\text{Chain}(c)$, the auditor can answer questions such as: \emph{Who authorized this agent? Who authorized the authorizer? What purpose was declared at each generation? At what depth did the chain originate from a human principal?} The immutability of the parent pointer chain ensures that these questions are answered definitively, without reliance on the honesty or completeness of any agent currently in the system.
+
+This forensic guarantee is the central security property of RSP: it makes retrospective attribution structurally mandatory, not merely conventionally advisable. An attacker who compromises an agent and manipulates its behavior cannot obscure its ancestry, because the ancestry record is sealed independently of the agent's mutable execution state. Any attempt to tamper with the chain produces observable inconsistencies between the sealed state block records and the forensic ledger, enabling detection by any external observer with ledger access.
+
+\subsection{Operational Semantics: State Machine Transitions}\label{sec:state-machine-transitions}
+
+AgentOS defines a deterministic state machine for each agent's lifecycle. The immutable parent pointer is assigned at the \texttt{SPAWNED} transition and is sealed before the agent reaches the \texttt{ACTIVE} state:
+
+\begin{enumerate}
+    \item \texttt{INITIALIZED}: Agent identity and sealed state block allocated; $\text{state}.\text{parent} = \text{unset}$.
+    \item \texttt{SPAWNED}: Parent pointer assigned and sealed; warrant generated and recorded. Transition is atomic—$\text{state}.\text{parent}$ transitions from $\text{unset}$ to $p$ exactly once.
+    \item \texttt{ACTIVE}: Agent begins execution. $\text{state}.\text{parent}$ is now immutable.
+    \item \texttt{TERMINATED}: Agent execution complete. $\text{state}.\text{parent}$ remains sealed and readable for post-hoc chain traversal.
+\end{enumerate}
+
+Any attempt to transition $\text{state}.\text{parent}$ outside the \texttt{INITIALIZED} $\to$ \texttt{SPAWNED} transition is rejected by the Fact Layer and logged as a tamper event. The state machine enforces that immutability is not merely a convention but a transition-enforced property of the lifecycle model.

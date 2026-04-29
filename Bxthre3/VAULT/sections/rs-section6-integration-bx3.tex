@@ -1,0 +1,66 @@
+% ============================================================
+\section{Integration with the BX3 Framework}
+\label{sec:rs-integration}
+% ============================================================
+
+The Recursive Spawning Protocol is not a layer-agnostic mechanism --- it is structurally dependent on the BX3 three-layer architecture for every correctness guarantee it provides. RSP converts the abstract accountability guarantees of the Purpose Layer, Bounds Engine, and Fact Layer into enforceable protocol events at every spawn. Each RSP phase maps onto exactly one BX3 layer, and each mapping is load-bearing: removing any layer collapses at least one RSP correctness property. This section specifies the three layer-to-phase mappings and establishes their structural necessity.
+
+% ------------------------------------------------------------
+\subsection{Purpose Layer: Accountability Anchor}
+\label{sec:rs-purpose-anchor}
+
+The Purpose Layer anchors RSP along two axes, each constitutive and each exclusive.
+
+\medskip
+\noindent\textbf{Exclusive origin of spawn warrants.} At Phase 1 of every RSP spawn event, the Purpose Layer evaluates the candidate child scope $R(n_{i+1})$ against the parent scope $R(n_i)$. The evaluation checks two mandatory preconditions: (i) strict scope refinement $R(n_{i+1}) \subset R(n_i)$, and (ii) operational necessity --- the condition motivating the spawn cannot be resolved within $R(n_i)$. These preconditions originate from human-authored intent and are encoded in warrant $w_i$ (Equation~\ref{eq:spawn-warrant}). The Bounds Engine evaluates compliance; the Fact Layer enforces compliance. Neither originates the requirement. No machine actor can self-authorize a spawn warrant: the Purpose Layer is the sole source of spawn authorization by architectural definition of the BX3 Framework.
+
+The exclusive-origin property is what makes RSP's accountability chain an accountable chain rather than merely a record-keeping chain. A mutable authorization source would allow machine actors to redefine their own mandate, severing the chain from human intent at the point of authorization. The Purpose Layer's exclusivity here is not a policy choice --- it is the structural precondition for all downstream correctness properties.
+
+\medskip
+\noindent\textbf{Exclusive terminus of escalation.} When the chain reaches $D_{\mathrm{ESCALATE}}$, the Bounds Engine compulsory-escalates to the human anchor $h(n_k)$. The human anchor is non-migratory: for any chain $\Chain{n_k} = \langle n_k, n_{k-1}, \ldots, n_0 \rangle$, $h(n_0) = h(n_k)$. The anchor does not shift downward as depth increases; the chain does not ``delegate down'' to a machine actor as its terminus. The human issues one of three directives --- \texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT} --- and these directives are the only possible terminal outcomes of an escalation event. No machine actor can absorb, override, or substitute for any of these directives.
+
+The exclusive-terminus property is what closes the drift loop. Without it, the chain would terminate at a machine actor at sufficient depth, and that actor could re-initiate autonomous operation under a self-defined mandate --- a machine-actor loop replacing the human anchor. The Purpose Layer's termination exclusivity is load-bearing for drift prevention (Section~\ref{sec:rs-correctness}).
+
+% ------------------------------------------------------------
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:rs-bounds-depth}
+
+The Bounds Engine provides RSP's constrained-execution layer: it evaluates spawn necessity, enforces the depth bound as a hard invariant, and manages the transition to \texttt{ESCALATING} state. The Bounds Engine operates within the operating range defined by the Purpose Layer but is architecturally independent of it --- its constraints are not configurable at runtime by any machine actor.
+
+\medskip
+\noindent\textbf{Depth constraint at spawn.} At each spawn event, the Bounds Engine evaluates current chain depth $|C|$ against the Purpose-defined maximum $D_{\max}$, both anchored in the Fact Layer authorization ledger. If $|C| \geq D_{\max}$, the Bounds Engine does not execute the spawn. It transitions to \texttt{ESCALATING} and initiates the Bailout Protocol, propagating the exception upward to $h(n_k)$. This enforcement is deterministic: the Bounds Engine has no discretion to exceed $D_{\max}$ regardless of operational urgency, chain importance, or system state. The depth constraint is a hard architectural boundary, not a configurable heuristic.
+
+\medskip
+\noindent\textbf{Scope refinement evaluation.} Beyond depth, the Bounds Engine also evaluates whether $R(n_{i+1}) \subset R(n_i)$ (strict scope refinement) and whether the spawn satisfies convergence proportionality. These evaluations occur before the Fact Layer pre-commit hook runs. The Bounds Engine's evaluation is a necessary precondition but is not sufficient on its own: the Fact Layer independently re-verifies scope refinement before any provisioning write is committed.
+
+The separation between Bounds Engine evaluation and Fact Layer enforcement is architecturally significant: it means that a compromised or misconfigured Bounds Engine cannot bypass the scope refinement invariant, because the Fact Layer enforces FC1 independently and has no dependency on the Bounds Engine's evaluation result for the immutability of the parent pointer.
+
+% ------------------------------------------------------------
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:rs-fact-layer}
+
+The Fact Layer provides RSP's deterministic enforcement substrate. Two Fact Layer mechanisms are directly constitutive of RSP correctness: the immutable parent pointer and the forensic ledger.
+
+\medskip
+\noindent\textbf{Immutable parent pointer.} The parent pointer $\alpha(n_{i+1}) = n_i$ is established by an atomic Fact Layer write at Phase 3 (Section~\ref{sec:rs-phase3-fact-layer}) and is permanently immutable thereafter. The Fact Layer write protocol defines no valid write operation for modifying $\alpha(n)$ after provisioning (FLR1). The immutability guarantee is enforced by the substrate, not by access control policy --- there is no privilege level, operational urgency, or system state under which the parent pointer may be retroactively modified. This is what converts the delegation chain from a mutable record into a structurally immutable artifact.
+
+\medskip
+\noindent\textbf{Forensic ledger with hash-chain continuity.} Each RSP spawn event produces a ledger entry $\ell_j$ (Equation~\ref{eq:ledger-entry}) that contains $\text{hash}(\ell_{j-1})$, creating a cryptographically continuous chain from any entry back to the root entry recording the human anchor's establishment at $n_0$. The hash chain provides tamper-evidence: any retroactive modification, insertion, or deletion of a ledger entry breaks hash continuity and is detectable in $O(1)$ time by any observer with ledger read access.
+
+The forensic ledger makes RSP's scope provenance permanently auditable. Every scope refinement event, every state transition, and every configuration change is recorded as a ledger entry. The ledger is append-only by Fact Layer architectural constraint (FLR2): no entry may be modified or deleted after commit. The combination of immutable parent pointers and append-only ledger entries means that any node's delegation chain can be reconstructed at any future time from the ledger alone, independent of the node's current state or the honesty of any machine actor in the chain.
+
+The three-layer checkpoint is independently effective: a failure or compromise of any single layer does not defeat the others. If the Bounds Engine is bypassed, the Fact Layer's pre-commit hook still blocks the invalid spawn. If the Purpose Layer authorization is forged, the Fact Layer enforcement of the immutable pointer still prevents the chain from being redirected. If the Fact Layer is somehow compromised, the Purpose Layer's exclusive origin of spawn warrants means there is no valid warrant to execute.
+
+% ------------------------------------------------------------
+\subsection{Minimality of the Three-Layer Architecture}
+\label{sec:rs-layer-minimality}
+
+RSP's three correctness properties (Section~\ref{sec:rs-correctness}) require all three BX3 layers working in mandatory concert. No subset of layers achieves the same guarantees:
+
+\begin{itemize}
+    \item \textbf{Purpose Layer removed:} Exclusive human terminus eliminated; chain can terminate in a machine actor; spawn warrants become self-authorized by machine actors; drift prevention collapses.
+    \item \textbf{Bounds Engine removed:} Depth constraint evaluation eliminated; no layer to enforce the spawn-refusal condition at $D_{\max}$ or to manage the \texttt{ESCALATING} transition.
+    \item \textbf{Fact Layer removed:} Immutable parent pointer eliminated; retroactive chain manipulation becomes possible; scope provenance record is mutable; chain integrity and termination become policy conventions, not structural guarantees.
+\end{itemize}
+
+Each layer contributes a guarantee that the other two cannot provide independently. The Purpose Layer cannot enforce immutability (it is an authorization layer, not an enforcement substrate); the Bounds Engine cannot originate human intent (it evaluates within the operating range, not above it); the Fact Layer cannot define authorized purpose (it is a deterministic enforcement layer, not a judgment layer). The three-layer architecture is therefore a structural necessity, not an organizational preference.

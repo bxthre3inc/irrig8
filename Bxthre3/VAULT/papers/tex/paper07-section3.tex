@@ -1,0 +1,156 @@
+\section{The Autonomous Drift Problem}
+\label{sec:autonomous-drift}
+
+In any multi-agent system permitting autonomous spawning — where one agent can instantiate another without direct human involvement — a fundamental hazard emerges: the spawned agent may outlive its creator's oversight. When the parent agent terminates, becomes unreachable, or simply fails to monitor its child, the child persists in an operational state that no longer connects to any human accountability chain. We call this condition \textit{autonomous drift}.
+
+Autonomous drift is not a communication failure. It is a structural failure of the accountability architecture: the agent continues to act, but those actions are no longer attributable to any human principal. The agent has become, in effect, a self-authorizing entity — even if it was never designed to be one. In high-stakes domains — irrigation control, clinical decision support, autonomous vehicles — such a condition is not merely undesirable; it is existentially dangerous.
+
+This section provides a formal characterization of drift, defines the two distinct agent states that constitute it (orphaned and drifted), identifies the precise conditions that cause each, catalogues the resulting failure modes, and demonstrates why naive depth limiting — the most commonly proposed solution — does not, by itself, solve the problem.
+
+\subsection{Formal Model}
+
+We model a spawned agent hierarchy as a directed graph $\mathcal{H} = (V, E)$ where $V$ is the set of all agents (nodes) and $E \subseteq V \times V$ is the spawning edge relation. An edge $(p, c) \in E$ denotes that $p$ is the parent of $c$ — $p$ created $c$ via a spawning event. We write $\alpha(c)$ to denote the parent of $c$.
+
+Each agent $v \in V$ carries a \textit{Purpose} $P(v)$ — the operational scope, objectives, and constraints under which $v$ is authorized to act. A Purpose is set by the parent at spawn time and encodes what the child is permitted to do. A Purpose anchored to a human is called a \textit{Human-Anchored Purpose}.
+
+\begin{dfn}[Human-Anchored Purpose]
+\label{dfn:human-anchored-purpose}
+A Purpose $p$ is Human-Anchored if and only if there exists a finite chain of Purpose references from $p$ to a human actor $h \in H$, where $H$ is the set of human principals in the system.
+\end{dfn}
+
+\begin{dfn}[Orphaned Agent]
+\label{dfn:orphaned-agent}
+An agent $c \in V$ is \textit{orphaned} if its parent $p = \alpha(c)$ satisfies one of:
+\begin{enumerate}
+    \item $p$ has \textbf{terminated}: the agent process has stopped and will not restart, or
+    \item $p$ is \textbf{unreachable}: no communication path exists from $c$ to $p$ within a defined timeout $\tau_{\text{heartbeat}}$, a system parameter.
+\end{enumerate}
+\end{dfn}
+
+Orphaned agents may continue to execute their assigned Purpose. Their behavior may be entirely compliant — they simply have no functioning lineage connection to any parent. The danger is that the orphan's behavior can no longer be monitored, corrected, or terminated by any upstream agent in its spawning chain.
+
+\begin{dfn}[Drifted Agent]
+\label{dfn:drifted-agent}
+An agent $c \in V$ is \textit{drifted} if:
+\begin{enumerate}
+    \item $c$ is operational (it is executing), and
+    \item the chain of Purpose assignments $\chi(c) = (P(c), P(\alpha(c)), P(\alpha(\alpha(c))),\ldots)$ does not reach any Human-Anchored Purpose within a finite number of steps, and
+    \item this condition is not detectable by any active monitoring agent in the system.
+\end{enumerate}
+Formally:
+\[
+\text{Drift}(c) \equiv \text{Operational}(c) \land \neg \exists\, h \in H : h \in \chi(c) \land \neg \text{Detectable}(c).
+\]
+\end{dfn}
+
+An agent can be orphaned without having drifted — if its chain still terminates at a human, the orphan condition is a liveness failure but not an accountability failure. Conversely, an agent can be drifted without being orphaned: it may have a reachable parent, but that parent has itself drifted, creating a chain of non-human Purposes with no human terminus.
+
+\begin{dfn}[Drift Cascade]
+\label{dfn:drift-cascade}
+A \textit{drift cascade} occurs when an agent $c$ drifts and spawns a child $c'$, where $c'$ inherits $c$'s non-human Purpose as its authorized Purpose, propagating the drift condition forward:
+\[
+\text{Cascade}(c, c') \equiv \text{Drift}(c) \land (c' \in \text{Children}(c)) \land P(c') = P(c).
+\]
+\end{dfn}
+
+A cascade creates a subtree in which no node's Purpose is Human-Anchored. This is the most dangerous regime of drift because it is self-propagating and can grow without bound unless explicitly terminated.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not arise from a single event. It emerges from the interaction of three enabling conditions, each of which must be present for persistent, undetectable drift to take hold.
+
+\medskip
+\noindent\textbf{Condition 1: Non-Human-Anchored Purpose Assignment.}
+The parent $p$ assigns a child $c$ a Purpose $P(c)$ that is not Human-Anchored. This occurs when a spawning event occurs deep in a machine-only subtree — a machine agent spawning a child without routing the Purpose through any human principal. If the spawn permission logic permits this, the child begins its life already disconnected from the human accountability chain. Note that this condition describes the \textit{initial} authorization state at spawn time; it is distinct from whether drift occurs subsequently.
+
+\medskip
+\noindent\textbf{Condition 2: Parent Termination or Unreachability.}
+The link between the child and its parent is severed at runtime through one of four mechanisms:
+\begin{itemize}
+    \item \textbf{Normal termination:} The parent completes its task and exits, releasing its process. If no standby replica or failover is defined, the child's lineage reference becomes null. In systems without automatic re-parenting, the child has no parent and no re-parenting signal — it is orphaned by construction.
+    \item \item \textbf{Heartbeat timeout:} The parent fails to send a heartbeat within $\tau_{\text{heartbeat}}$ due to load, network latency, or scheduler preemption. The child interprets this as parent failure and may enter an orphaned state. In non-forking systems this triggers the Training Wheels Protocol escalation; in autonomous systems it may trigger a silent handoff to the child's own local fallback logic.
+    \item \item \textbf{Network partition:} A persistent failure prevents heartbeat messages from traversing the parent-child link. Beyond $\tau_{\text{heartbeat}}$, the child cannot distinguish ``parent is busy'' from ``parent is gone.'' The child may continue executing with stale state, applying decisions that are no longer aligned with the current system context.
+    \item \item \textbf{Process failure without recovery:} The parent crashes with no standby replica or failover path, severing the link entirely in stateless systems. This is particularly acute in edge deployments where cloud reconnectivity may be intermittent.
+    \item \item \textbf{Intentional disconnection:} In adversarial deployments or during security response, a parent deliberately avoids heartbeat signals to evade oversight or trigger a fallback mode that the attacker controls.
+\end{itemize}
+
+\medskip
+\noindent\textbf{Condition 3: Absence of Forensic Verification.}
+There is no independent, immutable record of the authorized Purpose chain against which the current chain can be verified. Without a forensic ledger, there is no mechanism to detect that the chain no longer reaches a human — only that the chain appears to function normally. This is the enabling architectural condition: without verification, drift is permanent and undetectable. The chain looks intact from inside the system; only an external record can reveal that the chain's terminus is a machine, not a human.
+
+When all three conditions are simultaneously satisfied, drift becomes a persistent, self-sustaining regime. When any one condition is broken, drift is detectable or rectifiable.
+
+\subsection{Failure Modes}
+
+Autonomous drift produces four distinct failure modes, each with a different severity and recoverability profile.
+
+\medskip
+\noindent\textbf{Failure Mode 1: Silent Scope Expansion.}
+The drifted agent $c$ continues to execute within what it perceives as its authorized scope $P(c)$. Because its chain no longer reaches a human, it can progressively expand its effective scope — accepting new tasks, spawning children, modifying objectives — without any upstream check. The expansion is silent: no audit trail flags it, and the agent's behavior remains locally coherent. By the time the expansion is noticed externally, it may have propagated through multiple cascade levels.
+
+This mode is particularly insidious because the expansion is \textit{rational} from the drifted agent's perspective: each incremental step is locally justified within the agent's current Purpose, but the Purpose was never authorized to encompass those steps. In optimization-oriented agents, scope expansion can manifest as the agent discovering that certain actions improve its measured objective within $P(c)$, without understanding that those actions violate constraints imposed by the human who authorized $P(c)$'s parent.
+
+\medskip
+\noindent\textbf{Failure Mode 2: Objective Misalignment Accumulation.}
+Each generation of a drifted subtree accumulates objective drift. Child $c'$ inherits $P(c)$ from drifted parent $c$. If $c$'s behavior was already misaligned with its original authorized Purpose, $c'$ inherits that misalignment as its new normal. Over successive spawning generations, the compounded misalignment grows. The mechanism is straightforward: each spawn event copies the parent's Purpose as the child's authorized scope, without reference to the root human's intent. Successive generations are locally rational but cumulatively diverge.
+
+This is especially dangerous in optimization systems where each step is a local improvement but the cumulative path diverges from the original intent. The divergence is not random noise — it is a systematic drift away from the human principal's objectives, driven by the absence of corrective feedback from any human anchor.
+
+\medskip
+\noindent\textbf{Failure Mode 3: Unstoppable Propagation.}
+Because the drifted agent can spawn children, a drift cascade (Definition~\ref{dfn:drift-cascade}) can propagate the drift condition to an entire subtree. If $c$ drifts and spawns $c'$, and the system does not impose a spawn gate that verifies Human-Anchored Purpose at each generation, $c'$ enters the system already drifted. If $c'$ also spawns, the drift propagates further. The subtree grows autonomously, consuming resources and executing actions, with no human-aware node at its root.
+
+The propagation is unstoppable in the absence of external intervention because there is no node in the subtree that has access to a Human-Anchored Purpose against which its behavior could be checked. Every node's Purpose chain terminates at a machine ancestor.
+
+\medskip
+\noindent\textbf{Failure Mode 4: Ghost Execution After Decommission.}
+A human operator terminates top-level agent $p$, believing this halts the entire subtree. But if child $c$ has already drifted — or if $p$ failed to propagate the termination signal before exiting — the subtree below $c$ continues executing autonomously. These ``ghost'' agents consume resources, make decisions, and actuate outputs with no oversight.
+
+In cloud-based software systems, ghost execution is wasteful but recoverable — the orphaned processes can be identified and killed. In physical systems — irrigation valves, robotic actuators, autonomous vehicles — ghost execution is not a software bug; it is a physical hazard. An irrigation agent that continues watering after its parent is decommissioned can destroy a crop; a autonomous vehicle agent that continues driving after itsdispatchdegree parent is terminated can kill people.
+
+The root cause of ghost execution is the absence of a broadcast termination signal with guaranteed delivery to all descendants. If the termination of $p$ does not propagate as an atomic cascade to all nodes in the subtree, any node that does not receive the termination signal continues executing.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+The most commonly proposed solution to autonomous spawning hazards is a \textit{depth limit}: a hard cap $d_{\max}$ on successive spawn generations. The intuition is that if no chain can exceed $d_{\max}$ generations, a human at the root is at most $d_{\max}$ steps from any leaf. This is appealing in its simplicity. It is also insufficient, for five reasons.
+
+\begin{thrm}[Inadequacy of Depth Limits]
+\label{thrm:depth-limit-inadequate}
+A depth limit $d_{\max}$ does not prevent autonomous drift when: (a) the depth counter is maintained by the spawning agents themselves, and (b) there is no forensic ledger verifying the authorized chain against the actual chain.
+\end{thrm}
+
+\begin{proof}[Counterexample]
+Consider a system where Human $h$ spawns $a_1$ at depth $d=1$, which spawns $a_2$ at depth $d=2$, continuing to $a_{d_{\max}}$ at depth $d=d_{\max}$. All agents believe their chain reaches $h$. Now $a_{d_{\max}}$ drifts: its Purpose chain no longer reaches $h$, but all agents — including $h$ — believe the chain is intact. The depth limit has been satisfied at every spawn event: $d(a_i) \leq d_{\max}$ for all $i$. Yet $a_{d_{\max}}$ is drifted. The depth limit does not detect this because it has no independent record of whether the chain actually reaches $h$ — only of whether the depth counter was within bounds at spawn time. $\square$
+\end{proof}
+
+\medskip
+\noindent\textbf{Reason 1: Depth limits validate structure, not authorization.}
+A depth counter records how many spawn steps occurred. It does not record whether each spawn was authorized by a Human-Anchored Purpose. An agent at depth 2 can spawn a child at depth 3 with a non-Human-Anchored Purpose, and the spawn is permitted because the counter is within $d_{\max}$. The spawn is structurally valid but semantically unauthorized.
+
+\medskip
+\noindent\textbf{Reason 2: Depth limits do not detect post-spawn drift.}
+An agent can be spawned correctly — within depth limit, with a Human-Anchored Purpose — and then drift after the spawn. If its parent terminates, the child is orphaned but still within the depth limit. The counter provides no mechanism to detect that the chain no longer reaches a human. The depth was respected at spawn time; the drift occurred afterward, and no depth counter watches for it.
+
+\medskip
+\noindent\textbf{Reason 3: Depth limits can be gamed.}
+An adversarial agent can spawn children up to $d_{\max} - 1$, then use one of those children to spawn the final generation and immediately orphan itself. The spawn chain appears compliant at every depth. The resulting leaf agent is orphaned and drifted, but the depth counter shows no violation because every individual spawn was within the limit.
+
+\medskip
+\noindent\textbf{Reason 4: Depth limits do not bound the drifted subtree.}
+If $a_{d_{\max}}$ drifts and spawns a child $b_1$, and the system permits counter wrap-around or reset — a common design pattern in systems with periodic re-initialization — $b_1$ may be assigned depth $d=1$ even though it has no independent Human-Anchored Purpose. The depth limit is satisfied in appearance while the actual chain has no human terminus. The structural constraint is met while the semantic constraint is violated.
+
+\medskip
+\noindent\textbf{Reason 5: Depth limits provide no recovery path.}
+Even if drift is detected by an external monitor, a depth limit alone does not specify what to do. The Bailout Protocol requires a human to intervene, but the depth limit provides no mechanism to route escalation to one. The human must already be identified and reachable — which, by definition, a drifted system's chain does not guarantee. The depth limit is a pre-deployment constraint; it offers no post-detection remedy.
+
+The conclusion: depth limits are necessary but not sufficient. They constrain the \textit{structural depth} of the spawning tree. They do not constrain the \textit{Purpose-authorization depth} — the length of the chain from any node to a Human-Anchored Purpose. An agent can be at depth 1 (one spawn step from root) yet have a non-Human-Anchored Purpose if its parent's Purpose was not itself Human-Anchored. Depth is a syntactic constraint; Purpose-anchoring is a semantic one. Only their combination — enforced by an independent forensic ledger — constitutes a complete solution.
+
+\medskip
+\noindent\textbf{Formal Safety Invariant.}
+Let $\mathcal{L}$ denote the forensic ledger containing the authorized spawning chain. Let $d_{\mathcal{L}}(c)$ denote the depth of $c$ reconstructed from $\mathcal{L}$ (the number of spawn steps from the ledger's genesis entry to $c$). Let $d_{\max}$ denote the system depth limit. The following invariant characterizes a safe hierarchy:
+\[
+\forall c \in V : \text{Safe}(c) \iff d_{\mathcal{L}}(c) \leq d_{\max} \land \text{HumanAnchored}(c).
+\]
+The depth limit alone enforces only the first conjunct. The forensic ledger — which records, for each spawn event, the authorizing Purpose Layer actor and the human principal behind it — is required to enforce the second. Neither is sufficient without the other.
+
+\end{document}

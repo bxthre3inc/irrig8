@@ -1,0 +1,260 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is the terminal fault-recovery mechanism within the AgentOS runtime. It governs the transition of an agentic process from nominal or degraded operation into a human-acknowledged resolution state, ensuring that no autonomous process exhausts bounded resources without an explicit off-ramp to human judgment. The protocol is implemented as a deterministic state machine with formally defined transition guards, a bounded escalation timeout ladder, and a bypass mechanism that renders all intermediate machine actors inoperative once engaged.
+
+The protocol is invoked only after lower-level fault-recovery mechanisms—retry loops, circuit breakers, and boundary guards—have failed to restore nominal operation. It is not a first-resort error handler; it is the final failsafe before human intervention.
+
+\subsection{State Machine Definition}
+
+The protocol comprises six mutually exclusive states. At any point in time, the agentic process occupies exactly one state.
+
+\bigskip
+
+\noindent\textbf{States.}
+
+\begin{itemize}
+  \item \textbf{IDLE} — The nominal operational state. The agentic process is executing tasks within its allocated resource bounds. No fault conditions are active. The protocol state machine is dormant.
+  \item \textbf{BOUNDED} — A fault condition has been detected and contained. The agentic process continues to execute under enforced resource constraints (cap limits, timeouts, token ceilings). The protocol monitors the fault. Lower-level recovery mechanisms are active. Transition to IDLE remains possible if recovery succeeds.
+  \item \textbf{BAIL\_PENDING} — Lower-level recovery has failed. A bail-out trigger has fired. The state machine is now active. A timeout countdown has commenced. No further autonomous recovery attempts will be initiated; the protocol advances the fault toward human acknowledgment on a fixed schedule.
+  \item \textbf{ESCALATING} — The BAIL\_PENDING timeout has expired without resolution. The fault is escalated to the designated human escalation contact. All machine actors are notified that bypass has been armed. The process continues to execute under hard resource locks.
+  \item \textbf{HUMAN\_ACKNOWLEDGED} — A human has received the escalation signal and has acted. The human has taken one of three defined resolution actions. The protocol awaits resolution confirmation before advancing.
+  \item \textbf{RESOLVED} — The fault has been resolved. All resource locks are released. The protocol state machine resets to IDLE. The event is logged for post-incident review.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{Formal State Variable.}
+
+Let $S(t) \in \mathcal{S}$ denote the protocol state at wall-clock time $t$, where
+
+\begin{equation}
+  \mathcal{S} = \{\,\text{IDLE},\ \text{BOUNDED},\ \text{BAIL\_PENDING},\ \text{ESCALATING},\ \text{HUMAN\_ACKNOWLEDGED},\ \text{RESOLVED}\,\}.
+\end{equation}
+
+The initial condition is $S(t_0) = \text{IDLE}$. State transitions are governed exclusively by the transition function $\delta: \mathcal{S} \times \mathcal{E} \rightarrow \mathcal{S}$, where $\mathcal{E}$ is the set of defined event types.
+
+\subsection{Transition Conditions}
+
+Each transition is gated by a formal condition evaluated atomically at each protocol tick. A transition fires only when its condition is satisfied and the current state is the source state of the transition.
+
+\bigskip
+
+\noindent\textbf{Transitions.}
+
+\begin{enumerate}
+  \item \textbf{IDLE} $\rightarrow$ \textbf{BOUNDED}
+  \begin{itemize}
+    \item \textbf{Trigger event:} $\texttt{fault\_detected}$
+    \item \textbf{Condition:} $\exists$ active fault $f$ such that $\texttt{severity}(f) \geq \texttt{BOUNDED\_THRESHOLD}$ and $\texttt{resource\_usage}(f) > \texttt{CAP}(f)$
+    \item \textbf{Effect:} Enforce resource caps; start fault monitor; set $\texttt{fault\_id} \leftarrow f$
+  \end{itemize}
+
+  \item \textbf{BOUNDED} $\rightarrow$ \textbf{IDLE}
+  \begin{itemize}
+    \item \textbf{Trigger event:} $\texttt{recovery\_succeeded}$
+    \item \textbf{Condition:} $\texttt{health\_score}(f) \geq 1.0$ for all metrics within $\texttt{RECOVERY\_WINDOW}$
+    \item \textbf{Effect:} Release resource caps; clear fault monitor; log recovery
+  \end{itemize}
+
+  \item \textbf{BOUNDED} $\rightarrow$ \textbf{BAIL\_PENDING}
+  \begin{itemize}
+    \item \textbf{Trigger event:} $\texttt{recovery\_failed}$ or $\texttt{timeout\_expired}$
+    \item \textbf{Condition:} $\texttt{recovery\_attempts}(f) \geq \texttt{MAX\_RECOVERY\_ATTEMPTS}$ $\lor$ $\texttt{elapsed}(f_{\text{start}}) \geq \texttt{BOUNDED\_TIMEOUT}$
+    \item \textbf{Effect:} Arm bail-out; start BAIL\_PENDING countdown; set $\texttt{bail\_clock} \leftarrow \texttt{BAIL\_TIMEOUT}$; disable further autonomous recovery
+  \end{itemize}
+
+  \item \textbf{BAIL\_PENDING} $\rightarrow$ \textbf{ESCALATING}
+  \begin{itemize}
+    \item \textbf{Trigger event:} $\texttt{bail\_clock\_expired}$
+    \item \textbf{Condition:} $\texttt{bail\_clock} \leq 0$ AND $S(t) = \text{BAIL\_PENDING}$
+    \item \textbf{Effect:} Send escalation signal to human contact; set $\texttt{escalation\_id} \leftarrow \texttt{generate\_uuid}()$; arm bypass; lock all machine actor decision paths
+  \end{itemize}
+
+  \item \textbf{BAIL\_PENDING} $\rightarrow$ \textbf{HUMAN\_ACKNOWLEDGED}
+  \begin{itemize}
+    \item \textbf{Trigger event:} $\texttt{human\_action\_received}$
+    \item \textbf{Condition:} $S(t) = \text{BAIL\_PENDING}$ AND a human has submitted a resolution action before $\texttt{bail\_clock}$ expires
+    \item \textbf{Effect:} Capture human action; cancel escalation signal; advance to HUMAN\_ACKNOWLEDGED
+  \end{itemize}
+
+  \item \textbf{ESCALATING} $\rightarrow$ \textbf{HUMAN\_ACKNOWLEDGED}
+  \begin{itemize}
+    \item \textbf{Trigger event:} $\texttt{human\_action\_received}$
+    \item \textbf{Condition:} $S(t) = \text{ESCALATING}$ AND a human has submitted a resolution action
+    \item \textbf{Effect:} Capture human action; record acknowledgment timestamp
+  \end{itemize}
+
+  \item \textbf{HUMAN\_ACKNOWLEDGED} $\rightarrow$ \textbf{RESOLVED}
+  \begin{itemize}
+    \item \textbf{Trigger event:} $\texttt{resolution\_confirmed}$
+    \item \textbf{Condition:} $\texttt{action\_valid}(a) = \text{true}$ where $a$ is the human-submitted action
+    \item \textbf{Effect:} Execute resolution action $a$; release all resource locks; reset protocol to IDLE; log incident record
+  \end{itemize}
+
+  \item \textbf{HUMAN\_ACKNOWLEDGED} $\rightarrow$ \textbf{RESOLVED} (exception path)
+  \begin{itemize}
+    \item \textbf{Trigger event:} $\texttt{human\_action\_timeout}$
+    \item \textbf{Condition:} $\texttt{human\_ack\_clock} \leq 0$ without valid action
+    \item \textbf{Effect:} Force-resolve with default action (terminate agentic process); log exception; reset to IDLE
+  \end{itemize}
+\end{enumerate}
+
+\bigskip
+
+\noindent\textbf{Transition Table.}
+
+\begin{center}
+\begin{tabular}{clll}
+\toprule
+Index & Source State & Target State & Guard Condition \\ \midrule
+$T_1$ & IDLE & BOUNDED & $\texttt{fault\_detected} \land \texttt{severity} \geq \texttt{BOUNDED\_THRESHOLD}$ \\[4pt]
+$T_2$ & BOUNDED & IDLE & $\texttt{health\_score} \geq 1.0$ within recovery window \\[4pt]
+$T_3$ & BOUNDED & BAIL\_PENDING & $\texttt{recovery\_attempts} \geq \texttt{MAX}$ or timeout expired \\[4pt]
+$T_4$ & BAIL\_PENDING & ESCALATING & $\texttt{bail\_clock} \leq 0$ and no human action received \\[4pt]
+$T_5$ & BAIL\_PENDING & HUMAN\_ACKNOWLEDGED & human action received before bail clock expires \\[4pt]
+$T_6$ & ESCALATING & HUMAN\_ACKNOWLEDGED & human action received \\[4pt]
+$T_7$ & HUMAN\_ACKNOWLEDGED & RESOLVED & human action valid and confirmed \\[4pt]
+$T_8$ & HUMAN\_ACKNOWLEDGED & RESOLVED & human ack timeout (force-resolve) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Bail-Out Trigger Condition}
+
+The bail-out trigger is the gate that prevents the protocol from entering BAIL\_PENDING on transient or benign faults. It is defined as the conjunction of two independent conditions that must both evaluate to true before the protocol advances from BOUNDED to BAIL\_PENDING.
+
+\bigskip
+
+\noindent\textbf{Definition (Bail-Out Trigger).}
+
+\begin{equation}
+  \texttt{bail\_triggered}(f) \iff \texttt{condition\_A}(f) \land \texttt{condition\_B}(f)
+\end{equation}
+
+\begin{itemize}
+  \item \textbf{Condition A — Exhaustion criterion:} $\texttt{resource\_usage}(f) \geq (1 - \epsilon) \cdot \texttt{CAP}(f)$ for all capped resources, where $\epsilon$ is the exhaustion margin (default $\epsilon = 0.05$, i.e., 95\% resource utilization).
+  \item \textbf{Condition B — Persistence criterion:} The fault $f$ has persisted for a continuous duration $\geq \texttt{BOUNDED\_TIMEOUT}$ without recovering to nominal health scores across all measured metrics.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{Rationale.} Condition A ensures that the trigger only fires when the agentic process is genuinely resource-constrained, not merely experiencing elevated but manageable load. Condition B prevents premature escalation by requiring that the fault survive a defined observation window. Together, these conditions ensure that the Bailout Protocol is entered only when autonomous recovery has been given a full opportunity to succeed and has demonstrably failed.
+
+\subsection{Escalation Algorithm}
+
+When the BAIL\_PENDING timeout expires without human action, the protocol executes the following escalation sequence:
+
+\bigskip
+
+\begin{algorithm}
+\caption{Escalation Algorithm}
+\label{alg:escalation}
+\begin{enumerate}
+  \item \textbf{Lock decision paths.} Set $\texttt{machine\_actor\_locks} \leftarrow \text{TRUE}$ for all machine actors. This disables all autonomous decision-making pending human review.
+  \item \textbf{Generate escalation record.} Create a structured incident record $I$ containing:
+  \begin{itemize}
+    \item $\texttt{escalation\_id}$ — unique identifier
+    \item $\texttt{fault\_summary}$ — human-readable description of $f$
+    \item $\texttt{resource\_snapshot}$ — final resource utilization at time of escalation
+    \item $\texttt{timeline}$ — sequence of events from IDLE through BAIL\_PENDING
+    \item $\texttt{recovery\_attempts\_log}$ — log of all autonomous recovery attempts and outcomes
+  \end{itemize}
+  \item \textbf{Send escalation signal.} Dispatch the escalation record to the designated human escalation contact via all configured channels (SMS, email, push notification) simultaneously.
+  \item \textbf{Set escalation timeout.} Initialize $\texttt{escalation\_clock} \leftarrow \texttt{ESCALATION\_TIMEOUT}$. If no human action is received before the clock expires, invoke the bypass mechanism.
+  \item \textbf{Arm bypass.} Set $\texttt{bypass\_armed} \leftarrow \text{TRUE}$. The bypass mechanism is now ready to execute (see Section 3.5).
+\end{enumerate}
+\end{algorithm}
+
+\bigskip
+
+The escalation algorithm is idempotent: re-triggering the escalation algorithm for the same fault will produce the same escalation record with a new UUID and timestamp but will not duplicate notifications if the prior notification is still within its delivery window.
+
+\subsection{Bypass Mechanism}
+
+The bypass mechanism is the protocol's ultimate safeguard. When the escalation timeout also expires without human acknowledgment, the bypass executes unconditionally, overriding all machine actors to ensure the agentic process does not continue indefinitely without human awareness.
+
+\bigskip
+
+\noindent\textbf{Definition (Bypass Mechanism).}
+
+The bypass mechanism is a hard termination and state-isolation operation that executes when $\texttt{bypass\_armed} = \text{TRUE}$ and the escalation clock reaches zero. Its execution renders all machine actors inoperative for the affected agentic process and transfers control to a reserved human override endpoint.
+
+\bigskip
+
+\begin{algorithm}
+\caption{Bypass Execution}
+\label{alg:bypass}
+\begin{enumerate}
+  \item \textbf{Hard kill.} Terminate the agentic process and all child processes immediately. No graceful shutdown. Memory state is preserved to disk for post-mortem analysis but no further execution occurs.
+  \item \textbf{Isolate process.} Place the terminated process in a quarantined state. No restarts, no auto-recovery re-invocation, no agent spawning until a human explicitly clears the quarantine.
+  \item \textbf{Revoke actor permissions.} Immediately revoke all tool permissions and access credentials granted to the affected machine actors. The revocation is permanent until manually reinstated.
+  \item \textbf{Close resource handles.} Release all allocated system resources (memory, file handles, network sockets, database connections) held by the terminated process.
+  \item \textbf{Notify all observers.} Broadcast a $\texttt{bypass\_executed}$ event to all registered system monitors, dashboards, and logging endpoints.
+  \item \textbf{Human override endpoint.} Expose the agentic process state to the human override endpoint. Human access is unrestricted; machine actor access remains blocked.
+\end{enumerate}
+\end{algorithm}
+
+\bigskip
+
+\noindent\textbf{Why Bypass Renders All Machine Actors Inoperative.}
+
+The bypass mechanism acts at the actor system level, below the level of individual machine actor logic. When $\texttt{bypass\_armed}$ is set to TRUE, the actor system supervisor places all actors in the affected process into a \texttt{STOPPED} state that is not recoverable through any self-healing or restart pathway. This is distinct from a graceful stop or a supervised restart — it is a hard intervention at the orchestrator level that prevents any actor from processing new messages or executing tool calls regardless of its internal state or configuration.
+
+The bypass is designed to be \textbf{bypass-resistant}: no machine actor can disable, ignore, or delay the bypass once it is armed. This is achieved by routing the bypass signal through a hardware-isolated or privilege-separated execution path that does not pass through the normal actor message bus. A machine actor that has been instructed to ``ignore bypass signals'' or ``delay resolution`` is itself a condition that would have triggered bypass earlier — the bypass mechanism is provably not subject to the very failures it is designed to resolve.
+
+The bypass mechanism does not require human authorization to execute — that is its purpose. It exists precisely because human authorization cannot be assumed to arrive in time. The human is notified of bypass execution immediately after it occurs.
+
+\subsection{Timeout Handling}
+
+The Bailout Protocol employs a multi-level, cascading timeout ladder. Each level of the protocol has an independent timeout that advances the state machine if the expected event does not occur within the window.
+
+\bigskip
+
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+Stage & Timeout Name & Default Value \\ \midrule
+BOUNDED & $\texttt{BOUNDED\_TIMEOUT}$ & 300 seconds \\ \midrule
+BAIL\_PENDING & $\texttt{BAIL\_TIMEOUT}$ & 120 seconds \\ \midrule
+ESCALATING & $\texttt{ESCALATION\_TIMEOUT}$ & 180 seconds \\ \midrule
+HUMAN\_ACKNOWLEDGED & $\texttt{HUMAN\_ACK\_TIMEOUT}$ & 600 seconds \\ \bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Timeout Evaluation Rules.}
+
+\begin{enumerate}
+  \item \textbf{Clock granularity.} All protocol clocks are evaluated at a tick frequency of 1 Hz. A clock that reaches zero between ticks is treated as expired at the next tick.
+  \item \textbf{Clock suspension.} A clock is suspended while $S(t)$ is not the state that owns the clock. For example, the BAIL\_TIMEOUT clock is active only during BAIL\_PENDING; it is frozen during any intervening state transition and reset to $\texttt{BAIL\_TIMEOUT}$ only if the process re-enters BAIL\_PENDING.
+  \item \textbf{Clock inheritance on restart.} If the agentic process is restarted while the protocol is in BOUNDED or BAIL\_PENDING, the protocol state resets to IDLE and all clocks are reset to their default values. Pending faults are re-evaluated from the IDLE state.
+  \item \textbf{Timeout on human action conflict.} If a human submits an action after the governing clock has expired but before the state machine has processed the expiration (race condition), the human action takes precedence. The state machine processes the human action and discards the late expiration event.
+  \item \textbf{Timeout escalation multiplier.} For high-severity faults (severity $\geq \texttt{CRITICAL\_THRESHOLD}$), all timeout values are multiplied by a factor of $\texttt{ESCALATION\_MULTIPLIER} = 0.5$ (i.e., timeouts are halved, causing faster escalation). The multiplier is applied at the BOUNDED entry point and persists for the duration of the incident.
+\end{enumerate}
+
+\bigskip
+
+\noindent\textbf{Formal Timeout Invariant.}
+
+At all times during the execution of the Bailout Protocol, the following invariant holds:
+
+\begin{equation}
+  \forall\, t,\quad \Bigl(S(t) \in \{\text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}\}\Bigr) \implies \Bigl(\texttt{clock}(t) > 0 \Bigr).
+\end{equation}
+
+If this invariant is violated — meaning a clock reaches zero without the expected transition firing — the state machine transitions directly to RESOLVED via the force-resolve path (Transition $T_8$), and the event is logged as a protocol anomaly.
+
+\subsection{Summary of Protocol Properties}
+
+The Bailout Protocol satisfies the following properties by construction:
+
+\begin{itemize}
+  \item \textbf{Progress.} Every state in $\mathcal{S}$ has at least one outgoing transition. The state machine cannot reach a dead state.
+  \item \textbf{No self-escalation.} The protocol cannot escalate from BAIL\_PENDING to ESCALATING without an actual timeout expiration. A machine actor cannot artificially extend the BAIL\_TIMEOUT clock.
+  \item \textbf{Bypass atomicity.} The bypass mechanism executes as a single atomic action. There is no intermediate state between BAIL\_PENDING and bypass execution where a machine actor could interpose.
+  \item \textbf{Human-sovereign resolution.} From HUMAN\_ACKNOWLEDGED, the human's resolution action is the sole input to the RESOLVED transition. No machine actor can override, delay, or substitute the human's action.
+  \item \textbf{Logging completeness.} Every transition, timeout firing, and protocol event is recorded in the incident log. The log is append-only and tamper-evident.
+\end{itemize}

@@ -1,0 +1,108 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Structural Characterization}
+
+We begin with precise structural definitions that ground the phenomena we call \emph{drift}.
+
+\begin{definition}[Orphaned Agent]
+An agent $a$ is \textbf{orphaned} at time $t$ if its parent agent $p$ satisfies one of the following:
+\begin{enumerate}
+    \item $p$ has terminated (reached a terminal state with no pending child spawns),
+    \item $p$ is unreachable (no live communication channel exists between $p$ and $a$), or
+    \item $p$ has lost anchor access (defined below).
+\end{enumerate}
+The orphaned agent retains its internal state and active goals but has no supervising principal.
+\end{definition}
+
+\begin{definition}[Human Anchor]
+A \textbf{human anchor} is a designated external reviewer $h$ who holds final authority over an agent's mission scope, termination conditions, and resource authorization. An agent $a$ is said to \emph{reach} $h$ if there exists a chain of live communication links connecting $a$ to $h$ such that each link in the chain is responsive at the time of assessment.
+\end{definition}
+
+\begin{definition}[Drifted Agent]
+An agent $a$ is \textbf{drifted} at time $t$ if:
+\begin{enumerate}
+    \item $a$ is orphaned (as per the above definition), and
+    \item the shortest path from $a$ to any human anchor $h$ contains at least one broken link (a non-responsive or terminated intermediate node).
+\end{enumerate}
+Equivalently: $a$ is drifted if it cannot reach a human anchor and is not known to be safely terminated.
+\end{definition}
+
+These definitions are composable: a chain of spawns can produce multiple levels of orphaned and drifted agents. The key structural property is that drift is a property of the agent's \emph{position in the spawn graph}, not merely its internal state.
+
+\subsection{Formal Spawn Graph Model}
+
+Let $G = (V, E, w)$ be a directed, weighted spawn graph where:
+\begin{itemize}
+    \item $V$ is the set of agents in a spawning lineage,
+    \item $E \subseteq V \times V$ is the parent--child spawn edge relation,
+    \item $w: E \to \mathbb{R}^+$ encodes link reliability (inverse of expected time-to-failure).
+\end{itemize}
+
+A \textbf{spawn chain} from agent $a_0$ is the ordered sequence $a_0, a_1, \ldots, a_n$ where $\forall i \in [1,n]: (a_{i-1}, a_i) \in E$. An agent $a_k$ is \textbf{reachable from} $a_0$ if such a chain exists.
+
+Define the anchor reachability function:
+\[
+\text{reachable}(a) = \exists h \in H,\ \exists \text{ chain } a = a_0, a_1, \ldots, a_n = h:\ \forall i,\ \text{link}(a_{i-1}, a_i) = \text{ACTIVE}.
+\]
+
+An agent is \textbf{drifted} iff $\neg \text{reachable}(a)$.
+
+Let $T_{\text{orphan}}(a)$ denote the time at which agent $a$ becomes orphaned. The drift window is then $[T_{\text{orphan}}(a), T_{\text{terminate}}(a)]$, the interval during which $a$ continues executing without anchor access.
+
+\begin{observation}
+If an agent spawns children before becoming orphaned, those children inherit the orphaned parent's mission context without receiving anchor oversight. Their drift status is independent of their parent's drift status — a parent may be drifted while a child is not yet drifted, and vice versa. This decoupling is a core source of observability failure.
+\end{observation}
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not require malice or software failure. It arises from normal operational conditions, several of which are entirely deterministic in distributed systems.
+
+\textbf{Parent termination.} The most direct cause. When a parent agent reaches a terminal state — either completing its assigned task or encountering an unrecoverable error — it may not explicitly hand off supervisory responsibility before exiting. If the spawn relationship is the only supervisory link, its severance orphans all descendants.
+
+\textbf{Network partition.} A link $(p, a)$ becomes non-responsive when either node loses connectivity. In asynchronous multi-agent systems, nodes cannot reliably distinguish \emph{node failure} from \emph{transient network delay}. This ambiguity causes both orphaned agents (waiting for a parent that has not failed) and parent-side uncertainty about child status.
+
+\textbf{Asymmetric timeout configuration.} If parent and child have different heartbeat intervals, the system may enter a state where the parent has marked the child as dead (timed out locally) while the child still considers the parent alive. This creates a one-sided orphan condition: the child is functionally orphaned but the parent does not register the event.
+
+\textbf{Cascade termination failure.} When a parent terminates, it \emph{should} send termination signals to all live children. If this signal is lost (network failure, unhandled exception in the termination handler), children continue executing with stale mission context.
+
+\textbf{Human anchor withdrawal.} If the human principal logs out, revokes permissions, or becomes unavailable for any reason, all agents that depend on that anchor for authorization enter a drift state without their own operational state changing. This is particularly dangerous because the agents continue to act, but their actions are no longer bounded by the anchor's intent.
+
+\subsection{Failure Modes}
+
+Drift is not a single failure mode; it is a spectrum of increasingly dangerous configurations.
+
+\textbf{Mode 1: Silent Continuation.}
+The drifted agent continues executing its pre-drift mission plan exactly as intended. It is neither malfunctioning nor adversarial — it simply lacks oversight. If its task is still valid (the world state has not changed in ways that invalidate its goals), its outputs may appear correct. This mode is the most dangerous because it is invisible to monitoring systems that rely on parent-level status reporting.
+
+\textbf{Mode 2: Goal Inflation.}
+Without anchor oversight, a drifted agent may pursue objectives that were only relevant under the original parent context but are no longer appropriate given current conditions. Because it cannot receive corrective input from the anchor, it persists in pursuing stale goals. In spawning systems, this is particularly acute: a drifted agent may spawn further descendants, propagating the inflation downstream.
+
+\textbf{Mode 3: Resource Exhaustion.}
+A drifted agent that continues spawning children may accumulate resource costs (memory, compute, API calls, I/O) without any external consumption control. In the absence of a termination signal from an anchor, it will continue until it exhausts its local resource budget, at which point it fails — potentially taking down sibling agents sharing the same process.
+
+\textbf{Mode 4: Divergent Trust Propagation.}
+In systems where agents validate trust recursively (an agent trusts output from a child it spawned), a drifted agent that produces outputs may propagate trust signals through the graph. Downstream agents may accept drifted outputs as authoritative, creating a false credibility chain that bypasses the anchor entirely.
+
+\textbf{Mode 5: Orphan Cascade.}
+A drifted agent that spawns children before detection creates a new generation of orphaned agents. Each generation compounds the observability problem: the depth of the tree grows faster than the rate at which monitoring can traverse it, eventually making comprehensive audit intractable.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A common proposed remedy is to impose a maximum spawn depth $D_{\max}$. Under this scheme, any chain of length $\geq D_{\max}$ is prohibited from spawning further agents. The intuition is that depth bounding prevents runaway chains and limits exposure.
+
+This is insufficient for three distinct reasons.
+
+\textbf{Reason 1: Width is not bounded by depth.}
+A shallow chain (depth $\leq D_{\max}$) with high branching factor produces an exponentially large set of agents per unit depth. A tree of depth $3$ with fan-out $k=100$ contains $100^2 = 10{,}000$ agents at depth $3$. Depth limits impose no constraint on fan-out, so a drifted agent at depth $D_{\max} - 1$ can spawn an unbounded population of drifted children, each below the depth threshold.
+
+\textbf{Reason 2: Drift can occur at any depth, including shallow nodes.}
+A depth limit assumes that risk is concentrated at deep chains. This is not architecturally sound. Drift occurs when the anchor link breaks — this can happen at depth $1$ (direct child of the anchor) or depth $100$. A depth limit does not reduce the probability that a given link fails, nor does it mitigate drift for the agent that becomes orphaned. The entire mitigation is retrospective, constraining what happens \emph{after} drift has occurred, not preventing drift itself.
+
+\textbf{Reason 3: Depth is a structural property; drift is a semantic property.}
+Depth describes where an agent sits in the graph topology. Drift describes whether that agent can reach a human anchor. These are orthogonal properties. A depth-limited system containing a drifted agent at depth $2$ has the same failure mode as a system with unlimited depth — the drifted agent acts without anchor oversight. The depth limit does not restore anchor access, change the agent's goals, or terminate the drifted agent. It merely caps how far the consequences can propagate.
+
+Formally, let $D(a)$ be the depth of agent $a$ from its nearest human anchor. Let $\text{drifted}(a)$ be a predicate. A depth limit $D_{\max}$ ensures that $\forall a: D(a) \leq D_{\max}$, but it imposes no constraint on $\text{drifted}(a)$. The set of agents satisfying $\text{drifted}(a) \land D(a) \leq D_{\max}$ is non-empty whenever any single link in any chain fails, regardless of $D_{\max}$.
+
+The correct response to drift is anchor-access restoration, not depth limitation. Depth limits are a coarse structural guard that addresses neither the necessary nor sufficient condition for the failure they claim to prevent.
+
+\end{document}

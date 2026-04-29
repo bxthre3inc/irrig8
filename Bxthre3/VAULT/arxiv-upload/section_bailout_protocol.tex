@@ -1,0 +1,227 @@
+\section{The Bailout Protocol}
+\label{sec:bailout}
+
+\subsection{Overview and Purpose}
+
+The Bailout Protocol is the fifth foundational pillar of the BX3 Framework. It addresses the ``Black Box'' problem in autonomous systems: the condition in which an AI-driven action becomes orphaned from human responsibility, creating unresolvable legal, operational, and safety risk. When any node in a BX3 system encounters a state conflict it cannot resolve within its functional bounds, the Bailout Protocol guarantees that accountability escalates recursively upward through the system hierarchy, bypassing all machine actors, until it reaches a human anchor. The system fails upward into human consciousness --- never downward into algorithmic chaos.
+
+Formally, the Bailout Protocol is a state-machine protocol defined over a six-state finite state machine: $\{\texttt{IDLE}, \texttt{BOUNDED}, \texttt{BAIL\_PENDING}, \texttt{ESCALATING}, \texttt{HUMAN\_ACKNOWLEDGED}, \texttt{RESOLVED}\}$. It is triggered when a Bounds Engine node exhausts its local resolution capacity and cannot produce a proposal that satisfies all constraints in its \texttt{BoundsTable}. It terminates when a human explicitly acknowledges the escalated exception and a resolution action is recorded in the Forensic Ledger.
+
+\subsection{State Machine Definition}
+
+We define the Bailout Protocol as the tuple:
+
+\[
+\mathcal{B} = \langle S, \Sigma, \delta, s_0, F, T \rangle
+\]
+
+where:
+
+\begin{itemize}
+    \item $S = \{\texttt{IDLE}, \texttt{BOUNDED}, \texttt{BAIL\_PENDING}, \texttt{ESCALATING}, \texttt{HUMAN\_ACKNOWLEDGED}, \texttt{RESOLVED}\}$ is the finite set of states.
+    \item $\Sigma = \{\text{trigger}, \text{timeout}, \text{ack}, \text{resolve}, \text{reset}\}$ is the alphabet of events.
+    \item $\delta: S \times \Sigma \rightarrow S$ is the total deterministic transition function defined in Table \ref{tab:state_transitions}.
+    \item $s_0 = \texttt{IDLE}$ is the initial state.
+    \item $F \subseteq S$ is the set of terminal states. $F = \{\texttt{RESOLVED}\}$.
+    \item $T: S \rightarrow \mathbb{N}$ maps each state to its timeout in seconds, as defined in Table \ref{tab:timeouts}.
+\end{itemize}
+
+\begin{table}[htbp]
+\caption{Bailout Protocol State Transition Function $\delta(s, \sigma)$}
+\label{tab:state_transitions}
+\centering
+\begin{tabular}{llll}
+\toprule
+Current State $s$ & Event $\sigma$ & Next State $s'$ & Transition Condition \\
+\midrule
+IDLE & trigger & BOUNDED & $\texttt{BailoutCondition} \equiv \text{True}$ \\
+BOUNDED & trigger & BAIL\_PENDING & $\texttt{LocalResolutionFailed} \equiv \text{True}$ \\
+BOUNDED & timeout & BAIL\_PENDING & $t_{\text{elapsed}} \geq T(\text{BOUNDED})$ \\
+BOUNDED & resolve & RESOLVED & $\text{Action executed in Fact Layer}$ \\
+BOUNDED & reset & IDLE & $\text{Exception resolved at node level}$ \\
+BAIL\_PENDING & timeout & ESCALATING & $t_{\text{elapsed}} \geq T(\text{BAIL\_PENDING})$ \\
+BAIL\_PENDING & ack & HUMAN\_ACKNOWLEDGED & $\text{Human confirmed receipt}$ \\
+ESCALATING & ack & HUMAN\_ACKNOWLEDGED & $\text{Human confirmed receipt}$ \\
+ESCALATING & timeout & ESCALATING & $\texttt{MaxEscalationDepth} \not reached \land \text{Re-escalate}$ \\
+ESCALATING & timeout & RESOLVED & $\texttt{MaxEscalationDepth} \ reached \land \text{Timeout exceeded}$ \\
+HUMAN\_ACKNOWLEDGED & resolve & RESOLVED & $\text{Action recorded in Forensic Ledger}$ \\
+HUMAN\_ACKNOWLEDGED & reset & IDLE & $\text{Human disclaimed resolution}$ \\
+RESOLVED & reset & IDLE & $\text{New task initiated}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each state carries a defined operational role:
+
+\begin{itemize}
+    \item[\texttt{IDLE}] The node is operating normally. No exception condition exists. The Bounds Engine processes requests within established constraints.
+    \item[\texttt{BOUNDED}] A potential exception has been detected. The Bounds Engine is actively attempting local resolution within its \texttt{BoundsTable} limits. Time-bounded; if resolution fails or timeout fires, the machine transitions to \texttt{BAIL\_PENDING}.
+    \item[\texttt{BAIL\_PENDING}] Local resolution has failed or the BOUNDED timeout expired. The exception is formally queued for escalation. The node is not processing new requests in this state; the exception plane is locked.
+    \item[\texttt{ESCALATING}] The exception has been transmitted to the next upstream Purpose Layer anchor. The system awaits human acknowledgment. If the acknowledgment timeout fires before the human responds, the machine re-escalates to the next higher anchor or, if \texttt{MaxEscalationDepth} is reached, transitions directly to \texttt{RESOLVED} as a timeout exception.
+    \item[\texttt{HUMAN\_ACKNOWLEDGED}] A human has confirmed receipt and active awareness of the exception. The system is in a held state; no autonomous execution proceeds until the human issues a resolution directive recorded in the Forensic Ledger.
+    \item[\texttt{RESOLVED}] The exception has been closed. The full escalation path, human acknowledgments, and resolution actions are committed to the Forensic Ledger. The node returns to \texttt{IDLE} and resumes normal operation.
+\end{itemize}
+
+\subsection{Bail-Out Trigger Condition}
+
+The bail-out trigger condition $\texttt{BailoutCondition}$ is evaluated continuously by every Bounds Engine node during normal operation. It evaluates to \texttt{True} when any of the following conditions hold simultaneously:
+
+\[
+\texttt{BailoutCondition} \equiv \bigvee_{i=1}^{5} C_i
+\]
+
+where:
+
+\begin{enumerate}
+    \item $C_1$: \texttt{ConstraintViolation} --- A proposed action violates one or more constraints in the node's \texttt{BoundsTable} and the violation cannot be resolved by constraint relaxation within the node's authority.
+    \item $C_2$: \texttt{NovelInput} --- The input state $x \in X$ falls outside the training distribution $D_{\text{train}}$ by a margin exceeding the node's specified novelty threshold $\tau_{\text{novelty}}$, and no verified response strategy exists in the \texttt{ResponseTable}.
+    \item $C_3$: \texttt{ResourceExhaustion} --- A required computational resource (time, memory, API quota, or external dependency) is depleted to the point where safe completion of the current task cannot be guaranteed.
+    \item $C_4$: \texttt{HumanDirectiveConflict} --- Two or more directives from distinct Purpose Layer anchors conflict in their expressed intent, and the node lacks the authority to adjudicate among them.
+    \item $C_5$: \texttt{ForensicLedgerFailure} --- A write to the Forensic Ledger fails or returns a non-confirmation, indicating the audit trail cannot be guaranteed for the proposed action.
+\end{enumerate}
+
+When $\texttt{BailoutCondition} \equiv \text{True}$, the node transitions to \texttt{BOUNDED} and begins the local resolution procedure. The trigger condition itself is logged to the Forensic Ledger with timestamp, node identifier, and condition sub-type ($C_1$ through $C_5$).
+
+The \texttt{LocalResolutionFailed} condition that drives the \texttt{BOUNDED} $\rightarrow$ \texttt{BAIL\_PENDING} transition is defined as:
+
+\[
+\texttt{LocalResolutionFailed} \equiv \neg \exists \; a \in A : \texttt{isPermissible}(a) \land \texttt{isSafe}(a) \land \texttt{hasResource}(a)
+\]
+
+where $A$ is the action space available to the node, $\texttt{isPermissible}(a)$ returns \texttt{True} if $a$ satisfies all constraints in the \texttt{BoundsTable}, $\texttt{isSafe}(a)$ returns \texttt{True} if $a$ does not violate any safety-critical invariants, and $\texttt{hasResource}(a)$ returns \texttt{True} if sufficient computational and external resources exist to execute $a$.
+
+\subsection{Escalation Algorithm}
+
+The escalation algorithm is executed when the state machine transitions to \texttt{ESCALATING}. It is defined as the procedure \texttt{Escalate}($e$, $n$, $d$) where $e$ is the exception record, $n$ is the current node, and $d$ is the current escalation depth:
+
+\begin{algorithm}
+\caption{Escalation Algorithm \texttt{Escalate}}
+\label{alg:escalate}
+\begin{algorithmic}
+\Function{Escalate}{$e, n, d$}
+    \State $\text{timeout} \leftarrow T(\text{ESCALATING}) \times \texttt{BackoffFactor}(d)$
+    \State $\text{next\_anchor} \leftarrow \texttt{GetNextUpstreamAnchor}(n)$
+    \State $\texttt{TransmitException}(e, \text{next\_anchor})$
+    \State $\text{start\_time} \leftarrow \texttt{Now}()$
+    \While{$\texttt{Now}() - \text{start\_time} < \text{timeout}$}
+        \State $\text{ack} \leftarrow \texttt{WaitForAcknowledgment}(\text{next\_anchor})$
+        \If{$\text{ack} = \texttt{ACK\_RECEIVED}$}
+            \State $\texttt{TransitionTo}(\text{HUMAN\_ACKNOWLEDGED})$
+            \State \Return
+        \EndIf
+        \State $\texttt{Sleep}(\delta_{\text{poll}})$
+    \EndWhile
+    \Comment{Human did not acknowledge within timeout}
+    \If{$d < \texttt{MaxEscalationDepth}$}
+        \State $\texttt{LogEscalationEvent}(e, \text{next\_anchor}, d, \texttt{TIMEOUT})$
+        \State \Call{Escalate}{$e, \text{next\_anchor}, d + 1$}
+    \Else
+        \Comment{Max depth reached; record timeout exception and terminate}
+        \State $\texttt{LogEscalationEvent}(e, \text{next\_anchor}, d, \texttt{MAX\_DEPTH\_EXCEEDED})$
+        \State $\texttt{TransitionTo}(\text{RESOLVED})$
+        \State $\texttt{RecordTimeoutException}(e)$
+    \EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The \texttt{BackoffFactor}$(d)$ for escalation depth $d \in \mathbb{N}$ is defined as:
+
+\[
+\texttt{BackoffFactor}(d) = \min\left(2^d, \; \texttt{MaxBackoffMultiplier}\right)
+\]
+
+where $\texttt{MaxBackoffMultiplier} = 8$ by default, preventing unbounded exponential growth in human wait times while ensuring escalating urgency signals reach upstream anchors.
+
+The procedure \texttt{GetNextUpstreamAnchor}($n$) traverses the system hierarchy upward, bypassing all machine-actor nodes, until it reaches the next human-occupied Purpose Layer anchor. The bypass rule is defined formally in Section \ref{sec:bypass}.
+
+The \texttt{MaxEscalationDepth} parameter is configurable per deployment and defaults to $5$, meaning the protocol will bypass at most five consecutive machine-actor nodes before reaching a human. In practice, BX3 architectures are designed so that no machine-actor chain longer than \texttt{MaxEscalationDepth} exists between any leaf node and the nearest human anchor.
+
+\subsection{Bypass Mechanism}
+\label{sec:bypass}
+
+The bypass mechanism is the defining property of the Bailout Protocol. It ensures that escalation never terminates at a machine actor --- every exception path terminates at a human, or it is recorded as a timeout exception and the system is halted.
+
+The bypass rule is formally defined as:
+
+\[
+\forall n \in \text{Nodes} : \texttt{IsMachineActor}(n) \implies \texttt{CannotBeEscalationEndpoint}(n)
+\]
+
+In other words, any node classified as a machine actor is structurally ineligible to serve as the terminal endpoint of an escalation path. This classification is enforced at architecture design time and cannot be overridden at runtime.
+
+The mechanism operates as follows. When \texttt{GetNextUpstreamAnchor}($n$) is invoked, the hierarchy traversal performs the following check at each node:
+
+\begin{enumerate}
+    \item Query the node's role registry entry for the \texttt{ActorType} field.
+    \item If $\texttt{ActorType} = \texttt{HUMAN}$, the traversal terminates and this node is returned as the escalation target.
+    \item If $\texttt{ActorType} = \texttt{MACHINE}$, the traversal continues to the node's registered upstream anchor without entering the machine node's processing logic.
+    \item If $\texttt{ActorType} = \texttt{HYBRID}$, the node is treated as a machine actor for bypass purposes; escalation cannot terminate at a hybrid node unless it has an explicitly registered human operator in the \texttt{HumanFallback} field.
+\end{enumerate}
+
+The rationale for bypassing all machine actors is grounded in the accountability structure of the BX3 Framework. Machine actors at the Purpose Layer are not accountability anchors --- they are executors of intent set by human principals. When a Bounds Engine node cannot resolve an exception locally, the only entities capable of providing a binding resolution are those who bear upstream accountability: humans whose authority is grounded in legal, organizational, or moral frameworks that machine actors cannot replicate. Routing an escalation to a machine actor would simply displace the problem without resolving the accountability gap; the machine actor would either resolve the exception (creating a new accountability orphan) or escalate it (adding latency without structural benefit). The bypass mechanism eliminates both failure modes by design.
+
+\subsection{Timeout Handling}
+
+Timeout handling in the Bailout Protocol is state-dependent and architecturally explicit. Each state $s \in S$ has an associated timeout $T(s)$ that defines the maximum elapsed time the state machine will wait for an event before transitioning automatically. Timeouts are not advisory; they are enforced transitions that drive the state machine forward even in the absence of explicit events.
+
+\begin{table}[htbp]
+\caption{State Timeout Values}
+\label{tab:timeouts}
+\centering
+\begin{tabular}{lll}
+\toprule
+State & Timeout $T(s)$ (seconds) & Auto-Transition on Expiry \\
+\midrule
+IDLE & $\infty$ & None (terminal wait) \\
+BOUNDED & 30 & $\rightarrow$ BAIL\_PENDING \\
+BAIL\_PENDING & 120 & $\rightarrow$ ESCALATING \\
+ESCALATING & 180 & $\rightarrow$ ESCALATING (re-escalate if depth $<$ max) \\
+ & & $\rightarrow$ RESOLVED (if max depth reached) \\
+HUMAN\_ACKNOWLEDGED & 600 & $\rightarrow$ ESCALATING (re-escalate) \\
+RESOLVED & $\infty$ & None (terminal state) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The timeout values reflect the operational realities of each state. BOUNDED has a short timeout (30s) because local resolution attempts should complete quickly; if no resolution emerges within this window, the exception is by definition not locally resolvable. BAIL\_PENDING allows more time (120s) because queue management and diagnostic logging may be required before escalation is appropriate. ESCALATING permits the longest wait (180s base, scaled by backoff factor) because human acknowledgment inherently requires variable time depending on the anchor's availability and attention state.
+
+When a timeout fires during \texttt{ESCALATING}, the machine does not immediately terminate. It checks the escalation depth. If $d < \texttt{MaxEscalationDepth}$, it logs the timeout event, increments the escalation depth, and re-invokes the escalation algorithm targeting the next upstream anchor. This ensures that a non-responsive human does not freeze the system; instead, the exception propagates further up the hierarchy until a responsive human is reached or the maximum depth is exceeded.
+
+When a timeout fires at \texttt{MaxEscalationDepth} in \texttt{ESCALATING}, the state transitions to \texttt{RESOLVED} and a \texttt{TimeoutException} record is written to the Forensic Ledger. This record contains the full exception history, the escalation path, all timeout events, and a \texttt{HALT\_REQUIRED} flag indicating that the affected node must not resume autonomous operation until the timeout exception is reviewed and cleared by a human. This prevents timeout expiry from silently resuming normal operation.
+
+In \texttt{HUMAN\_ACKNOWLEDGED}, the 600-second timeout ensures that a human who acknowledges but does not resolve is periodically re-escalated to prevent the system from entering an indefinitely held state. This also protects against scenarios where a human acknowledges but then becomes unavailable before issuing a resolution directive.
+
+All timeout events are logged to the Forensic Ledger with the state at expiry, the elapsed time, the event that was awaited, and the auto-transition that was executed. This ensures complete traceability of all timeout-driven state transitions, satisfying the forensic auditability requirement of the Fact Layer.
+
+\subsection{Integration with the Forensic Ledger}
+
+The Bailout Protocol is tightly integrated with the Forensic Ledger introduced in Pillar 4. Every state transition, trigger condition evaluation, escalation transmission, human acknowledgment, resolution action, and timeout event is recorded as an immutable entry in the Forensic Ledger across three planes:
+
+\begin{itemize}
+    \item \textbf{Purpose Plane}: Authorization to escalate, human acknowledgment events, resolution directives issued by human principals.
+    \item \textbf{Bounds Engine Plane}: Trigger condition evaluations, local resolution attempts, constraint violation records, escalation path metadata.
+    \item \textbf{Fact Plane}: State transition timestamps, timeout fire events, resolution action executions, Forensic Ledger write confirmations.
+\end{itemize}
+
+This three-plane recording ensures that any post-hoc reconstruction of a Bailout Protocol event can determine with certainty: (1) what caused the exception, (2) what resolution was attempted and by whom, (3) what the outcome was, and (4) that the system's behavior at every step satisfied the architectural requirements of the BX3 Framework. The Forensic Ledger entry for a Bailout Protocol event is structured as:
+
+\[
+\text{Entry} = \langle \text{timestamp}, \text{nodeID}, \text{state}_{\text{from}}, \text{state}_{\text{to}}, \text{event}, \text{triggerType}, \text{escalationPath}, \text{resolution}, \text{plane} \rangle
+\]
+
+\subsection{Operational Guarantees}
+
+The Bailout Protocol provides the following formal operational guarantees:
+
+\begin{enumerate}
+    \item \textbf{Upstream Accountability Guarantee}: For any node $n$ in a BX3 system, there exists a finite escalation path $P = \langle n = p_0, p_1, \ldots, p_k \rangle$ such that $p_k$ is human-occupied, and $\forall i \in [0, k-1]$, $\texttt{IsMachineActor}(p_i) = \text{True}$. That is, every node has a guaranteed path to a human anchor that bypasses all machine actors.
+
+    \item \textbf{Non-Orphaning Guarantee}: No autonomous action can reach the \texttt{RESOLVED} state without at least one human acknowledgment in its escalation path, unless the resolution was a timeout exception at \texttt{MaxEscalationDepth}, in which case a \texttt{HALT\_REQUIRED} flag is set and the node is blocked from autonomous operation.
+
+    \item \textbf{Deterministic Timeout Guarantee}: Every state $s \in S \setminus \{\texttt{IDLE}, \texttt{RESOLVED}\}$ has a defined timeout $T(s) \in \mathbb{N}$, and the state machine transitions deterministically on timeout expiry regardless of external events.
+
+    \item \textbf{Audit Completeness Guarantee}: Every Bailout Protocol event produces a corresponding Forensic Ledger entry on all three planes before the state transition is considered complete. A state transition without a confirmed Forensic Ledger write is invalid and triggers a \texttt{ForensicLedgerFailure} condition ($C_5$).
+\end{enumerate}
+
+These guarantees collectively ensure that the Bailout Protocol satisfies the BX3 Framework's core safety property: \textit{accountability always escalates to a human, or the system halts and awaits human review.}

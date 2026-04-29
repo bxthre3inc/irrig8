@@ -1,0 +1,251 @@
+\section{Immutable Parent Pointers}
+\label{sec:immutable-parent-pointers}
+
+The immutable parent pointer is the foundational structural primitive of the Recursive Spawning Protocol. It is the single mechanism that makes the delegation chain a runtime-verifiable artifact rather than a forensic reconstruction, that renders chain integrity a structural guarantee rather than a policy assertion, and that renders all modes of autonomous drift architecturally impossible regardless of the operational urgency, architectural complexity, or adversarial sophistication of any machine actor in the chain. This section specifies the parent pointer formally, defines the chain traversal operator using the recursive formulation, establishes the base case for the root human anchor, specifies the immutability enforcement mechanism through the Fact Layer write protocol, describes the Purpose Layer's spawn authorization role, and provides the complete chain traversal and verification algorithms.
+
+% ------------------------------------------------------------------------------%
+\subsection{Formal Definition: ParentPointer}
+\label{sec:parent-pointer-definition}
+
+\begin{definition}[Parent Pointer]
+\label{def:parent-pointer}
+Let $\mathcal{N}$ be the set of all agent nodes in a \bxthree{} system implementing the Recursive Spawning Protocol. For any node $c \in \mathcal{N}$ spawned via a valid RSP spawn event, the relation $\ParentPointer{p}{c}$ is established exactly once at node provisioning via a Fact Layer atomic write, and satisfies four governing properties:
+
+\begin{enumerate}
+    \item[(P1) \textbf{Uniqueness}] For every child node $c \in \mathcal{N}$, there exists exactly one node $p \in \mathcal{N}$ such that $\ParentPointer{p}{c}$ holds at all times after provisioning. No child may have multiple simultaneous parent pointers. No mechanism exists by which an established pointer may be overwritten or redirected.
+
+    \item[(P2) \textbf{Immutability}] After the provisioning write confirming $\ParentPointer{p}{c}$ is recorded in the Fact Layer ledger, no operation exists --- from any source, with any privilege level, under any system condition --- that can modify or delete $\ParentPointer{p}{c}$. The pointer is permanent for the operational lifetime of $c$. This is not a policy enforced by access control; it is a structural property of the protocol: the modification operation is not defined.
+
+    \item[(P3) \textbf{Directionality}] The parent pointer is an intrinsic attribute of the child node, not a reference held by the parent. The child $c$ carries $\ParentPointer{p}{c}$ as an immutable attribute in its own Fact Layer state record. The parent $p$ holds no mutable reference to $c$. A parent that has terminated, crashed, or been decommissioned does not affect $c$'s ability to reference its parent. The chain is traversable from any node outward to its complete lineage independent of the operational state of any other node in the chain.
+
+    \item[(P4) \textbf{Human Anchor Termination}] The root of any RSP chain is a human principal node $h$ for which $\ParentPointer{\bot}{h}$ holds. The null parent marker $\bot$ indicates that $h$ is the ultimate delegation origin. No machine actor in the RSP model may serve as a chain root.
+\end{enumerate}
+\end{definition}
+
+\medskip
+\noindent\textbf{Notation.} We write $\ParentPointer{p}{c}$ to denote the parent pointer relation between parent $p$ and child $c$. The functional notation $\alpha(c) = p$ and $\parent(c) = p$ are used interchangeably. The expression $\alpha(c) = \bot$ denotes that node $c$ has no parent --- it is the root human anchor. The notation $\alpha^{(k)}(a)$ denotes the $k$-fold application of $\alpha$, and $\alpha^{(0)}(a) = a$.
+
+\medskip
+\begin{dfn}[Spawn Event]
+\label{dfn:spawn-event}
+A \emph{spawn event} is the 5-tuple
+\begin{equation}
+\mathrm{spawn}(c,\ p,\ \sigma_c,\ t,\ \phi)
+\end{equation}
+where $c$ is the newly created child node, $p \in \mathcal{N}$ is the authorizing parent node, $\sigma_c$ is the authorized execution scope, $t$ is the wall-clock timestamp, and $\phi$ is the cryptographic warrant produced by the Purpose Layer over the spawn request. The Fact Layer atomically: (1) creates node $c$, (2) sets $\ParentPointer{p}{c}$, (3) sets the node's authorized scope to $\sigma_c$, (4) seals the memory envelope, and (5) appends the event to the forensic ledger $\mathcal{L}$.
+\end{dfn}
+
+The atomic coupling of authorization (Purpose Layer) and assignment (Fact Layer) is essential: it prevents a parent from claiming to have spawned a node whose parent pointer was set to a different actor, and it prevents a child from falsifying its own ancestry after provisioning.
+
+% ------------------------------------------------------------------------------%
+\subsection{The Chain Operator}
+\label{sec:chain-operator}
+
+The chain operator $\Chain{\cdot}$ is the primary tool for chain traversal, verification, and accountability attribution. It constructs the complete delegation lineage from any node to the human anchor by recursively applying the parent pointer relation.
+
+\begin{dfn}[Chain Operator]
+\label{def:chain-operator}
+For any agent node $a \in \mathcal{N}$, the \emph{chain} $\Chain{a}$ is defined recursively as:
+\begin{equation}
+\Chain{a} =
+\begin{cases}
+\{\,\ParentPointer{\parent(a)}{a}\,\} \cup \Chain{\parent(a)} & \text{if } \alpha(a) \neq \bot \\[10pt]
+\emptyset & \text{if } \alpha(a) = \bot \quad \text{(base case: root human anchor)}
+\end{cases}
+\label{eq:chain-recursive}
+\end{equation}
+\end{dfn}
+
+Expanding the recursion once makes the structure explicit:
+\begin{equation}
+\Chain{a} = \{\,\ParentPointer{\parent(a)}{a},\} \cup \bigl(\{\,\ParentPointer{\parent^{(2)}(a)}{\parent(a)}\,\} \cup \Chain{\parent^{(2)}(a)}\bigr).
+\label{eq:chain-expanded}
+\end{equation}
+
+And in fully expanded form, the chain reveals the complete lineage as a set of parent pointer edges:
+\begin{equation}
+\Chain{a} = \bigl\{\,\ParentPointer{\parent(a)}{a},\ \ParentPointer{\parent^{(2)}(a)}{\parent(a)},\ \ParentPointer{\parent^{(3)}(a)}{\parent^{(2)}(a)},\ \ldots,\ \ParentPointer{\parent^{(n)}(a)}{\parent^{(n-1)}(a)}\,\bigr\}
+\label{eq:chain-expanded-full}
+\end{equation}
+where $n$ is the smallest integer such that $\parent^{(n)}(a) = \bot$ (the root human). By (P4), $\parent^{(n)}(a)$ is a human principal, so the chain always terminates at a named human.
+
+\begin{corol}[Chain Terminates at Human Anchor]
+\label{corol:chain-terminates-human}
+For any node $a \in \mathcal{N}$, $\Chain{a}$ contains a $\ParentPointer{\bot}{h}$ edge where $h$ is a human principal. Consequently, every node in $\mathcal{N}$ has a complete delegation lineage traceable to a human anchor, and no node can be the root of a chain.
+\end{corol}
+
+\begin{examp}[Chain Construction]
+Consider a chain of four agents: human $H$, agent $A$, agent $B$, agent $C$, and agent $D$. The parent pointers established at spawn are:
+\begin{align*}
+\ParentPointer{H}{A} &\quad \text{(root $H$ spawns $A$)} \\
+\ParentPointer{A}{B} &\quad \text{($A$ spawns $B$)} \\
+\ParentPointer{B}{C} &\quad \text{($B$ spawns $C$)} \\
+\ParentPointer{C}{D} &\quad \text{($C$ spawns $D$)}
+\end{align*}
+Using the chain operator:
+\begin{align*}
+\Chain{D} &= \{\ParentPointer{C}{D}\} \cup \Chain{C} \\
+          &= \{\ParentPointer{C}{D}\} \cup \{\ParentPointer{B}{C}\} \cup \Chain{B} \\
+          &= \{\ParentPointer{C}{D},\ \ParentPointer{B}{C}\} \cup \{\ParentPointer{A}{B}\} \cup \Chain{A} \\
+          &= \{\ParentPointer{C}{D},\ \ParentPointer{B}{C},\ \ParentPointer{A}{B}\} \cup \emptyset \\
+          &= \{\ParentPointer{C}{D},\ \ParentPointer{B}{C},\ \ParentPointer{A}{B}\}.
+\end{align*}
+The chain contains exactly the three edges of the delegation chain from $D$ to $H$. No edge is missing, no edge can be added, and no edge can be modified after the fact.
+\end{examp}
+
+% ------------------------------------------------------------------------------%
+\subsection{Immutability Enforcement: Fact Layer Write Protocol}
+\label{sec:fact-layer-immutability}
+
+The immutability of $\ParentPointer{p}{c}$ is enforced by the Fact Layer write protocol, which defines no valid modification operation for an established parent pointer. This is not access control --- it is protocol design. The distinction is critical.
+
+The Fact Layer is the append-only, tamper-evident ledger that records every meaningful event in a spawn chain. It provides the forensic guarantee central to the Recursive Spawning model's accountability claims. The immutability enforcement operates through four specific mechanisms:
+
+\begin{enumerate}
+    \item[(W1) \textbf{No modification operation defined.}] The Fact Layer operation set contains no $\mathrm{modify}(\ParentPointer{p}{c})$ entry. Any request to alter, overwrite, redirect, or delete an established parent pointer is rejected as an unrecognized operation before it reaches the ledger. This is not a policy response to a recognized request; it is a protocol-level rejection of an unrecognized operation class.
+
+    \item[(W2) \textbf{All modification requests rejected unconditionally.}] Any request to alter, overwrite, redirect, or delete $\ParentPointer{p}{c}$ is rejected before the Fact Layer attempts to execute it. The rejection is unconditional: it does not depend on the privilege level of the requesting actor, the system state, or any configurable policy. All sources receive identical treatment.
+
+    \item[(W3) \textbf{Sealed memory envelope.}] The parent pointer field $\ParentPointer{p}{c}$ is encrypted at rest using a Fact Layer-only symmetric key. Even a compromised system component cannot read $\ParentPointer{p}{c}$ because it never has access to the decryption key. The envelope carries an HMAC-SHA-256 signature computed over its contents; any modification to the ciphertext invalidates the signature. The Fact Layer decrypts the envelope only when reading $\ParentPointer{p}{c}$ to service a chain-traversal or audit request, and re-encrypts and re-signs after each authorized read.
+
+    \item[(W4) \textbf{Atomic provisioning.}] The parent pointer $\ParentPointer{p}{c}$ and its Purpose Layer warrant $\phi$ are created as a single atomic Fact Layer write. There is no temporal window in which the pointer exists without authorization, or in which authorization exists without a corresponding pointer. This eliminates the class of exploits where a parent pointer is first established and then retroactively authorized.
+\end{enumerate}
+
+In the Fact Layer write protocol, the immutability of $\ParentPointer{p}{c}$ is a property of the protocol itself. There is no operation defined for modifying $\ParentPointer{p}{c}$ after provisioning, so no amount of privilege elevation, credential compromise, or software vulnerability can produce a valid modification operation. The protocol does not enforce immutability --- it makes immutability the only valid state transition. The distinction is architectural, not a matter of degree.
+
+\medskip
+\noindent\textbf{Why access control is insufficient.} The distinction between access-control-based immutability and protocol-level immutability is the distinction between a promise and a guarantee. In an access-control model, immutability is enforced by restricting which principals may issue modification operations. If an attacker acquires sufficient privileges --- through credential theft, insider compromise, or software vulnerability --- the access control barrier is circumvented and immutability is violated. The immutability was a policy, enforceable until it was not.
+
+This is the precise failure mode the Fact Layer write protocol eliminates: retroactive manipulation of chain topology for the purpose of accountability laundering. Without protocol-level immutability, an adversarial actor could re-parent a node to a favorable parent after the fact, obscuring the original authorization chain. With protocol-level immutability, this manipulation is structurally impossible.
+
+The immutability guarantee exhibits four properties that distinguish it from access-control-based approaches:
+
+\begin{enumerate}
+    \item[(E1) \textbf{No override path.}] There is no configuration flag, emergency pathway, or administrative override capable of modifying $\ParentPointer{p}{c}$ after provisioning. Access control systems have override paths; the Fact Layer write protocol does not.
+
+    \item[(E2) \textbf{Failure-state resilience.}] The immutability holds even under system conditions that disable other enforcement mechanisms --- including catastrophic failure, kernel compromise, or memory corruption in other system components. The parent pointer is stored in non-volatile, sealed Fact Layer memory. A node that experiences power loss or hardware damage resumes with its parent pointer intact.
+
+    \item[(E3) \textbf{Source-equivalence of enforcement.}] All modification requests --- from any source --- receive identical treatment: protocol-level rejection. There is no distinguished principal, no system call path, and no operational mode in which modification is permissible.
+
+    \item[(E4) \textbf{Atomic warrant-pointer creation.}] The parent pointer and its Purpose Layer warrant are created as a single atomic Fact Layer write. There is no temporal window in which $\ParentPointer{p}{c}$ is established without a matching warrant, or in which a warrant exists without a corresponding parent pointer.
+\end{enumerate}
+
+% ------------------------------------------------------------------------------%
+\subsection{Spawn Authorization: Purpose Layer Role}
+\label{sec:purpose-layer-spawn-authorization}
+
+The Purpose Layer governs the \textit{creation} of new parent pointer relationships through the spawn authorization procedure. This procedure is invoked whenever a node $p$ proposes to spawn a child node $c$. The Purpose Layer evaluates whether the proposed spawn is consistent with the human principal's intent and, if so, authorizes the creation of the $\ParentPointer{p}{c}$ relationship by issuing a binding directive to the Fact Layer.
+
+The spawn authorization procedure $P_{\mathrm{spawn}}$ specifies the mandatory conditions for any valid spawn event:
+
+\begin{enumerate}
+    \item[(S1) \textbf{Scope refinement.}] The child scope must be a strict subset of the parent scope: $R(n_{\mathrm{child}}) \subsetneq R(n_{\mathrm{parent}})$. No lateral expansion, no superset, no equality. This ensures each spawn event narrows the delegation scope, preserving the intent-refinement property of the chain.
+
+    \item[(S2) \textbf{Operational necessity.}] The parent must declare, in the Fact Layer authorization ledger, the precise condition requiring child spawning. The declaration must identify why the condition cannot be resolved by the parent acting alone, and why the scope of the proposed child is the minimum scope sufficient to resolve it.
+
+    \item[(S3) \textbf{Human intent alignment.}] The proposed child scope must be contained within the declared purpose of the parent, traceable through the chain to the root human's purpose clause. This ensures no spawn event introduces operational intent that was not present in the root human's original authorization.
+\end{enumerate}
+
+The Purpose Layer authorization must precede the Fact Layer recording of the parent pointer. The authorization identifies the parent as a prerequisite for the Fact Layer to record the $\ParentPointer{p}{c}$ relation. Concretely:
+
+\begin{enumerate}
+    \item The parent $p$ submits a spawn request to the Purpose Layer specifying the proposed child scope $\sigma_c$ and the operational necessity.
+    \item The Purpose Layer evaluates the three authorization conditions (S1), (S2), and (S3). If any condition fails, the spawn request is rejected and no Fact Layer event is generated.
+    \item If all conditions hold, the Purpose Layer issues a cryptographic warrant $\phi$ certifying that the spawn is authorized, and transmits the warrant to the Fact Layer.
+    \item The Fact Layer receives the warrant and records $\ParentPointer{p}{c}$ as an immutable attribute of $c$.
+\end{enumerate}
+
+No child node $c$ can have an established $\ParentPointer{p}{c}$ in the Fact Layer ledger unless the Purpose Layer has issued a valid warrant $\phi_c$ for the spawn event. The Fact Layer will not complete the provisioning write for a spawn event without a valid Purpose Layer warrant. This coupling is what makes the parent pointer not merely immutable but also always legitimate at the moment of creation.
+
+% ------------------------------------------------------------------------------%
+\subsection{Chain Traversal Algorithm}
+\label{sec:chain-traversal-algorithm}
+
+The chain traversal procedure enables any node or auditor to reconstruct the complete delegation lineage for any agent in the system. The verification procedure uses the traversal to confirm structural validity of a chain at runtime.
+
+\medskip
+\begin{algorithm}[H]
+\caption{Chain-Traverse($n$)}
+\label{alg:chain-traverse}
+\begin{algorithmic}
+\REQUIRE Node $n \in \mathcal{N}$
+\ENSURE Returns $\Chain{n}$ as the set of all $\ParentPointer{}$ edges from $n$ to the root human
+
+\STATE $\text{current} \gets n$
+\STATE $\text{chain} \gets \emptyset$
+
+\LOOP
+    \STATE $p \gets \parent(\text{current})$
+    \IF{$p = \bot$}
+        \STATE \RETURN $\text{chain}$
+    \ENDIF
+    \STATE $\text{chain} \gets \text{chain} \cup \{\ParentPointer{p}{\text{current}}\}$
+    \STATE $\text{current} \gets p$
+\ENDLOOP
+\end{algorithmic}
+\end{algorithm}
+
+\medskip
+\begin{algorithm}[H]
+\caption{Chain-Verify($n$)}
+\label{alg:chain-verify}
+\begin{algorithmic}
+\REQUIRE Node $n \in \mathcal{N}$
+\ENSURE Returns \texttt{true} if $\Chain{n}$ satisfies all RSP structural constraints
+
+\STATE $chain \gets \text{Chain-Traverse}(n)$
+\STATE $m \gets |chain|$
+
+\STATE \COMMENT{\textit{V1: Verify human anchor termination}}
+\STATE $root \gets chain[m-1]$
+\IF{$\neg \isHuman(root)$}
+    \STATE \RETURN $\mathrm{false}$ \COMMENT{Chain does not terminate at human anchor}
+\ENDIF
+
+\STATE \COMMENT{\textit{V2: Verify Purpose Layer warrant at each link}}
+\FOR{$i \leftarrow 0$ \TO $m-1$}
+    \STATE $child \leftarrow chain[i].child$
+    \STATE $parent \leftarrow chain[i].parent$
+    \IF{$\neg \warrant\_exists}(child,\ parent)$}
+        \STATE \RETURN $\mathrm{false}$ \COMMENT{Missing Purpose Layer warrant for spawn}
+    \ENDIF
+\ENDFOR
+
+\STATE \COMMENT{\textit{V3: Verify scope refinement at each link}}
+\FOR{$i \leftarrow 0$ \TO $m-2$}
+    \STATE $child \leftarrow chain[i].child$
+    \STATE $parent \leftarrow chain[i+1]$
+    \IF{$\neg (R(child) \subsetneq R(parent))$}
+        \STATE \RETURN $\mathrm{false}$ \COMMENT{Scope refinement constraint violated}
+    \ENDIF
+\ENDFOR
+
+\STATE \COMMENT{\textit{V4: Verify depth bound compliance}}
+\FOR{$i \leftarrow 0$ \TO $m-1$}
+    \IF{$\mathrm{depth}(chain[i]) > D_{\max}$}
+        \STATE \RETURN $\mathrm{false}$ \COMMENT{Depth bound exceeded}
+    \ENDIF
+\ENDFOR
+
+\RETURN $\mathrm{true}$
+\end{algorithmic}
+\end{algorithm}
+
+Chain-Verify returns \texttt{true} if and only if all four verification conditions hold simultaneously. V1 confirms the chain terminates at a human anchor. V2 confirms every spawn was authorized by the Purpose Layer. V3 confirms scope refinement was respected at every link. V4 confirms the depth bound was respected throughout. A chain that passes Chain-Verify is a fully authorized delegation chain terminating at a human principal.
+
+The algorithm is deterministic and produces the same result regardless of which node in the chain initiates verification. There is no self-serving interpretation of authorization that a drifted or orphaned node could produce, because Chain-Verify inspects the complete chain topology and warrants in the Fact Layer ledger, not the node's own claims about its authorization.
+
+\begin{prop}[Chain-Verify Soundness]
+\label{prop:chain-verify-soundness}
+If Chain-Verify($n$) returns \texttt{true}, then $\Chain{n}$ is a valid RSP delegation chain terminating at a human principal, and all spawn events in the chain satisfy the Purpose Layer authorization conditions (S1), (S2), and (S3).
+\end{prop}
+
+\begin{prop}[Chain-Verify Completeness]
+\label{prop:chain-verify-completeness}
+If $\Chain{n}$ is a valid RSP delegation chain terminating at a human principal, then Chain-Verify($n$) returns \texttt{true}.
+\end{prop}
+
+\medskip
+\noindent\textbf{Computational cost.} Chain-Traverse runs in $O(d)$ time where $d$ is the chain depth (at most $D_{\max} + 1$). Chain-Verify runs in $O(m)$ time for the traversal plus $O(m)$ for each of the three verification loops, yielding $O(m)$ total where $m$ is the chain length (also bounded by $D_{\max} + 1$). The algorithms are linear in chain length and independent of the total number of nodes in the system.
+
+The depth bound $D_{\max}$ provides a constant-time upper bound on chain traversal cost: the worst-case number of pointer dereferences required to reach the human anchor from any node is $D_{\max} + 1$, independent of the total number of nodes in the system. Mutable parent pointers would allow the chain to be extended retroactively, making the effective depth potentially unbounded and the worst-case escalation time unbounded as well. Immutability is what makes the depth bound a structural guarantee, not merely a policy.

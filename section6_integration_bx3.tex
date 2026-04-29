@@ -1,0 +1,96 @@
+\section{Integration with the BX3 Framework}
+
+The Recursive Spawning Protocol does not operate in isolation. It is instantiated atop the BX3 Universal Architecture and derives its enforcement guarantees from the three functional layers defined therein: \textbf{Purpose}, \textbf{Bounds Engine}, and \textbf{Fact Layer}. RSP is the operationalization of BX3's Pillar 2 (Recursive Spawning) within a running system; its layered validation pipeline is structurally identical to the BX3 Loop itself. Understanding RSP requires understanding how each BX3 layer constrains and enables spawn operations.
+
+\subsection{Purpose Layer as Accountability Anchor}
+
+The BX3 Purpose Layer is the human-anchored accountability anchor that sets strategic goals, authorization boundaries, and operational SLOs for every node in the system. In RSP, the Purpose Layer plays two distinct roles: it authorizes spawn operations at their origin, and it provides the termination point against which every spawn chain is verified.
+
+Every spawn request entering the RSP pipeline must carry a \texttt{purpose\_token} issued by the Purpose Layer of the requesting agent's parent. This token is not a discretionary metadata field; it is a cryptographically signed assertion that the proposed spawn has been evaluated against the three Purpose Layer criteria described in Section 5: disclosability, non-circularity, and proportionality. The token's signature is verifiable against the system's public key, making it computationally infeasible to forge a purpose token without compromising the Purpose Layer's private key.
+
+The Purpose Layer's second role—chain termination verification—is architecturally distinct from spawn authorization. Even if a spawn request passes all three RSP validation gates (Purpose, Bounds Engine, Fact Layer), the child agent is not activated until the Fact Layer has traversed the prospective spawn chain backward and confirmed that it terminates at a human-originated Purpose Layer. This is the BX3 architectural rule made operational: \textbf{the Purpose layer must always remain Human-anchored}, and RSP enforces this by construction.
+
+The Human Root is the Level 0 Purpose Layer. It is the only node in the system that can originate a spawn chain without a parent pointer. All other agents—whether human or machine—occupy Level N for some N $>$ 0 and are therefore subject to RSP constraints. This creates a structural accountability anchor: every operational agent in the system has a traceable purpose lineage to a human decision-maker.
+
+\subsection{Bounds Engine Depth Enforcement}
+
+The BX3 Bounds Engine is the heuristic computation layer that proposes state transitions without holding execution authority. In RSP, the Bounds Engine is responsible for depth management—enforcing $D_{\max}$, tracking per-agent depth budgets, and rejecting spawn operations that would exceed the system's depth ceiling.
+
+The depth enforcement model described in Section 5 is a direct instantiation of the Bounds Engine's general bounded-reasoning mandate. The Bounds Engine does not merely count spawn edges; it evaluates whether the proposed spawn is consistent with the remaining depth budget of the requesting agent, the global $D_{\max}$ ceiling, and the proportionality constraints that prevent spawn operations from being used to circumvent the Purpose Layer's intent.
+
+When an agent at depth $d = D_{\max} - 1$ submits a spawn request, the Bounds Engine evaluates whether the resulting child would exceed $D_{\max}$. If so, the request is rejected with reason code \texttt{DEPTH\_LIMIT\_EXCEEDED}. This rejection is deterministic: the Bounds Engine holds no discretionary override authority, and no configuration flag can relax the $D_{\max}$ constraint for a specific agent or chain. The strictness of this enforcement is intentional—it reflects the BX3 principle that bounded recursion is a safety property, not a performance optimization, and must therefore be enforced uniformly.
+
+The depth budget accounting mechanism ensures that spawn budget is distributed equitably across the system. An agent at depth 3 with $D_{\max} = 10$ has a budget of 7 spawn operations. This budget does not roll over, does not transfer, and cannot be augmented by borrowing against future descendants. The Bounds Engine enforces these constraints at spawn time, atomically decrementing the parent's budget and assigning the child's depth before the Fact Layer creates the immutable parent pointer.
+
+The Bounds Engine also participates in convergence determination. When an agent reports objective completion, the Bounds Engine evaluates whether all descendants in the chain have satisfied their convergence criteria. If any descendant remains active, the chain cannot converge, and the Bounds Engine reports this constraint to the Fact Layer for ledger entry.
+
+\subsection{Fact Layer Forensic Ledger}
+
+The BX3 Fact Layer is the deterministic execution firewall that writes immutable records and blocks any action that violates hard-coded safety, regulatory, or physical constraints. In RSP, the Fact Layer performs three critical functions: creation of the immutable parent pointer, durable commitment of the forensic ledger entry, and issuance of the activation token that authorizes the child agent to operate.
+
+The immutable parent pointer described in Section 5 is a Fact Layer artifact. The Fact Layer generates the pointer independently of any input from the Purpose Layer or Bounds Engine, signs it with the system's Fact Layer private key, and embeds it in the child's initialization record. This independence is structurally important: it means that no compromise of the Purpose Layer or Bounds Engine can produce a falsified parent pointer, because the pointer is generated by a separate, isolated component with its own cryptographic key material.
+
+The forensic ledger is the Fact Layer's append-only audit store. Every spawn event—both successful activations and refused attempts—is recorded with complete provenance information: the purpose token, depth assignment, budget consumption, parent hash, timestamp, and validation outcomes from all three RSP layers. The ledger is immutable in the sense that no component of the system, including the Fact Layer itself, can alter or delete an entry once it has been durably committed.
+
+The synchronous commitment model—where no child is activated until its ledger entry is durably written—enforces a critical BX3 property: there are no ghost agents in the system. Every active agent has a corresponding forensic ledger entry that proves it was lawfully instantiated. This property is essential for compliance auditing and for post-hoc anomaly investigation, where the provenance of any agent may need to be reconstructed from the ledger.
+
+The Fact Layer also enforces the chain termination verification described in Section 5. The backward traversal of the spawn chain—reading each ancestor's immutable parent pointer to locate the next ancestor until a human-originated node is reached—is a Fact Layer operation. The Fact Layer holds the cryptographic key material required to verify each parent pointer's signature, and it is the only component with the authority to declare a chain continuous or broken.
+
+\section{Correctness Properties}
+
+RSP's layered architecture and the structural properties of its three constituent layers give rise to three correctness guarantees that collectively ensure the protocol's fitness for high-stakes deployment: \textbf{drift prevention}, \textbf{chain integrity}, and \textbf{termination}. This section establishes these guarantees formally and provides a proof sketch for drift prevention.
+
+\subsection{Drift Prevention: Proof Sketch}
+
+\textbf{Theorem (Drift Prevention).} Under RSP with BX3 layers properly instantiated, no agent in any spawn chain can autonomously drift from its assigned purpose without detection.
+
+\textit{Proof Sketch.} The proof proceeds by structural induction over the spawn chain.
+
+\begin{quotation}
+\textbf{Base Case.} The root of every spawn chain is a human-originated agent. The Human Root's Purpose Layer is by definition human-anchored, satisfying the BX3 non-negotiable rule. The Human Root's purpose is disclosed, non-circular, and proportionate by definition, as the Human Root operates without a parent pointer and therefore has no ancestor against which to check circularity. No drift is possible at the root.
+\end{quotation}
+
+\begin{quotation}
+\textbf{Inductive Step.} Assume that for all agents at depth $d \leq k$, no drift has occurred: each agent's operational purpose is consistent with its declared purpose token, and each agent's immutable parent pointer correctly identifies its ancestor at depth $d-1$. Consider an agent $A_k$ at depth $k$ that proposes to spawn a child $A_{k+1}$.
+
+\textit{Purpose token validation.} The proposed spawn must pass the Purpose Layer of $A_k$, which checks that the declared purpose is disclosable, non-circular with respect to all ancestors, and proportionate. Because $A_k$'s purpose is itself guaranteed consistent with its own ancestor chain by the inductive hypothesis, and because the non-circularity check explicitly traverses all ancestors, the purpose token issued for $A_{k+1}$ is guaranteed to be consistent with the human-defined purpose at the chain's root.
+
+\textit{Immutable parent pointer.} The Fact Layer generates an immutable parent pointer for $A_{k+1}$ that contains the SHA-256 hash of $A_k$'s state at spawn time. This pointer is cryptographically signed and cannot be modified post-activation. Any retrospective alteration of $A_k$'s state would invalidate the hash in $A_{k+1}$'s pointer, causing chain-integrity verification to fail.
+
+\textit{Forensic ledger continuity.} The forensic ledger entry for $A_{k+1}$'s creation includes the complete purpose token, parent hash, depth assignment, and validation outcomes. The ledger is append-only and is durably committed before $A_{k+1}$ is activated. Any attempt to alter $A_{k+1}$'s purpose post-activation would create an inconsistency between the agent's operational state and its ledger entry, detectable at any subsequent integrity checkpoint.
+
+\textit{Chain termination verification.} Before any agent is activated, the Fact Layer verifies that its spawn chain terminates at a human-originated Purpose Layer. This verification traverses the entire ancestor chain by reading immutable parent pointers. An agent that attempted to drift—operationally pursuing an objective inconsistent with its purpose token—would either fail the Purpose Layer's non-circularity check at spawn time (detected before activation) or would produce a ledger inconsistency detectable at any subsequent checkpoint (detected post-activation).
+
+\end{quotation}
+
+\begin{quotation}
+\textbf{Conclusion.} By induction, no agent in any RSP spawn chain can drift from its assigned purpose without either failing Purpose Layer validation (prevented pre-activation) or creating a forensic ledger inconsistency (detected post-activation). Drift is therefore impossible under RSP with properly instantiated BX3 layers.
+\end{quotation}
+
+The three structural properties that make this proof valid are: the immutability of the parent pointer (enforced cryptographically by the Fact Layer), the append-only forensic ledger (enforced by the Fact Layer's synchronous commitment model), and the mandatory chain termination verification at the Purpose Layer (enforced by the BX3 architectural rule). These properties are not configurable, not discretionary, and not bypassable. Their enforcement is distributed across three independent BX3 layers, making the drift-prevention guarantee robust against single-point compromise.
+
+\subsection{Chain Integrity}
+
+Chain integrity refers to the property that every active agent in the system occupies a position in a spawn chain that is continuous—free of discontinuities, forgeries, or tampering—from itself back to a human origin.
+
+The Fact Layer enforces chain integrity through two mechanisms operating at different times: \textbf{pre-activation verification} and \textbf{post-activation checkpointing}.
+
+\textbf{Pre-activation verification} occurs at every spawn event. The Fact Layer traverses the prospective spawn chain backward by iteratively reading each ancestor's immutable parent pointer, reconstructing the chain from the proposed child to the Human Root. If any pointer is missing, malformed, or has an invalid cryptographic signature, the chain is discontinuous and the spawn is rejected. If the traversal reaches a node without a parent pointer and that node is not the Human Root, the chain is discontinuous and the spawn is rejected. Only if the traversal successfully reaches a human-originated node does activation proceed.
+
+\textbf{Post-activation checkpointing} occurs at convergence evaluation and at any integrity monitoring event triggered by the system or by an auditor. During checkpointing, the Fact Layer re-traverses the chain from the terminal agent to the Human Root, verifying that all immutable parent pointers remain intact and that no agent has been added to or removed from the chain since the last checkpoint. A chain that fails a checkpoint is flagged as integrity-compromised, and the system responds according to the Bailout Protocol—routing the exception event to a human operator without involving any machine actor in the resolution path.
+
+Chain integrity is a necessary but not sufficient condition for drift prevention. A chain can be continuous but still contain an agent that is operationally drifting, if its purpose token was incorrectly issued. The Purpose Layer's non-circularity and proportionality checks, together with the forensic ledger's ability to record and compare declared purpose against actual operational behavior, address this residual risk.
+
+\subsection{Termination}
+
+RSP guarantees that every spawn chain must eventually terminate. This guarantee is enforced by two independent constraints: the depth bound and the convergence criteria.
+
+\textbf{Depth-bound termination.} Because $D_{\max}$ is a system-level constant and every spawn operation increments depth by exactly one, the number of spawn operations in any chain is bounded by $D_{\max} - 1$ (the Human Root occupies depth 0 and cannot be counted as a spawn operation). An agent at depth $D_{\max} - 1$ may spawn one child at depth $D_{\max}$, but that child cannot spawn further agents. The chain therefore has a maximum length, and agents at the maximum depth cannot extend the chain further by spawn operations. This provides a hard, enforceable upper bound on chain length independent of any other system property.
+
+\textbf{Convergence-bound termination.} Even within the depth bound, RSP defines explicit convergence criteria (Section 5) that, when all satisfied, permit a chain to be declared concluded and its terminal agent to be removed from active operational status. Convergence requires: objective completion, no pending descendant operations, all forensic ledger entries committed, and chain integrity verification passed. These criteria are evaluated by the Bounds Engine and Fact Layer working in concert, and convergence declarations are recorded in the forensic ledger.
+
+The combination of depth-bound and convergence-bound termination means that RSP guarantees two distinct termination properties. First, it guarantees \textbf{no infinite chains}: the depth bound ensures that any chain must terminate within a fixed number of spawn operations. Second, it guarantees \textbf{no orphaned operational state}: the convergence criteria ensure that a chain is only declared concluded when all of its descendant agents have either completed their objectives or been explicitly terminated, and when the complete audit trail has been durably committed.
+
+These termination guarantees are not aspirational; they are enforced by the protocol's architectural properties. $D_{\max}$ is a hard constant enforced by the Bounds Engine. Convergence criteria are evaluated deterministically by the Fact Layer. Neither can be overridden by any agent in the system, including the Human Root, because the Human Root itself is subject to the same depth constraints and convergence requirements as machine-originated agents.
+
+\end{document}

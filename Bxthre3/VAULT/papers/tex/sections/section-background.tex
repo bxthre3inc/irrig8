@@ -1,0 +1,81 @@
+\section{Background}
+
+The emergence of agentic AI systems—autonomous software agents capable of reasoning, planning, and executing multi-step tasks—has introduced a fundamental challenge: how to manage the lifecycle of agents that spawn, delegate to, and coordinate with other agents in distributed, often adversarial environments. This section surveys the landscape of agent lifecycle management, accountability architectures, delegation chain semantics, hierarchical task decomposition, and the BX3 Framework as a substrate for immutable parent-chain provenance.
+
+% ==============================================================================
+% 2.1 Agent Lifecycle Management in Multi-Agent Systems
+% ==============================================================================
+
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+
+Modern multi-agent systems (MAS) extend beyond static agent populations; they exhibit dynamic lifecycles where agents are instantiated, configured, delegated authority, and terminated in response to task demands. The lifecycle of an agent in such systems typically encompasses \emph{spawning} (creation with initial context and capabilities), \emph{delegation} (granting of scoped authority to child agents), \emph{execution} (task performance within granted boundaries), \emph{reporting} (returning results and provenance to the parent), and \emph{termination} (graceful shutdown with audit commit) \cite{SentinelAgent:2026}.
+
+Prior work on agent lifecycle has largely centered on orchestration frameworks such as LangChain, AutoGPT, and Microsoft AutoGen, which provide high-level abstractions for agent creation and coordination. However, these frameworks treat delegation as a lightweight, mutable operation—agents pass task descriptions and context without cryptographic binding to the originating decision. This creates an accountability gap: terminal actions performed by sub-agents cannot be reliably traced back to the human principal or the orchestrator that authorized them \cite{HDP:2026}.
+
+Emerging standards efforts address this gap at the architectural level. The IETF draft on PEDIGREE defines per-hop cryptographic delegation with parent-chain tokens that prevent parent-swap attacks and ensure traceable attribution across agent hierarchies \cite{PEDIGREE:2024}. Similarly, the Judgment Event Protocol (JEP) introduces four lifecycle primitives—\$Judge, \$Delegate, \$Terminate, and \$Verify—that provide a structured accountability framework for distributed AI systems, with cryptographic signatures and time anchors enabling post-hoc forensic reconstruction \cite{JEP:2026}. Faramesh introduces the Action Authorization Boundary (AAB), a mandatory non-bypassable runtime layer mediating all real-world actions proposed by agents, ensuring deterministic authorization and replayable decision records independent of policy semantics \cite{Faramesh:2026}.
+
+These efforts collectively establish that agent lifecycle management is not merely an operational concern but an accountability infrastructure. The lifecycle must be treated as a first-class architectural element, with explicit state transitions, cryptographic provenance, and termination guarantees.
+
+% ==============================================================================
+% 2.2 Accountability and Provenance in Distributed Systems
+% ==============================================================================
+
+\subsection{Accountability and Provenance in Distributed Agent Systems}
+
+Provenance in distributed systems refers to the ability to reconstruct the causal chain of events, decisions, and authorizations leading to a particular outcome. In single-agent systems, provenance reduces to the agent's own decision trace. In multi-agent systems, where a single human directive may cascade through orchestrators, sub-agents, and tool-execution layers, provenance becomes a layered, multi-hop construct \cite{HDP:2026}.
+
+The core problem is the \emph{provenance paradox}: in multi-agent LLM routing, delegation decisions often rely on self-reported quality signals, which dishonest delegates can inflate to win tasks. This systematically degrades routing quality below random selection. Empirical validation demonstrates that attested (verified) quality signals outperform self-claimed signals significantly, achieving near-optimal routing performance in adversarial simulations \cite{ProvenanceParadox:2026}. This finding extends to authorization: if delegation chains lack cryptographic verification, a compromised intermediate agent can expand its own authority without detection.
+
+The Warrant Certificate Authority (WCA) model proposes a hierarchical attestation infrastructure that certifies data origins in tool-call interactions, addressing what the draft calls \emph{semantic laundering}—the phenomenon where agents treat tool outputs as uniformly trustworthy, obscuring actual source provenance \cite{WCA:2026}. WCA introduces Warrant Attestation Levels (WAL-0 through WAL-3), analogous to SLSA build levels, that grade the rigor of provenance attestation across agent-tool boundaries.
+
+PROV-AGENT extends the W3C PROV standard using the Model Context Protocol (MCP) to capture fine-grained agent-centric metadata—prompts, responses, decisions—and relates these to the broader workflow. This enables near real-time provenance tracking across heterogeneous environments (edge, cloud, HPC) and supports transparency, traceability, and reproducibility in agentic workflows \cite{PROVAGENT:2025}. Importantly, PROV-AGENT mitigates the propagation of hallucinations and errors by making decision origins and context inspectable at each stage.
+
+The IETF Human Delegation Provenance (HDP) protocol provides a concrete cryptographic mechanism: a JSON token binding a human principal's authorization scope and session to the initiation event, with append-only signed hops for each agent in the delegation chain. Verification requires only the issuer's Ed25519 public key and session identifier—no external registries or trust anchors. This makes HDP particularly suitable for offline auditability in distributed deployments \cite{HDP:2026}.
+
+Accountability in distributed agent systems thus demands: (1) cryptographically verifiable delegation chains, (2) explicit scope narrowing at each hop, (3) append-only provenance records, and (4) failure modes that preserve auditability even when intent verification is bypassed \cite{SentinelAgent:2026}.
+
+% ==============================================================================
+% 2.3 Fixed vs. Mutable Delegation Chains
+% ==============================================================================
+
+\subsection{Fixed vs. Mutable Delegation Chains}
+
+A fundamental architectural decision in multi-agent delegation is whether delegation chains are \emph{mutable} (agents may reassign, expand, or revoke authority after initial delegation) or \emph{fixed} (authority granted at spawn time is immutable for the duration of the task). Mutable delegation offers flexibility; fixed delegation offers verifiability. Most production frameworks default to mutable delegation because it simplifies fault recovery and dynamic reallocation, but this comes at the cost of provenance integrity.
+
+The Delegation Chain Calculus (DCC) formalized in SentinelAgent defines seven properties for trustworthy delegation, six of which are deterministic: authority narrowing, policy preservation, forensic reconstructibility, cascade containment, scope-action conformance, and output schema conformance. The seventh—intent preservation—is probabilistic and susceptible to adversarial paraphrasing attacks \cite{SentinelAgent:2026}. Critically, the DCC's property set applies to fixed chains; mutable chains violate forensic reconstructibility by allowing retroactive modification of the authority graph.
+
+PEDIGREE enforces monotonic scope attenuation—authority can only narrow, never expand, as the chain progresses. This is enforced at both mint time (when delegation tokens are created) and verify time (when delegated actions are executed). Combined with operator ceilings (budget and limit constraints on the orchestrator), PEDIGREE reduces the risk surface from orchestrator compromise by ensuring that even a fully compromised orchestrator cannot expand its delegated authority beyond the initial mandate \cite{PEDIGREE:2024}.
+
+In contrast, mutable delegation chains permit what the provenance paradox literature identifies as \emph{authority inflation}: agents self-reporting capabilities that exceed their actual scope, leading to routing decisions that select suboptimal or malicious delegates. Attested identity models, which distinguish claimed (self-reported) quality from attested (verified) quality, address this by binding quality claims to external verifiers rather than allowing self-assertion \cite{ProvenanceParadox:2026}.
+
+The architectural implication is that fixed, immutable delegation chains are a prerequisite for strong accountability guarantees. Mutable delegation may be desirable operationally, but without cryptographic enforcement of scope narrowing and non-repudiation, it collapses provenance into a matter of trust rather than verification.
+
+% ==============================================================================
+% 2.4 Hierarchical Task Decomposition in AI
+% ==============================================================================
+
+\subsection{Hierarchical Task Decomposition in AI}
+
+Hierarchical task decomposition (HTD) is the process by which a complex, high-level goal is recursively broken into sub-tasks, each assigned to an appropriate agent or capability level. HTD is foundational to multi-agent systems because it maps the structure of human organizational behavior—where senior agents define objectives and delegate execution—to artificial agent hierarchies.
+
+In classical AI planning, HTD is implemented through task networks (e.g., Hierarchical Task Networks or HTNs) where decomposition rules specify how a task can be refined into sub-tasks. In modern LLM-based agents, HTD emerges dynamically: a reasoning agent decomposes a user request into sub-tasks, assigns them to child agents, and synthesizes results into a coherent response. This dynamic decomposition introduces specific challenges for accountability: each decomposition step creates a new delegation point, and the fidelity of the original intent may degrade as it passes through multiple decomposition layers \cite{SentinelAgent:2026}.
+
+The Intent-Preserving Delegation Protocol (IPDP) within SentinelAgent addresses this by enforcing that decomposition respects the original intent boundary—sub-tasks must be scoped subsets of the parent task, not lateral expansions or re-interpretations. The protocol's three-layer verification lifecycle (pre-execution intent checking, at-execution scope enforcement, post-execution output validation) provides a formal mechanism to catch intent drift at each decomposition step \cite{SentinelAgent:2026}.
+
+HTD also raises the question of depth versus breadth trade-offs in agent hierarchies. Deep hierarchies (many levels of decomposition) provide fine-grained accountability at each level but increase latency and provenance overhead. Flat hierarchies (few levels, many agents at each level) reduce depth but concentrate authority at intermediate nodes, creating single points of failure. The BX3 Framework addresses this through its lightweight spawn model, which allows agents to be instantiated with negligible overhead, enabling broad, shallow hierarchies that maintain fine-grained accountability without deep nesting.
+
+% ==============================================================================
+% 2.5 The BX3 Framework as Substrate for Immutable Parent Chains
+% ==============================================================================
+
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+
+The BX3 Framework (Brodi Blanco Build-Break-Build Framework) provides a structured operational model for agentic systems, grounded in three core phases: Build (initial agent instantiation and configuration), Break (adversarial testing and boundary verification), and Build (post-validation deployment and iteration). Within this model, the framework's spawn semantics are designed to serve as a substrate for immutable parent chains—delegation hierarchies where each child agent retains a permanent, cryptographic reference to its parent \cite{BX3Spec:2026}.
+
+BX3's spawn model differs from conventional agent frameworks in two critical respects. First, at spawn time, each agent receives a \emph{parent token}—a cryptographic commitment binding the child agent to the specific parent that authorized its creation. Unlike mutable context passing, the parent token is immutable: it cannot be reassigned, and any subsequent delegation by the child agent must reference the original parent chain. This establishes a durable provenance trail that survives agent termination and across chain-of-custody transfers.
+
+Second, BX3 enforces a scope-attenuation contract at spawn: the parent specifies the maximum authority scope granted to the child, and the framework's runtime enforces that this scope cannot be exceeded by the child or any descendant in the chain. This mirrors the monotonic attenuation guarantees of PEDIGREE \cite{PEDIGREE:2024} but operates at the framework level rather than the token level, enabling verifiable delegation without requiring external verification infrastructure.
+
+BX3's immutable parent chains provide several accountability properties by construction. The parent chain is append-only: new agents can be added to the tree, but existing parent-child relationships cannot be retroactively modified. Each agent in the chain carries its full ancestry, enabling forensic reconstruction of any action back to the originating human principal. The framework's Build-Break-Build cycle ensures that these properties are verified through adversarial testing before deployment, addressing the intent preservation weakness identified in the Delegation Chain Calculus \cite{SentinelAgent:2026}.
+
+By grounding immutable parent chains in a lightweight, framework-level spawn model, BX3 enables scalable multi-agent systems where provenance integrity is maintained without the overhead of per-hop cryptographic token exchange. Agents spawn with their full lineage, verified scope, and a cryptographic binding to the originating human intent—forming a foundation for accountable, auditable agentic operations at scale.

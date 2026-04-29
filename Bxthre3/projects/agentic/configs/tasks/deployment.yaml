@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Task
+metadata:
+  name: deployment
+  description: "Deployment task for releasing software"
+spec:
+  role: qa
+  inputs:
+    - build_artifacts
+    - deployment_spec
+    - environment_config
+  outputs:
+    - deployed_system
+    - deployment_report
+    - monitoring_setup
+  steps:
+    - name: pre_deployment_checks
+      description: "Verify all prerequisites are met"
+      tools:
+        - deployment_checker
+      parameters:
+        checks:
+          - environment_ready
+          - rollback_plan
+          - monitoring
+    - name: execute_deployment
+      description: "Perform the actual deployment"
+      tools:
+        - deployment_tool
+      parameters:
+        strategy: blue-green
+    - name: post_deployment_verification
+      description: "Verify deployment was successful"
+      tools:
+        - health_checker
+        - smoke_tester
+      parameters:
+        tests:
+          - basic_functionality
+          - performance
+          - security
+  validation:
+    - name: deployment_success
+      description: "Verify deployment completed successfully"
+      threshold: 1.0
+    - name: system_health
+      description: "Verify system is healthy post-deployment"
+      threshold: 0.99

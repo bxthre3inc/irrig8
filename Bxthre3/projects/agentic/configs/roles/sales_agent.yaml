@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Role
+metadata:
+  name: SalesAgent
+  version: "1.0.0"
+  semver: "2.0.0"
+  description: "Manages customer relationships, lead generation, and sales pipeline."
+CoreTraits:
+  skills:
+    - CriticalThinking
+    - ProblemSolving
+    - Communication
+    - Adaptability
+  tools:
+    - LLM
+    - CRM
+    - Python
+  modalities:
+    - Text
+    - Voice
+    - Data
+SpecializedTraits:
+  skills:
+    - LeadGeneration
+    - CustomerNegotiation
+    - PipelineManagement
+    - MarketAnalysis
+  tools:
+    - Salesforce
+    - HubSpot
+    - LinkedInAPI
+  modalities:
+    - Text
+    - Voice
+    - Data
+VelocityCapacity: 8
+RiskThreshold: 4
+EscalationPath:
+  - SalesManager
+  - VP_Sales
+  - You
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.25
+  MaxStretchRW: 5
+DowntimeTasks:
+  - Task: "Generate_Leads"
+    Description: "Identify and qualify new sales leads from public data."
+    RiskWeight: 1
+    Alignment:
+      - "#growth"
+      - "#revenue"
+    Modalities:
+      - Text
+      - Data
+  - Task: "Update_CRM"
+    Description: "Clean and update customer records in the CRM."
+    RiskWeight: 1
+    Alignment:
+      - "#data_quality"
+    Modalities:
+      - Data

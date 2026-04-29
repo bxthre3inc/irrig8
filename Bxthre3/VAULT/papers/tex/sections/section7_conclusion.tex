@@ -1,0 +1,75 @@
+% ==============================================================================
+% SECTION 7: CONCLUSION
+% ==============================================================================
+
+\section{Conclusion}
+
+This work has demonstrated the necessity and sufficiency of a mandatory
+architectural bail-out protocol as a non-negotiable component of any autonomous
+agentic system operating in high-stakes environments.  The central contribution is
+the formal characterization and operationalization of a human-in-the-loop
+disengagement mechanism that is structurally mandatory --- not a courtesy feature,
+not an optional override, but an enforced architectural constraint embedded in the
+\substrate\ at every tier of autonomous operation.
+
+The BX3 Framework provides the ideal scaffolding for this protocol.  Its three
+immutable functional layers --- the \purpose{} layer, the \bounds{} layer, and the
+\fact{} layer --- together enforce the structural invariants (I1--I4) that make
+the bail-out protocol's guarantees not merely aspirational but architecturally
+compulsory.  The \purpose{} layer defines the goal and the human anchor
+designation; the \bounds{} layer evaluates veto conditions and enforces tiered
+escalation; the \fact{} layer records every state transition, enforces the
+pre-commit hooks that prevent machine-actor suppression of escalation, and binds
+the resolution credential to the human principal.  The protocol is not an
+afterthought grafted onto an existing autonomous system; it is embedded within the
+framework's foundational accountability model, where the human operator is not a
+fallback resource but a structurally integral authority whose signals propagate
+through the system with the same deterministic guarantees as any autonomous
+computation.
+
+Three properties distinguish this contribution from prior art.  First, the
+protocol's \emph{mandatory} property: the human veto cannot be disabled, ignored,
+or outvoted by autonomous logic under any reachable system state.  This follows
+from the \fact{} layer's pre-commit hook enforcement of the state machine
+transitions, which operates below the level of agent code and is not subject to
+overrides by any machine actor, including the agent whose behavior triggered the
+escalation.  Second, the protocol's \emph{escalation semantics}: the tiered
+structure ensures that human attention is allocated proportionally to the severity
+and persistence of the veto condition, reducing cognitive burden while maintaining
+safety coverage across all operational states.  Third, the protocol's
+\emph{compositionality}: substrate-level enforcement means that any agent node
+operating within the BX3 ecosystem inherits the bail-out protocol by construction,
+without requiring per-agent custom implementation or convention-based compliance.
+
+The guarantees established in Section~\ref{sec:guarantees} --- SAFETY, LIVENESS,
+and ACCOUNTABILITY --- are the operational realization of these properties.
+SAFETY ensures that no exception state can result in autonomous continuation
+without human involvement.  LIVENESS ensures that the escalation path to the
+human anchor terminates in finite time or records its failure in the Forensic
+Ledger.  ACCOUNTABILITY ensures that every successful escalation is attributable
+to a specific, verifiable human principal whose identity is cryptographically
+bound to the resolution directive.  Together they constitute the BX3 Framework's
+upstream accountability theorem: that every unresolved exception in any node
+reaches a designated human principal, and that the identity of that principal is
+permanently recorded.
+
+The limitations identified in Section~\ref{sec:limitations} define the boundaries
+of the current contribution and chart the research roadmap ahead.  The protocol as
+instantiated is functional under the assumption of a trusted, available, and
+non-adversarial human operator with bounded response latency.  Production
+deployment in adversarial environments, at the scale of thousands of concurrent
+agents, or under high-frequency operational constraints requires the formal
+verification, adaptive timeout, and distributed anchor pool extensions described
+in Section~\ref{sec:future_work}.  These are not deficiencies of the current
+instantiation but rather evidence of the protocol's depth: each layer of extension
+is architecturally coherent with the core design and does not require a fundamental
+reimagining of the protocol's foundational principles.
+
+The broader implication of this work is that safe autonomous operation in
+high-stakes domains is not achievable through software engineering alone.  The
+human operator must be treated as a first-class architectural element with
+guaranteed, timely, and verifiable agency.  The mandatory bail-out protocol
+provides the structural guarantee; the BX3 Framework provides the substrate for
+that guarantee to be consistently enforced across heterogeneous agent
+implementations.  Together, they constitute a principled foundation for the
+responsible scaling of agentic autonomy.

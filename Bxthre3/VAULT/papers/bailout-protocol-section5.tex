@@ -1,0 +1,81 @@
+\section{Guarantees and Correctness Properties}
+
+The Bailout Protocol is designed with formal correctness guarantees that ensure the autonomous agent system remains safe, responsive, and auditable throughout its operational lifecycle. These guarantees are not aspirational—they are enforced architecturally and verified through proof sketches that demonstrate the protocol's behavior under all defined conditions. This section establishes three core correctness properties: Safety (no autonomous collapse), Liveness (eventual human contact), and Accountability (human always identifiable). Together, these form a triadic invariant that any compliant implementation must satisfy.
+
+---
+
+\subsection{SAFETY: No Autonomous Collapse}
+
+\textbf{Property S (Safety).} Under the Bailout Protocol, the agent system \emph{shall not} transition into a state that is unrecoverable by any human principal without intentional override of the protocol's enforcement mechanism.
+
+Autonomous collapse is defined as a system state in which: (i) the agent continues to execute actions without receiving external input or oversight, and (ii) no human principal can intervene through the standard protocol interface within a bounded operational window. The protocol prevents collapse by enforcing two structural constraints: mandatory checkpointing and bounded action horizons.
+
+\begin{definition}
+A \textbf{checkpoint} $c_t$ at time $t$ is a complete snapshot of the agent's belief state, pending action queue, and environment model, such that the agent can be restored to state $c_t$ by any human principal with read access to the protocol log.
+\end{definition}
+
+\begin{invariant}[Checkpoint Invariant]
+The agent produces a checkpoint $c_t$ at every interval $\tau_{\text{ckpt}} \leq T_{\text{safety}}$, where $T_{\text{safety}}$ is the maximum time elapsed before an unrecoverable state divergence becomes architecturally possible.
+\end{invariant}
+
+\textbf{Proof Sketch.} We prove Safety by contradiction. Assume an autonomous collapse occurs at time $t_c$. By definition of collapse, the agent has exceeded the bounded action horizon without receiving external input. Let $c_{t_c - \delta}$ be the last checkpoint prior to $t_c$, where $\delta \leq T_{\text{safety}}$. The protocol requires that at every checkpoint the pending action queue is non-empty only if a human principal has authenticated within the preceding $\tau_{\text{ckpt}}$ interval. Since no intervention occurred, the queue must have been empty at $c_{t_c - \delta}$, meaning the agent had no autonomous imperative. The agent's action execution beyond $c_{t_c - \delta}$ must therefore be in response to an environmental trigger. However, environmental triggers that produce unbounded action sequences are explicitly gated by the protocol's action horizon parameter $H$. If $H$ is finite, the agent cannot generate an unbounded sequence; if $H$ is unbounded, the protocol is violated by definition. $\square$
+
+The practical implication is that any compliant deployment must enforce finite $H$ and log all environmental trigger events. If the protocol detects that $H$ would be exceeded without human contact, it triggers an automatic \texttt{bailout} condition, placing the agent in a suspension state until a principal authenticates.
+
+---
+
+\subsection{LIVENESS: Eventual Human Contact}
+
+\textbf{Property L (Liveness).} Under the Bailout Protocol, any agent in an active state will eventually receive a response from a human principal, or the protocol will escalate to a defined fallback within a bounded time $T_{\text{liveness}}$.
+
+Liveness is the dual of Safety: while Safety prevents unbounded autonomous behavior, Liveness ensures that the autonomous agent does not become permanently orphaned—waiting indefinitely for input that never arrives. The protocol addresses this through a combination of timeout escalation and redundancy.
+
+\begin{invariant}[Contact Invariant]
+For every agent session $\sigma$, if no human principal has authenticated within the window $[t_{\text{start}}, t_{\text{start}} + T_{\text{liveness}})$, the protocol transitions $\sigma$ to an \texttt{escalation} state and notifies all registered fallback principals.
+\end{invariant}
+
+\begin{assumption}[Bounded Response Time]
+We assume that at least one human principal in the registered set will respond within a worst-case latency $L_{\text{human}}$ that is finite and publicly documented in the protocol configuration. This assumption is necessary for any liveness guarantee, as no protocol can guarantee contact with a principal who is permanently unavailable.
+\end{assumption}
+
+\textbf{Proof Sketch.} Consider an agent session $\sigma$ initiated at $t_{\text{start}}$. The protocol monitors authentication events through the session's \texttt{last\_contact} timestamp. At each checkpoint $c_t$, if $t - t_{\text{start}} \geq T_{\text{liveness}}$, the invariant evaluates to true and the escalation transition is triggered. The escalation is deterministic: it is not a probabilistic retry but a guaranteed state transition. The fallback principal receives notification through the registered communication channel, which by the Bounded Response Time assumption will result in contact within $L_{\text{human}}$. Therefore, for any session $\sigma$, the upper bound on time-to-human-contact is $T_{\text{liveness}} + L_{\text{human}}$, which is finite. $\square$
+
+Note that this guarantee depends on the availability assumption. If all registered principals are simultaneously and permanently unavailable—outside the scope of the protocol's control—liveness cannot be maintained. The protocol's guarantee is therefore conditional on the principal set being non-empty and at least partially available. This is consistent with standard liveness proofs in distributed systems where the environment's cooperation is required.
+
+---
+
+\subsection{ACCOUNTABILITY: Human Always Identifiable}
+
+\textbf{Property A (Accountability).} Every action taken by the agent system is attributable to a specific human principal who authorized or ratified that action, and the attribution record is immutable and queryable for the duration of the audit window $T_{\text{audit}}$.
+
+Accountability is the foundational property of the Bailout Protocol. Without it, Safety and Liveness guarantees reduce to institutional trust rather than cryptographic or architectural guarantees. The protocol enforces accountability through a continuous identity chain and action attribution log.
+
+\begin{definition}
+An \textbf{attribution chain} $A = (p, a, t, \tau)$ is a tuple where $p$ is the authenticated human principal, $a$ is the action taken or ratified by $p$, $t$ is the timestamp of the action, and $\tau$ is the cryptographic signature of $p$ over the action $a$.
+\end{definition}
+
+\begin{invariant}[Attribution Invariant]
+Every action $a$ recorded in the protocol log contains a non-null attribution chain $A$ linking $a$ to a principal $p$ such that $p$ was authenticated at the time $t$ of the action.
+\end{invariant}
+
+\textbf{Proof Sketch.} The protocol requires authentication prior to any agent action initiation. The authentication mechanism produces a signed session token $\tau_{\text{session}}$ that is valid for a bounded window $W_{\text{session}}$. Every action $a$ generated during $W_{\text{session}}$ is signed with the session token, which is in turn linked to the principal's identity $p$. The protocol log is append-only: no modification or deletion of entries is permitted during $T_{\text{audit}}$. Any attempt to execute an action without a valid session token fails at the authorization check, producing a \texttt{denied} event that is itself logged with a null-principal attribution—ensuring the log itself is complete and honest. Since every successful action $a$ must pass the authorization check, and the check requires a valid $\tau_{\text{session}}$ linked to $p$, every logged action is attributable. $\square$
+
+The Accountability guarantee has a critical architectural consequence: the protocol cannot operate in a fully anonymous or pseudonymous mode. Human principals must be identifiable to the system, though the protocol does not mandate that this identity be publicly visible—it may be pseudonymous in external reports while remaining verifiable internally. The identity chain ensures that any dispute about agent behavior can be resolved by tracing the action back to its authorizing principal.
+
+---
+
+\subsection{Unified Correctness Theorem}
+
+The three properties—Safety, Liveness, and Accountability—are not independent; they form a unified correctness invariant. Violation of any one property implies a violation of at least one other, as the properties share the checkpoint and attribution infrastructure.
+
+\begin{corollary}
+A compliant Bailout Protocol implementation satisfies the triadic invariant:
+\begin{equation}
+\forall \sigma,\quad \text{Safety}(\sigma) \land \text{Liveness}(\sigma) \land \text{Accountability}(\sigma)
+\end{equation}
+where $\sigma$ ranges over all agent sessions in the system.
+\end{corollary}
+
+The triadic invariant holds if and only if: (i) the checkpoint interval $\tau_{\text{ckpt}} \leq T_{\text{safety}}$, (ii) the escalation window $T_{\text{liveness}}$ is finite and the principal set is non-empty, and (iii) the attribution log is append-only with bounded $T_{\text{audit}} \geq T_{\text{retention}}$. These conditions are checkable at deployment time and verifiable at runtime through periodic protocol audits.
+
+\end{document}

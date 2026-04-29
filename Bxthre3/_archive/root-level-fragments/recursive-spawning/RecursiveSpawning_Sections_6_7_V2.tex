@@ -1,0 +1,170 @@
+% ============================================================
+% Section 6: Integration with the BX3 Framework
+% ============================================================
+\section{Integration with the BX3 Framework}
+\label{sec:rs-integration}
+
+The Recursive Spawning Protocol is a \textit{structural instantiation} of the \bxthree three-layer accountability architecture — not a module composed alongside it. Every RSP mechanism maps onto exactly one \bxthree layer, and each such mapping is \textit{structurally necessary}: no layer in RSP is advisory, redundant, or replaceable by organizational convention. The immutable parent pointer, the depth bound, the escalation path, and the forensic ledger each operationalize a capability exclusive to a single layer. This section specifies the three mappings and demonstrates minimal-sufficiency.
+
+% ------------------------------------------------------------
+\subsection{Purpose Layer: Accountability Anchor}
+\label{sec:rs-purpose-anchor}
+
+The Purpose Layer occupies two structurally exclusive roles in RSP, neither of which any other layer can perform.
+
+\medskip
+\noindent\textbf{Exclusive origin of spawn authorization.} At root provisioning, the Purpose Layer defines and records the spawn authorization policy $P_{\mathrm{spawn}}$ in the Fact Layer authorization ledger. $P_{\mathrm{spawn}}$ mandates two conditions for any valid child spawn: (i) $R(n_{i+1}) \subset R(n_i)$ — strict scope refinement — and (ii) operational necessity demonstrably unresolvable within the parent's scope. No machine actor may issue a spawn warrant in the absence of a matching Purpose Layer authorization record. The Bounds Engine evaluates against $P_{\mathrm{spawn}}$; the Fact Layer enforces it; neither originates it.
+
+\medskip
+\noindent\textbf{Exclusive terminus of escalation.} When a chain reaches $D_{\mathrm{ESCALATE}}$, the protocol compulsory-escalates to the human anchor $h(n)$. This terminus is non-collapsing: for all nodes $n_i \in C$, $h(n_i) = h(n_0)$. The human anchor does not migrate down the chain as depth increases. The human issues one of $\{\texttt{ACK}, \texttt{RESOLVE}, \texttt{REJECT}\}$; no machine actor may issue any of these. If any machine actor could absorb an exception or issue a terminal directive, the chain would terminate at that actor rather than at a human — defeating the upstream \bxthree accountability guarantee. The Purpose Layer's exclusivity here is not a design preference; it is the load-bearing constraint that makes the guarantee structurally operative.
+
+% ------------------------------------------------------------
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:rs-bounds}
+
+The Bounds Engine enforces constrained execution evaluation: it evaluates proposed actions against the operating range defined by the Purpose Layer and enforces the depth constraint that prevents unbounded chain growth. The Bounds Engine cannot exceed its constraints under any operational circumstance.
+
+\medskip
+\noindent\textbf{Depth evaluation at spawn.} At each spawn event $n_i \xrightarrow{\text{spawn}} n_{i+1}$, the Bounds Engine evaluates current chain depth $|\text{depth}(n_i) + 1|$ against $D_{\max}$ (anchored in the Fact Layer authorization ledger). If $\text{depth}(n_i) + 1 > D_{\max}$, the spawn is refused, the Bounds Engine enters \texttt{ESCALATING} state, and the Bailout Protocol is triggered. This enforcement is deterministic: no discretion to exceed $D_{\max}$ regardless of urgency, criticality, or the absence of alternative resolution paths. The depth constraint is not a heuristic — it is a hard architectural boundary.
+
+\medskip
+\noindent\textbf{Fact Layer pre-commit reinforcement.} The Bounds Engine's depth evaluation is structurally reinforced by the Fact Layer pre-commit hook. Before any spawn is recorded, the Fact Layer re-verifies: (1) $R(n_{i+1}) \subseteq R(n_i)$ and (2) $\text{depth}(n_{i+1}) \leq D_{\max}$. Rejected spawns are logged; the Bounds Engine does not execute them; \texttt{ESCALATING} is triggered if the unmet condition persists. The pre-commit hook makes both the depth bound and scope subset relationship \emph{structural invariants} — not policy conventions overridable in exigent circumstances.
+
+The structural necessity of the Bounds Engine follows from the depth-limit insufficiency theorem (Section~\ref{sec:drift-depth-limits}): depth limits alone cannot prevent scope-creep drift when the operating scope is mutable. The Bounds Engine enforces the depth constraint; the Fact Layer enforces scope refinement; together they enforce both conjuncts of the drift prevention condition. Neither layer alone is sufficient.
+
+% ------------------------------------------------------------
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:rs-fact-ledger}
+
+The Fact Layer provides deterministic enforcement and forensic auditability. It maintains the append-only ledger that makes the RSP chain auditable at any future time and enforces the write protocol that makes RSP tamper-evident.
+
+\medskip
+\noindent\textbf{Append-only forensic ledger.} The Fact Layer records every spawn event, every state transition, every Purpose Layer directive, and every unresolved exception. Each entry is timestamped, attributed to the originating node, and hash-chained to its predecessor. Hash-chaining ensures no entry can be inserted, deleted, reordered, or altered after recording: any tampering breaks hash continuity and is detectable by any observer with ledger read access. The ledger is the runtime artifact that distinguishes RSP chains from conventional delegation chains, which exist only as forensic reconstructions attempted after the fact.
+
+\medskip
+\noindent\textbf{Immutable parent pointer.} Once $\alpha(n)$ is established at node provisioning, no actor — including the Purpose Layer post-provisioning, the Bounds Engine, any administrative process, or any external principal — may modify it. The Fact Layer write protocol rejects any attempt to overwrite $\alpha(n)$. Chain topology changes occur only through authorized spawn operations recorded in the ledger; no mechanism for retroactive pointer manipulation exists. The parent pointer is not merely access-controlled — it is structurally immutable by protocol definition.
+
+\medskip
+\noindent\textbf{Pre-commit hook.} At every spawn event, the Fact Layer pre-commit hook verifies conditions (a) $R(n_{i+1}) \subseteq R(n_i)$ and (b) $\text{depth}(n_{i+1}) \leq D_{\max}$ \emph{before} the spawn is recorded. Rejected spawns are logged; the Bounds Engine may not execute them; \texttt{ESCALATING} is entered if the unmet condition persists. The pre-commit hook operates identically on all machine actors; no privileged actor capable of bypassing it exists.
+
+The structural necessity of the Fact Layer is established by the immutable-parent-pointer requirement: without the Fact Layer write protocol, immutability is a promise rather than a constraint. A mutable parent pointer enables all four drift failure modes (Section~\ref{sec:drift-failure-modes}); without the pre-commit hook, scope refinement and depth bounds are policy documentation — enforceable until an actor with sufficient privilege decides they are inconvenient. The Fact Layer is the structural enforcement layer that makes policy effective.
+
+% ------------------------------------------------------------
+\subsection{Structural Minimality}
+\label{sec:rs-minimality}
+
+The three-layer mapping is minimal-sufficient. Removing any layer causes the corresponding guarantee to fail (Table~\ref{tab:layer-minimality}).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{3.0cm} p{5.2cm}}
+\toprule
+\textbf{Removed layer} & \textbf{Guarantee that fails} \\
+\midrule
+Purpose Layer        & Exclusive human terminus eliminated; chain can terminate in machine actors \\
+Bounds Engine        & No layer evaluates spawn necessity between pre-commit approve/reject and mandatory escalation \\
+Fact Layer           & Immutable parent pointer eliminated; retroactive chain manipulation possible; depth bound and scope refinement become conventions \\
+\bottomrule
+\end{tabular}
+\caption{Layer removal consequences for RSP correctness properties.}
+\label{tab:layer-minimality}
+\end{table}
+
+No subset of layers achieves the same guarantees. The three-layer architecture is the minimal structure that makes RSP's correctness properties unconditionally guaranteed rather than conditionally expected.
+
+% ============================================================
+% Section 7: Correctness Properties
+% ============================================================
+\section{Correctness Properties}
+\label{sec:rs-correctness}
+
+This section establishes three correctness properties for the Recursive Spawning Protocol — drift prevention, chain integrity, and termination — each stated formally, proved sketchedly, and connected to the \bxthree Framework layer that enforces it. Together these properties constitute the RSP's overall guarantee: a spawn chain is an accountable, bounded, and auditable refinement process that terminates in human judgment.
+
+% ------------------------------------------------------------
+\subsection{Drift Prevention}
+\label{sec:rs-drift-prevention}
+
+\medskip
+\noindent\textbf{Theorem (Drift Prevention).} Let $C = \langle n_0, n_1, \ldots, n_k \rangle$ be a Recursive Spawning chain rooted at $n_0$ with human anchor $h(n_0) = h(n_k)$. Then for all $i$ ($0 \leq i \leq k$), the operating scope $R(n_i)$ is a descendant refinement of the intent of $h(n_0)$. Equivalently: no node in $C$ can exhibit behavior outside the authorized intent of its human anchor.
+
+\medskip
+\noindent\textbf{Proof sketch.} The proof proceeds by structural induction on chain depth, where each inductive step is enforced at runtime by the Fact Layer pre-commit hook — making drift prevention a structural invariant rather than an inferred property.
+
+\medskip
+\textit{Base case ($i=0$).} $R(n_0)$ is defined by $h(n_0)$ at provisioning. By the Purpose Layer's definition of authorized operating scope, $R(n_0)$ is a descendant refinement of $h(n_0)$'s intent by construction. No drift exists at the root.
+
+\medskip
+\textit{Inductive step.} Assume $R(n_i)$ is a descendant refinement of $h(n_0)$'s intent for some $i$ with $0 \leq i < k$. For $n_i$ to spawn $n_{i+1}$, the Fact Layer pre-commit hook must verify before recording:
+\begin{enumerate}
+    \item[(a)] $R(n_{i+1}) \subseteq R(n_i)$ — scope refinement. The Purpose Layer's spawn policy $P_{\mathrm{spawn}}$ requires strict scope subset; no authorized provision for lateral or upward scope expansion exists.
+    \item[(b)] $\text{depth}(n_{i+1}) \leq D_{\max}$ — depth constraint, also enforced by the pre-commit hook.
+\end{enumerate}
+The Fact Layer rejects any spawn violating (a) or (b). No actor — including the Bounds Engine — can execute a rejected spawn. Therefore $R(n_{i+1}) \subseteq R(n_i)$ holds by structural enforcement.
+
+By the inductive hypothesis, $R(n_i)$ refines $h(n_0)$'s intent. Since $R(n_{i+1}) \subseteq R(n_i)$, $R(n_{i+1})$ also refines $h(n_0)$'s intent. Hence $n_{i+1}$ does not drift.
+
+\medskip
+The proof sketch rests on three architectural facts that distinguish it from any policy-based argument:
+
+\begin{enumerate}
+    \item[(1)] \textbf{Immutable parent pointer.} $\alpha(n)$ is established once at provisioning and is thereafter immutable under the Fact Layer write protocol. Scope inheritance is traceable to a unique authorized lineage — not a manipulable graph.
+    \item[(2)] \textbf{Forensic ledger.} Every scope assignment is recorded in the append-only, hash-chained ledger. Each step of the refinement chain is an empirically verifiable, tamper-evident record.
+    \item[(3)] \textbf{Chain terminates at Purpose Layer.} The exclusive human terminus closes the inductive argument at a finite bound. There is no machine-actor alternative terminus; $h(n_i) = h(n_0)$ for all $i$.
+\end{enumerate}
+
+With all three conjuncts present, drift is architecturally impossible — not statistically unlikely, not conventionally prevented. If any conjunct is absent, the proof structure collapses. $\square$
+
+% ------------------------------------------------------------
+\subsection{Chain Integrity}
+\label{sec:rs-chain-integrity}
+
+\medskip
+\noindent\textbf{Theorem (Chain Integrity).} For any Recursive Spawning chain $C = \langle n_0, n_1, \ldots, n_k \rangle$, the parent pointer sequence $\alpha(n_i) = n_{i-1}$ holds for all $1 \leq i \leq k$, and no node configuration in $C$ has been modified after provisioning.
+
+\medskip
+\noindent\textbf{Proof sketch.} The proof has two components: topological integrity and node immutability.
+
+\medskip
+\textit{Topological integrity.} Each spawn event $n_{i-1} \xrightarrow{\text{spawn}} n_i$ establishes $\alpha(n_i) = n_{i-1}$ as an immutable Fact Layer property at provisioning time. The Fact Layer write protocol rejects any operation attempting to modify $\alpha(n_i)$ post-provisioning. Since the chain is constructed exclusively through authorized spawn events and no parent pointer is modified after establishment, $\alpha(n_i) = n_{i-1}$ holds for all $i \geq 1$ by construction. This eliminates the re-parenting drift failure mode (Failure Mode 3) by making retroactive chain rewriting structurally impossible.
+
+\medskip
+\textit{Node immutability.} Each node $n_i$ is provisioned with a fixed configuration $(R(n_i), P_{\mathrm{spawn}}(n_i), h(n_i))$ established by the Purpose Layer and recorded in the Fact Layer authorization ledger. The Fact Layer enforces immutability of these parameters post-provisioning. The Fact Layer write protocol rejects any modification request from any actor — including the Bounds Engine and the Purpose Layer post-provisioning. The Purpose Layer may issue a \texttt{RESOLVE} directive that redirects behavior, but this is recorded as a new ledger entry (a state transition), not as an alteration of the provisioned configuration.
+
+The forensic ledger's hash-chaining provides evidentiary support: any attempt to insert a falsified spawn event or reorder existing entries breaks hash continuity and is detectable by any observer with ledger read access. Chain integrity is not a property of current chain state alone — it is a property of the entire historical record, enforceable at any future time. $\square$
+
+% ------------------------------------------------------------
+\subsection{Termination}
+\label{sec:rs-termination}
+
+\medskip
+\noindent\textbf{Theorem (Termination).} Every Recursive Spawning chain $C = \langle n_0, n_1, \ldots, n_k \rangle$ terminates — either at a resolution state or at the escalation threshold — within a finite number of spawn steps bounded by $\max(D_{\max}, D_{\mathrm{ESCALATE}})$.
+
+\medskip
+\noindent\textbf{Proof sketch.} Two lemmas combine to establish the theorem.
+
+\medskip
+\textit{Lemma 1 (Depth-bounded growth).} The chain grows only through spawn events. By the Bounds Engine enforcement and the Fact Layer pre-commit hook, any spawn event producing $\text{depth}(n_i) + 1 > D_{\max}$ is rejected. Autonomous chain growth is thus bounded by $D_{\max} - 1$ spawn steps. Rejected spawns are logged; the Bounds Engine transitions to \texttt{ESCALATING}.
+
+\medskip
+\textit{Lemma 2 (Escalation-triggered halt).} If the chain reaches $D_{\mathrm{ESCALATE}}$ before resolving the exception condition, the protocol enters \texttt{ESCALATING} and suspends all autonomous spawn activity. The Bounds Engine awaits a directive from $h(n_k)$ — the human anchor. Since $h(n_k) = h(n_0)$ is a human principal, the directive arrives in finite time. \texttt{REJECT} terminates the chain definitively; \texttt{RESOLVE} redirects behavior and records a new ledger entry; \texttt{ACK} permits continued operation under continued Purpose Layer authorization.
+
+\medskip
+\textit{Theorem conclusion.} The chain grows autonomously at most $D_{\max} - 1$ spawn steps. If it reaches $D_{\mathrm{ESCALATE}}$ before resolution, it halts and escalates. If it reaches $D_{\max}$ before resolution, the Fact Layer rejects further spawn and triggers mandatory escalation. In all execution paths, the chain reaches a terminal state within $\max(D_{\max}, D_{\mathrm{ESCALATE}})$ spawn steps. Since $D_{\max}$ and $D_{\mathrm{ESCALATE}}$ are finite integers defined at provisioning, the chain terminates in finite time. $\square$
+
+Termination also precludes infinite spawn-escalate cycles. When $D_{\max}$ is reached, the Fact Layer blocks further spawn and triggers mandatory escalation. The human anchor's \texttt{REJECT} directive terminates the chain. No mechanism exists by which the chain can circumvent this bound and re-enter autonomous spawn — the Fact Layer pre-commit hook is structural, not configurable at runtime by any machine actor.
+
+% ------------------------------------------------------------
+\subsection{Collective Guarantee}
+\label{sec:rs-collective}
+
+Together, the three correctness properties constitute RSP's overall accountability guarantee in the context of recursive agent population dynamics.
+
+Drift prevention ensures scope refinement is the only authorized direction of chain growth. Without it, successive scope expansions could gradually migrate the chain's operating scope away from the human anchor's intent — an autonomy runway within a bounded-depth chain. The depth-limit insufficiency theorem (Section~\ref{sec:drift-depth-limits}) establishes that depth bounds alone cannot prevent this.
+
+Chain integrity ensures chain topology is stable and tamper-evident. The parent pointer sequence is immutable, node configurations are unmodifiable post-provisioning, and the forensic ledger's hash-chaining makes any tampering detectable. Without chain integrity, an adversarial actor could manipulate chain parentage or configuration to redirect accountability or obscure node provenance — a form of accountability laundering.
+
+Termination ensures the chain cannot grow indefinitely and cannot sustain an infinite spawn-escalate cycle. The depth bound is enforced structurally by the Fact Layer pre-commit hook, and the escalation path terminates in human judgment, not in autonomous resolution. Without termination, an unresolvable exception condition could drive unbounded chain growth exceeding any human's supervisory capacity — defeating the upstream \bxthree accountability guarantee by overwhelming the human anchor.
+
+These three properties are mutually reinforcing and jointly enforced by the \bxthree three-layer architecture. The Purpose Layer defines spawn authorization policy and receives escalated exceptions — the exclusive terminus of every accountability path. The Bounds Engine evaluates spawn necessity and enforces the depth constraint — it cannot bypass the depth bound through operational urgency. The Fact Layer enforces the immutable parent pointer, maintains the append-only forensic ledger, and executes the pre-commit hooks that make all other constraints structural invariants. This mapping is not a design pattern — it is a structural necessity. Removing any layer causes the corresponding guarantee to collapse.
+
+The result is an accountable, bounded, and auditable refinement process: it grows only in authorized directions (drift prevention), preserves the topology established at provisioning (chain integrity), halts within a Purpose Layer-defined depth bound (termination), and maintains a complete forensic record of every decision point (Fact Layer). This is the operational expression of the upstream \bxthree accountability guarantee applied to recursive agent population dynamics.

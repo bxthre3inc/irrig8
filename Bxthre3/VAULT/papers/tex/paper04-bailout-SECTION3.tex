@@ -1,0 +1,376 @@
+\section{The Bailout Protocol}
+\label{sec:bailout-protocol}
+
+The Bailout Protocol is the runtime mechanism by which the BX3 Framework enforces its upstream accountability guarantee: that every unresolvable exception state propagates to a human accountability anchor, bypassing all intermediate machine actors, with complete diagnostic context, and that the system never fails downward into algorithmic chaos. The protocol is triggered not by machine error but by the Bounds Engine's correct identification of the boundary of its own authority. It is an \textit{authority-exceeded} signal, not a failure signal.
+
+This section specifies the protocol in full formal detail: its state machine, its trigger conditions, its escalation algorithm, its bypass mechanism, and its timeout handling. The specification is complete enough to serve as an authoritative reference for implementation, audit, and formal verification.
+
+\subsection{Formal Definitions}
+\label{sec:formal-definitions}
+
+We define the following entities and invariants that govern the Bailout Protocol:
+
+\bigskip
+
+\noindent\textbf{Definition 1 (Bounds Engine Node).} A Bounds Engine node $B$ is a tuple:
+\begin{equation}
+B \triangleq \langle C_B, M_B, P_B, \text{BailoutSM}_B \rangle
+\end{equation}
+where:
+\begin{itemize}\setlength\itemsep{0.25em}
+\item $C_B$ is the constraint set governing $B$'s operational scope, authored by a Purpose Layer owner.
+\item $M_B$ is the current mandate of $B$, a subset of $C_B$ active under the present operational context.
+\item $P_B$ is the parent node in the system hierarchy; if $B$ is a root node, $P_B = \texttt{null}$.
+\item $\text{BailoutSM}_B$ is the per-instance Bailout Protocol state machine for node $B$, with state $\sigma_B \in \Sigma$, where $\Sigma = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{Definition 2 (Constraint Set).} The constraint set $C_B$ is a set of predicate functions over the system state $S$:
+\begin{equation}
+C_B = \{ c_i : S \rightarrow \{\texttt{true}, \texttt{false}\} \mid i = 1, \ldots, n \}
+\end{equation}
+A proposed action $a$ is \textit{approved} by $B$ if $\forall c_i \in M_B : c_i(S \mid a) = \texttt{true}$. A proposed action $a$ is \textit{rejected} by $B$ if $\exists c_i \in M_B : c_i(S \mid a) = \texttt{false}$.
+
+\bigskip
+
+\noindent\textbf{Definition 3 (Unresolvable State).} A system state $s \in S$ is \textit{unresolvable} by $B$ under mandate $M_B$ if and only if:
+\begin{equation}
+\text{isUnresolvable}(s, M_B) \triangleq \nexists a : \forall c_i \in M_B : c_i(s \mid a) = \texttt{true}
+\end{equation}
+That is, no proposed action exists that satisfies all active constraints. This is the foundational condition for triggering the Bailout Protocol.
+
+\bigskip
+
+\noindent\textbf{Definition 4 (BailoutTrigger).} When a trigger condition is satisfied at node $B$, the Bounds Engine constructs a BailoutTrigger object $T$:
+\begin{equation}
+T \triangleq \langle \text{id}, B, s, M_B, \kappa, \psi, \tau, \phi \rangle
+\end{equation}
+where:
+\begin{itemize}\setlength\itemsep{0.25em}
+\item $\text{id}$: unique identifier for this bailout event.
+\item $B$: the originating Bounds Engine node.
+\item $s$: the system state at time of triggering.
+\item $M_B$: the active mandate at time of triggering.
+\item $\kappa \in \mathbb{K}$: the trigger condition class (see Section~\ref{sec:trigger-conditions}).
+\item $\psi$: the diagnostic snapshot of $B$'s internal state at time of firing.
+\item $\tau \in \mathbb{R}^+$: the Unix timestamp at which the trigger was fired.
+\item $\phi = [\,]$: the propagation chain, initially empty; appended to as $T$ propagates up the hierarchy.
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{Definition 5 (Trigger Condition Class).} The set $\mathbb{K}$ of recognized trigger condition classes is:
+\begin{equation}
+\mathbb{K} = \{
+\text{CONSTRAINT\_UNCOVERED},
+\text{INTERCONSTRAINT\_CONFLICT},
+\text{FACT\_LAYER\_VIOLATION},
+\text{SCOPE\_EXCEEDED},
+\text{MANDATE\_MODIFICATION\_REQUEST}
+\}
+\end{equation}
+Each class corresponds to a distinct boundary condition of authority (Section~\ref{sec:trigger-conditions}).
+
+\bigskip
+
+\noindent\textbf{Definition 6 (Purpose Layer Owner).} The Purpose Layer owner of node $B$, denoted $\text{owner}(B)$, is the named human actor who authored $B$'s mandate $M_B$ and bears accountability for $B$'s outcomes. $\text{owner}(B)$ is the sole permissible terminal recipient of a BailoutTrigger.
+
+\bigskip
+
+\noindent\textbf{Definition 7 (Hard Block).} When $\sigma_B \in \{\text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}\}$, the Fact Layer enforces a hard block $\Gamma_B$ on all physical actuator commands originating from $B$. Formally:
+\begin{equation}
+\forall \text{actuator } \alpha : \forall \text{command } a \in A_\alpha \text{ proposed by } B : \Gamma_B(\sigma_B) = \texttt{block}(a) \quad \text{if } \sigma_B \neq \text{IDLE} \land \sigma_B \neq \text{RESOLVED}
+\end{equation}
+The hard block is monotonic: it is applied at BOUNDED and is not released until RESOLVED. No confidence signal, timer, or business context can override $\Gamma_B$.
+
+% ADDED: define timeout constants
+\bigskip
+
+\noindent\textbf{Definition 8 (Timeout Constants).} The Bailout Protocol defines two timeout constants enforced by the Fact Layer:
+
+\begin{equation}
+T_{\text{bound}} = 300 \quad \text{(seconds)} \qquad T_{\text{human}} = 7200 \quad \text{(seconds)}
+\end{equation}
+
+$T_{\text{bound}}$ is the maximum duration a trigger may remain in the BOUNDED state before automatic transition to BAIL\_PENDING. $T_{\text{human}}$ is the maximum duration a trigger may remain in HUMAN\_ACKNOWLEDGED before the protocol issues a final warning and logs a staleness record. Both constants are set conservatively to allow thorough human review while preventing indefinite escalation.
+
+\subsection{The Bailout Protocol State Machine}
+\label{sec:bp-state-machine}
+
+The Bailout Protocol operates as a deterministic state machine, $\text{BailoutSM}_B$, hard-encoded in the Fact Layer for each Bounds Engine node $B$. The state machine has six mutually exclusive, collectively exhaustive states:
+
+\bigskip
+
+\noindent\textbf{State} $\sigma = \text{IDLE}$: The default operational state. No trigger is active. The Bounds Engine evaluates and approves or rejects proposed actions within its mandate $M_B$ without involvement of the Bailout Protocol. Transition to BOUNDED occurs when a trigger condition is detected (Section~\ref{sec:trigger-conditions}).
+
+\bigskip
+
+\noindent\textbf{State} $\sigma = \text{BOUNDED}$: A trigger condition has been detected at this node. The Bounds Engine has constructed the BailoutTrigger object $T$ and is in the process of building the full diagnostic context $\psi$. The Fact Layer hard block $\Gamma_B$ is applied immediately upon entering this state. The Bounds Engine may not forward any actuator commands from this node. The node remains in BOUNDED for at most $T_{\text{bound}}$ seconds. If diagnostic context construction completes within this window, the transition to BAIL\_PENDING occurs. If the timeout $T_{\text{bound}}$ expires before completion, the Fact Layer forces the transition to BAIL\_PENDING with a \texttt{CONSTRUCTION\_TIMEOUT} flag set in $T$.
+
+\bigskip
+
+\noindent\textbf{State} $\sigma = \text{BAIL\_PENDING}$: Diagnostic context construction is complete. The BailoutTrigger $T$ is sealed and ready for propagation. The Fact Layer maintains the hard block. No machine actor may resolve or dismiss $T$; the only permissible next state is ESCALATING, in which $T$ is dispatched to the parent node $P_B$.
+
+\bigskip
+
+\noindent\textbf{State} $\sigma = \text{ESCALATING}$: The BailoutTrigger $T$ has been dispatched to the parent node $P_B$. The trigger is in transit. The Fact Layer maintains the hard block on the originating node $B$. The propagation chain $\phi$ is updated with the identity of $B$, the timestamp, and the action taken (dispatch). If $P_B$ is a Purpose Layer human anchor ($\text{owner}(B)$), the transition to HUMAN\_ACKNOWLEDGED occurs immediately upon receipt. If $P_B$ is another Bounds Engine node, the transition is to the same ESCALATING state (re-dispatch), continuing recursively up the hierarchy until $T$ reaches a human anchor.
+
+\bigskip
+
+\noindent\textbf{State} $\sigma = \text{HUMAN\_ACKNOWLEDGED}$: The BailoutTrigger $T$ has been received by $\text{owner}(B)$, the Purpose Layer human anchor. The owner has the full diagnostic context and is actively reviewing. The hard block remains in effect. The owner may issue a resolution, request additional information, modify the mandate $M_B$, or escalate to their own supervisory chain. The system remains in HUMAN\_ACKNOWLEDGED until the owner issues a resolution or $T_{\text{human}}$ expires. If the owner has not acted within $T_{\text{human}}$, the Fact Layer logs a staleness record and sets a \texttt{STALENESS\_WARNING} flag, but does not force resolution.
+
+\bigskip
+
+\noindent\textbf{State} $\sigma = \text{RESOLVED}$: The Purpose Layer owner has issued a resolution. The Fact Layer records the resolution in the Forensic Ledger, releases the hard block $\Gamma_B$, and the system transitions back to IDLE. This is the terminal state of the Bailout Protocol state machine for this trigger event. For recursive spawning contexts, the resolution may simultaneously serve as the trigger for a new BailoutSM instance at a child node, but for the triggering event itself, RESOLVED is terminal.
+
+\subsection{Transition Conditions}
+\label{sec:transition-conditions}
+
+Transitions are deterministic events, not timers or confidence thresholds. The complete transition function $\delta : \Sigma \times E \rightarrow \Sigma$ is defined as follows, where $E$ is the event set:
+
+\bigskip
+
+\textbf{Transitions from IDLE:}
+
+\begin{equation}
+\delta(\text{IDLE}, \texttt{TRIGGER\_CONDITION\_SATISFIED}) = \text{BOUNDED}
+\end{equation}
+Fires when the Bounds Engine detects that a trigger condition $\kappa \in \mathbb{K}$ is satisfied at node $B$. This is the sole transition out of IDLE.
+
+\bigskip
+
+\textbf{Transitions from BOUNDED:}
+
+\begin{equation}
+\delta(\text{BOUNDED}, \texttt{DIAGNOSTIC\_COMPLETE}) = \text{BAIL\_PENDING}
+\end{equation}
+Fires when the Bounds Engine has completed construction of the full BailoutTrigger object $T$ including the diagnostic snapshot $\psi$.
+
+\begin{equation}
+\delta(\text{BOUNDED}, \texttt{TIMER\_EXPIRED\_BOUND}) = \text{BAIL\_PENDING}
+\end{equation}
+Fires when elapsed time since entering BOUNDED exceeds $T_{\text{bound}}$. The Fact Layer forces this transition, sets \texttt{CONSTRUCTION\_TIMEOUT} in $T$, and logs the timeout event.
+
+\bigskip
+
+\textbf{Transitions from BAIL\_PENDING:}
+
+\begin{equation}
+\delta(\text{BAIL\_PENDING}, \texttt{TRIGGER\_DISPATCHED}) = \text{ESCALATING}
+\end{equation}
+Fires immediately upon dispatch of $T$ to the parent node $P_B$. The propagation chain $\phi$ is updated atomically with this dispatch event.
+
+\bigskip
+
+\textbf{Transitions from ESCALATING:}
+
+\begin{equation}
+\delta(\text{ESCALATING}, \texttt{RECEIVED\_BY\_HUMAN\_ANCHOR}) = \text{HUMAN\_ACKNOWLEDGED}
+\end{equation}
+Fires when the parent node $P_B$ is confirmed to be $\text{owner}(B)$ (a Purpose Layer human anchor). This is the terminal propagation transition.
+
+\begin{equation}
+\delta(\text{ESCALATING}, \texttt{RECEIVED\_BY\_MACHINE\_NODE}) = \text{ESCALATING}
+\end{equation}
+Fires when $P_B$ is another Bounds Engine node. $T$ is re-dispatched to $P_{P_B}$, the parent of $P_B$, and the propagation chain $\phi$ is appended accordingly. This transition may occur repeatedly until a human anchor is reached.
+
+\bigskip
+
+\textbf{Transitions from HUMAN\_ACKNOWLEDGED:}
+
+\begin{equation}
+\delta(\text{HUMAN\_ACKNOWLEDGED}, \texttt{HUMAN\_RESOLUTION\_ISSUED}) = \text{RESOLVED}
+\end{equation}
+Fires when $\text{owner}(B)$ issues a resolution. The Fact Layer records the resolution in the Forensic Ledger, releases the hard block, and transitions to IDLE.
+
+\begin{equation}
+\delta(\text{HUMAN\_ACKNOWLEDGED}, \texttt{TIMER\_EXPIRED\_HUMAN}) = \text{HUMAN\_ACKNOWLEDGED}
+\end{equation}
+Fires when elapsed time since entering HUMAN\_ACKNOWLEDGED exceeds $T_{\text{human}}$. The Fact Layer logs a \texttt{STALENESS\_WARNING} in the Forensic Ledger and issues an SMS reminder to $\text{owner}(B)$. The state does not change; this transition may re-fire at intervals of $T_{\text{human}}$ until a resolution is issued.
+
+\bigskip
+
+\textbf{Transitions from RESOLVED:} There are no outbound transitions from RESOLVED for this trigger instance. The state machine for this instance terminates.
+
+\bigskip
+
+The Fact Layer enforces that no transition not explicitly defined above may occur. This means, for example, that $\delta(\text{BOUNDED}, \texttt{MACHINE\_RESOLUTION\_ATTEMPTED})$ is undefined and therefore impermissible --- the Fact Layer will reject any attempt by a machine actor to resolve a trigger at the BOUNDED state, just as it will reject any attempt to bypass Purpose Layer routing.
+
+\subsection{Bail-Out Trigger Conditions}
+\label{sec:trigger-conditions}
+
+The Bailout Protocol is triggered by the Bounds Engine when it correctly identifies that a condition has arisen that exceeds its resolution authority. The trigger is not an error signal; it is an \textit{authority boundary} signal. The Bounds Engine may be functioning correctly and still fire a bailout, precisely because it has correctly identified that the current situation is outside the scope of its mandate.
+
+\bigskip
+
+A Bounds Engine node $B$ fires a BailoutTrigger when any of the following conditions is satisfied:
+
+\bigskip
+
+\noindent\textbf{T1 (Constraint Uncovered).} $B$ receives a request to perform action $a$, and $a$ is not covered by any constraint in $M_B$:
+\begin{equation}
+\nexists c_i \in M_B : c_i \text{ governs } a
+\end{equation}
+This condition indicates that the proposed action is outside the scope of the current mandate and requires Purpose Layer authorization.
+
+\bigskip
+
+\noindent\textbf{T2 (Unresolvable State).} $B$ detects a system state $s$ for which $\text{isUnresolvable}(s, M_B) = \texttt{true}$ (Definition 3). This condition arises when the environment has moved into a configuration that the current mandate has no approved response to --- not because the Bounds Engine failed, but because the mandate has a genuine gap.
+
+\bigskip
+
+\noindent\textbf{T3 (Interconstraint Conflict).} $B$ detects a conflict between two or more active constraints $c_i, c_j \in M_B$ such that:
+\begin{equation}
+\nexists a : c_i(s \mid a) = \texttt{true} \land c_j(s \mid a) = \texttt{true}
+\end{equation}
+This condition indicates that the mandate contains internally contradictory requirements and requires Purpose Layer disambiguation or mandate revision.
+
+\bigskip
+
+\noindent\textbf{T4 (Fact Layer Violation).} $B$ receives a proposed action $a$ that, when validated by the Fact Layer enforcement model, violates a Fact Layer enforcement rule $r \in R_{\text{fact}}$:
+\begin{equation}
+\text{FactLayer\_validate}(a, r) = \texttt{violation}
+\end{equation}
+This condition indicates that the Bounds Engine's proposal would breach a deterministic safety constraint that the Fact Layer enforces independently of the Bounds Engine's reasoning.
+
+\bigskip
+
+\noindent\textbf{T5 (Scope Exceeded).} $B$ receives a request to perform action $a$ that falls within its technical capability but outside the scope of $M_B$, as defined by the Purpose Layer owner:
+\begin{equation}
+a \in \text{capability}(B) \land a \notin \text{authorized\_scope}(M_B)
+\end{equation}
+This condition distinguishes between what $B$ \textit{can} do and what $B$ \textit{is authorized} to do.
+
+\bigskip
+
+\noindent\textbf{T6 (Mandate Modification Request).} $B$ receives a request to modify $C_B$ or $M_B$ (including adding, removing, or altering constraints), which it cannot authorize unilaterally:
+\begin{equation}
+\text{request\_type}(r) = \texttt{MANDATE\_MODIFICATION}
+\end{equation}
+Mandate modifications require Purpose Layer approval and therefore trigger the Bailout Protocol to route the request to $\text{owner}(B)$.
+
+\bigskip
+
+When a trigger condition is satisfied, the Bounds Engine transitions to BOUNDED immediately and begins constructing the BailoutTrigger object $T$. There is no gating condition, no confidence threshold, and no opportunity for the Bounds Engine to attempt an autonomous resolution before firing. The guarantee of upstream accountability depends on this immediacy: any delay between condition detection and trigger firing creates a window in which an incorrect autonomous action could be taken.
+
+\subsection{Escalation Algorithm}
+\label{sec:escalation-algorithm}
+
+The escalation algorithm determines the path a BailoutTrigger takes from the originating Bounds Engine node $B$ to the Purpose Layer human anchor $\text{owner}(B)$. The algorithm is defined recursively over the system hierarchy:
+
+\bigskip
+
+\begin{enumerate}[noitemsep]
+\caption{BailoutTrigger Escalation Algorithm}
+\label{alg:escalation}
+\begin{enumerate}[noitemsep][1]
+
+\Function{Escalate}{$T, B$}
+\item $\phi \leftarrow T.\phi$ \Comment{Initialize propagation chain}
+\item $B_{\text{current}} \leftarrow B$ \Comment{Start at originating node}
+
+\While{$B_{\text{current}} \neq \texttt{null}$}
+\item $\sigma_{B_{\text{current}}} \leftarrow \text{ESCALATING}$
+\item $\phi.\text{append}(\langle B_{\text{current}}, \tau_{\text{now}}, \texttt{DISPATCHED} \rangle)$
+\item $T.\phi \leftarrow \phi$
+
+\If{$\text{isHumanAnchor}(B_{\text{current}})$}
+\item \Comment{$B_{\text{current}}$ is the Purpose Layer owner}
+\item $\sigma_{B_{\text{current}}} \leftarrow \text{HUMAN\_ACKNOWLEDGED}$
+\item $\phi.\text{append}(\langle B_{\text{current}}, \tau_{\text{now}}, \texttt{HUMAN\_RECEIVED} \rangle)$
+\item $T.\phi \leftarrow \phi$
+\item \Return \texttt{SUCCESS}
+ 
+
+\item $B_{\text{parent}} \leftarrow P_{B_{\text{current}}}$
+
+\If{$B_{\text{parent}} = \texttt{null}$}
+\item \Comment{No parent in hierarchy --- log failure and halt}
+\item $\phi.\text{append}(\langle \texttt{null}, \tau_{\text{now}}, \texttt{NO\_ANCHOR\_FOUND} \rangle)$
+\item $T.\phi \leftarrow \phi$
+\item \item \textbf{raise} \texttt{HIERARCHY\_ERROR: No human anchor in ancestry chain}
+\item \Return \texttt{FAILURE}
+ 
+
+\item $B_{\text{current}} \leftarrow B_{\text{parent}}$
+\EndWhile
+
+\item \textbf{raise} \texttt{ESCALATION\_LOOP\_ERROR: Algorithm did not terminate}
+\item \Return \texttt{FAILURE}
+\EndFunction
+
+\end{enumerate}
+\end{enumerate}
+
+\bigskip
+
+The algorithm has the following critical properties:
+
+\begin{itemize}\setlength\itemsep{0.25em}
+\item \textbf{Termination.} The system hierarchy is a rooted tree with a finite depth. Since $B_{\text{current}}$ strictly ascends the parent chain on each iteration and the tree has finite depth, the while loop terminates in at most $d$ iterations, where $d$ is the depth of $B$ in the hierarchy. The loop cannot diverge.
+\item \textbf{No intermediate resolution.} The algorithm performs no autonomous reasoning and makes no attempt to resolve the trigger at any machine node. Each machine node in the chain is a transit point, not a decision point. This is the architectural commitment that the bypass mechanism (Section~\ref{sec:bypass-mechanism}) enforces.
+\item \textbf{Single destination.} The algorithm routes to exactly one human anchor: $\text{owner}(B)$, the Purpose Layer owner of the originating node. It does not clone the trigger to multiple recipients, does not broadcast to a team, and does not select a recipient based on availability or load. This ensures a single accountable decision-maker.
+\item \textbf{Complete traceability.} The propagation chain $\phi$ records every node in the hierarchy through which $T$ passed, with a timestamp and action at each hop. This record is included in the Forensic Ledger entry for this bailout event and is the solution to the abstraction leakage problem described in Section~\ref{sec:background}.
+\end{itemize}
+
+The Fact Layer enforces the escalation algorithm's invariants at the architectural level. A machine node cannot refuse to forward a BailoutTrigger, cannot select a different parent node, and cannot substitute a machine fallback for the human anchor. The algorithm is not a policy that machine actors may choose to follow or deviate from; it is a physical constraint of the layer architecture.
+
+\subsection{Bypass Mechanism: Why the Bailout Protocol Bypasses All Machine Actors}
+\label{sec:bypass-mechanism}
+
+The most critical property of the Bailout Protocol is that it bypasses all machine actors in its escalation path. When a BailoutTrigger reaches a machine node in the hierarchy during escalation, that node does not attempt to resolve the trigger. It forwards the trigger to its own parent and stops. The trigger does not ask the machine node's opinion, does not request a confidence-weighted assessment, and does not allow the machine node to substitute its own resolution.
+
+This bypass is not a convention or a software convention. It is a structural property enforced by the layer architecture. To understand why the bypass is architecturally necessary, consider the failure modes that arise if machine actors are permitted to in the escalation path:
+
+\bigskip
+
+\noindent\textbf{Failure Mode 1: Autonomous Override.} If a machine node in the escalation path could resolve a BailoutTrigger, it would become a de facto autonomous override of human accountability. The node could apply its own reasoning, propose a resolution, and either dismiss the trigger or substitute its own action --- precisely the pattern that the Bailout Protocol is designed to prevent. The upstream accountability guarantee would be voided by a silent machine override that the human never sees.
+
+\bigskip
+
+\noindent\textbf{Failure Mode 2: Confidence-Based Routing.} If machine nodes could assess a BailoutTrigger and decide whether to escalate based on their own confidence, the system would introduce a probabilistic component into an architectural safety mechanism. A machine node that is highly confident in its own resolution would suppress the trigger and proceed autonomously --- the same failure mode that the Simplex architecture's formal verification requirements are designed to prevent. The confidence signal is internal to the machine layers and is not a permitted input to the escalation routing decision.
+
+\bigskip
+
+\noindent\textbf{Failure Mode 3: Abstraction Leakage Amplification.} If machine nodes could respond to a BailoutTrigger, the human accountability anchor receiving the escalation would lose additional context with each hop, as each intervening machine node transforms, filters, or summarizes the diagnostic information before passing it up. This amplification of abstraction leakage would undermine the forensic standard that the protocol is designed to maintain. The bypass mechanism ensures that the diagnostic context $\psi$ that reaches the human anchor is the original context constructed at the originating node, not a transformed version.
+
+\bigskip
+
+The bypass mechanism is enforced by the Fact Layer at the state machine level. When $\sigma_B = \text{ESCALATING}$, the Fact Layer state machine for node $B$ rejects any inbound event from a machine actor that attempts to resolve the trigger, sets the node's $\sigma_B$ back to ESCALATING, and logs the override attempt as a \texttt{BYPASS\_VIOLATION} event in the Forensic Ledger. This is the same deterministic enforcement mechanism that enforces all Fact Layer constraints, and it carries the same weight.
+
+The architectural implication is that the Bailout Protocol does not merely \textit{permit} escalation to a human anchor --- it \textit{prevents} all alternative termination points. The system cannot accidentally terminate a bailout at a machine actor, because the Fact Layer will not accept a machine resolution at any state other than RESOLVED, and RESOLVED can only be entered via the HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED transition initiated by the human anchor. The state machine is a physical enforcement mechanism, not a workflow suggestion.
+
+This design reflects the principle articulated in Section~\ref{sec:background}: that accountability for consequential decisions in the real world is a social and legal institution that cannot be instantiated in software. The bypass mechanism ensures that the Bailout Protocol maintains this distinction at runtime, under all conditions, including system stress, high workload, and component degradation.
+
+\subsection{Timeout Handling}
+\label{sec:timeout-handling}
+
+The Bailout Protocol defines two timeout constants, $T_{\text{bound}}$ and $T_{\text{human}}$, that govern the maximum duration a trigger may spend in the BOUNDED and HUMAN\_ACKNOWLEDGED states, respectively. Timeout handling is designed to prevent indefinite stalling at either the diagnostic construction phase or the human review phase, while preserving the human's full authority to review at their own pace.
+
+\bigskip
+
+\noindent\textbf{BOUNDED State Timeout ($T_{\text{bound}}$).} The BOUNDED state is the phase during which the Bounds Engine constructs the complete diagnostic context $\psi$ for the BailoutTrigger. In most cases, diagnostic context construction completes quickly --- typically within seconds. However, in complex scenarios involving nested system state, multiple sensor inputs, and cross-plane diagnostic data, construction may take longer.
+
+If $T_{\text{bound}}$ (300 seconds, 5 minutes) expires before construction is complete, the Fact Layer forces the transition to BAIL\_PENDING with the \texttt{CONSTRUCTION\_TIMEOUT} flag set in $T$. The trigger proceeds to escalation with whatever diagnostic context was available at the time of timeout. The Purpose Layer owner receiving the bailout is informed that the diagnostic context is incomplete and may request additional information before issuing a resolution.
+
+The purpose of $T_{\text{bound}}$ is not to penalize the Bounds Engine for slow construction, but to prevent a pathological scenario in which a system under stress (where bailout triggering is most likely) could stall indefinitely in the diagnostic phase due to degraded performance. The timeout ensures that the escalation phase begins within a bounded time regardless of system conditions.
+
+\bigskip
+
+\noindent\textbf{HUMAN\_ACKNOWLEDGED State Timeout ($T_{\text{human}}$).} The HUMAN\_ACKNOWLEDGED state is the phase during which the Purpose Layer owner reviews the BailoutTrigger and its diagnostic context and issues a resolution. Human review is intentionally unbounded in the base protocol --- there is no scenario in which a machine actor should force a resolution over the objection or non-action of the human accountability anchor. The $T_{\text{human}}$ timeout (7200 seconds, 2 hours) exists to address a different failure mode: the scenario in which the human anchor has not engaged with the bailout due to notification failure, absence, or oversight.
+
+When $T_{\text{human}}$ expires, the Fact Layer:
+\begin{enumerate}\setlength\itemsep{0.25em}
+\item Logs a \texttt{STALENESS\_WARNING} in the Forensic Ledger for this bailout event.
+\item Issues an SMS reminder to $\text{owner}(B)$ via the INBOX routing system, with a direct link to the bailout context and a summary of the triggering condition.
+\item Transitions the state machine back to HUMAN\_ACKNOWLEDGED (the state does not change; only a warning is issued).
+\end{enumerate}
+
+The $T_{\text{human}}$ timeout may re-fire at intervals of $T_{\text{human}}$ seconds, with each firing logged as a separate \texttt{STALENESS\_WARNING} entry. The Fact Layer continues to log warnings and issue reminders until the human anchor issues a resolution or the system is formally halted by an authorized administrator.
+
+There is no automatic resolution. Even under repeated staleness warnings, the Fact Layer will not accept a resolution from any actor other than the confirmed human anchor. If the human anchor is permanently unreachable (e.g., due to incapacitation), the escalation algorithm's hierarchy traversal provides for a \texttt{HIERARCHY\_ERROR} condition (Algorithm~\ref{alg:escalation}, line 20), which surfaces the failure to the next available human anchor in the chain of organizational authority. This fallback is the only permitted deviation from the single-anchor rule, and it is triggered only by the absence of a human anchor in the ancestry chain, not by any machine actor's preference.
+
+The timeout handling design reflects the principle that human review is the mandatory terminal state of the Bailout Protocol and that timeouts exist to ensure the system does not stall --- not to substitute machine judgment for human judgment. The guarantees of the Bailout Protocol hold regardless of timeout behavior, because timeouts never permit autonomous resolution.
+
+\end{document}

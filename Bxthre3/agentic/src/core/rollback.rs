@@ -139,60 +139,61 @@ impl CascadeManager {
 
     /// Initiate rollback to a target state
     pub fn initiate_rollback(&self, target_state: &str) -> RollbackResult {
-        let rollback_points = self.rollback_points.read().unwrap();
-        let Some(target) = rollback_points.get(target_state) else {
-            return RollbackResult {
-                success: false,
-                rollback_point_id: target_state.into(),
-                cascades_paused: 0,
-                cascades_resumed: 0,
-                cascades_escalated: 0,
-                error: Some("Rollback point not found".into()),
-            };
+        // Step 0: Look up target, clone what we need, drop guard
+        let (target_task_id, rollback_id) = {
+            let guard = self.rollback_points.read().unwrap();
+            match guard.get(target_state) {
+                Some(t) => (t.task_id.clone(), t.id.clone()),
+                None => {
+                    return RollbackResult {
+                        success: false,
+                        rollback_point_id: target_state.to_string(),
+                        cascades_paused: 0,
+                        cascades_resumed: 0,
+                        cascades_escalated: 0,
+                        error: Some("Rollback point not found".into()),
+                    };
+                }
+            }
         };
-        drop(rollback_points);
 
-        // Step 1: Identify affected cascades
-        let cascades = self.cascades.read().unwrap();
-        let affected: Vec<String> = cascades.iter()
-            .filter(|(_, c)| c.task_id == target.task_id && c.status == CascadeStatus::Active)
-            .map(|(id, _)| id.clone())
-            .collect();
-        drop(cascades);
+        // Step 1: Identify affected cascades (read-only)
+        let affected: Vec<String> = {
+            let guard = self.cascades.read().unwrap();
+            guard.iter()
+                .filter(|(_, c)| c.task_id == target_task_id && c.status == CascadeStatus::Active)
+                .map(|(id, _)| id.clone())
+                .collect()
+        };
 
-        // Step 2: Pause affected cascades
+        // Step 2: Pause affected cascades (write)
         {
-            let mut cascades = self.cascades.write().unwrap();
+            let mut guard = self.cascades.write().unwrap();
             for id in &affected {
-                if let Some(c) = cascades.get_mut(*id) {
+                if let Some(c) = guard.get_mut(id) {
                     c.status = CascadeStatus::Paused;
                 }
             }
         }
 
-        // Step 3: Restore state (placeholder — in production this replays state)
-        // Step 4: Verify coherence (placeholder)
-        // Step 5: Resume safe cascades, escalate unsafe
-        let mut resumed = 0;
-        let mut escalated = 0;
-        let cascades = self.cascades.read().unwrap();
-        for id in &affected {
-            if let Some(c) = cascades.get(id) {
-                // Simulate coherence check: if depth < 5 → safe, else escalate
-                if c.depth < 5 {
-                    resumed += 1;
-                } else {
-                    escalated += 1;
+        // Step 3: Count safe vs escalated (read-only)
+        let (resumed, escalated) = {
+            let guard = self.cascades.read().unwrap();
+            let mut resumed = 0usize;
+            let mut escalated = 0usize;
+            for id in &affected {
+                if let Some(c) = guard.get(id) {
+                    if c.depth < 5 { resumed += 1; } else { escalated += 1; }
                 }
             }
-        }
-        drop(cascades);
+            (resumed, escalated)
+        };
 
-        // Mark cascades as resumed or escalated
+        // Step 4: Apply final status (write)
         {
-            let mut cascades = self.cascades.write().unwrap();
+            let mut guard = self.cascades.write().unwrap();
             for id in &affected {
-                if let Some(c) = cascades.get_mut(*id) {
+                if let Some(c) = guard.get_mut(id) {
                     c.status = if escalated > 0 && c.depth >= 5 {
                         CascadeStatus::Escalated
                     } else {
@@ -204,13 +205,14 @@ impl CascadeManager {
 
         RollbackResult {
             success: true,
-            rollback_point_id: target_state.into(),
+            rollback_point_id: rollback_id,
             cascades_paused: affected.len(),
             cascades_resumed: resumed,
             cascades_escalated: escalated,
             error: None,
         }
     }
+
 
     /// Create a rollback point for a cascade
     pub fn create_rollback_point(

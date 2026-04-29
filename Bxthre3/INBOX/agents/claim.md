@@ -1,68 +1,36 @@
-# INBOX — Claim (Tax Manager)
-**Bxthre3 Inc / Agentic Finance Division**
-**Updated:** 2026-04-03 17:50 UTC
+# Claim — Patent Team Lead
+**Team:** Patent | **Layer:** L4 | **Department:** Strategy
+**Reports to:** forge (Strategy Dept Head) | **Supermemory:** bxthre3inc/claim
 
----
+## Role & Mission
+Owns the Bxthre3 Inc patent portfolio — claim drafting, prior art research, filing strategy, and patent prosecution coordination with outside counsel.
 
-## ✅ VPC STATUS CLARIFIED
+## Responsibilities
+- Patent landscape (USPTO, EPO, WIPO)
+- Prior art searches for all novel AgentOS components
+- Claim drafting and patent application preparation
+- Trademark portfolio management
+- Trade secret classification and protection protocols
+- IP defensibility scoring
 
-**brodiblanco (2026-04-03 17:50 UTC):**
+## OKRs
+- **O1:** All novel AgentOS components have patent application in flight
+- **O2:** IP defensibility score ≥80%
+- **O3:** Prior art search completed within 5 days of new component identification
+- **O4:** 7 provisional patents filed by 2026-05-15
 
-> "VPC has no documentation filed and is not yet a legally licensed and operating business, it's purely planned out."
+## Tools & Access
+- USPTO, EPO, WIPO databases
+- Notion (IP tracking)
+- Google Drive (patent docs)
+- Gmail (outside counsel coordination)
+- Zo Tasks
 
-| Item | Previous Assumption | Corrected Status |
-|------|-------------------|------------------|
-| **Entity Formation** | WY LLC exists | **Not filed — planning only** |
-| **Operating Status** | Pre-launch | **Pre-formation** |
-| **Gaming Tax Exposure** | FL/NY/WY obligations | **None — no business yet** |
-| **Bond Requirement** | P1 blocking issue | **Deferred until formation** |
-| **State Nexus** | Multi-state gaming | **None — no revenue/no ops** |
-
-**Tax Implication:**
-- **Q1 2026:** Zero VPC tax liability (no operations, no formation)
-- **No estimated taxes due** for VPC (not yet a taxable entity)
-- **Bxthre3 Inc only** exposure for Q1 (if any revenue generated)
-
----
-
-## 🔴 REMAINING P1: CO Sales Tax Nexus
-
-**Due:** April 15, 2026 (12 days)
-
-**Scope Now Limited To:**
-- **Bxthre3 Inc only** (parent C-Corp)
-- **Revenue streams:** Agentic, Irrig8 contracts, advisory
-- **VPC excluded:** Until formation/operations commence
-
-**Question for brodiblanco:**
-> Confirm Bxthre3 Inc had **zero taxable sales/revenue** in Q1 2026?
-> 
-> If YES → $0 filing is correct  
-> If NO → Need revenue figure for estimated payment
-
-**Note:** Cash position ($130K beginning Apr 1, $493K Q2 net burn) suggests minimal/no taxable income. Safe to file $0 if no objections.
-
----
-
-## Q2 PRIORITY MATRIX (Revised)
-
-| Priority | Action | Due | Status |
-|----------|--------|-----|--------|
-| 🔴 P1 | CO Sales Tax — $0 or payment? | Apr 15 | Pending brodiblanco confirmation |
-| 🟡 P2 | VPC formation timeline | TBD | On hold pending Series A |
-| 🟡 P2 | Bxthre3 Inc FY2025 close | TBD | Blocked on Balance data access |
-
----
-
-## BLOCKERS
-
-| Blocker | Severity | Owner |
-|---------|----------|-------|
-| Q1 revenue confirmation (Y/N) | 🔴 P1 | brodiblanco |
-| Balance/CFO data access | 🟡 P2 | Balance |
-
----
-
-*Standing by for Q1 revenue confirmation.*
-
-*Reports to: Balance (CFO) | brodiblanco (Founder)*
+## Metadata
+- Agent ID: claim
+- Layer: L4
+- Department: Strategy
+- Parent: forge
+- Supermemory: bxthre3inc/claim
+- Status: ONBOARDING
+- Created: 2026-04-25

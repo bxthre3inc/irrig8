@@ -1,0 +1,290 @@
+\section{The Bailout Protocol}
+\label{sec:bailout}
+
+The Bailout Protocol is the failover mechanism of the \bxthree{} Framework's \bounds{} layer — the architectural guarantee that no condition ever leaves the agent network without a human in the loop. It is not an optional exception handler, a recovery routine, or a graceful degradation strategy. It is a structurally invariant pathway that supersedes all machine actors when the conditions for its activation are met. Every node in the \bxthree{} agent network is required to implement the protocol; no node may opt out, override, or reconfigure it. This invariance is what makes the protocol a fail-safe in the formal sense: its activation does not depend on the continued correct functioning of any node in the chain, including the node that triggered it.
+
+% ---------------------------------------------------------------
+\subsection{Overview and Motivation}
+\label{sec:bailout-overview}
+
+When a node's \bounds{} layer encounters a condition that exceeds its provisioned resolution capacity — a novel situation, an ambiguous directive, a value trade-off that the node is not authorized to resolve — the \bounds{} layer does not attempt to reason its way to a resolution. The \bounds{} layer is an envelope constraint engine, not a reasoning engine; its function is to detect constraint violations, not to resolve them. The node initiates the Bailout Protocol when it recognizes that the condition triggering it falls outside the node's operational envelope. At this point, the node transitions to a holding state and awaits human resolution.
+
+The protocol is designed around a single operational principle: \textbf{a machine actor may not be the terminal resolution point for any condition it cannot itself resolve}. This principle is non-negotiable and is enforced architecturally, not programmatically. It is implemented as a state machine with a defined set of states, formal transition conditions, and a mandatory escalation pathway that cannot be intercepted by any machine actor in the network. The bypass mechanism — the structural property that allows the protocol to override all machine actors — is described in \S\ref{sec:bypass}.
+
+The protocol is not a form of human-in-the-loop as ratification (where a human reviews and approves a machine's proposed action). It is HITL as escalation endpoint: the human is asked to supply a resolution when the machine has exhausted its provisioned capacity. This distinction is architecturally significant, as it determines when and why the human is brought into the loop. In a ratification model, the human is in the loop to add epistemic redundancy to a decision the machine is capable of making. In an escalation model — the model adopted here — the human is in the loop because the machine is structurally incapable of making the decision in question.
+
+% ---------------------------------------------------------------
+\subsection{State Machine Formalism}
+\label{sec:state-machine}
+
+The Bailout Protocol is formally defined as a deterministic state machine $M = (S, s_0, \Sigma, T, s_f)$ where:
+
+\begin{itemize}
+\item $S = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$ is the finite set of protocol states.
+\item $s_0 = \text{IDLE}$ is the initial state.
+\item $\Sigma$ is the input alphabet (events and conditions defined in \S\ref{sec:alphabet}).
+\item $T: S \times \Sigma \rightarrow S$ is the total transition function.
+\item $s_f = \text{RESOLVED}$ is the terminal absorbing state.
+\end{itemize}
+
+All states except \text{RESOLVED} are non-absorbing; the protocol reaches $s_f$ only upon explicit human resolution or a system-level abort. The state machine is deterministic: for any $(s, \sigma) \in S \times \Sigma$, $T(s, \sigma)$ is defined uniquely.
+
+% ---------------------------------------------------------------
+\subsubsection{State Definitions}
+\label{sec:state-definitions}
+
+\begin{description}
+\item[IDLE] The node is operating within its provisioned envelope. No exceptional condition is active. The node executes nominal operations and monitors its \bounds{} layer continuously.
+
+\item[BOUNDED] The node has detected a condition that requires semantic evaluation — a directive or subdirective whose intent alignment is uncertain, a factual claim whose ledger correspondence is unverifiable locally, or an operational boundary that is approaching but has not been exceeded. The node has not exceeded its envelope; it is operating in a constrained mode where additional guardrails are active. No escalation is triggered at this state.
+
+\item[BAIL\_PENDING] The node's \bounds{} layer has determined that a condition has exceeded the node's provisioned resolution capacity. The node has entered a holding state: it has suspended all pending actions that could propagate the exceptional condition, and it has generated and sealed a diagnostic package containing the full context necessary for human resolution. The protocol is now awaiting escalation execution.
+
+\item[ESCALATING] The diagnostic package has been transmitted to the human anchor and the node is awaiting human acknowledgment. The node is in a suspended state: no new actions may be initiated, and no pending actions that are not already committed may proceed. The escalation pathway is active and cannot be interrupted by any machine actor.
+
+\item[HUMAN\_ACKNOWLEDGED] The human anchor has received and acknowledged the diagnostic package. The system is awaiting the human's resolution directive. The node remains in a suspended state. No machine actor may proceed until the human provides a resolution.
+
+\item[RESOLVED] The human anchor has supplied a resolution directive. The protocol has completed its execution. All suspended actions are resolved per the human's directive. The state machine returns to this absorbing state and the node resumes nominal operation under the \bounds{} layer's updated constraints.
+\end{description}
+
+% ---------------------------------------------------------------
+\subsubsection{Input Alphabet}
+\label{sec:alphabet}
+
+The input alphabet $\Sigma$ consists of the following events and conditions:
+
+\begin{align*}
+\Sigma = \{ 
+  &\texttt{BOUND\_ENTERED},      &&\texttt{ENVELOPE\_EXCEEDED},   &&\texttt{ESCALATION\_SENT}, \\
+  &\texttt{ACK\_RECEIVED},       &&\texttt{RESOLUTION\_RECEIVED}, &&\texttt{TIMEOUT\_EXPIRED}, \\
+  &\texttt{ABORT\_TRIGGERED},    &&\texttt{RECOVERY\_COMPLETE},   &&\texttt{REVISION\_APPLIED}
+\}
+\end{align*}
+
+Each element corresponds to a condition or event observable by the \bounds{} layer during protocol execution. The transition function $T$ is defined for all $s \in S$ and all $\sigma \in \Sigma$, with undefined transitions treated as no-ops (the machine remains in $s$).
+
+% ---------------------------------------------------------------
+\subsection{Transition Conditions}
+\label{sec:transitions}
+
+The transition function $T$ is defined as follows. For each current state $s \in S$ and each input symbol $\sigma \in \Sigma$, the resulting state is given by the rules below.
+
+\begin{table}[h]
+\centering
+\caption{Bailout Protocol State Transition Table}
+\label{tab:transition}
+\begin{tabular}{lcl}
+\toprule
+Current State & Input Symbol & Next State \\
+\midrule
+IDLE & \texttt{BOUND\_ENTERED} & BOUNDED \\
+IDLE & \texttt{ENVELOPE\_EXCEEDED} & BAIL\_PENDING \\
+BOUNDED & \texttt{ENVELOPE\_EXCEEDED} & BAIL\_PENDING \\
+BOUNDED & \texttt{RECOVERY\_COMPLETE} & IDLE \\
+BAIL\_PENDING & \texttt{ESCALATION\_SENT} & ESCALATING \\
+BAIL\_PENDING & \texttt{TIMEOUT\_EXPIRED} & ESCALATING \\
+BAIL\_PENDING & \texttt{ABORT\_TRIGGERED} & RESOLVED \\
+ESCALATING & \texttt{ACK\_RECEIVED} & HUMAN\_ACKNOWLEDGED \\
+ESCALATING & \texttt{TIMEOUT\_EXPIRED} & ESCALATING (re-escalate) \\
+ESCALATING & \texttt{ABORT\_TRIGGERED} & RESOLVED \\
+HUMAN\_ACKNOWLEDGED & \texttt{RESOLUTION\_RECEIVED} & RESOLVED \\
+HUMAN\_ACKNOWLEDGED & \texttt{TIMEOUT\_EXPIRED} & ESCALATING (re-escalate) \\
+RESOLVED & \texttt{REVISION\_APPLIED} & IDLE \\
+RESOLVED & \texttt{RECOVERY\_COMPLETE} & IDLE \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The following invariants hold for all reachable states:
+
+\begin{enumerate}
+\item \textbf{Non-regression.} The protocol never transitions to a prior state except via \texttt{REVISION\_APPLIED} or \texttt{RECOVERY\_COMPLETE}, which represent explicit human resolution or system-level recovery, not regression.
+\item \textbf{Escalation irreversibility.} Once in \text{ESCALATING}, no machine actor may transition the machine back to \text{IDLE}, \text{BOUNDED}, or \text{BAIL\_PENDING}. Only a human may resolve an \text{ESCALATING} state.
+\item \texttt{TIMEOUT\_EXPIRED} while in \text{ESCALATING} re-triggers escalation (re-escalates) rather than advancing the state machine. This ensures that a failure to receive acknowledgment does not silently advance the protocol; the protocol must actively recover via human action.
+\end{enumerate}
+
+% ---------------------------------------------------------------
+\subsection{Bail-Out Trigger Condition}
+\label{sec:trigger}
+
+The bail-out trigger is the formal condition under which the \bounds{} layer initiates the Bailout Protocol by emitting \texttt{ENVELOPE\_EXCEEDED}. This condition is not a behavioral heuristic; it is a structural predicate evaluated against the node's declared operational envelope.
+
+\begin{definition}[Envelope Exceedance]
+\label{def:envelope-exceedance}
+A node's \bounds{} layer emits \texttt{ENVELOPE\_EXCEEDED} if and only if all of the following hold:
+
+\begin{enumerate}
+\item[(E1)] The node has encountered a condition $c$ during execution.
+\item[(E2)] Condition $c$ is not classified as resolvable within the node's provisioned resolution scope $R$.
+\item[(E3)] No alternative node in the agent network has been explicitly delegated resolution authority for $c$ by the human principal.
+\item[(E4)] The node's confidence in its own resolution for $c$ falls below the node's configured confidence threshold $\tau$.
+\end{enumerate}
+
+Formally:
+\[
+\texttt{ENVELOPE\_EXCEEDED} \iff \exists c \colon (E1) \land \neg(E2) \land \neg(E3) \land (conf(c) < \tau)
+\]
+
+where $conf(c)$ denotes the node's self-assessed confidence in resolving $c$, and $R$ is the set of condition types the node is provisioned to resolve autonomously.
+\end{definition}
+
+The trigger condition is evaluated continuously by the \bounds{} layer during node operation. It is not a one-time check at the initiation of an operation; it is evaluated at every decision point where the node's \bounds{} layer is consulted. This ensures that novel conditions arising mid-operation are detected as early as possible, before they propagate further into the agent network.
+
+Conditions that trigger (E2) include but are not limited to: value conflicts between competing objectives, directives that require knowledge the node does not have and cannot acquire autonomously, actions whose consequences exceed the node's impact scope, and situations where the node's factual self-assessment contradicts the Forensic Ledger. The enumeration of condition types in $R$ is defined at node provisioning time and is not modified by the node itself.
+
+The confidence threshold $\tau$ is a per-node configuration parameter that determines the node's self-trust calibration. A node that has demonstrated reliable performance in a given domain may be provisioned with a lower $\tau$ (higher self-trust) for conditions in that domain; a node operating in an unfamiliar domain retains a higher $\tau$ (lower self-trust). $\tau$ is never set to zero: the protocol requires that even a highly trusted node must escalate when its confidence falls below its own threshold, ensuring that self-trust is always epistemically grounded.
+
+% ---------------------------------------------------------------
+\subsection{Escalation Algorithm}
+\label{sec:escalation-algorithm}
+
+Upon emission of \texttt{ENVELOPE\_EXCEEDED}, the node executes the escalation algorithm as defined below. This algorithm is executed atomically by the \bounds{} layer and is not interruptible by any machine actor, including the node's own \purpose{} or \truth{} layers.
+
+\bigskip
+\noindent\textbf{Algorithm 1: Bailout Escalation}
+\begin{algorithmic}
+\State $\id{node\_state} \gets \text{BAIL\_PENDING}$
+\State $\id{package} \gets \text{generate\_diagnostic\_package}(\id{node}, c)$
+\State $\id{package.sealed\_at} \gets \text{timestamp}()$
+\State $\id{package.seal\_hash} \gets \text{SHA256}(\id{package.contents})$
+\State $\id{ledger.write}("BAIL\_TRIGGERED", \id{node.id}, \id{package.seal\_hash})$
+\State $\id{transmission} \gets \text{deliver}(\id{package}, \id{node.human\_anchor})$
+\State $\id{timeout\_timer} \gets \text{start\_timer}(T_{\text{ack}})$
+\State $\id{node\_state} \gets \text{ESCALATING}$
+\State $\id{ledger.write}("ESCALATION\_SENT", \id{node.id}, \id{transmission.id})$
+\State \text{await} $\id{acknowledgment}$ \text{or} $\id{timeout}$
+\State $\id{timeout\_timer.cancel}()$
+\State \text{if} $\id{acknowledgment}$ \text{received}:
+\State \quad $\id{node\_state} \gets \text{HUMAN\_ACKNOWLEDGED}$
+\State \quad $\id{ledger.write}("ACK\_RECEIVED", \id{node.id})$
+\State \quad $\id{resolution} \gets \text{await\_resolution}(\id{node.human\_anchor})$
+\State \quad $\id{ledger.write}("RESOLUTION\_RECEIVED", \id{resolution})$
+\State \quad $\id{node\_state} \gets \text{RESOLVED}$
+\State \quad $\text{apply\_resolution}(\id{resolution})$
+\State \text{else if} $\id{timeout}$:
+\State \quad $\id{re\_escape\_count} \gets \id{re\_escape\_count} + 1$
+\State \quad $\id{ledger.write}("ESCALATION\_TIMEOUT", \id{node.id}, \id{re\_escape\_count})$
+\State \quad $\text{goto step 5}$ \Comment{re-escalate}
+\State $\id{node\_state} \gets \text{IDLE}$
+\end{algorithmic}
+
+\bigskip
+The diagnostic package generated in step 2 contains all information required for the human anchor to understand the context of the exception and formulate a resolution. Its required contents are defined as follows:
+
+\begin{itemize}
+\item \textbf{Condition descriptor:} The nature of $c$, including all available diagnostic context.
+\item \textbf{Ledger excerpt:} The last $k$ relevant Forensic Ledger entries for this node and its parent chain.
+\item \textbf{Parent chain:} The complete delegation chain from the root principal to the current node.
+\item \textbf{Node's self-assessment:} The node's own evaluation of what the correct resolution would be, if it had the authority to act.
+\item \textbf{Alternative actions considered:} Any alternative resolutions the node evaluated and rejected, with the reason for rejection.
+\item \textbf{Seal hash:} SHA-256 hash of the package contents, ensuring tamper-evident transport.
+\end{itemize}
+
+The package is sealed at the node before transmission, ensuring that any tampering during transport is detectable at the receiving end. The Forensic Ledger records the seal hash, establishing a non-repudiable link between the node's report and the ledger entry.
+
+% ---------------------------------------------------------------
+\subsection{Bypass Mechanism}
+\label{sec:bypass}
+
+The bypass mechanism is the structural property that allows the Bailout Protocol to override all machine actors in the network. This property is what distinguishes the protocol from a conventional exception-handling mechanism: it is not a fallback that operates within the agent network's normal hierarchy; it is a structural guarantee that exists outside and above that hierarchy.
+
+\begin{definition}[Protocol Override Invariant]
+\label{def:override-invariant}
+The Bailout Protocol's escalation pathway bypasses all machine actors in the following sense: once \texttt{ENVELOPE\_EXCEEDED} has been emitted, no machine actor — including the triggering node, its parent node, any supervisory node, or any other node in the agent network — may prevent, intercept, delay, or redirect the diagnostic package from reaching the human anchor. The protocol's communication pathway is structurally privileged with respect to all machine actor code paths.
+\end_definition}
+
+This invariant holds because the protocol is implemented at the architectural level of the \bounds{} layer, not within any agent's executable logic. The \bounds{} layer is not a module within an agent — it is a structural layer of the framework that wraps every agent node. The protocol operates through the \bounds{} layer's own structural pathways, which are defined outside the agent's action model. An agent cannot intercept the protocol because the protocol is not transmitted through the agent's action model; it is transmitted through the \bounds{} layer's own escalation channel, which is defined independently of the agent's operational logic.
+
+The bypass mechanism also prevents a parent node from absorbing an exception on behalf of a child node. In conventional hierarchical systems, a parent node may intercept an exception from a child and handle it internally, keeping the exception within the machine actor network. This is an intentional design choice in many systems, as it allows for localized error recovery without requiring human intervention. The \bxthree{} Framework disallows this pattern at the architectural level: the Bailout Protocol is the only permissible exception resolution pathway, and it requires a human. A parent node may assist in the diagnostic packaging or escalate on behalf of the child (the parent acts as the escalation relay for all its children), but the resolution must come from a human. The parent may not substitute its own judgment for the human's.
+
+This design reflects the fail-safe principle from \S\ref{sec:failsafe}: the system's safe state is not contingent on the continued correct functioning of any machine actor. By making the human the only terminal resolution point, the protocol ensures that the system remains under human authority even when the machine actor network is in a degraded or adversarial state.
+
+% ---------------------------------------------------------------
+\subsection{Timeout Handling}
+\label{sec:timeouts}
+
+The Bailout Protocol defines two timeout thresholds that govern escalation behavior:
+
+\begin{itemize}
+\item $T_{\text{ack}}$: The maximum time the node will wait for human acknowledgment of the diagnostic package before re-escalating.
+\item $T_{\text{res}}$: The maximum time the node will wait for a resolution directive after the human has acknowledged the package.
+\end{itemize}
+
+Both timeouts are per-node configuration parameters with system-defined defaults: $T_{\text{ack}}$ defaults to 15 minutes, and $T_{\text{res}}$ defaults to 24 hours. These defaults reflect the operational reality that acknowledgment (a single-button action) is significantly faster than resolution (a potentially complex decision requiring context review). Both thresholds are configurable by the human principal on a per-node or system-wide basis.
+
+\bigskip
+\noindent\textbf{Algorithm 2: Timeout Escalation}
+
+\begin{algorithmic}
+\State \text{on} $\id{timer\_expire}(\id{timer} = T_{\text{ack}})$:
+\State \quad $\id{re\_escape\_count} \gets \id{re\_escape\_count} + 1$
+\State \quad $\id{ledger.write}("ACK\_TIMEOUT\_R", \id{node.id}, \id{re\_escape\_count})$
+\State \quad $\text{system.notify}(\text{ADMIN})$ \Comment{notify operations dashboard}
+\State \quad $\text{if} \id{re\_escape\_count} \geq N_{\text{max}}$:
+\State \quad \quad $\text{emit\_p1\_alert}(\id{node.id}, \text{"Bailout unacknowledged after } N_{\text{max}} \text{ attempts}")$
+\State \quad $\text{deliver}(\id{package}, \id{node.human\_anchor})$ \Comment{re-escalate}
+\State \quad $\text{restart\_timer}(T_{\text{ack}})$
+\State \quad $\id{node\_state} \gets \text{ESCALATING}$
+
+\State \text{on} $\id{timer\_expire}(\id{timer} = T_{\text{res}})$:
+\State \quad $\id{ledger.write}("RES\_TIMEOUT\_R", \id{node.id})$
+\State \quad $\text{system.notify}(\text{ADMIN})$
+\State \quad $\text{system.notify}(\text{HUMAN\_ANCHOR}, \text{"Resolution overdue"})$
+\State \quad $\text{restart\_timer}(T_{\text{res}})$ \Comment{extend deadline, do not re-escalate}
+\end{algorithmic}
+
+\bigskip
+The retry counter $N_{\text{max}}$ is set to 3 by default. Upon reaching $N_{\text{max}}$ re-escalations without acknowledgment, the system emits a P1 alert to the human anchor via the fastest available channel (SMS for P1 alerts per the INBOX routing policy), ensuring that a stalled escalation is never silently abandoned.
+
+Resolution timeouts do not trigger re-escalation; they trigger notification to the human anchor and an automatic deadline extension. This reflects the fact that a human may be actively working on a resolution but requires more time. The protocol does not punish deliberation — it flags the delay and ensures it is visible to the human and to the operations dashboard, but it does not re-escalate or take autonomous recovery action.
+
+When a timeout re-escalation occurs, the protocol does not reset the diagnostic package — it re-transmits the identical package with the same seal hash. This is by design: re-transmitting the same package ensures that the human anchor receives consistent information across all escalation attempts, and the seal hash provides a consistent audit trail linking all attempts to the same triggering event.
+
+% ---------------------------------------------------------------
+\subsection{Resolution Application and Recovery}
+\label{sec:resolution}
+
+When a resolution directive is received from the human anchor, the \bounds{} layer applies it through a deterministic resolution application procedure:
+
+\bigskip
+\noindent\textbf{Algorithm 3: Resolution Application}
+
+\begin{algorithmic}
+\State $\id{resolution} \gets \text{receive\_resolution}(\id{node.human\_anchor})$
+\State $\id{ledger.write}("RESOLUTION\_APPLIED", \id{node.id}, \id{resolution})$
+\State \text{match} $\id{resolution.type}$:
+\State \quad $\text{DIRECTIVE}:$ $\text{execute\_directive}(\id{resolution.action})$
+\State \quad $\text{PARAMETER\_UPDATE}:$ $\text{update\_bounds\_params}(\id{resolution.params})$
+\State \quad $\text{SCOPE\_REDUCTION}:$ $\text{reduce\_node\_scope}(\id{resolution.scope})$
+\State \quad $\text{ABORT}:$ $\text{abort\_node\_operation}(\id{resolution.reason})$
+\State \quad $\text{DELEGATE}:$ $\text{delegate\_to\_node}(\id{resolution.target}, \id{resolution.task})$
+\State $\id{node\_state} \gets \text{RESOLVED}$
+\State \text{if} $\id{resolution.revision\_required}$:
+\State \quad $\text{apply\_revision}(\id{resolution.revision})$
+\State \quad $\id{node\_state} \gets \text{IDLE}$
+\end{algorithmic}
+
+\bigskip
+Resolution types are defined as follows:
+
+\begin{itemize}
+\item \textbf{DIRECTIVE:} The human provides a specific action to be executed by the node. The \bounds{} layer verifies the action is within the node's physical and authorization scope, then executes it.
+\item \textbf{PARAMETER\_UPDATE:} The human updates the node's operational parameters (including the confidence threshold $\tau$), effectively re-provisioning the node's envelope. The node resumes in \text{IDLE} with the updated parameters.
+\item \textbf{SCOPE\_REDUCTION:} The human narrows the node's operational scope in response to the triggering condition. The node resumes in \text{IDLE} with the reduced scope.
+\item \textbf{ABORT:} The human terminates the node's current operation entirely. No recovery path is initiated; the node returns to \text{IDLE} in a quiescent state.
+\item \textbf{DELEGATE:} The human delegates the triggering condition to a different node in the network. The current node resumes in \text{IDLE} with no further involvement.
+\end{itemize}
+
+The resolution type and full contents are recorded in the Forensic Ledger, providing a complete audit trail from the triggering condition through the diagnostic package, the escalation pathway, the human's acknowledgment, and the resolution applied. This audit trail is the primary instrument of accountability for the \bxthree{} Framework: it ensures that every exceptional condition that reached a human was handled by a named human, with a named resolution, at a recorded time.
+
+% ---------------------------------------------------------------
+\subsection{Integration with the Forensic Ledger}
+\label{sec:ledger-integration}
+
+The Bailout Protocol is designed to be recorded, not merely executed. Every state transition, timeout event, re-escalation, and resolution is written to the Forensic Ledger by the \fact{} layer, which operates independently of the protocol's execution logic. This separation is architecturally critical: the protocol's state machine must not depend on the ledger for its execution, because during a bailout the ledger may be receiving high write volumes and the protocol must continue to function correctly regardless.
+
+The ledger entries for the Bailout Protocol follow the same append-only, tamper-evident structure as all other ledger entries. Each entry carries the node's parent pointer, the timestamp, and the seal hash of the associated diagnostic package. Entries are written synchronously during protocol execution — the protocol does not proceed to the next step until the ledger write is confirmed. This ensures that the ledger is never ahead of the protocol's actual execution state; a gap between the two would indicate an incomplete record.
+
+Re-escalation events increment a per-node retry counter that is recorded with each re-escalation ledger entry. This counter provides the audit trail for escalation failure analysis: if a node has required $n$ re-escalations to receive acknowledgment, the ledger will contain $n+1$ entries for that bailout event (initial escalation plus $n$ re-escalations), each with the same diagnostic package seal hash and monotonically increasing retry counter. This structure enables post-hoc analysis of escalation patterns, identification of chronic timeout conditions, and calibration of timeout thresholds per node or per condition type.
+
+The protocol's complete separation from the \bounds{} layer's decision logic — it records the protocol's execution but does not participate in it — is what ensures the protocol's reliability during degraded system states. The \fact{} layer is designed to remain operational even when the agent network is severely degraded; its independence from the agent network's execution state is precisely what makes it a reliable auditor.

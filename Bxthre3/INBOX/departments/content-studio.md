@@ -52,14 +52,14 @@ Own video, podcast, and multimedia content production across all Bxthre3 venture
 ## Standup
 Daily at 8:15 AM
 
-## Last Standup: 2026-04-15 09:05 UTC
+## Last Standup: 2026-04-20 09:10 UTC
 See `Bxthre3/INBOX/agents/reel.md` for full standup log.
 
-**Summary:** 13 tracks not started, 6 blockers. P0 = YC/Techstars videos (awaiting brodiblanco script approval). P1 = Irrig8 content pipeline + VPC channel content. P2 = Starting 5/Zoe content. P3 = Zoe/Bxthre3 corporate content.
+**Summary:** 13 tracks unchanged, 6 blockers all 17+ days stale. No tracks unblocked since 2026-04-17. YC/Techstars submission status [VERIFY]. VPC compliance 17+ days overdue. Deal approval 19+ days stale. Starting 5 pipeline zero targets 26+ days.
 
 **Key blockers:**
-- VPC compliance overdue (13+ days)
-- YC/Techstars script approval (~9 days)
-- Deal approval on Irrig8 sequences (14 days)
-- Starting 5 pipeline targets (0 identified, ~21 days)
+- VPC compliance overdue (17+ days)
+- YC/Techstars script approval (~14 days)
+- Deal approval on Irrig8 sequences (19+ days)
+- Starting 5 pipeline targets (0 identified, 26+ days)
 - Production resource allocation (unallocated)

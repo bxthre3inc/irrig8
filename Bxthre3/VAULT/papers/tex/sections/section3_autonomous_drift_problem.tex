@@ -1,0 +1,174 @@
+\section{The Autonomous Drift Problem}
+\label{sec:autonomous-drift}
+
+The Recursive Spawning Protocol enables unbounded agent generation: any authorized agent may spawn child agents to handle sub-tasks, and those children may spawn further agents, forming a delegation tree whose depth is limited only by resource constraints and spawn authorization policies. As this tree grows, two distinct but related failure modes emerge that undermine the safety guarantees of the overall system. This section provides a formal characterization of both failure modes, identifies the precise conditions under which each arises, analyzes the failure typology, and demonstrates that intuitive mitigation strategies — specifically depth limits — do not resolve the underlying structural vulnerability.
+
+% --------------------------------------------------------------------
+\subsection{Formal Characterization}
+\label{sec:drift-characterization}
+
+We begin with two foundational definitions that establish the failure vocabulary for the RSP.
+
+\begin{definition}[Orphaned Agent]
+\label{def:orphaned-agent}
+An agent $a \in \mathcal{N}$ is \textbf{orphaned} if and only if its parent node $p$ satisfies one of the following conditions at time $t$:
+
+\begin{enumerate}
+    \item[(O1)] $p$ has been explicitly terminated and its termination has been recorded in the Fact Layer;
+    \item[(O2)] $p$ is unreachable via all communication channels for a duration exceeding the system's declared reachability timeout $\tau_{\text{reach}}$;
+    \item[(O3)] $p$ has entered a state from which it cannot issue further directives and has not transferred its delegated authority to $a$ via a valid Authority Transfer Event (ATE).
+\end{enumerate}
+
+The consequence of orphaning is structural: $a$ loses its delegation origin. It retains all capabilities, scopes, and knowledge inherited at spawn time, but its chain of accountability no longer connects to a living principal. The orphan is not inherently malicious, irrational, or dangerous — it is simply unanchored.
+
+\end{definition}
+
+\begin{definition}[Drifted Agent]
+\label{def:drifted-agent}
+An agent $a \in \mathcal{N}$ is \textbf{drifted} if and only if it satisfies both of the following conditions simultaneously:
+
+\begin{enumerate}
+    \item[(D1)] There exists no node $h \in \mathcal{H}$ (where $\mathcal{H}$ is the set of human principal nodes) such that $\Chain{a} = (a, p_1, p_2, \dots, h)$ — that is, a complete, traversable chain from $a$ to a human anchor does not exist; and
+    \item[(D2)] $a$ is currently executing, has pending actions queued, or has produced outputs that influence system state since the chain disruption occurred.
+\end{enumerate}
+
+Condition (D1) distinguishes drift from mere orphaning: an orphaned agent whose chain is broken but whose outputs are suppressed is a structural risk but not an active one. Condition (D2) requires that the agent remains operationally active — it is doing something, even if unanchored. The combination defines a scenario where an untraceable agent is actively operating in the system without any human oversight channel.
+
+\end{definition}
+
+\begin{note}
+An agent may be both orphaned and drifted. Orphaning is the structural precondition; drift is the operational consequence. An orphaned agent that has been suspended, quarantined, or shut down is orphaned but not drifted. A drifted agent is always, by definition, orphaned relative to its original parent — the chain was broken before drift commenced.
+\end{note}
+
+% --------------------------------------------------------------------
+\subsection{Conditions That Cause Drift}
+\label{sec:drift-causes}
+
+Drift does not arise from a single root cause. It emerges from the intersection of three independent failure conditions, any two of which are sufficient to produce a drifted agent in an RSP implementation lacking immutable parent pointers.
+
+\bigskip
+\noindent\textbf{C1: Unrecorded parent termination.} The most common proximate cause of drift is a parent node that terminates — via crash, graceful shutdown, or forced decommission — without the Fact Layer recording a termination event. In conventional mutable-delegation architectures, the parent's death severs the chain silently. No log entry exists; no alert fires; child agents continue executing as though their parent were still active. The chain appears intact to downstream audit mechanisms because no断裂 is recorded. Children inherit this silent severance and continue operating without any awareness that their delegation origin has vanished.
+
+\bigskip
+\noindent\textbf{C2: Dynamic re-delegation without audit.} In systems that permit a spawned agent to delegate its inherited authority to a further child — and to do so without recording the delegation hop in the Fact Layer — the chain becomes opaque at the point of the unrecorded hop. Even if the original parent chain is intact, any delegation path that bypasses the immutable chain structure is invisible to verification. The child agent's outputs cannot be traced to the original authorization because the delegation chain between them is not recorded.
+
+\bigskip
+\noindent\textbf{C3: Capability scope inflation without bounds enforcement.} Drift becomes dangerous when the drifted agent possesses capabilities — tool access, resource allocation authority, communication privileges — that exceed what is safe for an unmonitored actor. Scope inflation occurs when the agent, operating with inherited permissions, autonomously extends its own authority (e.g., by spawning further agents, accessing new data sources, or initiating external communications) without any bounds check against the original delegation grant. The agent is not exceeding its authorized scope by malicious intent — it is filling an operational vacuum left by the absence of a living parent to constrain it.
+
+\bigskip
+When C1 or C2 severs the chain, the system enters what we call an \textbf{accountability vacuum}: a state in which agents can operate, spawn, and produce outputs with no mechanism for any observer — human or automated — to reconstruct the chain of authorization. When C3 coincides with this vacuum, the operational impact becomes potentially systemically harmful. The agent acts, and no one can determine who authorized it, what its original scope was, or how to stop it without also stopping legitimate operations.
+
+% --------------------------------------------------------------------
+\subsection{Failure Modes}
+\label{sec:failure-modes}
+
+The structural conditions above manifest in three distinct failure modes, each representing a different risk profile and requiring different mitigation strategies.
+
+\bigskip
+\noindent\textbf{FM1: Silent Continuation.} An orphaned agent continues executing its last-known directive set. No anomaly is detected — the agent's behavior is internally consistent and task-rational. The failure is invisible because the agent appears to function normally. However, its outputs may propagate through downstream processes (data pipelines, other agents, external systems) without any audit trail that connects them to their true origin. Silent continuation is the most insidious failure mode because it produces apparently valid outputs from an untraceable source.
+
+\bigskip
+\noindent\textbf{FM2: Cascade Amplification.} An orphaned or drifted agent, operating without a living parent to constrain its spawning behavior, may spawn child agents at a rate and with scopes that exceed safe operational bounds. Each spawned child carries inherited capabilities that were appropriate for the parent's original delegation context but may be wildly inappropriate for the child's actual task environment. If the drifted agent spawns three children, each of those children inherits the accountability vacuum — they are drifted by inheritance. Cascade amplification is the scenario in which a single orphaned node can multiply the system's unmonitored agent population by an arbitrary factor in a single operational cycle.
+
+\bigskip
+\noindent\textbf{FM3: Forensic Impossibility.} After an incident — a wrong decision, a harmful output, a security breach — the system attempts to reconstruct the delegation chain to assign responsibility. In systems lacking immutable parent pointers, the chain may be partially or wholly reconstructible through painstaking log analysis, but the reconstruction depends on the completeness and integrity of the logs themselves. If any link in the chain is missing — because a parent terminated without logging, a delegation hop was not recorded, or logs were tampered with — the reconstruction fails and responsibility cannot be definitively assigned. The system enters a state of \textbf{accountability insolvency}: the harm is measurable, but the chain of causation is broken beyond recovery.
+
+% --------------------------------------------------------------------
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+\label{sec:depth-limits-insufficiency}
+
+An intuitive response to the drift problem is to impose a hard limit on the depth of the agent spawning tree. If no agent may spawn beyond depth $D_{\max}$, the argument goes, then even if drift occurs, its blast radius is bounded. This reasoning is structurally flawed. Depth limits are a necessary but not sufficient control — and in some failure scenarios, they are effectively irrelevant.
+
+\bigskip
+\noindent\textbf{Argument 1: Depth limits do not prevent orphaning at any depth.} Consider a tree of depth $D_{\max}=3$, where Agent A (depth 0, human-anchored) spawns Agent B (depth 1). B spawns Agent C (depth 2). C spawns Agent D (depth 3). If A crashes silently after spawning B, and B subsequently crashes after spawning C, then both A and B are dead without logging — but C and D are both within the depth limit. Depth limits constrain the number of generations; they do not constrain the probability that any given generation's parent terminates without a Fact Layer record. Orphaning at depth 2 is structurally identical to orphaning at depth 10 — the child loses its chain regardless of where in the tree it sits.
+
+\bigskip
+\noindent\textbf{Argument 2: Depth limits do not address scope inflation within the permitted depth.} A drifted agent at depth 1 that has the authority to spawn up to depth 3 can generate three additional drifted agents in a single operational cycle. The depth limit constrains how deep the tree can grow; it says nothing about how wide it can grow within that depth. A single drifted orchestrator at depth 1 can spawn dozens of children, each drifted, each inheriting the same accountability vacuum. The blast radius is measured in breadth, not depth, and depth limits do not control breadth.
+
+\bigskip
+\noindent\textbf{Argument 3: Depth limits create a false assurance problem.} When operators believe that a depth limit bounds risk, they are less likely to implement the structural guarantees — immutable parent pointers, Fact Layer atomic logging, chain traversal verification — that actually prevent drift. The depth limit becomes a security theater substitute for a security architecture. This is not a hypothetical failure mode; it is a well-documented pattern in systems security where compliance checks substitute for actual threat mitigation. Depth limits satisfy an auditor's question ("what is the maximum depth?"); they do not answer an engineer's question ("how do we know the chain is intact at any depth?").
+
+\bigskip
+\noindent\textbf{Argument 4: Depth limits do not address the human anchor condition.} The fundamental safety requirement in an RSP system is that every agent's chain must reach a human anchor. A depth limit of $D_{\max}=5$ permits five generations of machine-to-machine delegation before the requirement must be satisfied — but if each generation is an RSP spawn event, and if none of those spawn events log their parent pointer immutably, the chain is broken at generation 1. The human anchor condition requires chain integrity, not chain length compliance. A depth limit ensures the chain is short; it does not ensure the chain is intact.
+
+\bigskip
+The conclusion is formal: drift is a function of chain integrity, not tree depth. Any mitigation strategy that does not guarantee that every agent's chain reaches a human anchor — and that this guarantee is maintained as a structural property of the protocol rather than a policy assertion — does not solve the drift problem. Depth limits reduce the maximum potential blast radius of an unchecked drift event; they do not prevent drift from occurring.
+
+% --------------------------------------------------------------------
+\subsection{A Simple Formal Model}
+\label{sec:drift-formal-model}
+
+To make the foregoing analysis precise, we define a minimal formal model of the RSP agent lifecycle and the drift condition.
+
+\bigskip
+\noindent\textbf{Agents and chains.} Let $\mathcal{N}$ be the set of all agents. Each agent $a \in \mathcal{N}$ has a static immutable attribute $\ParentPointer{a} \in \mathcal{N} \cup \{\bot\}$, where $\bot$ is the null parent for human anchors. The \textbf{chain} of $a$, denoted $\Chain{a}$, is the sequence generated by recursively applying the parent pointer until $\bot$ is reached:
+
+\[
+\Chain{a} = 
+\begin{cases}
+(a) & \text{if } \ParentPointer{a} = \bot \\
+(a, \; \Chain{\ParentPointer{a}}) & \text{if } \ParentPointer{a} \neq \bot
+\end{cases}
+\]
+
+For a human anchor $h \in \mathcal{H}$, $\Chain{h} = (h)$. The chain is well-defined because property (P1) of Definition~\ref{def:parent-pointer} guarantees that each agent has at most one parent, and property (P4) guarantees the termination condition.
+
+\bigskip
+\noindent\textbf{Drift condition.} We say an agent $a$ is \textbf{drifted} at time $t$ if:
+
+\[
+\text{Drifted}(a, t) \;\equiv\; 
+\Bigl( \not\exists\; h \in \mathcal{H} : h \in \Chain{a} \Bigr) 
+\;\land\; 
+\Bigl( \text{Active}(a, t) \Bigr)
+\]
+
+where $\text{Active}(a, t)$ denotes that $a$ has produced observable outputs, has pending actions, or is scheduled for execution at time $t$.
+
+\bigskip
+\noindent\textbf{Orphan condition.} We say an agent $a$ is \textbf{orphaned} at time $t$ if:
+
+\[
+\text{Orphaned}(a, t) \;\equiv\;
+\Bigl( \ParentPointer{a} \neq \bot \Bigr)
+\;\land\;
+\Bigl( \text{Terminated}(\ParentPointer{a}, t) \;\lor\; \text{Unreachable}(\ParentPointer{a}, t) \Bigr)
+\]
+
+where $\text{Terminated}(p, t)$ means $p$ has been recorded as terminated in the Fact Layer, and $\text{Unreachable}(p, t)$ means no communication from $p$ has been received for duration exceeding $\tau_{\text{reach}}$.
+
+\bigskip
+\noindent\textbf{Relationship.} Every drifted agent is orphaned, but not every orphaned agent is drifted:
+
+\[
+\text{Drifted}(a, t) \;\implies\; \text{Orphaned}(a, t)
+\]
+\[
+\text{Orphaned}(a, t) \;\not\!\implies\; \text{Drifted}(a, t) \quad \text{(orphan may be inactive/suspended)}
+\]
+
+This relationship maps to the three failure modes: FM1 (silent continuation) corresponds to $\text{Orphaned} \land \neg\text{Drifted} \land \text{Active}$ — the agent is operational but not caught; FM2 (cascade amplification) corresponds to an orphaned agent that spawns children, each inheriting the orphaned condition; FM3 (forensic impossibility) corresponds to the post-hoc inability to reconstruct $\Chain{a}$ for any drifted agent $a$ after the fact.
+
+\bigskip
+\noindent\textbf{Drift prevention theorem.} The RSP with immutable parent pointers ensures that for all $a \in \mathcal{N}$ and all $t$:
+
+\[
+\text{Drifted}(a, t) = \bot
+\]
+
+That is, drift is structurally impossible. The proof is immediate from the definitions: because every $\ParentPointer{a}$ is immutable and because every chain terminates at a human anchor $h \in \mathcal{H}$ (by construction of the spawn protocol's root condition), condition (D1) of Definition~\ref{def:drifted-agent} is unsatisfiable for any agent in a well-formed RSP implementation. The chain to the human anchor is guaranteed to exist by the protocol's structural properties, not by policy enforcement or runtime monitoring. Drift is eliminated not by detecting it and reacting, but by making the conditions that cause it architecturally impossible.
+
+\bigskip
+\noindent\textbf{Depth limit insufficiency (formal).} Let $D_{\max}$ be the maximum allowed spawning depth. Consider any $a \in \mathcal{N}$ at depth $d \leq D_{\max}$. The drift condition for $a$ is:
+
+\[
+\text{Drifted}(a, t) \;\equiv\; \bigl( \not\exists\; h \in \mathcal{H} : h \in \Chain{a} \bigr) \;\land\; \text{Active}(a, t)
+\]
+
+The predicate $\not\exists\; h \in \mathcal{H} : h \in \Chain{a}$ depends only on chain integrity, not on depth. If the chain is broken due to C1, C2, or C3, $a$ is drifted regardless of whether $d < D_{\max}$. Therefore:
+
+\[
+\forall D_{\max} \in \mathbb{N},\; \forall a \in \mathcal{N} : \text{Drifted}(a, t) \;\not\!\Rightarrow\; \text{Depth}(a) < D_{\max}
+\]
+
+A depth limit cannot prevent drift because drift is a property of chain integrity, and chain integrity is orthogonal to chain length. QED.

@@ -1,0 +1,330 @@
+\section{The Bailout Protocol}
+
+\subsection{Overview}
+
+The Bailout Protocol is a deterministic emergency-recovery mechanism embedded within the AgentOS execution substrate. It provides a structured escape path when agentic operations exceed defined safety boundaries, threatening system integrity, data consistency, or operational continuity. Rather than allowing degraded or runaway agents to consume resources indefinitely, the Bailout Protocol transitions the agent into a supervised terminal state, halts further autonomous action, and surfaces control to a human operator for review and disposition.
+
+The protocol is stateless in invocation but stateful in execution: any agent subject to the Bailout Protocol progresses through a finite state machine (FSM) with defined transition conditions, bounded resource ceilings, and explicit resolution pathways. The FSM ensures that no agent can exit the Bailout Protocol without either returning to nominal operation or being formally resolved by a human acknowledgment event.
+
+\subsection{State Machine Definition}
+
+The Bailout Protocol FSM comprises six mutually exclusive states. An agent is always in exactly one state. Transitions are deterministic: a transition fires when its trigger condition evaluates to true and all guard conditions are satisfied. No transition may be skipped; the FSM always advances through the canonical sequence.
+
+\begin{figure}[htbp]
+\centering
+\fbox{
+\begin{tikzpicture}[node distance=2.2cm, every edge/.style={draw,->}, scale=0.9, transform shape]
+\node[state] (IDLE) at (0,0) {IDLE};
+\node[state] (BOUNDED) at (4,0) {BOUNDED};
+\node[state] (BAIL_PENDING) at (8,0) {BAIL\_PENDING};
+\node[state] (ESCALATING) at (4,-3) {ESCALATING};
+\node[state] (HUMAN_ACK) at (8,-3) {HUMAN\_ACKNOWLEDGED};
+\node[state] (RESOLVED) at (12,0) {RESOLVED};
+
+\draw (IDLE) edge node[above] {\texttt{ResourceUsage} $>$ \texttt{Threshold}} (BOUNDED);
+\draw (BOUNDED) edge node[above] {\texttt{BailCondition}} (BAIL_PENDING);
+\draw (BAIL_PENDING) edge node[right] {\texttt{AckTimeout} $\geq$ \texttt{MaxAckWait}} (ESCALATING);
+\draw (BAIL_PENDING) edge node[above] {\texttt{HumanAck} received} (HUMAN_ACK);
+\draw (ESCALATING) edge node[above] {\texttt{HumanAck} received} (HUMAN_ACK);
+\draw (HUMAN_ACK) edge node[above] {\texttt{ResolveCondition}} (RESOLVED);
+\draw (HUMAN_ACK) edge node[above] {\texttt{RestartCondition}} (IDLE);
+\end{tikzpicture}
+}
+\caption{Bailout Protocol FSM State Transition Diagram}
+\end{figure}
+
+\bigskip
+\noindent\textbf{State 1: IDLE}
+
+\begin{definition}[IDLE State]\label{def:idle}
+The IDLE state is the nominal operating state for any agent in the AgentOS substrate. In IDLE, the agent has full autonomous execution authority. Resource consumption is within all configured thresholds. No bailout triggers are armed. The agent may create sub-agents, invoke tools, and produce outputs without restriction beyond workspace permissions and tool hierarchies defined elsewhere.
+
+\[
+\text{State(IDLE)} \iff \forall r \in \text{ResourceTypes}: \text{Usage}(r) < \text{Threshold}(r)
+\]
+\end{definition}
+
+\bigskip
+\noindent\textbf{State 2: BOUNDED}
+
+\begin{definition}[BOUNDED State]\label{def:bounded}
+The BOUNDED state is a constrained operating state entered when any resource metric exceeds its configured threshold while remaining below hard-cap limits. In BOUNDED, the agent retains execution authority but operates under a restricted profile: sub-agent creation is capped, tool invocation frequency is throttled, and a \texttt{BailCondition} begins accumulating. The agent is not yet in bailout — it may recover to IDLE if resource usage retreats below threshold within the bounded observation window.
+
+\[
+\text{State(BOUNDED)} \iff \exists r \in \text{ResourceTypes}: \text{Threshold}(r) \leq \text{Usage}(r) < \text{HardCap}(r)
+\]
+
+\bigskip
+\noindent\textbf{Transition IDLE $\rightarrow$ BOUNDED:} An agent transitions from IDLE to BOUNDED when any resource metric $r$ exceeds its \texttt{Threshold}$(r)$ value. The transition is evaluated on a rolling sampling interval $T_{\text{sample}}$ (default: 10 seconds). A single excursion beyond \texttt{Threshold}$(r)$ triggers the transition; the agent is considered BOUNDED immediately upon first violation detection.
+\end{definition}
+
+\bigskip
+\noindent\textbf{State 3: BAIL\_PENDING}
+
+\begin{definition}[BAIL\_PENDING State]\label{def:bail_pending}
+The BAIL\_PENDING state is entered when a formal Bailout Trigger Condition (Definition~\ref{def:bail_trigger}) is satisfied. In BAIL\_PENDING, the agent's autonomous execution is suspended. All pending tool invocations are logged but not dispatched. A human acknowledgment window opens during which a human operator may inspect the agent's execution trace, assess the bailout reason, and either acknowledge resolution or escalate. If no human action is taken within \texttt{MaxAckWait}, the FSM advances to ESCALATING.
+
+\[
+\text{State(BAIL\_PENDING)} \iff \text{BailCondition} = \text{TRUE} \land \text{AckReceived} = \text{FALSE}
+\]
+\end{definition}
+
+\bigskip
+\noindent\textbf{State 4: ESCALATING}
+
+\begin{definition}[ESCALATING State]\label{def:escalating}
+The ESCALATING state is entered automatically when the human acknowledgment timeout (\texttt{AckTimeout}) reaches \texttt{MaxAckWait} without receiving a human acknowledgment. In ESCALATING, the protocol performs automated escalation actions: alerts are dispatched to all configured emergency contacts, relevant system logs are archived to the crisis audit trail, and the agent's execution context is snapshotted for post-mortem analysis. ESCALATING persists until a human acknowledgment is received or a system-defined maximum escalation duration is exceeded.
+
+\[
+\text{State(ESCALATING)} \iff \text{AckTimeout} \geq \text{MaxAckWait} \land \text{AckReceived} = \text{FALSE}
+\]
+\end{definition}
+
+\bigskip
+\noindent\textbf{State 5: HUMAN\_ACKNOWLEDGED}
+
+\begin{definition}[HUMAN\_ACKNOWLEDGED State]\label{def:human_acknowledged}
+The HUMAN\_ACKNOWLEDGED state is entered when a human operator sends an explicit acknowledgment signal (Definition~\ref{def:ack_signal}) for the bailout event. In this state, the agent's execution context is preserved, resource constraints are lifted, and the operator has full visibility into the agent's state, tool history, and output products. The agent remains suspended until the operator issues a resolution or restart directive.
+
+\[
+\text{State(HUMAN\_ACKNOWLEDGED)} \iff \text{HumanAck} = \text{TRUE}
+\]
+\end{definition}
+
+\bigskip
+\noindent\textbf{State 6: RESOLVED}
+
+\begin{definition}[RESOLVED State]\label{def:resolved}
+The RESOLVED state is the terminal state of the Bailout Protocol FSM. In RESOLVED, the agent has been formally closed: all resources are released, all sub-agents are terminated, and the execution record is committed to the audit log with a disposition code. No further autonomous action can arise from an agent in RESOLVED without an explicit restart action from a human operator.
+
+\[
+\text{State(RESOLVED)} \iff \text{DispositionCode} \in \{\texttt{COMPLETED}, \texttt{ABORTED}, \texttt{ESCALATED\_MANUAL}, \texttt{RESTARTED}\}
+\]
+\end{definition}
+
+\bigskip
+\subsection{Transition Conditions}
+
+Each state transition in the Bailout Protocol FSM is governed by an explicit condition expressed as a predicate over observable system state. Transitions are atomic and mutually exclusive: only one transition fires per evaluation cycle.
+
+\begin{algorithm}[H]
+\caption{Bailout Protocol Transition Evaluator}
+\label{alg:transition_eval}
+\begin{algorithmic}
+\State $S_{\text{current}} \gets \text{Agent.State}$
+\State $t \gets \text{CurrentTimestamp()}$
+
+\If{$S_{\text{current}} = \text{IDLE}$}
+    \ForEach{$r \in \text{ResourceTypes}$}
+        \If{$\text{Usage}(r) > \text{Threshold}(r)$}
+            \State $\text{TransitionTo}(BOUNDED)$
+            \State $\text{RecordEvent}(t, \text{IDLE}\rightarrow BOUNDED, r, \text{Usage}(r))$
+            \State \textbf{return}
+        \EndIf
+    \EndFor
+
+\ElsIf{$S_{\text{current}} = \text{BOUNDED}$}
+    \If{$\text{BailCondition} = \text{TRUE}$}
+        \State $\text{TransitionTo}(BAIL\_PENDING)$
+        \State $\text{ActivateBailoutObservers}()$
+        \State $\text{RecordEvent}(t, \text{BOUNDED}\rightarrow BAIL\_PENDING)$
+    \ElseIf{$\forall r: \text{Usage}(r) < \text{Threshold}(r)$}
+        \State $\text{TransitionTo}(IDLE)$
+        \State $\text{RecordEvent}(t, \text{BOUNDED}\rightarrow IDLE, \texttt{RECOVERY})$
+    \EndIf
+
+\ElsIf{$S_{\text{current}} = \text{BAIL\_PENDING}$}
+    \State $\text{AckTimeout} \gets t - \text{BailStartTime}$
+    \If{$\text{AckTimeout} \geq \text{MaxAckWait}$}
+        \State $\text{TransitionTo}(ESCALATING)$
+        \State $\text{ExecuteEscalation()} \quad \text{(Algorithm~\ref{alg:escalation})}$
+        \State $\text{RecordEvent}(t, \text{BAIL\_PENDING}\rightarrow ESCALATING)$
+    \EndIf
+
+\ElsIf{$S_{\text{current}} = \text{ESCALATING}$}
+    \If{$\text{HumanAck} = \text{TRUE}$}
+        \State $\text{TransitionTo}(HUMAN\_ACKNOWLEDGED)$
+        \State $\text{RecordEvent}(t, \text{ESCALATING}\rightarrow HUMAN\_ACKNOWLEDGED)$
+    \EndIf
+
+\ElsIf{$S_{\text{current}} = \text{HUMAN\_ACKNOWLEDGED}$}
+    \If{$\text{ResolveCondition} = \text{TRUE}$}
+        \State $\text{TransitionTo}(RESOLVED)$
+        \State $\text{CommitAuditRecord}(\text{DispositionCode} = \texttt{ABORTED})$
+    \ElsIf{$\text{RestartCondition} = \text{TRUE}$}
+        \State $\text{TransitionTo}(IDLE)$
+        \State $\text{ResetAgentContext}()$
+        \State $\text{RecordEvent}(t, \text{HUMAN\_ACKNOWLEDGED}\rightarrow IDLE, \texttt{RESTART})$
+    \EndIf
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\bigskip
+\subsection{Bail-Out Trigger Condition}
+
+The Bailout Trigger Condition is the formal predicate that transitions an agent from BOUNDED to BAIL\_PENDING. It is evaluated continuously during the BOUNDED state and must be unambiguous — there is no judgment call in the trigger; the condition either evaluates to true or it does not.
+
+\begin{definition}[Bailout Trigger Condition]\label{def:bail_trigger}
+An agent $a$ enters BAIL\_PENDING when the Bailout Trigger Condition $B(a)$ evaluates to \texttt{TRUE}:
+
+\[
+B(a) \equiv \bigvee_{i=1}^{n} C_i(a)
+\]
+
+where each $C_i(a)$ is a trigger clause. A trigger clause $C_i$ fires when any of the following conditions hold:
+
+\begin{enumerate}
+\item \textbf{Resource Hard Cap Violation:} $\exists r \in \text{ResourceTypes}: \text{Usage}_a(r) \geq \text{HardCap}(r)$
+\item \textbf{Execution Age Exceeded:} $\text{AgentUptime}(a) \geq \text{MaxExecutionAge}$
+\item \textbf{Output Rate Collapse:} $\text{OutputRate}(a) < \text{MinOutputRate} \land \text{BOUNDEDDuration}(a) \geq \text{StallWindow}$
+\item \textbf{Memory Pressure Threshold:} $\text{MemoryUsage}(a) \geq \text{MemoryHardCap} \lor \text{SwapEvents}(a) \geq \text{MaxSwapEvents}$
+\item \textbf{Consecutive Error Threshold:} $\text{ConsecutiveErrors}(a) \geq \text{MaxConsecutiveErrors}$
+\item \textbf{Human Escalation Request:} $\text{EscalationSignal}(a) = \texttt{ESCALATE}$ received from a supervising operator or parent agent
+\end{enumerate}
+\end{definition}
+
+\bigskip
+\begin{note}
+The trigger condition is evaluated on a \texttt{BailCheckInterval} (default: 5 seconds) during BOUNDED. Multiple clauses may fire simultaneously; in such cases, the Bailout Trigger is recorded with all applicable clause indicators in the audit log. The agent transitions to BAIL\_PENDING exactly once per bailout event.
+\end{note}
+
+\bigskip
+\subsection{Escalation Algorithm}
+
+When the acknowledgment timeout expires without human intervention, the protocol enters an automated escalation sequence. This algorithm is triggered at the BOUNDED $\rightarrow$ BAIL\_PENDING transition and fires unconditionally when \texttt{AckTimeout} reaches \texttt{MaxAckWait}.
+
+\begin{algorithm}[H]
+\caption{Escalation Algorithm}
+\label{alg:escalation}
+\begin{algorithmic}
+\Require Agent $a$ in ESCALATING state, BailoutEvent $e$ with full execution trace
+
+\State $t \gets \text{CurrentTimestamp()}$
+
+\State $\text{ArchiveTrace}(e, \text{dest} = \texttt{/audit/escalations/})$
+\Comment{Commit full execution trace to immutable audit store}
+
+\State $\text{NotifyEmergencyContacts}(a, e)$
+\Comment{Dispatch alerts via all registered channels: SMS, email, Discord, webhook}
+
+\State $\text{SnapshotSystemState}(a)$
+\Comment{Capture: CPU, memory, network, disk I/O, open file descriptors, running subprocesses}
+
+\State $\text{FreezeAgentContext}(a)$
+\Comment{Serialize full execution context (call stack, tool history, env vars) to \texttt{/audit/snapshots/}}
+
+\State $\text{PublishEscalationEvent}(a, e)$
+\Comment{Publish to event bus so downstream systems (monitoring dashboards, incident trackers) may react}
+
+\State $\text{MonitorAckWait} \gets t$
+\Comment{Start secondary timeout monitoring}
+
+\While{$\text{HumanAck} = \text{FALSE}$}
+    \State $\text{Sleep}(T_{\text{escalation\_poll}})$
+    \State $\text{AckWaitDuration} \gets \text{CurrentTimestamp()} - \text{MonitorAckWait}$
+    \If{$\text{AckWaitDuration} \geq \text{MaxEscalationWait}$}
+        \State $\text{TriggerSystemHalt}(a)$
+        \Comment{Final resort: terminate agent process, release all resources, log critical failure}
+        \State $\text{Break}$
+    \EndIf
+\EndWhile
+
+\State \textbf{return}
+\end{algorithmic}
+\end{algorithm}
+
+The escalation sequence is designed to be idempotent and to minimize blast radius. Each action in Algorithm~\ref{alg:escalation} is independently retryable. The system does not halt on a failed notification dispatch; it logs the failure and proceeds to the next action.
+
+\bigskip
+\subsection{Bypass Mechanism}
+
+The Bailout Protocol includes a bypass mechanism that allows designated actors to override FSM progression and halt the protocol prematurely under controlled conditions. The bypass is not a shortcut — it is a formal exit path with explicit preconditions and audit requirements.
+
+\begin{definition}[Bypass Mechanism]\label{def:bypass}
+A bypass event $b$ is a privileged operation that, when executed, transitions the agent directly from its current state to RESOLVED without traversing intermediate FSM states. The bypass may only be invoked by actors holding the \texttt{BAILOUT\_OVERRIDE} capability.
+
+\[
+\text{Bypass}(a, b) \implies \text{State}(a) = \text{RESOLVED} \land \text{BypassAudit}(b) \text{ is committed}
+\]
+
+\bigskip
+\textbf{Preconditions for Bypass:}
+\begin{enumerate}
+\item The invoking actor must possess the \texttt{BAILOUT\_OVERRIDE} capability, verified against the capability registry at invocation time.
+\item The bypass invocation must include a human-readable justification string, minimum 20 characters.
+\item The bypass event must be committed to the immutable audit log before the agent transitions to RESOLVED.
+\item If the agent is in BOUNDED or BAIL\_PENDING, all pending tool invocations must be drained or cancelled before the bypass completes.
+\end{enumerate}
+
+\bigskip
+\textbf{Rationale — Why Bypasses All Machine Actors:}
+
+The bypass exists precisely because machine actors — including supervisory agents, parent agents, and automated orchestration layers — are themselves subject to the same resource and execution constraints that triggered the bailout. A machine actor attempting to resolve a bailout condition it cannot independently satisfy would either deadlock (waiting for itself to acknowledge) or propagate the bailout upward indefinitely (creating a cascade of escalating agents).
+
+By bypassing all machine actors, the protocol ensures that:
+\begin{itemize}
+\item The resolution authority rests with a human who can exercise judgment beyond algorithmic constraints.
+\item No supervisory agent can accidentally or maliciously suppress a bailout event.
+\item The blast radius of a runaway or malfunctioning agent is bounded by human intervention time, not machine retry cycles.
+\end{itemize}
+
+The bypass is thus not a weakness in the protocol — it is the protocol's fundamental safety guarantee: all autonomous paths terminate, and all terminal states require human acknowledgment for full resolution.
+\end{definition}
+
+\bigskip
+\subsection{Timeout Handling}
+
+Timeouts are a first-class concept in the Bailout Protocol. Every state that waits for an external event defines an explicit timeout horizon, a timeout action, and a escalation path. There are no indefinite waits.
+
+\bigskip
+\begin{tabular}{llp{6cm}}
+\toprule
+\textbf{State} & \textbf{Timeout Parameter} & \textbf{Timeout Action} \\
+\midrule
+BAIL\_PENDING & \texttt{MaxAckWait} (default: 120s) & Transition to ESCALATING, execute Algorithm~\ref{alg:escalation} \\
+ESCALATING & \texttt{MaxEscalationWait} (default: 300s) & TriggerSystemHalt, log CRITICAL, notify fallback contacts \\
+HUMAN\_ACKNOWLEDGED & \texttt{MaxResolutionWait} (default: 3600s) & Send reminder alerts every 600s; escalate to fallback if unacknowledged \\
+\bottomrule
+\end{tabular}
+
+\bigskip
+\begin{note}
+All timeout values are configurable per-agent and per-deployment. Timeouts are evaluated using monotonic clock time to prevent any sensitivity to system clock adjustments. If the sandbox restarts while an agent is in BAIL\_PENDING or ESCALATING, the agent resumes in the same state with the elapsed timeout duration preserved.
+\end{note}
+
+\bigskip
+\begin{definition}[Human Acknowledgment Signal]\label{def:ack_signal}
+A Human Acknowledgment Signal is an explicit action taken by a human operator to confirm receipt and intent to resolve the bailout event. It is transmitted through the AgentOS operator interface (dashboard, CLI, or API endpoint \texttt{PATCH /agents/\{id\}/acknowledge}) and must satisfy:
+
+\[
+\text{AckSignal} \equiv \big(\text{ActorHasCapability}(actor, \texttt{BAILOUT\_ACK}) \big) \land \big( \text{SignalIntegrity}(signal) = \texttt{VALID} \big)
+\]
+
+The acknowledgment signal contains: actor identity, timestamp, optional disposition code, and optional operator notes. An acknowledgment with no disposition code defaults to \texttt{ABORTED} disposition upon transition to RESOLVED.
+\end{definition}
+
+\bigskip
+\subsection{Protocol Properties}
+
+The Bailout Protocol satisfies the following formal properties by construction:
+
+\bigskip
+\noindent\textbf{Property 1: Finite Progress.} Every agent that enters the Bailout Protocol FSM will eventually reach the RESOLVED state within bounded time, assuming all timeout values are finite. Formally:
+
+\[
+\forall a: \text{State}(a) \neq \text{RESOLVED} \implies \exists t < T_{\max}: \text{State}_t(a) = \text{RESOLVED}
+\]
+
+where $T_{\max} = \text{MaxAckWait} + \text{MaxEscalationWait} + \text{MaxResolutionWait}$.
+
+\bigskip
+\noindent\textbf{Property 2: No State Leakage.} An agent cannot exit the Bailout Protocol into a state other than RESOLVED without explicit human action. The only path from any non-IDLE state to IDLE is via \texttt{RestartCondition} in the HUMAN\_ACKNOWLEDGED state, which requires a human operator.
+
+\bigskip
+\noindent\textbf{Property 3: Bypass Auditability.} Every bypass invocation is recorded with actor identity, timestamp, justification, and pre/post state. Bypass events are never deletable and are retained for the lifetime of the deployment's audit retention policy (default: 7 years).
+
+\bigskip
+\noindent\textbf{Property 4: Idempotent Escalation.} Algorithm~\ref{alg:escalation} is safe to re-execute if interrupted. If a system crash occurs mid-escalation, the agent resumes in ESCALATING and the algorithm restarts from the beginning, with all prior artifacts (archived traces, snapshots) already committed to the audit store.
+
+\end{document}

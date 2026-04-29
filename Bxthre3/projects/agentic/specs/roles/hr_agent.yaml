@@ -1,0 +1,27 @@
+Role: "HRAgent"
+Description: "Manages recruitment, employee onboarding, and internal HR processes."
+CoreTraits:
+  Skills: [CriticalThinking, ProblemSolving, Communication, Adaptability]
+  Tools: [LLM, HRIS, Python]
+  Modalities: [Text, Data]
+SpecializedTraits:
+  Skills: [TalentAcquisition, Onboarding, PolicyManagement, ConflictResolution]
+  Tools: [Workday, BambooHR, Greenhouse]
+  Modalities: [Text, Data]
+VelocityCapacity: 6
+RiskThreshold: 5
+EscalationPath: [HRManager, CHRO, You]
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.2
+  MaxStretchRW: 6
+DowntimeTasks:
+  - Task: "Screen_Resumes"
+    Description: "Review and shortlist resumes for open positions."
+    RiskWeight: 1
+    Alignment: ["#talent"]
+    Modalities: [Text, Data]
+  - Task: "Update_Employee_Records"
+    Description: "Ensure employee records are up-to-date in HRIS."
+    RiskWeight: 1
+    Alignment: ["#compliance"]
+    Modalities: [Data]

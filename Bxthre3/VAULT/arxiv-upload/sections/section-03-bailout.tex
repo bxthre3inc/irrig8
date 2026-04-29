@@ -1,0 +1,349 @@
+% -------------------------------------------------------
+\section{The Bailout Protocol}
+\label{sec:bailout}
+
+\subsection{Problem Statement}
+
+In any autonomous or semi-autonomous system built on the BX3 Framework, there exists a class of system states in which the Bounds Engine cannot resolve a conflict within its authorized constraint envelope, and the Fact Layer cannot execute or refuse execution without upstream guidance. These states arise from: (i) novel input falling outside all defined constraint categories; (ii) conflicting constraint directives that produce a logical impossibility at execution time; (iii) resource exhaustion or environmental conditions that render the planned Fact Layer action physically invalid; or (iv) an internal integrity failure in a subordinate node that propagates an unresolvable exception upward.
+
+In conventional autonomous systems, such states either deadlock (the system halts without explanation or recourse) or proceed arbitrarily (the system guesses and acts, orphaning accountability). Neither outcome is acceptable in high-stakes operational environments. The Bailout Protocol provides a deterministic resolution pathway that guarantees every unresolvable state reaches a human decision-maker — and that no action is taken during escalation that could compromise system integrity or create irreversible harm.
+
+The core safety guarantee of the Bailout Protocol is:
+
+\begin{invariant}[Upstream Accountability Invariant]
+\label{inv:upstream-accountability}
+For any BX3 node $a$, if $\texttt{State}(a) \in \{\text{BAIL\_PENDING}, \text{ESCALATING}\}$, then all Fact Layer execution for $a$ is suspended and no actuator command may be issued until $\texttt{State}(a) = \text{RESOLVED}$.
+\end{invariant}
+
+This invariant holds unconditionally. It is not a preference or a best practice — it is a physical constraint enforced by the Fact Layer of the node in question. No Bounds Engine, no subordinate actor, and no external process can override Invariant~\ref{inv:upstream-accountability} while the system holds the BAIL\_PENDING or ESCALATING state.
+
+% ---------------------------------------------------
+\subsection{State Machine Definition}
+
+The Bailout Protocol operates as a deterministic finite state machine (DFSM) over the state space $\mathcal{S} = \{\text{IDLE}, \text{BOUNDED}, \text{BAIL\_PENDING}, \text{ESCALATING}, \text{HUMAN\_ACKNOWLEDGED}, \text{RESOLVED}\}$. Every BX3 node maintains a state variable $\texttt{State}: \mathcal{N} \rightarrow \mathcal{S}$ where $\mathcal{N}$ is the set of all nodes in the system. Transitions are triggered by events and are governed by conditions that are both necessary and sufficient. There are no probabilistic transitions.
+
+\begin{definition}[Bailout State Space]
+\label{def:bailout-state-space}
+The six permissible states of the Bailout Protocol state machine are defined as follows:
+
+\begin{itemize}[noitemsep]
+    \item[\textbf{IDLE:}] The node has no active task or workload. It is monitoring for inbound events and has not entered a bounded reasoning cycle. The Fact Layer is not engaged.
+    \item[\textbf{BOUNDED:}] The node is actively executing within its authorized constraint envelope. The Bounds Engine is processing, the Fact Layer is engaged in allowed operations, and no exception has been raised. This is the nominal operating state for any active node.
+    \item[\textbf{BAIL\_PENDING:}] The node has encountered a condition it cannot resolve within its authorized bounds. A bail-out trigger has fired. The Fact Layer is suspended (per Invariant~\ref{inv:upstream-accountability}), and the escalation pathway is being determined. No execution proceeds during this state.
+    \item[\textbf{ESCALATING:}] The node has identified its nearest accountable ancestor but has not yet received confirmation that the escalation has been received and is under human review. The escalation notification is in transit or queued.
+    \item[\textbf{HUMAN\_ACKNOWLEDGED:}] The nearest Purpose Layer ancestor has confirmed human receipt and review of the escalation. The human is actively engaged. No autonomous execution resumes until the human provides a directive.
+    \item[\textbf{RESOLVED:}] The human has issued a binding directive that resolves the triggering condition. The directive is logged, the node's constraint state is updated, and the node transitions back to BOUNDED or IDLE accordingly.
+\end{itemize}
+\end{definition}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    state/.style={circle, draw, minimum size=1.6cm, font=\bfseries\scriptsize},
+    arrow/.style={->, >=stealth', thick},
+    every label/.style={font=\footnotesize}
+]
+\node[state] (IDLE) at (0,0) {IDLE};
+\node[state] (BOUNDED) at (3.5,0) {BOUNDED};
+\node[state] (BAIL) at (7,0) {BAIL\_PENDING};
+\node[state] (ESC) at (10.5,0) {ESCALATING};
+\node[state] (ACK) at (7,-2.8) {HUMAN\_ACKNOWLEDGED};
+\node[state] (RES) at (3.5,-2.8) {RESOLVED};
+
+\draw[arrow] (IDLE) -- (BOUNDED) node[midway, above] {$ev\_task$};
+\draw[arrow] (BOUNDED) -- (BAIL) node[midway, above] {$trig\_bailout$};
+\draw[arrow] (BAIL) -- (ESC) node[midway, above] {$path\_found$};
+\draw[arrow] (ESC) -- (ACK) node[midway, right] {$human\_recv$};
+\draw[arrow] (ACK) -- (RES) node[midway, above] {$directive\_issued$};
+\draw[arrow] (RES) -- (BOUNDED) node[midway, above] {$resume\_task$} ;
+\draw[arrow] (RES) -- (IDLE) node[midway, left] {$ev\_complete$} ;
+\draw[arrow] (BOUNDED) -- (IDLE) node[midway, below] {$ev\_complete$} ;
+\draw[arrow] (ACK) ..Controls+(2.5,-1.5) .. (BOUNDED) node[midway, below, pos=0.3] {$timeout\_hard$} ;
+\end{tikzpicture}
+\caption{Bailout Protocol state machine. Transitions are labeled with events. State IDs: IDLE (0), BOUNDED (1), BAIL\_PENDING (2), ESCALATING (3), HUMAN\_ACKNOWLEDGED (4), RESOLVED (5).}
+\label{fig:bailout-fsm}
+\end{figure}
+
+Each state is assigned a canonical integer identifier for logging and serial protocol encoding:
+
+\begin{equation}
+\label{eq:state-ids}
+\text{StateID}: \mathcal{S} \rightarrow \{0, 1, 2, 3, 4, 5\} = \{
+\text{IDLE} \mapsto 0,\;
+\text{BOUNDED} \mapsto 1,\;
+\text{BAIL\_PENDING} \mapsto 2,\;
+\text{ESCALATING} \mapsto 3,\;
+\text{HUMAN\_ACKNOWLEDGED} \mapsto 4,\;
+\text{RESOLVED} \mapsto 5
+\}
+\end{equation}
+
+% ---------------------------------------------------
+\subsection{Transition Conditions}
+
+Each state transition $T = (s_i, s_j, e, c)$ is defined as a 4-tuple consisting of a source state $s_i$, a destination state $s_j$, an event $e$, and a condition predicate $c$. A transition fires only when the current state is $s_i$, the event $e$ has occurred, and the condition predicate $c$ evaluates to true. This is a deterministic guarded transition model: under identical $(s_i, e, c)$ across two instantiations of the same node, the transition outcome is identical.
+
+\begin{definition}[Transition: IDLE $\rightarrow$ BOUNDED]
+\label{def:trans-idle-bounded}
+\begin{itemize}[noitemsep]
+    \item[\textbf{Event:}] $ev\_task$: A task assignment, inbound event, or scheduled work item arrives at the node.
+    \item[\textbf{Condition:}] $\texttt{State} = \text{IDLE} \land \exists \text{task } t: \text{authorized}(t, \texttt{node})$.
+    \item[\textbf{Action:}] Initialize a bounded reasoning cycle; load constraint envelope from the node's registered Purpose Layer; activate the Fact Layer in monitoring mode.
+    \item[\textbf{Log entry:}] \texttt{BAILOUT\_TRANSITION | 0→1 | ev\_task | node\_id | task\_id}
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Transition: BOUNDED $\rightarrow$ IDLE]
+\label{def:trans-bounded-idle}
+\begin{itemize}[noitemsep]
+    \item[\textbf{Event:}] $ev\_complete$: The active task completes normally with all constraints satisfied and no pending exceptions.
+    \item[\textbf{Condition:}] $\texttt{State} = \text{BOUNDED} \land \text{task\_complete}(\text{current\_task}) = \text{true}$.
+    \item[\textbf{Action:}] Clear the task context; close the Fact Layer monitoring session; log final audit record.
+    \item[\textbf{Log entry:}] \texttt{BAILOUT\_TRANSITION | 1→0 | ev\_complete | node\_id | task\_id}
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Transition: BOUNDED $\rightarrow$ BAIL\_PENDING]
+\label{def:trans-bounded-bail}
+\begin{itemize}[noitemsep]
+    \item[\textbf{Event:}] $trig\_bailout$: A bail-out trigger condition fires within the node (see Section~\ref{sec:bailout-trigger}).
+    \item[\textbf{Condition:}] $\texttt{State} = \text{BOUNDED} \land \text{bailout\_triggered}() = \text{true}$.
+    \item[\textbf{Action:}] Immediately suspend all Fact Layer execution for this node; set $\texttt{FactLayer.SUSPENDED} \leftarrow \text{true}$; compute the escalation path; transition to BAIL\_PENDING.
+    \item[\textbf{Log entry:}] \texttt{BAILOUT\_TRANSITION | 1→2 | trig\_bailout | node\_id | trigger\_signature}
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Transition: BAIL\_PENDING $\rightarrow$ ESCALATING]
+\label{def:trans-bail-escalating}
+\begin{itemize}[noitemsep]
+    \item[\textbf{Event:}] $path\_found$: The escalation path to the nearest accountable ancestor has been successfully computed and verified.
+    \item[\textbf{Condition:}] $\texttt{State} = \text{BAIL\_PENDING} \land \text{escalation\_path} \neq \emptyset \land \text{path\_valid}(\text{escalation\_path}) = \text{true}$.
+    \item[\textbf{Action:}] Dispatch escalation notification to the identified ancestor Purpose Layer; set escalation timestamp; transition to ESCALATING.
+    \item[\textbf{Log entry:}] \texttt{BAILOUT\_TRANSITION | 2→3 | path\_found | node\_id | ancestor\_id | escalation\_id}
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Transition: ESCALATING $\rightarrow$ HUMAN\_ACKNOWLEDGED]
+\label{def:trans-escalating-ack}
+\begin{itemize}[noitemsep]
+    \item[\textbf{Event:}] $human\_recv$: The accountable human at the ancestor Purpose Layer has confirmed receipt and is actively reviewing the escalation.
+    \item[\textbf{Condition:}] $\texttt{State} = \text{ESCALATING} \land \text{ACK\_received}() = \text{true}$.
+    \item[\textbf{Action:}] Record human identity; mark escalation as acknowledged; begin human review timer; transition to HUMAN\_ACKNOWLEDGED.
+    \item[\textbf{Log entry:}] \texttt{BAILOUT\_TRANSITION | 3→4 | human\_recv | node\_id | human\_id | ack\_timestamp}
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Transition: HUMAN\_ACKNOWLEDGED $\rightarrow$ RESOLVED]
+\label{def:trans-ack-resolved}
+\begin{itemize}[noitemsep]
+    \item[\textbf{Event:}] $directive\_issued$: The human has issued a binding resolution directive through the Purpose Layer.
+    \item[\textbf{Condition:}] $\texttt{State} = \text{HUMAN\_ACKNOWLEDGED} \land \text{directive} \neq \emptyset \land \text{directive.valid} = \text{true}$.
+    \item[\textbf{Action:}] Apply the directive to the node's constraint state; log the directive in the Forensic Ledger on all three planes; resume or terminate the task as directed.
+    \item[\textbf{Log entry:}] \texttt{BAILOUT\_TRANSITION | 4→5 | directive\_issued | node\_id | human\_id | directive\_hash}
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Transition: RESOLVED $\rightarrow$ BOUNDED or IDLE]
+\label{def:trans-resolved}
+\begin{itemize}[noitemsep]
+    \item[\textbf{Event:}] $resume\_task$ or $ev\_complete$: After a directive is applied, the node either resumes execution (if the directive specifies continuation) or terminates cleanly (if the directive specifies completion or abandonment).
+    \item[\textbf{Condition:}] $\texttt{State} = \text{RESOLVED}$.
+    \item[\textbf{Action:}] If $\text{directive.resume} = \text{true}$: restore full Fact Layer operation, transition to BOUNDED. Else: clear task context, transition to IDLE.
+    \item[\textbf{Log entry:}] \texttt{BAILOUT\_TRANSITION | 5→1 | resume\_task | node\_id} or \texttt{BAILOUT\_TRANSITION | 5→0 | ev\_complete | node\_id}
+\end{itemize}
+\end{definition}
+
+There is one additional transition that reflects a hard timeout override (Section~\ref{sec:timeout}):
+
+\begin{definition}[Transition: HUMAN\_ACKNOWLEDGED $\rightarrow$ BOUNDED (timeout override)]
+\label{def:trans-timeout-override}
+\begin{itemize}[noitemsep]
+    \item[\textbf{Event:}] $timeout\_hard$: The hard timeout counter expires before a human directive is received.
+    \item[\textbf{Condition:}] $\texttt{State} = \text{HUMAN\_ACKNOWLEDGED} \land \text{HUMAN\_TIMER} = 0$.
+    \item[\textbf{Action:}] Enter lockdown state; suspend all node operations; log a P0 event to the canonical INBOX; await external intervention.
+    \item[\textbf{Log entry:}] \texttt{BAILOUT\_TRANSITION | 4→1\_LOCKDOWN | timeout\_hard | node\_id | elapsed\_ms}
+\end{itemize}
+\end{definition}
+
+% ---------------------------------------------------
+\subsection{Bail-Out Trigger Condition}
+\label{sec:bailout-trigger}
+
+The bail-out trigger is the sole entry point from the nominal BOUNDED state into the escalation pathway. It fires when and only when the node reaches a state $s$ such that the following predicate is true:
+
+\begin{definition}[Bail-Out Trigger Predicate]
+\label{def:bailout-trigger}
+Let $\mathcal{C}$ be the node's authorized constraint set, let $I$ be the current input context, and let $A$ be the set of actions the Bounds Engine has evaluated as feasible given $\mathcal{C}$. The bail-out trigger fires when:
+
+\begin{equation}
+\label{eq:bailout-trigger}
+\phi(I, \mathcal{C}, A) \;=\; \bigl( A = \emptyset \bigr) \;\lor\; \bigl( \exists a \in A: \text{FactLayer.canExecute}(a) = \text{false} \land \text{BoundsEngine.isUnresolvable}(a) = \text{true} \bigr)
+\end{equation}
+
+\noindent where $\phi$ is evaluated at every step of the bounded reasoning cycle. The trigger is instantaneous and non-deferrable: once $\phi = \text{true}$, the node must transition to BAIL\_PENDING within one reasoning cycle, and no further Fact Layer actions may be issued.
+\end{definition}
+
+In plain terms, the trigger fires when either: (1) the Bounds Engine finds no action feasible within the constraint set — the problem is under-constrained relative to available options; or (2) the Bounds Engine identifies a nominally feasible action $a$, but the Fact Layer cannot execute it (e.g., a physical actuator is unavailable, a required resource is absent, or the action violates a hard physical constraint), and the Bounds Engine cannot substitute an alternative. The conjunction of these two conditions means the node is genuinely stuck — it has exhausted its reasoning options and its execution options simultaneously.
+
+The trigger condition is evaluated deterministically and is not subject to probabilistic interpretation. It does not fire on uncertainty, on degraded performance, or on computationally expensive inference — only on the principled impossibility of producing a valid action. This conservative threshold ensures that escalation is targeted and meaningful: every Bailout event represents a genuine boundary condition, not a performance concern.
+
+\begin{note}
+In hybrid human-AI nodes, the trigger condition may also fire when a human operator within the Bounds Engine layer explicitly signals an exception that cannot be resolved autonomously — for example, when a novel ethical scenario falls outside all encoded constraint categories. In such cases, the human operator initiates the trigger by setting $\text{BoundsEngine.isUnresolvable}(a) = \text{true}$ for all candidate actions $a$, and the escalation proceeds identically.
+\end{note}
+
+% ---------------------------------------------------
+\subsection{Escalation Algorithm}
+\label{sec:escalation}
+
+Upon entering BAIL\_PENDING, the node executes the escalation algorithm to identify the nearest accountable ancestor to which the exception should be routed. This algorithm operates over the immutable accountability chain defined in Section~\ref{sec:immutable-parent-pointers} and guarantees termination at the root human node.
+
+\begin{algorithm}[htbp]
+\caption{Escalation Path Computation}
+\label{alg:escalation}
+\begin{enumerate}[noitemsep]
+    \item \textbf{Input:} Node identifier $a$ in state BOUNDED that has triggered the bail-out condition.
+    \item \textbf{Output:} An ordered pair $(\text{ancestor\_id}, \text{escalation\_id})$ identifying the nearest accountable ancestor and a unique escalation event identifier.
+    \item \textbf{Data structures:}
+    \begin{itemize}[noitemsep]
+        \item $\texttt{chain\_cache}$: Ordered list of node identifiers on the accountability chain from $a$ to the root human.
+        \item $\texttt{visited\_set}$: Set of already-evaluated node identifiers to prevent circular traversal.
+        \item $\texttt{candidates}$: Ordered list of candidate ancestors, filtered by Purpose Layer occupancy.
+    \end{itemize}
+    \item \textbf{Procedure:}
+    \begin{enumerate}[noitemsep]
+        \item $\texttt{chain\_cache} \leftarrow \texttt{Chain}(a)$ using Algorithm~\ref{alg:chain-traversal}.
+        \item $\texttt{candidates} \leftarrow []$.
+        \item \textbf{for each} $\texttt{node\_id}$ \textbf{in} $\texttt{chain\_cache}$ \textbf{do}:
+        \begin{enumerate}[noitemsep]
+            \item $\texttt{layer\_type} \leftarrow \texttt{FactLayer.ReadLayerType}(\texttt{node\_id})$.
+            \item \textbf{if} $\texttt{layer\_type} = \text{Purpose Layer}$ \textbf{then}:
+            \begin{enumerate}[noitemsep]
+                \item $\texttt{append}(\texttt{candidates}, \texttt{node\_id})$.
+            \end{enumerate}
+        \end{enumerate}
+        \item \textbf{if} $\texttt{len}(\texttt{candidates}) = 0$ \textbf{then}:
+        \begin{enumerate}[noitemsep]
+            \item \textbf{raise} $\texttt{ESCALATION\_FAILURE}$ \hfill \textit{// No Purpose Layer ancestor found; chain integrity violation.}
+            \item \textbf{log} $\texttt{CHAIN\_INTEGRITY\_FAILURE | node\_id | a}$ to the Forensic Ledger on all three planes.
+            \item \textbf{goto} emergency fallback (Section~\ref{sec:bypass}).
+        \end{enumerate}
+        \item $\texttt{target} \leftarrow \texttt{candidates}[0]$ \hfill \textit{// Nearest Purpose Layer ancestor}.
+        \item $\texttt{escalation\_id} \leftarrow \text{GenerateUUID}()$.
+        \item $\texttt{event\_record} \leftarrow \{
+            \text{id}: \texttt{escalation\_id},
+            \text{source\_node}: a,
+            \text{target\_node}: \texttt{target},
+            \text{timestamp}: \texttt{CLOCK\_NOW()},
+            \text{trigger\_signature}: \texttt{ComputeTriggerSignature}(a),
+            \text{chain\_depth}: \texttt{len}(\texttt{chain\_cache}),
+            \text{bailout\_state\_snapshot}: \texttt{State}(a)
+        \}$.
+        \item \textbf{for each} plane $\in \{$\texttt{PURPOSE}, \texttt{BOUNDS\_ENGINE}, \texttt{FACT}$\}$ \textbf{do}:
+        \begin{enumerate}[noitemsep]
+            \item $\texttt{ForensicLedger.Log}($\texttt{plane}$, \texttt{BAILOUT\_ESCALATION}, \texttt{event\_record}$)$.
+        \end{enumerate}
+        \item $\texttt{DispatchEscalation}(\texttt{target}, \texttt{event\_record})$.
+        \item \textbf{return} $(\texttt{target}, \texttt{escalation\_id})$.
+    \end{enumerate}
+\end{enumerate}
+\end{algorithm}
+
+The algorithm traverses the accountability chain from the triggering node upward, filtering for nodes whose Fact Layer reports a Purpose Layer occupant. The first such node is the nearest accountable ancestor — the most recent node on the chain that has a human actor in its Purpose Layer. This guarantees that escalation always moves to a human decision-maker and never to an intermediate machine-only node.
+
+\begin{note}
+The nearest accountable ancestor is defined as the first node $p$ on the accountability chain $\text{Chain}(a)$ such that $\text{layer\_type}(p) = \text{Purpose Layer}$. Because the chain is finite and the root human node is guaranteed to occupy the Purpose Layer at the chain's terminus, the algorithm is guaranteed to return a non-empty candidate list with probability 1. The escalation path is thus guaranteed to terminate at a human anchor.
+\end{note}
+
+The dispatched escalation notification contains: (i) a unique event identifier for tracking; (ii) the full state snapshot of the node at the time of bailout; (iii) the trigger signature (a deterministic hash of the specific constraint conflict that caused the trigger); (iv) the depth of the accountability chain to give the human reviewer immediate context about where in the hierarchy the problem originated; and (v) all relevant context from the triggering input and the Bounds Engine's attempted resolution steps.
+
+% ---------------------------------------------------
+\subsection{Bypass Mechanism: Why It Bypasses All Machine Actors}
+\label{sec:bypass}
+
+The escalation algorithm bypasses all intermediate machine actors — all Bounds Engine nodes and all Fact Layer nodes that do not contain a human in their Purpose Layer — by design. This is not an implementation choice; it is a direct consequence of the BX3 layer separation and the accountability chain structure.
+
+Consider the alternative: routing the escalation to an intermediate machine node. That machine node would either: (i) resolve the exception autonomously (in which case it should have done so before triggering the bailout — contradicting the definition of the bail-out trigger condition, which fires only when the Bounds Engine is unresolvable); or (ii) escalate further, which adds latency and an additional non-deterministic hop without any benefit, since the machine actor has no greater authority than its Purpose Layer ancestor.
+
+The Bypass Property is formally stated:
+
+\begin{property}[Escalation Bypass]
+\label{prop:bypass}
+For any escalation event $e$ dispatched from node $a$, the set of intermediate nodes $M$ that are bypassed is defined as:
+
+\begin{equation}
+\label{eq:bypass}
+M = \{ m \in \text{Chain}(a) \setminus \{a, \text{ancestor\_id}\} \mid \text{layer\_type}(m) \neq \text{Purpose Layer} \}
+\end{equation}
+
+No message, notification, or request associated with $e$ is routed through any $m \in M$. The escalation is dispatched directly from $a$ to the nearest Purpose Layer ancestor with no machine actor in the transmission path.
+\end{property}
+
+This bypass holds even when the intermediate machine nodes are functioning correctly, are fully operational, and have no fault conditions. The bypass is not a response to machine failure — it is a structural property of the escalation mechanism that holds regardless of machine health. Machine actors are excluded from the escalation path not because they are broken, but because they are not accountability anchors. Routing an accountability exception through a non-accountability actor would create an ambiguous chain of responsibility.
+
+In the degenerate case where the escalation algorithm fails to find any Purpose Layer ancestor (a chain integrity violation detected at line 10 of Algorithm~\ref{alg:escalation}), the system enters the emergency fallback:
+
+\begin{enumerate}[noitemsep]
+    \item The node logs a \texttt{CHAIN\_INTEGRITY\_FAILURE} event on all three planes with full diagnostic context.
+    \item The node enters a hard suspend state: $\texttt{State} \leftarrow \text{BOUNDED\_LOCKDOWN}$, all Fact Layer execution is frozen, and all actuators are disabled.
+    \item A P0 event is dispatched directly to the canonical INBOX at the workspace root, addressed to brodiblanco.
+    \item The node awaits external intervention; no autonomous recovery is attempted.
+\end{enumerate}
+
+This fallback ensures that even in the event of data corruption, chain tampering, or a deep system integrity failure, the system enters a safe state and directly alerts the root human — never an automated fallback that could conceal the failure.
+
+% ---------------------------------------------------
+\subsection{Timeout Handling}
+\label{sec:timeout}
+
+The Bailout Protocol defines two timeout tiers to prevent indefinite hangs and to bound the exposure window during which Fact Layer execution is suspended.
+
+\begin{definition}[Soft Timeout — ESCALATING]
+\label{def:soft-timeout}
+When a node enters the ESCALATING state, a soft timer $\texttt{ESCALATION\_TIMER}$ is initialized to $\tau_{\text{soft}} = 300\,$seconds (configurable per deployment domain). If the node has not received an ACK from the target Purpose Layer ancestor within $\tau_{\text{soft}}$, the system:
+
+\begin{enumerate}[noitemsep]
+    \item Logs a \texttt{TIMEOUT\_SOFT} event to the Forensic Ledger on all three planes.
+    \item Re-dispatches the escalation notification to the next ancestor on the chain (the second-nearest Purpose Layer node).
+    \item Resets $\texttt{ESCALATION\_TIMER}$.
+\end{enumerate}
+
+This retry is performed at most $\kappa_{\text{max}} = 3$ times before the soft timeout is considered exhausted. After $\kappa_{\text{max}}$ retries, the system logs a \texttt{TIMEOUT\_SOFT\_EXHAUSTED} event and transitions to the hard timeout regime.
+\end{definition}
+
+The soft timeout addresses communication failures — dropped notifications, temporarily unavailable ancestors, or network latency — without treating transient issues as structural failures. It provides a bounded retry window that preserves the escalation guarantee while tolerating benign connectivity interruptions.
+
+\begin{definition}[Hard Timeout — HUMAN\_ACKNOWLEDGED]
+\label{def:hard-timeout}
+When a node enters the HUMAN\_ACKNOWLEDGED state (meaning a human has confirmed receipt and is actively reviewing), a hard timer $\texttt{HUMAN\_TIMER}$ is initialized to $\tau_{\text{hard}} = 600\,$seconds (configurable). This timer is not retried. Upon expiration:
+
+\begin{enumerate}[noitemsep]
+    \item The node transitions to BOUNDED\_LOCKDOWN (as per Transition~\ref{def:trans-timeout-override}).
+    \item A P0 event is logged to the canonical INBOX with full diagnostic dump: node state, trigger signature, escalation history, human identity (if known), and elapsed time.
+    \item All Fact Layer operations for this node are suspended until an explicit external reset is issued by the root human.
+    \item The system does not attempt autonomous recovery or reassignment.
+\end{enumerate}
+\end{definition}
+
+The hard timeout is non-negotiable and is enforced by the Fact Layer as a physical constraint: the timer is stored in Fact Layer non-volatile memory, cannot be modified by the Bounds Engine, and drives the lockdown state directly. This ensures that even in the pathological case where a human acknowledges receipt but never issues a directive — due to distraction, medical emergency, or system error — the node does not remain in a suspended state indefinitely.
+
+The timeout values $\tau_{\text{soft}}$ and $\tau_{\text{hard}}$ are deployment parameters and should be set according to the operational requirements of the domain. For agricultural IoT deployments such as Irrig8, typical values are $\tau_{\text{soft}} = 120\,$s and $\tau_{\text{hard}} = 300\,$s, reflecting the real-time nature of irrigation decisions and the need for rapid human engagement. For financial trading systems, a hard timeout of $\tau_{\text{hard}} = 30\,$s may be appropriate given the cost of suspended positions. The protocol does not prescribe absolute values; it prescribes the structural mechanism and the enforcement model.
+
+\begin{note}
+For multi-agent systems where multiple nodes may enter the Bailout Protocol simultaneously, each node maintains an independent timer. Timeout collisions — where multiple nodes timeout simultaneously — are handled by the Purpose Layer's concurrency management. The Forensic Ledger provides the total ordering of events necessary to reconstruct the causal chain in post-hoc analysis.
+\end{note}
+
+% ---------------------------------------------------
+\subsection{Forensic Ledger Integration}
+
+The Bailout Protocol is designed to be fully auditable via the three-plane Forensic Ledger described in Pillar 1. Every state transition, trigger event, escalation dispatch, acknowledgment, directive, and timeout is logged simultaneously on the Purpose, Bounds Engine, and Fact planes. The log entries are cryptographically chained — each entry contains the hash of the previous entry on each plane — making post-hoc tampering detectable.
+
+The canonical log entry format for a Bailout event is:
+
+\begin{verbatim}
+BAILOUT_EVENT | <timestamp> | <node_id> | <state_before>→<state_after>
+  | <trigger_signature> | <escalation_id> | <human_id> | <directive_hash>
+\end{verbatim}
+
+This format supports both real-time monitoring (Purpose Plane dashboards) and post-incident forensic reconstruction (Fact Plane audit trail). Any divergence between the three plane logs — for example, a state transition recorded on the Purpose plane but not on the Fact plane — constitutes a chain integrity failure and triggers the emergency fallback described in Section~\ref{sec:bypass}.
+
+The Bailout Protocol, combined with the Immutable Parent Pointers (Section~\ref{sec:immutable-parent-pointers}) and the Forensic Ledger, constitutes the complete upstream accountability subsystem of the BX3 Framework. Together they guarantee: (i) every exception has a traceable escalation path; (ii) the path terminates at a named human; (iii) all machine actors are bypassed in the escalation; (iv) no execution occurs during escalation; and (v) every event is logged across three independent planes with cryptographic integrity guarantees.

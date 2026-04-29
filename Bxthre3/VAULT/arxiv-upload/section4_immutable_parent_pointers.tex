@@ -1,0 +1,277 @@
+\section{Immutable Parent Pointers}
+\label{sec:immutable-parent-pointers}
+
+The immutable parent pointer is the foundational structural primitive of the Recursive Spawning Protocol. It is the single mechanism that makes the delegation chain a runtime-verifiable artifact rather than a forensic reconstruction, that makes chain integrity a structural guarantee rather than a policy assertion, and that renders all four modes of autonomous drift architecturally impossible regardless of the operational urgency, architectural complexity, or adversarial sophistication of any machine actor in the chain. This section specifies the parent pointer formally, defines the chain traversal operator, establishes the base case for the root human anchor, specifies the immutability enforcement mechanism through the Fact Layer write protocol, describes the Purpose Layer's spawn authorization role, and provides the complete chain traversal algorithm with correctness arguments.
+
+% ---------------------------------------------------------------
+\subsection{Formal Definition of the Parent Pointer}
+\label{sec:parent-pointer-formal}
+
+Let $\mathcal{N}$ be the set of all agent nodes in a \bxthree{} system implementing the Recursive Spawning Protocol, and let $P$ be the set of all Purpose Layer actors. The \emph{parent pointer} $\alpha(n)$ is defined for every node $n \in \mathcal{N}$ as:
+
+\begin{equation}
+\alpha(n) =
+\begin{cases}
+p \in P & \text{if $n$ was spawned by parent $p$} \\
+\bot     & \text{if $n$ is the human root anchor $h$}
+\end{cases}
+\tag{PP-1}
+\end{equation}
+
+The parent pointer is assigned exactly once — at the moment of spawn — and is thereafter constant for the operational lifetime of the node. No mechanism exists, in-band or out-of-band, by which any actor can modify $\alpha(n)$ after initialization. This immutability is not a logical constraint or a coding convention; it is enforced by the Fact Layer at the memory and protocol levels (\S\ref{sec:fact-layer-enforcement}).
+
+The key structural property of $\alpha$ is that it is a total function on $\mathcal{N}$ with range $P \cup \{\bot\}$ and is strictly write-once. The \emph{write-once} property distinguishes it from conventional mutable parent references in multi-agent systems:
+
+\begin{dfn}[Write-Once Function]
+\label{dfn:write-once}
+A function $f: D \rightarrow R$ is \emph{write-once} if there exists exactly one time $t_0$ at which $f(x)$ is assigned for any $x \in D$, and for all $t > t_0$, $f(x) = f_{t_0}(x)$ is invariant under any subsequent operation in the system.
+\end{dfn}
+
+Applied to the parent pointer: for each node $c \in \mathcal{N}$, there is exactly one spawn event at time $t_{\text{spawn}}$ at which $\alpha(c)$ receives its value $p$. For all $t > t_{\text{spawn}}$, $\alpha(c) = p$ holds unconditionally. The Fact Layer records the spawn event atomically and seals the memory envelope containing $\alpha(c)$ before the child node begins execution.
+
+The parent pointer's immutability can be stated formally:
+
+\begin{prop}[Immutability of ParentPointer]
+\label{prop:pp-immutable}
+For any node $c \in \mathcal{N}$ with parent pointer $\alpha(c) = p$ assigned at spawn time $t_0$:
+
+\[
+\forall t > t_0: \alpha_t(c) = p
+\]
+
+No actor — including $p$, any sibling, any Purpose Layer process, the Bounds Engine, the runtime, or $c$ itself — can alter $\alpha(c)$ after $t_0$.
+\end{prop}
+
+This property holds regardless of system state, operational urgency, or the presence of compromised nodes. If it did not hold, the chain integrity guarantee of the Recursive Spawning Protocol would collapse to a policy convention, and autonomous drift would become structurally possible.
+
+% ---------------------------------------------------------------
+\subsection{The Accountability Chain}
+\label{sec:accountability-chain}
+
+The accountability chain of a node is the transitive closure of the parent pointer relation applied to that node, terminating at the human root. It is the structure through which every spawned node is linked to a human principal, and through which exceptions propagate upward during bailout.
+
+\begin{dfn}[Accountability Chain]
+\label{dfn:chain}
+For any agent node $a \in \mathcal{N}$, the \emph{chain} $\Chain(a)$ is defined recursively as:
+
+\begin{equation}
+\Chain(a) =
+\begin{cases}
+\{\,\alpha(a)\,\} \cup \Chain(\alpha(a)) & \text{if } \alpha(a) \neq \bot \\[6pt]
+\{\,\bot\,\}                              & \text{if } \alpha(a) = \bot \quad (\text{root human})
+\end{cases}
+\tag{CH-1}
+\end{equation}
+
+Equivalently, in iterative expansion:
+
+\begin{equation}
+\Chain(a) = \bigl\{\, \alpha(a),\; \alpha^{(2)}(a),\; \alpha^{(3)}(a),\; \dots,\; \alpha^{(k)}(a) \,\bigr\}
+\tag{CH-2}
+\end{equation}
+
+where $\alpha^{(i)}(a)$ denotes the $i$-fold composition of $\alpha$, and $k$ is the smallest integer such that $\alpha^{(k)}(a) = \bot$. The chain includes all ancestors from the immediate parent through the human root, but does \emph{not} include $a$ itself — consistent with the Bailout Protocol's propagation semantics, in which the originating node sends its exception to its parent, not to itself.
+\end{dfn}
+
+The chain includes the parent of $a$ and all ancestors up to and including the human root $h$, where $\alpha(h) = \bot$. The chain of the human root $h$ is $\{\bot\}$ — a singleton containing the null pointer, indicating the terminus.
+
+\begin{dfn}[Chain Depth]
+\label{dfn:chain-depth}
+The \emph{chain depth} of a node $a$, denoted $\depth(a)$, is the number of edges from $a$ to the human root:
+
+\begin{equation}
+\depth(a) = |\Chain(a)| - 1
+\tag{CD-1}
+\end{equation}
+
+The root human $h$ has $\depth(h) = 0$. A node spawned directly by $h$ has $\depth = 1$. A node spawned by that node has $\depth = 2$, and so on.
+\end{dfn}
+
+The chain construction algorithm is derived directly from Definition~\ref{dfn:chain}:
+
+\begin{algorithm}[Chain Construction]
+\label{alg:chain-construction}
+\textsc{BuildChain}(node $a$):
+\begin{tabbing}
+\textbf{Input:} A node $a \in \mathcal{N}$ \\
+\textbf{Output:} An ordered list $C = [p_0, p_1, \ldots, p_k]$ where $p_0 = \alpha(a)$, $p_{i+1} = \alpha(p_i)$, and $\alpha(p_k) = \bot$ (human root reached)
+\end{tabbing}
+\begin{enumerate}
+    \item $C \leftarrow []$
+    \item $p \leftarrow \alpha(a)$
+    \item \textbf{while } $p \neq \bot$ \textbf{do:}
+        \begin{enumerate}
+            \item $C.\text{append}(p)$
+            \item $p \leftarrow \alpha(p)$
+        \end{enumerate}
+    \item \textbf{return } $C$
+\end{enumerate}
+\end{algorithm}
+
+The algorithm terminates because $\alpha$ is a strict partial function: every node has at most one parent, and the root human has $\alpha(h) = \bot$, so iterated application of $\alpha$ must eventually reach $\bot$ within a finite number of steps bounded by the maximum depth $d_{\max}$.
+
+% ---------------------------------------------------------------
+\subsection{Base Case: The Root Human and Null Parent}
+\label{sec:root-human-null-parent}
+
+The root human node $h$ is the sole accountability terminus for every spawn chain in the system. It is structurally distinguished by $\alpha(h) = \bot$ — a null parent pointer that is not a default value or a degenerate case, but a load-bearing structural property.
+
+\begin{dfn}[Human Root Node]
+\label{dfn:human-root}
+The \emph{Human Root Node} $h \in H$ is the unique node in $\mathcal{N}$ satisfying $\alpha(h) = \bot$. It is established through an out-of-band human authentication ceremony at system initialization (e.g., cryptographic key generation under hardware security module control), and no runtime process can manufacture, modify, or delete this credential.
+\end{dfn}
+
+The null parent at the root is the boundary condition that closes the recursion in Definition~\ref{dfn:chain}. Without it, the chain would be partial: some nodes' chains might terminate at a machine actor rather than a human, and autonomous drift would be structurally possible. With it, every chain terminates at a human by definition — this is the Human Root Mandate, and it is architecturally enforced at the runtime level.
+
+The root human carries the following properties:
+
+\begin{enumerate}
+    \item \textbf{Uniqueness per tree.} Each rooted sub-tree has exactly one designated human anchor as its accountability terminus. The framework does not support co-principal roots or peer human principals sharing terminal authority over the same branch.
+    \item \textbf{Non-spawnability.} The human root is not itself a spawned entity. It cannot be created by the spawn mechanism described in \S\ref{sec:spawn-authorization} — it exists by institutional designation at system boot.
+    \item \textbf{Terminus for chain traversal.} When chain traversal reaches a node $p$ such that $\alpha(p) = \bot$, traversal terminates. No machine actor has $\alpha = \bot$; only the human root occupies this state.
+    \item \textbf{Forensic anchor.} Every ledger entry carries a reference to its originating node and implicitly to $h$ through $\Chain(n)$. The human root's null parent is the base case that terminates every cryptographic audit trail.
+\end{enumerate}
+
+The root human node carries a Level 0 credential — the highest trust tier in the \bxthree{} trust model — cryptographically bound to a hardware security module or secure enclave. The existence of this node is a precondition for the entire accountability architecture: every spawn chain must terminate here, or the system enters the Bailout Protocol.
+
+% ---------------------------------------------------------------
+\subsection{Immutability Enforcement at the Fact Layer}
+\label{sec:fact-layer-enforcement}
+
+The Fact Layer is the exclusive enforcement authority for parent pointer immutability. It operates as an isolated process with its own protected memory space, inaccessible to child nodes, the Bounds Engine, and all other system components. This isolation is load-bearing: if the Fact Layer shared memory or process space with any actor capable of issuing write instructions, immutability could be circumvented by a sufficiently privileged actor.
+
+The Fact Layer enforces immutability through three mechanisms applied in concert:
+
+\begin{enumerate}
+    \item[\textbf{F$_1$}] \textbf{Atomic write-once assignment.} When a child node $c$ is spawned by parent $p$, the Purpose Layer authorizes the spawn and the Fact Layer performs the atomic initialization: it creates node $c$, sets $\alpha(c) \leftarrow p$, seals the memory envelope, and appends the spawn event to the forensic ledger $\mathcal{L}$ as a single atomic transaction. There is no intermediate state in which $\alpha(c)$ is null or uninitialized before receiving $p$.
+
+    \item[\textbf{F$_2$}] \textbf{Read-only access at the machine-actor level.} All machine actors — including the Bounds Engine and any administrative process operating outside the Purpose Layer — have read-only access to $\alpha(n)$ for all $n \in \mathcal{N}$. The Fact Layer rejects any write request to any $\alpha$ field that does not originate from the Purpose Layer with a valid human authorization signature. Rejected attempts are logged as protocol violations.
+
+    \item[\textbf{F$_3$}] \textbf{Sealed memory envelopes with cryptographic integrity.} The parent pointer $\alpha(c)$ is stored in a cryptographically sealed memory envelope encrypted with a Fact Layer-exclusive symmetric key. The envelope carries an HMAC-SHA-256 computed over its contents; any modification to the ciphertext invalidates the signature and triggers a protocol violation. After each authorized read, the Fact Layer re-encrypts and re-signs the envelope, preventing replay attacks based on stale plaintext.
+\end{enumerate}
+
+The enforcement guarantee is formally stated:
+
+\begin{equation}
+\forall n \in \mathcal{N},\; \forall t \in \text{runtime}:\quad \alpha_t(n) = \alpha_{t_0}(n)
+\tag{ENF-1}
+\end{equation}
+
+where $t_0$ is the spawn time and $t > t_0$ is any subsequent time. The parent pointer retains its initial value throughout the node's entire operational lifetime. There is no exception, no emergency override, and no administrative bypass — because any override would require Purpose Layer authorization from the human principal, which is precisely the unrepudiable accountability event the immutability constraint is designed to make verifiable.
+
+If any process other than the authorized Fact Layer initialization routine attempts to write to a node's parent pointer field, the Fact Layer: (1) rejects the write and returns an error code, (2) logs the attempt to the forensic ledger with full attribution (source process ID, timestamp, target node, attempted value), (3) emits a bailout trigger to the node's parent and to the Human Accountability Anchor, and (4) enters the Lockdown operational mode per the Training Wheels Protocol. This is the Bailout Trigger for Parent Pointer Modification Attempt.
+
+\begin{dfn}[Modification Resistance]
+\label{dfn:mod-resistance}
+A parent pointer $\alpha(c)$ is \emph{modification-resistant} if and only if: (1) any write to $\alpha(c)$ after initialization requires Fact Layer authorization with Purpose Layer approval and a forensic ledger entry; (2) the write is atomic with respect to the ledger update; and (3) any unauthorized write attempt is rejected, logged, and triggers the Bailout Protocol.
+\end{dfn}
+
+A parent pointer that can be modified after initialization is not a parent pointer in the sense defined by the Recursive Spawning Protocol — it is a mutable reference, and mutable references do not provide the accountability guarantees the protocol requires.
+
+% ---------------------------------------------------------------
+\subsection{Spawn Authorization at the Purpose Layer}
+\label{sec:spawn-authorization}
+
+The Purpose Layer is the exclusive authorization authority for spawn events. It governs two distinct decisions: whether a spawn may occur at all, and what the resulting parent pointer value will be. The parent pointer is not chosen by the parent actor — it is assigned by the Fact Layer upon Purpose Layer authorization, which enforces the separation of authorization (Purpose Layer) from assignment (Fact Layer).
+
+\begin{dfn}[Spawn Authorization Policy]
+\label{dfn:spawn-auth}
+The Purpose Layer maintains a spawn authorization predicate $P_{\text{spawn}}(\text{spawn}(c, p, \sigma_c, t, \phi))$ that evaluates the spawn request and returns \texttt{true} iff all of the following hold:
+
+\begin{enumerate}
+    \item The authorizing actor $p$ is a Purpose Layer actor in \texttt{ACTIVE} state.
+    \item The proposed child node $c$ does not already exist in the system.
+    \item The authorized scope $\sigma_c$ is a strict subset of $p$'s own scope $\sigma_p$ (scope refinement requirement).
+    \item The spawn does not violate the maximum depth bound $d_{\max}$.
+    \item The cryptographic signature $\phi$ verifies against $p$'s Purpose Layer key.
+\end{enumerate}
+\end{dfn}
+
+When $P_{\text{spawn}}$ returns \texttt{true}, the Purpose Layer produces the authorized spawn event tuple and forwards it to the Fact Layer for atomic execution. The resulting $\alpha(c) = p$ is an enforced structural fact: the Fact Layer will not execute a spawn event where the parent field $p$ was not produced by a verified Purpose Layer authorization decision.
+
+The spawn authorization flow proceeds as follows:
+
+\begin{enumerate}
+    \item A child-capable node $p$ submits a spawn request $\texttt{spawn\_request}(c, \sigma_c, t)$ to the Purpose Layer.
+    \item The Purpose Layer evaluates $P_{\text{spawn}}$ against the request and current system state.
+    \item If the predicate returns \texttt{false}, the spawn is rejected and logged with a reason code. The requesting node receives an error.
+    \item If the predicate returns \texttt{true}, the Purpose Layer: (a) generates the cryptographic signature $\phi$ over the spawn request, (b) produces the 5-tuple $\mathrm{spawn}(c, p, \sigma_c, t, \phi)$, (c) sends the tuple to the Fact Layer, and (d) logs the authorization in its operational log.
+    \item The Fact Layer receives the authorized tuple, atomically initializes node $c$ with $\alpha(c) = p$, seals the memory envelope, appends to $\mathcal{L}$, and returns a confirmation to the Purpose Layer.
+    \item The Purpose Layer records the confirmation and notifies $p$ that $c$ is active.
+\end{enumerate}
+
+The child node's Purpose is a \emph{derived} intent, not an independent one: the child carries the parent's Purpose (translated into the child's operational context), and it does not generate its own Purpose from scratch. This derived-Purpose mechanism allows the human root's intent to propagate across arbitrarily deep trees while maintaining a single, unbroken accountability chain.
+
+The spawn authorization model is formally captured:
+
+\begin{equation}
+\text{Spawn}(p, \sigma_c) \implies \exists c:\; \alpha(c) = p \;\land\; \text{Purpose}(c) \subseteq \text{Purpose}(p) \;\land\; \text{FactLayer.record}(\text{spawn-authorized})
+\tag{SP-1}
+\end{equation}
+
+The child $c$ exists if and only if: the parent pointer is set to $p$, the child's Purpose is a proper subset of the parent's Purpose (preventing drift), and the Fact Layer has recorded the authorization. These three conditions are jointly necessary and jointly sufficient for a valid spawn event.
+
+Two consequences follow immediately:
+
+\begin{prop}[Single Parent Assignment]
+\label{prop:single-parent}
+For any node $c$, there exists exactly one $p \in P$ such that $\alpha(c) = p$ for the operational lifetime of $c$. No actor can assign a second parent to $c$, re-parent $c$ to a different actor, or sever $c$'s connection to its original parent.
+\end{prop}
+
+\begin{prop}[Purpose Layer Exclusivity]
+\label{prop:purpose-exclusivity}
+The Purpose Layer is the sole source of parent pointer values. The Fact Layer rejects any spawn event where the parent field $p$ was not produced by a Purpose Layer authorization decision verified by $\phi$.
+\end{prop}
+
+% ---------------------------------------------------------------
+\subsection{Chain Traversal Algorithm}
+\label{sec:chain-traversal}
+
+The accountability chain must be efficiently traversable at runtime — for scheduled audit operations, on-demand verification by external parties, and for exception propagation during bailout. This subsection specifies the chain traversal algorithm, proves its correctness properties, and analyzes its computational complexity.
+
+\begin{algorithm}[Chain Traversal]
+\label{alg:chain-traversal}
+\textsc{GetChain}(node $a$):
+\begin{tabbing}
+\textbf{Input:} A node $a \in \mathcal{N}$ \\
+\textbf{Output:} An ordered list $[p_0, p_1, \ldots, p_k]$ where $p_0 = \alpha(a)$, $p_{i+1} = \alpha(p_i)$, and $\alpha(p_k) = \bot$
+\end{tabbing}
+\begin{enumerate}
+    \item $C \leftarrow []$
+    \item $p \leftarrow \alpha(a)$
+    \item \textbf{while } $p \neq \bot$ \textbf{do:}
+        \begin{enumerate}
+            \item $C.\text{append}(p)$
+            \item $p \leftarrow \alpha(p)$
+        \end{enumerate}
+    \item \textbf{return } $C$
+\end{enumerate}
+\end{algorithm}
+
+The algorithm performs a single-pass walk up the parent pointer chain, collecting nodes until it encounters the null pointer marking the human root. The termination condition is guaranteed by the acyclicity of $\alpha$ and the existence of the human root as the unique node with $\alpha(h) = \bot$.
+
+\begin{prop}[Chain Traversal Correctness]
+\label{prop:chain-traversal-correct}
+For any node $a$, $\Call{GetChain}(a)$ returns an ordered list $[p_0, p_1, \ldots, p_k]$ such that:
+\begin{enumerate}
+    \item $p_0 = \alpha(a)$.
+    \item For each $i \in [0, k-1]$, $p_{i+1} = \alpha(p_i)$.
+    \item $\alpha(p_k) = \bot$ (the human root).
+    \item The list is maximal: no additional node can be prepended while maintaining properties (1) and (2).
+\end{enumerate}
+\end{prop}
+
+\begin{prop}[Bounded Termination]
+\label{prop:bounded-termination}
+$\Call{GetChain}(a)$ terminates within $\depth(a) + 1$ iterations, where $\depth(a)$ is defined in Definition~\ref{dfn:chain-depth}.
+\end{prop}
+
+\begin{prop}[Constant-Time Escalation]
+\label{prop:constant-time}
+The worst-case number of pointer dereferences required to reach a Human Accountability Anchor from any node $a$ is $O(d_{\max})$, independent of the total number of nodes in the system. A system with 10,000 spawned nodes and $d_{\max} = 5$ requires at most six dereferences to reach a human — the same as a system with 10 nodes.
+\end{prop}
+
+Constant-time escalation is a direct consequence of immutable parent pointers combined with depth-bounded spawning. Mutable parent pointers would allow the chain to be extended retroactively, making effective depth potentially unbounded and worst-case escalation time unbounded as well. Immutability is what makes the depth bound a structural guarantee, not merely a policy.
+
+The chain traversal algorithm provides the operational counterpart to the structural immutability guarantee. Together, immutability and traversal make the accountability chain not a policy aspiration but a verifiable, machine-auditable property of the runtime — independently reconstructable by external auditors, regulators, or dispute-resolution processes, without relying on any agent to self-report its own chain.
+

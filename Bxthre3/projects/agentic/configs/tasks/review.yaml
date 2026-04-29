@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Task
+metadata:
+  name: review
+  description: "Comprehensive review of work products"
+spec:
+  role: reviewer
+  inputs:
+    - work_product
+    - requirements
+    - standards
+  outputs:
+    - review_report
+    - approved_status
+    - issues_list
+  steps:
+    - name: initial_assessment
+      description: "Quick scan for obvious issues"
+      tools:
+        - static_analysis
+      parameters:
+        quick_scan: true
+    - name: detailed_review
+      description: "In-depth review of all aspects"
+      tools:
+        - code_analyzer
+        - security_scanner
+      parameters:
+        depth: full
+    - name: compliance_check
+      description: "Verify compliance with standards"
+      tools:
+        - compliance_checker
+      parameters:
+        standards:
+          - PEP8
+          - OWASP
+          - GDPR
+  validation:
+    - name: issue_severity
+      description: "Critical issues must be resolved"
+      threshold: 0
+    - name: compliance_score
+      description: "Must meet minimum compliance standards"
+      threshold: 0.95

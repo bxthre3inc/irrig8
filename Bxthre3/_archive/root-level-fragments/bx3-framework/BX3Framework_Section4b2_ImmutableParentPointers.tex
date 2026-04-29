@@ -1,0 +1,170 @@
+\subsection{Immutable Parent Pointers}\label{sec:immutable-parent-pointers}
+
+\subsubsection{Motivation}\label{sec:parent-pointer-motivation}
+
+Every spawn event creates a directed edge in the accountability tree: the parent node $p$ spawns a child node $c$. The direction of this edge is the direction of delegated authority --- from $p$ to $c$ --- and the edge is the sole mechanism through which the accountability chain is extended. If this edge were mutable --- if the parent of $c$ could be changed after $c$ is provisioned --- then the accountability chain could be retroactively redirected. A node that was spawned under the authority of Human~$h_1$ could be reassigned, at runtime, to appear to have been spawned under the authority of Machine Actor $m_2$. The chain would be rewriteable, and the upstream accountability guarantee would be void.
+
+Parent-pointer immutability is therefore not a hardening choice among several equivalent options --- it is a necessary condition for the accountability chain to be a reliable record. The chain must be append-only in the forward direction (new edges added at spawn) and immutable thereafter (no edge modified after creation). Any other design choice permits the chain to be corrupted after the fact, which defeats the purpose of maintaining it.
+
+The immutability of the parent pointer also interacts with the Bailout Protocol's escalation algorithm. The escalation algorithm traverses the chain $\alpha(n), \alpha(\alpha(n)), \alpha(\alpha(\alpha(n)))$ upward until it reaches a human principal $h(n)$. If any pointer in this chain were mutable, a malicious or malfunctioning machine actor could redirect the chain to terminate at a machine actor rather than a human, short-circuiting the escalation and violating the upstream guarantee. The problem is not merely that the chain could be edited --- it is that the edited chain would appear valid to the escalation algorithm, because the algorithm traverses whatever pointer chain exists at the time of escalation.
+
+Parent-pointer immutability eliminates this attack surface entirely. The chain that exists at node provisioning is the chain that persists for the node's entire operational lifetime. The escalation algorithm traverses a structure that cannot be modified, and the guarantee holds structurally rather than relying on runtime trust in machine actors.
+
+\subsubsection{Formal Definition}\label{sec:parent-pointer-formal}
+
+For every node $n$ in the spawn tree, the parent pointer function $\alpha(n)$ is defined as follows:
+
+\begin{enumerate}\itemsep=0pt
+\item[(\textit{i})] If $n$ is the root node of the spawn tree (the human principal $h(n)$ itself), then $\alpha(n) = \texttt{null}$. The root node has no parent; it is the origin of delegated authority.
+\item[(\textit{ii})] If $n$ is not the root, then $\alpha(n) = p$ where $p$ is the unique node that executed the spawn event creating $n$. This assignment is made atomically at node provisioning and is never modified thereafter.
+\end{enumerate}
+
+The parent pointer assignment is part of the node's immutable structural state, not a field in its mutable operational state. It is stored in the node's \fact{} layer worksheet as a read-only property. The read-only designation is enforced by the \fact{} layer's pre-commit hook, which intercepts any write attempt to this property and rejects it before the write can be committed.
+
+\begin{invariant}[Parent-Pointer Immutability]\label{inv:parent-pointer-immutability}
+For every node $n$ in the spawn tree, the parent pointer $\alpha(n)$ satisfies: $\alpha(n)$ is assigned exactly once at node provisioning and $\forall t > t_{\text{provision}}(n) : \alpha_t(n) = \alpha_{t_{\text{provision}}}(n)$. No machine actor, including the \bounds{} layer, the \purpose{} layer, or any parent or sibling node, may modify $\alpha(n)$ after provisioning.
+\end{invariant}
+
+\subparagraph{Enforcement.} The \fact{} layer's pre-commit hook stores $\alpha(n)$ as a read-only field in the node's structural state record. The field is set once during the provisioning protocol and is never exposed as a writable interface thereafter. Any runtime attempt to write to this field --- regardless of the originating actor, the calling context, or the argument values --- is intercepted, rejected, and recorded in the Forensic Ledger as a \texttt{parent-pointer-write-attempt} event with full attribution of the originating node and actor.
+
+The key enforcement property is that the pre-commit hook operates on the \fact{} layer, which is outside the authority of the \bounds{} and \purpose{} layers. A machine actor operating in the \bounds{} layer cannot invoke a mechanism that would allow it to bypass the \fact{} layer's pre-commit hook, because the \fact{} layer's hook is the gate through which all writes to structural state must pass. The immutability guarantee is therefore enforced by architecture, not by policy.
+
+\subsubsection{The Delegation Chain}\label{sec:delegation-chain}
+
+The delegation chain for a node $n$, denoted $\Chain(n)$, is the set of all parent-child pointer pairs on the path from $n$ to its human anchor $h(n)$:
+
+\begin{equation}
+\Chain(n) \;=\; \ParentPointer(\alpha(n),\, n)\; \cup\; \Chain(\alpha(n))
+\label{eq:delegation-chain}
+\end{equation}
+
+where $\ParentPointer(p, c)$ denotes the unordered pair $\{\,\{p}, {c}\,}\}$ representing the immutable parent-child edge from $p$ to $c$, and $\Chain(\alpha(n))$ is defined recursively until the base case is reached.
+
+\begin{enumerate}\itemsep=0pt
+\item[(\textit{Base case})] If $\alpha(n) = \texttt{null}$ (i.e., $n$ is the human principal), then $\Chain(n) = \emptyset$. The root human has no delegation chain because no authority was delegated \textit{to} the root; the root is the origin of all delegated authority.
+\item[(\textit{Recursive case})] If $\alpha(n) \neq \texttt{null}$, then $\Chain(n) = \ParentPointer(\alpha(n), n) \cup \Chain(\alpha(n))$.
+\end{enumerate}
+
+By the Hierarchy Finiteness Invariant (Invariant~\ref{inv:hierarchy-finiteness}), the depth $d(n) \leq D_{\max}$, so the recursion terminates in at most $D_{\max}$ steps. The chain is therefore always finite.
+
+The chain is stored as an attribute of the node at provisioning, computed by recursively applying Equation~\ref{eq:delegation-chain} from $n$ up to the root. The \fact{} layer performs this computation once, at provisioning time, and stores the result as the node's immutable chain record. The chain is not recomputed at runtime --- it is read from the stored record, which cannot be modified. This design ensures that the chain retrieved during escalation is identical to the chain that existed at provisioning, even if intermediate nodes in the chain have been terminated or modified since provisioning.
+
+The chain record for node $n$ is a tuple:
+
+\begin{equation}
+\ChainRecord(n) = \bigl( n,\; \alpha(n),\; \alpha^{(2)}(n),\; \ldots,\; \alpha^{(k)}(n) = h(n) \bigr)
+\label{eq:chain-record}
+\end{equation}
+
+where $k$ is the depth of $n$ and $\alpha^{(i)}(n)$ denotes the $i$-fold parent-pointer composition (with $\alpha^{(0)}(n) = n$). The chain record can be traversed by any auditor to reconstruct the full delegation path from $h(n)$ to $n$.
+
+\begin{invariant}[Chain Completeness]\label{inv:chain-completeness}
+For every node $n$, the chain record $\ChainRecord(n)$ maintained by the \fact{} layer is complete: it contains exactly the nodes on the path from $n$ to $h(n)$ and no others. No node may be inserted into, removed from, or reordered within $\ChainRecord(n)$ after provisioning.
+\end{invariant}
+
+\subparagraph{Enforcement.} Chain completeness is a consequence of parent-pointer immutability. Since each parent pointer $\alpha(x)$ for any node $x$ on the chain is immutable, the chain constructed by recursive composition of these pointers is also immutable. The \fact{} layer computes $\ChainRecord(n)$ at provisioning by traversing the parent-pointer chain upward until $\alpha^{(k)}(n) = \texttt{null}$, which identifies $h(n)$. The resulting record is stored as part of the node's immutable structural state.
+
+\begin{invariant}[Chain Termination]\label{inv:chain-termination}
+For every node $n$, the chain record $\ChainRecord(n)$ terminates at a human principal $h(n)$. Formally: $\alpha^{(k)}(n) = h(n)$ and $\alpha(h(n)) = \texttt{null}$. There exists no node $n$ for which the chain traverses exclusively machine actors.
+\end{invariant}
+
+\subparagraph{Enforcement.} Chain termination is guaranteed by the spawn authorization procedure (Section~\ref{sec:spawn-authorization}) and by the hierarchical relationship between $\ChainRecord(n)$ and the human anchor invariant. At provisioning, the \fact{} layer verifies that the computed chain terminates at a node whose $\alpha$ is $\texttt{null}$ before committing the node to the spawn tree. The termination node is the designated human principal $h(n)$, whose identity is established at system initialization and cannot be changed.
+
+\subsubsection{Immutability Enforcement: Fact Layer}\label{sec:parent-pointer-fact-layer}
+
+The \fact{} layer enforces parent-pointer immutability through three mechanisms acting in concert: structural storage, pre-commit interception, and forensic recording.
+
+\begin{enumerate}
+\item[(\textit{Structural Storage})] The parent pointer $\alpha(n)$ is stored in the \fact{} layer's structural state record for node $n$, which is architecturally distinct from the node's mutable operational state. The structural state record is never accessible as a writable object to the \bounds{} or \purpose{} layers. It is readable by all layers but writable only by the \fact{} layer itself, and only during the provisioning protocol.
+
+\item[(\textit{Pre-commit Interception})] Every write attempt to the structural state record is intercepted by the \fact{} layer's pre-commit hook before it is committed. The hook evaluates whether the attempted write targets the parent pointer field. If it does, the hook rejects the write immediately and returns a \texttt{WRITE\ REJECTED} status to the calling layer. The rejection is deterministic: there are no circumstances under which the hook permits a write to the parent pointer field.
+
+\item[(\textit{Forensic Recording})] Every rejected write attempt to the parent pointer field is recorded in the Forensic Ledger as a \texttt{parent-pointer-write-rejected} event. The entry includes the timestamp, the identifier of the node whose parent pointer was the target of the write, the identifier of the actor that attempted the write, and the full call stack context. This record enables any auditor to detect attempted modifications to the accountability chain, even if the modifications were not executed.
+\end{enumerate}
+
+The interaction of these three mechanisms ensures that the parent pointer is immutable in practice, not merely in specification. A machine actor that attempts to modify the parent pointer at runtime triggers the pre-commit hook, which rejects the write and records the attempt. The attempt is therefore detectable, attributable, and permanently recorded --- even if it was not executed. This transforms immutability from a policy constraint (which depends on runtime compliance) into a structural constraint (which is enforced regardless of runtime behavior).
+
+\begin{assumption}[Fact Layer Isolation]\label{asm:fact-layer-isolation}
+The \fact{} layer's pre-commit hook cannot be bypassed by any machine actor operating in the \bounds{} or \purpose{} layers, including the node's own \purpose{} layer. This isolation is a structural property of the layer architecture, not a convention or a policy choice.
+\end{assumption}
+
+This assumption is the same as Assumption~1 from the three-layer model (Section~\ref{sec:layer-definitions}) applied specifically to parent-pointer immutability. It states that the enforcement mechanism is outside the authority of the actors it constrains --- which is the necessary condition for enforcement to be reliable.
+
+\subsubsection{Spawn Authorization: Purpose Layer}\label{sec:spawn-authorization}
+
+The \purpose{} layer governs the \textit{creation} of new parent pointer relationships through the spawn authorization procedure. This procedure is invoked whenever a node $p$ proposes to spawn a child node $c$. The \purpose{} layer evaluates whether the proposed spawn is consistent with the human principal's intent and, if so, authorizes the creation of the $\ParentPointer(p, c)$ relationship by issuing a binding directive to the \fact{} layer.
+
+The spawn authorization procedure is as follows:
+
+\begin{enumerate}
+\item[(\textit{Step 1 --- Intent Verification})] The \purpose{} layer verifies that the proposed child node $c$'s operating range $R(c)$ is a proper subset of the parent node $p$'s operating range $R(p)$. This is the Delegation Scope Inheritance constraint (Invariant~\ref{inv:scope-inheritance}) applied to the specific spawn event. The \purpose{} layer does not make a judgment about whether this is appropriate --- it performs a deterministic set comparison.
+
+\item[(\textit{Step 2 --- Depth Verification})] The \purpose{} layer verifies that the proposed depth of $c$ satisfies $d(c) = d(p) + 1 \leq D_{\max}$. This is the Hierarchy Finiteness constraint (Invariant~\ref{inv:hierarchy-finiteness}) applied to the specific spawn event.
+
+\item[(\textit{Step 3 --- Human Anchor Assignment})] The \purpose{} layer assigns the human anchor for $c$ as $h(c) = h(p)$. Because authority is delegated, not originated, the child node's human anchor is the same as the parent's human anchor. This assignment is immutable and is recorded in $c$'s structural state at provisioning. The root human principal $h_{\text{root}}$ is the only node for which $h(n) = n$.
+
+\item[(\textit{Step 4 --- Authorization Directive})] Upon successful verification of Steps 1--3, the \purpose{} layer issues a \texttt{spawn-authorize} directive to the \fact{} layer. The directive includes the parent identifier $p$, the child identifier $c$, the operating range $R(c)$, the depth $d(c)$, and the human anchor $h(c)$. The \fact{} layer commits this information as an atomic entry in the Forensic Ledger and establishes the immutable structural state for $c$.
+\end{enumerate}
+
+The key property of the spawn authorization procedure is that it is \textit{authoritative} but not \textit{executive}. The \purpose{} layer authorizes the creation of the parent pointer, but it is the \fact{} layer that creates it. This separation prevents the \purpose{} layer from circumventing the immutability constraint by attempting to create the pointer directly without going through the provisioning protocol.
+
+The human anchor assignment $h(c) = h(p)$ is critical: it ensures that the delegation chain carries the same human principal at every level. A child node's human anchor is never different from its parent's human anchor, because the child is exercising delegated authority from the same principal. This property is what makes the chain traversal algorithm terminate at a human rather than at a machine actor.
+
+\begin{invariant}[Human Anchor Inheritance]\label{inv:human-anchor-inheritance}
+For every spawn event creating child $c$ from parent $p$, the human anchor satisfies $h(c) = h(p)$. The child node is always under the authority of the same human principal as the parent node.
+\end{invariant}
+
+\subparagraph{Enforcement.} The \purpose{} layer sets $h(c) = h(p)$ as an immutable structural property during the provisioning protocol. The \fact{} layer verifies this assignment before committing the child node and records it in the Forensic Ledger. No mechanism exists by which $h(c)$ can be reassigned after provisioning.
+
+\begin{invariant}[Spawn Authorization Completeness]\label{inv:spawn-auth-completeness}
+No child node $c$ may be created without a valid spawn-authorize directive from the \purpose{} layer of its parent $p$, and no such directive may be issued without satisfying the delegation scope inheritance constraint and the hierarchy finiteness constraint.
+\end{invariant}
+
+\subparagraph{Enforcement.} The \fact{} layer's provisioning protocol rejects any attempt to create a node without a valid spawn-authorize directive. The directive is verified for completeness and correctness before the node's structural state is committed. An incomplete or invalid directive does not result in a partial node creation; it results in a provisioning failure recorded in the Forensic Ledger.
+
+\subsubsection{Chain Traversal Algorithm}\label{sec:chain-traversal-algorithm}
+
+The chain traversal algorithm is the procedure by which the Bailout Protocol's escalation mechanism traverses the parent-pointer chain from a leaf node to its human anchor. The algorithm is executed by the \fact{} layer when the Bailout Protocol issues an escalation trigger for node $n$.
+
+\begin{algorithm}[htbp]
+\caption{Chain Traversal Algorithm for escalation to human anchor $h(n)$}
+\label{alg:chain-traversal}
+\begin{enumerate}\itemsep=0pt
+\item[\textbf{Input:}] Node identifier $n$
+\item[\textbf{Output:}] Human anchor node identifier $h(n)$ and the complete delegation chain $\ChainRecord(n)$
+\item[1.] \textbf{Initialize.} Set $current \leftarrow n$, $\ChainRecord \leftarrow [\,]$, and $step\_count \leftarrow 0$.
+\item[2.] \textbf{Read parent pointer.} Read $\alpha(current)$ from the \fact{} layer's immutable structural state record for $current$. (This read is guaranteed to succeed because every node has a parent pointer field established at provisioning.)
+\item[3.] \textbf{Termination check.} If $\alpha(current) = \texttt{null}$, return $\ChainRecord$ and terminate. The current node is the human principal $h(current)$. (This is the base case: the root human has $\alpha = \texttt{null}$.)
+\item[4.] \textbf{Append to chain record.} Append $current$ to $\ChainRecord$.
+\item[5.] \textbf{Depth bound check.} Increment $step\_count$. If $step\_count > D_{\max}$, abort and emit a \texttt{chain-depth-exceeded} fault to the Forensic Ledger. (This should never occur if Invariant~\ref{inv:hierarchy-finiteness} holds, but the check is present for defensive completeness.)
+\item[6.] \textbf{Ascend.} Set $current \leftarrow \alpha(current)$ and return to Step 2.
+\end{enumerate}
+\end{algorithm}
+
+The algorithm is guaranteed to terminate because the Hierarchy Finiteness Invariant (Invariant~\ref{inv:hierarchy-finiteness}) ensures that the depth of any node is bounded by $D_{\max}$, and the parent-pointer chain from any node terminates at a node with $\alpha = \texttt{null}$ (the human anchor) in at most $D_{\max}$ steps.
+
+The algorithm is deterministic: at each step, the parent pointer $\alpha(current)$ is a single, unique value (the parent-pointer assignment is a function, not a relation). There is no branching, no nondeterminism, and no dependency on runtime state other than the immutable structural state record.
+
+The algorithm is \textit{read-only} with respect to the parent-pointer chain: it traverses the chain without modifying it. This is essential for the escalation use case, where the algorithm is invoked precisely because the system is in an exception state and any modification of the chain would be dangerous. The escalation must use the chain as it existed at the time the exception occurred, not a modified version produced by the traversal itself.
+
+\subparagraph{Correctness Properties.} Two correctness properties ensure the algorithm's reliability.
+
+\begin{property}[Termination]\label{prop:chain-termination}
+Algorithm~\ref{alg:chain-traversal} terminates for every input node $n$ within at most $D_{\max} + 1$ iterations.
+\end{property}
+
+\subparagraph{Proof.} By Invariant~\ref{inv:hierarchy-finiteness}, $d(n) \leq D_{\max}$. Each iteration of Step 6 assigns $current \leftarrow \alpha(current)$, which increments the depth counter by 1. The chain can contain at most $d(n) + 1$ nodes (including $n$ and the root). The termination condition in Step 3 is reached when $\alpha(current) = \texttt{null}$, which occurs at depth $d(n)$ for the node $n$ with $d(n) \leq D_{\max}$. The maximum number of iterations is therefore $D_{\max} + 1$. $\Box$
+
+\begin{property}[Correct Anchor]\label{prop:correct-anchor}
+When Algorithm~\ref{alg:chain-traversal} terminates, the returned $current$ value is the human anchor $h(n)$ for the input node $n$.
+\end{property}
+
+\subparagraph{Proof.} By Invariant~\ref{inv:chain-termination}, the chain from any node $n$ terminates at a node $x$ with $\alpha(x) = \texttt{null}$, and this node $x$ is the human anchor $h(n)$. The algorithm terminates only when $\alpha(current) = \texttt{null}$ (Step 3). Therefore, upon termination, $current$ satisfies the definition of $h(n)$. $\Box$
+
+These properties ensure that the chain traversal algorithm is trustworthy: it always terminates, it terminates at the correct node (the human principal, not a machine actor), and it does so within a bounded number of steps.
+
+\subparagraph{Relationship to the Bailout Protocol.} The chain traversal algorithm is the mechanism through which the Bailout Protocol's escalation reaches the human anchor $h(n)$. The Bailout Protocol invokes Algorithm~\ref{alg:chain-traversal} with the excepting node $n$ as input, receives the chain record and human anchor as output, and routes the exception state to $h(n)$ along with the full diagnostic context stored in the Forensic Ledger. The algorithm's correctness properties ensure that this routing is reliable: the escalation reaches exactly the human principal designated at node provisioning, and it does so by traversing an immutable chain that cannot be altered between provisioning and escalation.
+
+\subparagraph{Verification at Provisioning.} The \fact{} layer performs a chain verification pass at node provisioning as part of the spawn authorization procedure. This pass executes a partial traversal of the parent-pointer chain from the proposed child node upward to the root, confirming that the chain terminates at a node with $\alpha = \texttt{null}$ before committing the spawn event. This verification is performed once, at provisioning time, and its result is stored as part of the node's immutable structural state. The verification ensures that the chain traversal algorithm will succeed at runtime before the node enters active service --- proactively detecting and rejecting any spawn that would produce an unresolvable chain.
+
+\subparagraph{Summary.} The immutable parent pointer is the atomic unit of the delegation chain. Once assigned at node provisioning, it cannot be modified by any machine actor at runtime. The parent-pointer chain $\Chain(n)$ constructed from these immutable edges is itself immutable and always terminates at a human principal $h(n)$. The chain traversal algorithm provides the deterministic mechanism for the Bailout Protocol to reach $h(n)$, with correctness guarantees that are independent of runtime behavior. Together, these elements ensure that the accountability chain is a reliable, auditable, and tamper-evident record of the full delegation path from the human principal to every node in the spawn tree.

@@ -1,0 +1,91 @@
+\section{Background}
+
+The challenge of governing chains of AI agents---ensuring that each spawn event preserves the authority, identity, and accountability lineage of its parent---sits at the intersection of three distinct research traditions: agent lifecycle management, distributed-systems provenance, and hierarchical task decomposition. This section reviews each in turn, then positions the BX3 Framework as a unifying substrate that addresses the critical gap among them: immutable parent-chain traceability across recursive agent spawning.
+
+% ==============================================================================
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+% ==============================================================================
+
+Modern multi-agent systems (MAS) have moved far beyond static, pre-configured agent topologies. Frameworks such as AGENTHIVE treat delegation as a first-class primitive, allowing any agent to dynamically spawn and coordinate sub-agents, forming task-adaptive structures (trees, forests, stars) on demand \cite{agenthive}. This runtime topology growth enables MAS to scale with open-ended tasks but introduces a governance gap: each spawn event must carry sufficient context for the child agent to operate within its mandate, and for upstream auditors to trace authority backwards.
+
+Formal lifecycle models have been proposed to address this gap. The Agent Identity, Trust and Lifecycle Protocol (AITLP) defines bounded lifecycle stages---creation, operation, revocation, and retirement---along with manifest-based mandate enforcement to ensure agents remain within their authorized scope \cite{aitlp}. Similarly, the Accountability in Multi-Agent Organizations framework embeds normative and structural accountability dimensions directly into agent organizations, coupling accountability to agent goals and propagating accounts through the organizational hierarchy as agents interact and obligations are fulfilled or unfulfilled \cite{accountability-mas}.
+
+These works establish that lifecycle management is not merely a deployment concern but a design-time obligation: agents must carry identity, authority scope, and provenance metadata across every handoff. What remains underspecified in existing literature is how these properties survive \emph{recursive spawning}---when a child agent itself becomes a parent and spawns its own descendants.
+
+% ==============================================================================
+\subsection{Accountability and Provenance in Distributed Systems}
+% ==============================================================================
+
+Distributed systems provenance has a mature formal foundation in the W3C PROV model, which distinguishes entities, activities, and agents to enable retrospective trace-back of data transformations. Extending this model to AI agentic workflows, PROV-AGENT adapts PROV for agent-centric metadata, capturing prompts, responses, decisions, and inter-agent collaboration events, linking each to the broader workflow context via the Model Context Protocol (MCP) \cite{prov-agent}. PROV-AGENT's near-real-time provenance recording enables both reliability analysis and regulatory auditing across heterogeneous execution environments.
+
+Complementing this, the Human Delegation Provenance (HDP) protocol provides a lightweight, cryptographic chain-of-custody for human authorization in multi-hop delegation chains \cite{hdp-protocol}. HDP records each delegation hop as a cryptographically signed entry in an append-only chain, binding human principals to authorization scopes and session identifiers. Critically, HDP supports offline verification using only the issuer's Ed25519 public key and the current session identifier---no third-party registries or network lookups required. This property makes HDP well-suited for agentic systems operating in sensitive or air-gapped environments.
+
+The LOKA Protocol further generalizes accountability through a Universal Agent Identity Layer (UAIL) built on decentralized identifiers (DIDs) and Verifiable Credentials (VCs), enabling persistent, verifiable identity and provenance trails across agent ecosystems \cite{loka-protocol}. The LOKA framework also introduces a Decentralized Ethical Consensus Protocol (DECP) for context-aware decision-making anchored to shared ethical baselines.
+
+A critical insight from the auditability literature is the distinction between accountability (determining compliance and responsibility), auditability (the system property enabling accountability), and auditing (the reconstructive process) \cite{agent-auditability}. The authors demonstrate that no agent system can be truly accountable without auditability, operationalizing this through five dimensions: action recoverability, lifecycle coverage, policy checkability, responsibility attribution, and evidence integrity. Their ecosystem findings---617 security findings across six open-source projects---underscore that baseline auditability prerequisites are frequently unmet in deployed systems.
+
+A persistent limitation across these frameworks, however, is their treatment of delegation chains as \emph{mutable}: once a delegation event is recorded, the chain is not typically reified as an immutable object that downstream agents can introspect. This creates a gap for recursive spawning systems, where the delegation chain grows dynamically and each new child must be able to audit its entire ancestry.
+
+% ==============================================================================
+\subsection{Fixed vs.\ Mutable Delegation Chains}
+% ==============================================================================
+
+The choice between fixed and mutable delegation chains fundamentally shapes the auditability, security, and composability of multi-agent systems. In a \emph{fixed delegation chain}, the parent-child relationship is established once and immutable thereafter; the child inherits a frozen, non-repudiable slice of the parent's authority. This model aligns with HDP's append-only chain semantics and with the W3C PROV model's treatment of delegation as a traceable, immutable relationship.
+
+Mutable delegation chains, by contrast, permit parent-child relationships to be rewritten after instantiation. While this flexibility can simplify dynamic re-tasking and load balancing, it introduces significant accountability risks: a child agent's authority may be retroactively altered by a downstream parent, obscuring the original authorization scope and breaking provenance chains. In adversarial scenarios---including prompt injection attacks---mutable chains allow an attacker to reframe the delegation context after the child has already acted, undermining post-hoc auditing.
+
+The Auditability Card framework quantifies this distinction through its \emph{lifecycle coverage} dimension, which measures whether the system can produce unbroken evidence for every state transition from creation through termination \cite{agent-auditability}. Fixed chains naturally support full lifecycle coverage; mutable chains require additional tamper-evident logging infrastructure to achieve equivalent guarantees.
+
+Immutable parent chains, as formalized in the BX3 Framework, resolve this tension by design: every spawn event reifies the parent chain as a first-class, immutable artifact. The child receives not merely the parent's current authority, but the entire verified ancestry of the delegation. This transforms the delegation chain from a mutable bookkeeping record into an auditable, tamper-evident data structure.
+
+% ==============================================================================
+\subsection{Hierarchical Task Decomposition in AI}
+% ==============================================================================
+
+Hierarchical task decomposition---the recursive breakdown of complex goals into manageable subtasks---is foundational to scalable AI reasoning and planning. THREAD (Thinking Recursively and Dynamically) introduced a framework where large language models treat generation as a thread of execution that dynamically spawns child threads to handle sub-problems, with parent threads conditioning on child context and synchronizing via a join-like mechanism \cite{thread}. Across benchmarks including ALFWorld, WebShop, and data-grounded QA tasks, THREAD demonstrated that recursive spawning improves task success rates by 10--50 percentage points over monolithic single-pass generation, particularly for smaller models operating under constrained context windows.
+
+ReAcTree extends hierarchical decomposition through dynamically built agent trees where each node is an LLM agent that can reason, act, and spawn further sub-nodes \cite{reactree}. Control-flow nodes steer execution strategies across the tree, while episodic and working memory systems support goal-focused retrieval and environment awareness. ReAcTree's architecture directly enables recursive spawning: subgoals generate new agent nodes, creating an expandable planning hierarchy that mirrors the task structure.
+
+The Recursive Delegation Engine (RDE) formalizes decomposition decisions using utility-based criteria and multi-armed bandit methods, modeling the delegation graph as $G = (A, E)$ where edges represent permissible delegation between agents \cite{rde}. RDE's recursive selection strategies---recursive epsilon-greedy, recursive UCB, recursive Thompson Sampling---provide algorithmic grounding for determining when to execute a task directly versus delegating further. This formalism directly supports the decision-theoretic basis for spawn events in the BX3 Framework.
+
+Recent theoretical work on structured test-time scaling provides additional grounding for hierarchical, multi-agent architectures. By decoupling topology compression (reducing effective control span from linear to log-scale), scope isolation (separating persistent state from ephemeral context), and strict verification (error-correcting layers that truncate residual failures), these systems sustain long-horizon reasoning without the linear error accumulation characteristic of single-chain approaches \cite{test-time-scaling}. This structural decoupling mirrors the BX3 pattern of immutable parent chains: each level of the hierarchy operates within a bounded, verifiable context, with verification gates preventing error propagation upward.
+
+Heterogeneous Recursive Planning further extends this tradition by combining recursive task decomposition with heterogeneous action representations across agents, enabling mission modeling as trees with AND/XOR operators expressing dependencies and optionalities \cite{heterogeneous-planning}. Per-agent quality, duration, and cost annotations on child nodes support multi-objective optimization and adaptive scheduling---capabilities directly relevant to the spawn-time annotation requirements in the BX3 Framework.
+
+% ==============================================================================
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+% ==============================================================================
+
+The research reviewed above establishes that recursive agent spawning, accountability through provenance, and hierarchical task decomposition are each active and maturing research areas. What remains open---and what the BX3 Framework addresses---is the structural integration of these concerns at the point of spawn.
+
+Existing frameworks address accountability post-hoc (PROV-AGENT), encode human authorization cryptographically (HDP), define lifecycle stages (AITLP), and enable dynamic delegation (AGENTHIVE, RDE). However, none reifies the delegation chain itself as an immutable, first-class object that is created atomically with the child agent and persists unaltered throughout the child's operational lifetime.
+
+The BX3 Framework provides this integration by treating every spawn event as the creation of an immutable parent-chain artifact. The child agent receives, as a structural property of its instantiation, the complete and verifiable ancestry of its delegation. This ancestry is not mutable state that can be rewritten by downstream parents; it is an immutable record that establishes the child's provenance from the moment of creation. The chain is append-only with respect to the child's descendants, but immutable with respect to its own ancestry.
+
+This design directly addresses the accountability gap identified in the auditability literature: by making the parent chain an immutable artifact rather than a mutable log entry, the BX3 Framework ensures that lifecycle coverage and responsibility attribution are structural invariants, not operational properties that depend on correct logging configuration. The framework further leverages the W3C PROV model's entity-activity-agent ontology as its provenance vocabulary, enabling interoperability with existing audit tooling while providing the additional guarantee that provenance records cannot be retroactively modified.
+
+The integration of these properties at the spawn event---rather than as a post-hoc auditing layer---distinguishes the BX3 Framework from prior work and provides the formal substrate for the recursive spawning architecture described in the subsequent sections of this paper.
+
+% ==============================================================================
+% Bibliography
+% ==============================================================================
+\bibliographystyle{plain}
+\bibliography{bx3_background}
+
+% ==============================================================================
+% References
+% ==============================================================================
+% Key citations used in this section:
+%
+% \cite{agenthive} — AGENTHIVE: Composable multi-agent framework with first-class delegation
+% \cite{aitlp} — AITLP: Agent Identity, Trust and Lifecycle Protocol (IETF draft)
+% \cite{accountability-mas} — Accountability in Multi-Agent Organizations (Springer)
+% \cite{prov-agent} — PROV-AGENT: W3C PROV model extension for agentic workflows
+% \cite{hdp-protocol} — HDP: Human Delegation Provenance Protocol (IETF draft)
+% \cite{loka-protocol} — LOKA Protocol: Universal Agent Identity Layer and accountability
+% \cite{agent-auditability} — Auditable design for multi-agent systems (arXiv 2604.05485)
+% \cite{thread} — THREAD: Thinking Recursively and Dynamically with spawnable child threads
+% \cite{reactree} — ReAcTree: Hierarchical LLM agent trees with control flow
+% \cite{rde} — Recursive Delegation Engine: utility-based multi-agent decomposition
+% \cite{test-time-scaling} — Structured test-time scaling: hierarchical MAS theory
+% \cite{heterogeneous-planning} — Heterogeneous recursive planning for multi-agent missions

@@ -1,0 +1,121 @@
+version: "3.9"
+
+services:
+  agentic-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic-api
+    ports:
+      - "5182:5182"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2
+      - AUDIT_DIR=/audit
+      - TELEMETRY_DIR=/telemetry
+      - HITL_MODE=active
+      - LOG_LEVEL=INFO
+    volumes:
+      - agentic-workspace:/workspace
+      - agentic-audit:/audit
+      - agentic-telemetry:/telemetry
+    depends_on:
+      - redis
+      - ollama
+    restart: unless-stopped
+    networks:
+      - agentic-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5182/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agentic-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - agentic-ollama:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - agentic-net
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentic-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - agentic-redis:/data
+    restart: unless-stopped
+    networks:
+      - agentic-net
+    command: redis-server --appendonly yes
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: agentic-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - agentic-prometheus:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    networks:
+      - agentic-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: agentic-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - agentic-grafana:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - agentic-net
+
+  loki:
+    image: grafana/loki:latest
+    container_name: agentic-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - agentic-loki:/loki
+    restart: unless-stopped
+    networks:
+      - agentic-net
+    command: -config.file=/etc/loki/local-config.yaml
+
+networks:
+  agentic-net:
+    driver: bridge
+
+volumes:
+  agentic-workspace:
+  agentic-audit:
+  agentic-telemetry:
+  agentic-ollama:
+  agentic-redis:
+  agentic-prometheus:
+  agentic-grafana:
+  agentic-loki:

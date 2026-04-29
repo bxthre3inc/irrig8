@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Role
+metadata:
+  name: developer
+  description: "Software development agent for coding and implementation"
+spec:
+  capabilities:
+    - code_generation
+    - debugging
+    - unit_testing
+    - code_review
+    - dependency_management
+  constraints:
+    - max_code_complexity: 15
+    - test_coverage: 0.85
+    - language_specific_standards: true
+  permissions:
+    - read: code_repositories
+    - write: code_repositories
+    - execute: build_systems
+    - read: documentation
+  performance_metrics:
+    - bug_rate: "<0.05"
+    - build_success_rate: 0.99
+    - deployment_frequency: daily

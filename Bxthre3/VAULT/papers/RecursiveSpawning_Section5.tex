@@ -1,0 +1,163 @@
+\section{The Recursive Spawning Protocol}
+\label{sec:recursive-spawning-protocol}
+
+% -------------------------------------------------------
+\subsection{Overview and Design Intent}
+\label{sec:rsp-overview}
+
+The Recursive Spawning Protocol (RSP) governs the lifecycle of every agentic sub-process spawned within the AgentOS runtime. RSP is not a forking primitive; it is a deterministic, auditable, and bounded process that ensures every spawned agent maintains a verifiable chain of provenance terminating at a human decision. Every spawn event passes through three sequential gates---Purpose Layer, Bounds Engine, and Fact Layer---before a child agent receives its activation warrant. No gate may be bypassed under any circumstance, including during cloud disconnection or system stress.
+
+The protocol's scope encompasses the full spawn lifecycle: authorization, activation, execution, convergence, and termination. RSP does not define the internal reasoning behavior of agents; it defines the structural constraints under which agents are permitted to exist and operate. This distinction is load-bearing: RSP is a governance protocol, not a reasoning protocol. The protocol operationalizes a single foundational constraint: \textit{agents are tools, not origins. A human must always exist at the root of any agent chain, and every agent's authority flows downward through a chain of validated spawn events.}
+
+% -------------------------------------------------------
+\subsection{Purpose Layer Validation}
+\label{sec:rsp-purpose-layer}
+
+The Purpose Layer is the first gate and the exclusive source of legitimate spawn authority. Before any spawn event is initiated, the parent agent must present a machine-readable \textit{spawn proposal} to the Purpose Layer validator. The proposal must answer three questions with structural precision:
+
+\begin{enumerate}
+    \itemsep0em
+    \item \textbf{Distinct capability:} What task does the proposed child agent perform that the parent cannot perform within its current context budget?
+    \item \textbf{Termination condition:} What output, state transition, or timeout defines successful completion of the child's assigned task?
+    \item \textbf{Necessity justification:} Why is sequential processing or deferred execution structurally insufficient for this task?
+\end{enumerate}
+
+Purpose declarations are not prose; they are structured assertions subject to automated validation. The Purpose Layer validator cross-references the spawn proposal against the task registry and the parent's current context state to confirm the child agent performs a genuinely distinct function. Redundant capability claims---for example, a parent requesting a child to perform sentiment analysis on a corpus the parent has already loaded---produce an automatic \texttt{PURPOSE\_INSUFFICIENT} rejection. Overlapping scope claims trigger \texttt{PURPOSE\_REDUNDANT}. The Purpose Layer also enforces a \textit{spawn necessity threshold}: a child agent must justify why its task cannot be completed within the parent's remaining context budget through standard chunking or summarization techniques. This prevents reflexive spawning that creates the appearance of multi-agent orchestration without genuine functional decomposition.
+
+The Purpose Layer also enforces the non-redundancy invariant: a parent may not spawn a child whose intended function overlaps with an existing active child or with the parent's own current capabilities. This prevents spawn events from being used to create parallel agents that duplicate work already in flight.
+
+The Purpose Layer gate produces one of three outcomes:
+
+\begin{itemize}
+    \itemsep0em
+    \item \texttt{PURPOSE\_VALID}: Authorization granted; proceed to Bounds Engine.
+    \item \texttt{PURPOSE\_INSUFFICIENT}: Rejected on grounds of insufficient functional differentiation.
+    \item \texttt{PURPOSE\_REDUNDANT}: Rejected on grounds of scope overlap with existing agents.
+\end{itemize}
+
+Only \texttt{PURPOSE\_VALID} permits progression. All outcomes---including rejections---are recorded in the forensic ledger with full propositional context. The validation result, including the declared purpose and validator reasoning, is emitted as a signed metadata record to the Fact Layer's append-only audit stream before the spawn process continues.
+
+% -------------------------------------------------------
+\subsection{Bounds Engine: Depth Management}
+\label{sec:rsp-bounds-engine}
+
+The Bounds Engine is the second gate and the core enforcement mechanism for finite termination. It governs the depth of the spawn tree to prevent unbounded recursive delegation---the structural prerequisite for guaranteeing that every escalation path terminates at a human within a known, bounded number of steps. The Bounds Engine operates on a simple invariant: no agent may spawn a child if doing so would exceed the maximum allowable spawn depth for the originating session.
+
+The depth $d(c)$ of a node $c$ is defined recursively as:
+
+\begin{equation}
+d(c) =
+\begin{cases}
+0 & \text{if } \alpha(c) \in P \quad \text{(parent is a Purpose Layer actor)} \\
+1 + d(\alpha(c)) & \text{otherwise}
+\end{cases}
+\tag{1}
+\end{equation}
+
+where $\alpha(c)$ denotes the immutable parent pointer of $c$ and $P$ denotes the set of all Purpose Layer actors.
+
+\subsubsubsection{Maximum Spawn Depth}
+
+The system-wide hard limit $d_{\max}$ is a configurable runtime parameter with a default of five. This default reflects an empirical finding that the vast majority of useful agentic task trees decompose within five levels of depth. Tasks requiring greater depth are typically evidence of pathological decomposition---the sequential fragmentation of a task that could be more efficiently parallelized at a shallower level. The $d_{\max}$ parameter is enforced at the Fact Layer via a pre-commit hook on every spawn authorization; the depth bound is not a convention but a structurally enforced constraint.
+
+A per-authority depth budget $\Delta(p)$ for each Purpose Layer actor $p \in P$ limits how deeply any single human's delegation chain can extend, preventing inadvertent creation of arbitrarily deep machine-only sub-chains beneath a single human anchor. The effective maximum for any node $c$ spawned under authority $p$ is $\min(d_{\max}, \Delta(p) - d(p))$.
+
+\subsubsubsection{Spawn Refusal at the Depth Limit}
+
+When a spawn request would produce $d(c) \geq d_{\max}$, the Bounds Engine returns \texttt{DEPTH\_EXCEEDED} and the spawn is refused. Refusal is recorded in the forensic ledger with full chain context. The parent agent receives a \texttt{DEPTH\_LIMIT\_REACHED} diagnostic containing the current depth, the limit, and a recommendation to either terminate an existing child or route to human review.
+
+Critically, $d_{\max}$ spawns are not permanently forbidden; they are routed to human review. When an agent genuinely requires continuation beyond $d_{\max}$---for example, in highly parallelized data processing pipelines where each level represents a genuinely distinct computational stage---the spawn request is escalated to the Human Accountability Anchor for explicit authorization. The human is made explicitly aware of the chain depth and must authorize the continuation. This creates a mandatory human-in-the-loop checkpoint at the system's highest complexity boundary.
+
+The depth management invariants are:
+
+\begin{itemize}
+    \itemsep0em
+    \item \textbf{Finite termination:} For any node $c$, repeated application of $\alpha$ reaches $\bot$ within at most $d_{\max}$ steps.
+    \item \textbf{No bypass:} The Fact Layer pre-commit hook rejects any spawn operation that would produce $d(c) \geq d_{\max}$.
+    \item \textbf{Human checkpoint:} Depth-$d_{\max}$ spawns require explicit human authorization; no machine actor may authorize them.
+\end{itemize}
+
+% -------------------------------------------------------
+\subsection{Fact Layer: Immutable Pointer and Forensic Ledger}
+\label{sec:rsp-fact-layer}
+
+The Fact Layer is the third and final gate. It is responsible for two coupled operations: the creation of an immutable parent pointer for the child agent, and the atomic recording of the spawn event to the forensic ledger. No warrant may be created without a valid chain of Purpose Layer and Bounds Engine approvals preceding it.
+
+When the Purpose Layer and Bounds Engine both return permissive outcomes, the Fact Layer generates a \textit{spawn warrant}---a signed data structure that encodes: the identity of the parent, the identity of the child, the spawn timestamp at nanosecond resolution, the declared purpose, the depth at which the spawn occurred, and a SHA-256 hash of the parent's own spawn warrant. This chaining of hash references creates a cryptographically verifiable lineage graph. The warrant is signed using the runtime's internal signing key, and the signature is embedded in the warrant record.
+
+The \textbf{immutable parent pointer} $\alpha(c) = p$ is stored in a write-once, MPU-protected field at the Fact Layer. It satisfies two structural properties: (1) write-once, read-many---the field may be written exactly once at the node's spawn event and read an unlimited number of times thereafter; (2) architecturally enforced---the Fact Layer enforces immutability through cryptographic sealing and, in hardware deployments, memory protection unit (MPU) constraints that prohibit write access from any process other than the Fact Layer's spawn-authorized initialization routine. Once set, $\alpha(c)$ cannot be altered by any subsequent operation, including operations performed by the child itself, the parent, or any other agent in the runtime. A child node cannot re-parent itself; any modification to the delegation structure requires a new Recursive Spawning event initiated by the parent or an ancestor, recorded in the forensic ledger.
+
+The child agent is activated only upon receipt of a valid spawn warrant. The child's activation sequence verifies the warrant's signature and the parent pointer's hash integrity before entering the ready state. If verification fails---indicating either tampering or a corrupted warrant---the child enters a \texttt{FAULTED} state and halts before executing any task. The fault is recorded to the forensic ledger as a tamper-detection event, and the parent agent is notified. This pre-activation verification ensures the system never activates an agent whose provenance cannot be cryptographically confirmed.
+
+The \textbf{forensic ledger} $\mathcal{L}$ is an append-only, tamper-evident log maintained as a Merkle-tree-structured replicated data structure within the AgentOS runtime. Every spawn event, refusal, deferred spawn, and tamper detection is recorded with full chain context. The Merkle-tree structure enables any external auditor to confirm at constant time that no records have been inserted, deleted, or modified after the fact. The ledger supports three queries essential to RSP correctness:
+
+\begin{enumerate}
+    \itemsep0em
+    \item \textbf{Ancestry reconstruction:} Given any node $c$, traverse the full parent pointer chain by following spawn records backward through $\mathcal{L}$. Each entry provides the authorized parent, enabling deterministic chain reconstruction.
+    \item \textbf{Drift detection:} Compare observed node behavior---Fact Layer state deltas, actuator commands, ledger entries---against the authorized scope $\sigma_c$ recorded at spawn. Any divergence triggers the Bailout Protocol.
+    \item \textbf{Depth verification:} Recompute $d(c)$ from ledger spawn entries and verify $d(c) \leq d_{\max}$. Violation indicates unauthorized depth escalation or retroactive ledger tampering.
+\end{enumerate}
+
+% -------------------------------------------------------
+\subsection{Chain Verification: Termination at Human}
+\label{sec:rsp-chain-verification}
+
+The Human Root Mandate requires that the root of every spawn chain be a human-occupied node at Level 0. This mandate is architecturally enforced at the runtime level: the runtime boots with a Level 0 Human Root credential established through out-of-band human authentication (e.g., cryptographic key ceremony), and no machine process can manufacture this credential. The mandate closes the accountability gap by definition: any chain that reaches $\bot$ must have reached a human.
+
+The accountability chain of a node $a$ is the sequence obtained by iterated application of $\alpha$ starting from $a$, terminating at the root human:
+
+\begin{equation}
+\xi(a) = \bigl( a,\ \alpha(a),\ \alpha(\alpha(a)),\ \ldots \bigr)
+\end{equation}
+
+The chain terminates when $\alpha(\cdot) = \bot$, which occurs exactly at the root human actor $h \in H \subseteq P$. The chain traversal algorithm (Algorithm~\ref{alg:chain-traversal}) provides the operational counterpart to the structural immutability guarantee:
+
+\begin{algorithm}
+\caption{Chain Traversal}\label{alg:chain-traversal}
+\begin{algorithmic}
+\Procedure{TraverseChain}{$c$}
+    \State $chain \gets [c]$
+    \State $current \gets c$
+    \Loop
+        \State $parent \gets \alpha(current)$
+        \If{$parent = \bot$}
+            \State \Return $chain$ \Comment{Terminated at human root}
+        \EndIf
+        \State $chain.append(parent)$
+        \State $current \gets parent$
+    \EndLoop
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The key property is \textbf{constant-time escalation}: traversal from any node to its human root requires at most $d_{\max}$ pointer dereferences, independent of the total number of nodes in the system. A system with 10,000 spawned nodes and $d_{\max} = 5$ requires at most five pointer dereferences to reach a human---the same as a system with 10 nodes. Mutable parent pointers would allow the chain to be extended retroactively, making the effective depth potentially unbounded and the worst-case escalation time unbounded as well. Immutability is what makes the depth bound a guarantee, not merely a policy.
+
+In the Bailout Protocol context, chain traversal is used to identify the correct Human Accountability Anchor when an agent at any depth encounters an unresolvable exception. The upward propagation of the exception signal follows the same parent-pointer structure as chain traversal, but uses the asynchronous trigger pathway rather than the synchronous verification pathway. The Bailout Protocol's escalator walks the chain upward, delivering exception notifications to each ancestor in sequence, until a human acknowledges.
+
+% -------------------------------------------------------
+\subsection{Convergence Criteria}
+\label{sec:rsp-convergence}
+
+The convergence criteria define the conditions under which a spawned child agent is considered to have completed its task. Convergence is the state in which a spawned child agent completes its assigned task, emits its outputs to the parent or designated sink, and enters a terminated state. A chain that continues spawning without producing terminal outputs is a resource leak, not a feature. The convergence criteria prevent RSP from becoming a mechanism for spawning agentic processes that persist indefinitely without delivering value or terminating.
+
+The convergence criteria are defined as four coupled requirements:
+
+\textbf{Completion definition.} Every spawn event must include an explicit \textit{completion definition}---a machine-readable specification of the output or state transition that constitutes task completion. This definition is recorded in the Fact Layer and associated with the child agent's identity. An agent that does not emit the specified output or state transition within a defined timeout (configurable per spawn, default: 30 minutes) is classified \texttt{STALLED}. Stalled agents are suspended, their state is preserved for human review, and the parent is notified via a \texttt{CHILD\_STALL\_DETECTED} event. The system does not silently kill stalled agents; it escalates to human review.
+
+\textbf{Termination signaling.} Every child agent must emit a \texttt{SPAWN\_COMPLETE} signal upon termination. This signal includes the agent's final output hash, the actual duration of execution, and a flag indicating whether the completion definition was satisfied. The signal is recorded in the forensic ledger. Agents that terminate without emitting \texttt{SPAWN\_COMPLETE} are flagged \texttt{ABNORMALLY\_TERMINATED} and their parent chain is subject to mandatory review.
+
+\textbf{Flow control.} The total number of live agents in a session must not grow monotonically. Convergence requires that, over any rolling 10-minute window, the number of agent spawns does not exceed the number of agent terminations. A session that violates this criterion enters \texttt{DIVERGENCE} state, in which no new spawns are permitted until the live agent count returns to or below the baseline. This is a flow-control mechanism, not a permanent halt; it forces the system to terminate existing agents before creating new ones.
+
+\textbf{Watchdog propagation.} Agents that spawn children must track child lifecycle and propagate termination signals. A parent that does not receive or process a child's termination signal within the timeout window must enter a watchdog state, preserve its own context for recovery, and emit \texttt{CHILD\_STALL\_DETECTED} to the forensic ledger. The system does not automatically terminate the stalled child; it escalates to human review, preventing the silent killing of agents performing legitimate long-running operations.
+
+These four criteria ensure that RSP governs not just the initiation of agentic chains but their complete lifecycle---from authorized spawn through productive execution to clean termination. Together with the depth limit, they prevent RSP from becoming a vector for resource exhaustion, whether intentional or emergent.
+
+% -------------------------------------------------------
+\subsection{Accountability Summary}
+\label{sec:rsp-accountability-summary}
+
+The Recursive Spawning Protocol provides a structural answer to a fundamental question: \textit{who is responsible when an autonomous agent acts?} In conventional agentic runtimes, responsibility is diffuse---actions taken by deeply spawned agents are rarely attributable to a specific human decision because the chain of authorization is not recorded or enforced. RSP makes responsibility structurally tractable by ensuring that every agent's authority is cryptographically traceable to a human anchor and every spawn event is immutably recorded.
+
+The forensic ledger serves as both an accountability mechanism and an incident reconstruction tool. In the event of an agentic failure, the complete spawn chain can be reconstructed from the ledger to determine where authority was exercised, where convergence criteria were violated, and where human review was either requested or suppressed. The ledger does not prevent failures, but it ensures that failures are never unattributed.
+
+The spawn refusal mechanism at depth limits prioritizes system integrity over operational convenience. The convergence criteria prevent RSP from becoming a vector for resource exhaustion. By enforcing termination discipline and flow-control gates, RSP ensures that agentic operations remain bounded in scope, finite in duration, and attributable to a human at their root. The immutable parent pointer architecture provides the stable foundation: every node, regardless of depth, is traceable to its authorizing Purpose Layer actor, and that actor is a human by architectural mandate.

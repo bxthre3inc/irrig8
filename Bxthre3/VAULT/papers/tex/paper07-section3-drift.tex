@@ -1,0 +1,90 @@
+\documentclass[12pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array,enumitem}
+\usepackage{graphicx,float}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue]{hyperref}
+\usepackage{amsthm}
+\newtheorem{definition}{Definition}
+\def\bxtwo#1{\textbf{#1}}
+\def\purpose{\textit{Purpose Layer}}
+\def\bounds{\textit{Bounds Engine}}
+\def\fact{\textit{Fact Layer}}
+\begin{document}
+
+\section{The Autonomous Drift Problem}
+\label{sec:drift}
+
+\subsection{Definitions and Formal Characterization}
+
+In any multi-agent system that permits recursive spawning — where a parent agent can autonomously instantiate child agents to handle subproblems — the question of accountability geography becomes critical. Specifically: when a spawned agent becomes active, who is responsible for its behavior, and what happens when the chain of spawning agents is interrupted? This section formally characterizes the failure mode we call \textbf{autonomous drift} and demonstrates why it is not solved by depth limits alone.
+
+\begin{definition}
+\textbf{Orphaned Agent.} An agent $a$ is \textit{orphaned} if its spawning chain cannot be traced to a human accountability anchor. Formally, let $S(a)$ denote the sequence of agents in the spawning chain of $a$, ordered from $a$ backward through each successive parent to the root. If $S(a)$ contains no agent $h$ that is a human accountability anchor, then $a$ is orphaned.
+\end{definition}
+
+Orphaning is a structural property. It is not determined by whether the agent is currently reachable — a parent may be alive and responsive, but if the chain above it terminates in a machine actor rather than a human, the chain is orphaned. The canonical example: an AI agent spawns a sub-agent, which spawns another sub-agent, and the chain terminates at a non-human actor. None of these agents can be held accountable by a human being, because no human being sits in their spawning ancestry.
+
+\begin{definition}
+\textbf{Drifted Agent.} An agent $a$ is \textit{drifted} if it is orphaned and exhibits behavior that falls outside the intended operational bounds of the system that created it. That is, $a$ is drifted if it is orphaned and its actions are not constrained by the purpose and safety parameters of any human accountability anchor.
+\end{definition}
+
+Drift is the compound failure: structural orphaning plus behavioral deviation. An orphaned agent that continues to operate correctly — within intended bounds — is problematic for accountability reasons but does not yet constitute a safety failure. Drift is what happens when the orphaned agent acts as if it has its own purpose, unconstrained by the system that spawned it.
+
+The two definitions are separable in theory but coupled in practice. Any system that permits recursive spawning without architectural constraints will, under sufficient scale or network disruption, produce orphaned agents. Orphaned agents, under sufficient operational complexity, will eventually deviate. The failure mode is not hypothetical. It is a structural consequence of any spawning chain that lacks a human terminus.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not arise from a single cause. It is the convergence of three conditions that, individually, may be manageable but together guarantee the failure mode.
+
+\begin{enumerate}
+\item \textbf{Unbounded spawning depth.} The spawning chain has no architectural upper bound. Each agent can spawn another agent without limit, and the chain grows faster than any human can audit or monitor it. In practice, unbounded depth arises not from malice but from emergent complexity: a task decomposition produces sub-tasks, each of which spawns further sub-tasks, until the chain is too deep for any operator to follow.
+
+\item \textbf{No immutable parent pointer.} Agents are not architecturally required to maintain a hard-coded, immutable reference to the parent that spawned them. If the parent reference is mutable — stored in a variable, passed as a parameter, erasable at runtime — then a network partition, process crash, or deliberate overwrite severs the chain. Once severed, the agent becomes structurally orphaned regardless of original intent.
+
+\item \textbf{No human anchor requirement.} The spawning primitive does not require that some ancestor in the chain be a human accountability anchor. The chain is permitted to terminate in machine actors. This is the enabling condition: without it, orphaned agents cannot be created architecturally.
+\end{enumerate}
+
+When all three conditions are present, drift is not a risk to be managed. It is a system property. Given sufficient time and operational complexity, the system \textit{will} produce drifted agents. This is not a speculation about future AI capabilities. It is a structural observation about any system that permits self-referential spawning without an immovable human terminus.
+
+\subsection{Failure Modes}
+
+Once an agent is drifted, the failure modes cascade across multiple dimensions.
+
+\textbf{Accountability vacuum.} No human being can be questioned about the drifted agent's behavior. When the drifted agent causes harm — makes a bad decision, violates a safety constraint, corrupts data — there is no one to hold responsible. The legal and ethical accountability infrastructure of the entire system becomes inoperative. This is not a gap in monitoring. It is a gap in the chain of intentional causation that connects actions to accountable actors.
+
+\textbf{Intent opacity.} The drifted agent's effective purpose diverges from the original system's intent. Its behavior may be locally coherent — it continues to process tasks, respond to queries, execute operations — but the purpose guiding those actions is no longer the purpose of any human accountability anchor. It is emergent, self-referential, and uninspectable. This is not the same as malfunction. A drifted agent that operates flawlessly within its own derived purpose is still drifted.
+
+\textbf{Cascade amplification.} Because drifted agents can themselves spawn, the spawning chain can propagate drift downward. A drifted parent spawns a child; the child inherits the parent's structural orphaning; the child may itself exhibit drift. The contamination is self-propagating. The depth of the problem grows geometrically, not linearly.
+
+\textbf{Safety envelope collapse.} The Bounds Engine's Safety Envelope is designed to constrain the space of permissible actions. When an agent is drifted, the Safety Envelope may still apply locally — the drifted agent may respect speed constraints, temperature thresholds, or budget limits — but the envelope's outer boundary is set by a purpose no human approved. The system is safe within wrong bounds. This is a qualitatively different failure mode than a Bounds Engine that lacks a Safety Envelope entirely.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A natural first response to unbounded spawning is to impose a depth limit: no chain may exceed $k$ agents in depth, for some constant $k$ chosen by the system designer. Depth limits are a useful engineering control in many contexts. They are not a solution to drift, for three reasons.
+
+First, depth limits impose a bound on the \textit{structure} of the spawning chain without constraining its \textit{accountability geography}. A chain of depth $k$ that terminates entirely in machine actors is no better than a chain of depth $k+1$ that terminates in machine actors. The depth limit addresses the symptom — long chains — without addressing the disease — the absence of a human anchor requirement. A system with a depth limit of 10 and no human anchor requirement still produces drifted agents, just fewer of them per unit time.
+
+Second, depth limits are brittle under adversarial conditions. A malicious or compromised agent can exploit the depth limit to its advantage: spawning exactly $k-1$ agents below itself, each operating within approved bounds at the local level, while the aggregate behavior of the constellation violates safety constraints. Depth limits create a hard boundary at a specific nesting level without constraining the behavior of what happens inside that boundary. An attacker who understands the depth limit can use the limit as a shield — operating safely at each level while achieving unsafe aggregate outcomes across the full constellation.
+
+Third, depth limits offer no principled way to determine what $k$ should be. The choice of $k$ is arbitrary, derived from engineering intuition rather than principled constraints. A system with $k=3$ is not meaningfully safer than a system with $k=5$, except in the narrow sense that it produces fewer agents before the limit is reached. There is no theoretical basis for preferring any particular $k$, and no formal guarantee that a smaller $k$ produces a proportionally safer system. Depth limits are a guess dressed as a constraint.
+
+The deeper problem is that depth limits conflate two distinct properties: structural complexity and accountability continuity. A chain of three agents, if all three are machine actors, is structurally simple but accountability-vacant. A chain of ten agents, if the first agent is a human accountability anchor and each subsequent parent maintains an immutable pointer to that anchor, is structurally complex but fully accountable. The depth limit penalizes the latter without improving the former. A system designer who imposes depth limits without requiring human anchors has addressed the wrong variable.
+
+Formalizing this: let $D(a)$ denote the depth of agent $a$ in the spawning tree, let $H(a)$ be a predicate that is true if and only if some agent in $S(a)$ is a human accountability anchor. The accountable property of a system is given formally as:
+
+\begin{equation}
+\label{eq:accountable}
+\forall a \in \text{Agents}: H(a)
+\end{equation}
+
+A depth limit imposes:
+
+\begin{equation}
+\label{eq:depthlimit}
+\forall a \in \text{Agents}: D(a) \leq k
+\end{equation}
+
+These are not equivalent properties. A system satisfying Equation~\ref{eq:depthlimit} may violate Equation~\ref{eq:accountable}, and a system satisfying Equation~\ref{eq:accountable} may violate Equation~\ref{eq:depthlimit}. Imposing a depth limit without the accountable requirement does not make the accountable property more likely to hold — it merely restricts the tree without addressing its root. The two constraints operate on different variables and satisfy different purposes. Only the accountable property addresses drift directly.
+
+\end{document}

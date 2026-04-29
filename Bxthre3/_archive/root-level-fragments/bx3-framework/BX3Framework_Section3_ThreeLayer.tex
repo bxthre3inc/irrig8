@@ -1,0 +1,226 @@
+\section{The BX3 Three-Layer Model}\label{sec:three-layer}
+
+The \bxthree{} three-layer model is the architectural substrate within which all five
+pillars of the framework operate.  It is not a separate mechanism from the pillars ---
+it is the structural foundation that makes the pillars possible and that makes their
+guarantees unconditional rather than contingent.  This section specifies each layer's
+function, the interaction constraints between layers, the data structures maintained
+by each layer, and the invariants that the layers collectively enforce.
+
+% ---------------------------------------------------------------
+\subsection{Layer Definitions}\label{sec:layer-definitions}
+
+Every \bxthree{} node is organized into three immutable functional layers,
+each with a distinct role in the accountability architecture and each with
+strictly delineated authority that cannot be exceeded or transferred.
+
+\textbf{The \purpose{} layer} carries intent, judgment, and final authority.
+It is the layer at which the human principal's objectives are translated into
+operational directives and at which the operating range $R(n)$ for node $n$ is
+defined.  The \purpose{} layer receives all escalated exceptions and issues all
+binding resolution directives.  It is the exclusive terminus for any exception
+state that exceeds machine-actor provisioned authority.  The layer is
+non-delegable: no machine actor possesses the judgment capacity to serve as a
+substitute terminus for exceptions that exceed its own operating range.
+This non-delegability is not a policy constraint -- it is a structural
+property of the layer's function.  The \purpose{} layer carries the
+principal's intent, and no agent operating under delegated authority can possess
+the principal's intent in sufficient completeness to substitute for it.
+
+\textbf{The \bounds{} layer} carries bounded reasoning and constrained execution
+within $R(n)$.  It is the layer at which the node evaluates whether proposed
+actions fall within its current authority by reference to the authorization
+ledger maintained by the \fact{} layer, executes resolution procedures when
+exception conditions are detected, and emits the \texttt{bailout\_signal} when
+the exception exceeds its current scope.  The \bounds{} layer acts autonomously
+within $R(n)$ but is architecturally compelled to escalate when it exits that
+range.  The $T_{\text{bounds}}$ timeout parameter is enforced at this layer,
+ensuring that bounded reasoning does not become unbounded deliberation.
+
+\textbf{The \fact{} layer} carries deterministic enforcement and forensic
+auditability.  It is the layer at which the authorization ledger is consulted,
+the state machine transition relations of all five pillars are enforced, and
+the append-only Forensic Ledger is maintained.  The \fact{} layer is the
+fail-safe anchor of the framework: it is the only layer that may issue a
+definitive halt to autonomous action, and it does so by refusing to approve
+any proposed action that lacks a valid authorization entry.  No machine actor
+may modify, delete, or suppress entries in the Forensic Ledger; the layer's
+function is to enforce the record rather than to interpret it.
+
+The three layers are not merely a conceptual taxonomy -- they are enforced
+architectural divisions with distinct execution semantics enforced by the
+\fact{} layer's pre-commit hook.  A node in the \bounds{} layer cannot issue
+authorizations; a node in the \purpose{} layer cannot spawn sub-agents without
+a designated human anchor; a node in the \fact{} layer cannot define operating
+ranges.  These constraints are not convention -- they are structural invariants
+enforced at the pre-commit stage before any layer's code can execute.
+
+% ---------------------------------------------------------------
+\subsection{The Authorization Ledger}\label{sec:auth-ledger}
+
+The authorization ledger is the definitive record of all actions that the
+\fact{} layer has approved for execution.  Every entry in the ledger is
+immutable once written: no machine actor, including the \bounds{} layer or any
+parent node, may modify or delete a ledger entry after it is committed.  The
+ledger is maintained by the \fact{} layer and is consulted by the \bounds{}
+layer before any proposed action is dispatched to the execution engine.
+
+Each ledger entry $e$ is a 4-tuple:
+\[
+e = (t,\ \text{node}(e),\ \text{action}(e),\ \text{scope}(e))
+\]
+where $t$ is the logical timestamp, $\text{node}(e)$ is the identifier of
+the node that requested the authorization, $\text{action}(e)$ is the action
+descriptor, and $\text{scope}(e)$ is the operating range parameter within
+which the action was evaluated.  The scope field is critical: it records the
+$R(n)$ parameter under which the action was authorized, enabling retrospective
+determination of whether the action was taken within or outside the principal's
+stated intent at the time of authorization.
+
+The ledger provides the foundation for the \bxthree{} accountability model:
+every consequential action is attributable to a node and authorized within a
+defined scope, and the complete action history of any node is reconstructable
+from the ledger as an immutable chronological record.  The ledger is not a
+conventional audit log -- it is an append-only authorization substrate that
+the \fact{} layer enforces at the pre-commit stage.
+
+% ---------------------------------------------------------------
+\subsection{The Forensic Ledger}\label{sec:forensic-ledger}
+
+The Forensic Ledger is the append-only record of all protocol events across
+all five pillars of the framework.  Unlike the authorization ledger, which
+records only approved actions, the Forensic Ledger records every state
+transition, every trigger condition, every timeout event, every escalation,
+every pathway selection decision, and every human directive issued by an
+$h(n)$.  The Forensic Ledger is maintained exclusively by the \fact{} layer;
+no machine actor may write to, modify, or suppress any entry.
+
+Each Forensic Ledger entry $f$ is a 6-tuple:
+\[
+f = (\text{id}(f),\ t_{\text{logical}}(f),\ \text{node}(f),\ \text{event}(f),\ \text{context}(f),\ \text{hash}(f))
+\]
+where $\text{id}(f)$ is the unique identifier of the entry, $t_{\text{logical}}(f)$
+is the logical timestamp assigned by the \fact{} layer, $\text{node}(f)$ is the
+originating node, $\text{event}(f)$ is the event type, $\text{context}(f)$ is the
+full diagnostic context associated with the event (the content of which depends
+on the event type), and $\text{hash}(f)$ is the SHA-256 hash of the preceding
+entry, forming a cryptographically chained sequence from the genesis entry to
+the most recent.  The cryptographic chaining ensures that no entry can be
+modified, deleted, or inserted without breaking the chain, a condition detectable
+by any auditor without access to the ledger's contents.
+
+The Forensic Ledger serves two distinct functions that are often conflated in
+conventional audit systems.  First, it is an \textit{enforcement mechanism}: the
+\fact{} layer's pre-commit hooks for the Bailout Protocol, Sandbox Gate, and
+Spatial Firewall all query the Forensic Ledger to determine the current state
+of their respective state machines before committing any state change.  The
+ledger is not merely a record -- it is the authoritative source of truth for
+the runtime state of all five pillars.  Second, it is an \textit{evidence
+mechanism}: any human principal, regulator, or external auditor can reconstruct
+the complete exception and resolution history of any node from the ledger,
+including all diagnostic context, all pathway selections, and all human
+directives, with cryptographic assurance that the record has not been tampered
+with.
+
+The Forensic Ledger is the architectural bridge between the \bxthree{}
+Framework's runtime accountability properties and its retrospective auditability
+properties.  The Bailout Protocol ensures that every unresolved exception reaches
+$h(n)$; the Forensic Ledger ensures that this fact can be demonstrated to any
+external auditor at any future point in time.  Together they constitute
+\textit{accountable escalation}: the guarantee that exceptions are not merely
+resolved but resolved in a way that is permanently attributable.
+
+% ---------------------------------------------------------------
+\subsection{Layer Interaction Constraints}\label{sec:layer-constraints}
+
+The three layers interact through strictly defined interfaces that enforce the
+separation of concerns essential to the framework's accountability properties.
+These interfaces are not conventions -- they are structural constraints
+enforced by the \fact{} layer's pre-commit hook.
+
+\begin{enumerate}
+\item[\textbf{IC-1.}] The \bounds{} layer may request authorization for an action
+by submitting an authorization request to the \fact{} layer.  The \fact{} layer
+consults the authorization ledger and returns approval or rejection.  The
+\bounds{} layer may not bypass this request-response cycle for any consequential
+action.  The \purpose{} layer does not participate in this cycle -- it defines
+the scope, it does not execute within it.
+
+\item[\textbf{IC-2.}] The \purpose{} layer receives exceptions from the
+\fact{} layer only when the \bounds{} layer has triggered the Bailout Protocol
+and the protocol has reached the \purpose{} layer via the escalation algorithm.
+The \purpose{} layer does not receive raw exception signals -- it receives
+escalated exceptions with full diagnostic context appended by the propagation
+chain.
+
+\item[\textbf{IC-3.}] The \fact{} layer writes to the Forensic Ledger for every
+state transition of every pillar's state machine and for every event that
+requires recording under the pillar's specification.  The \fact{} layer does not
+filter, aggregate, or summarize entries -- it records every event in full.
+The \purpose{} and \bounds{} layers have no write access to the Forensic Ledger.
+
+\item[\textbf{IC-4.}] The \purpose{} layer issues binding resolution directives
+by committing an entry to the authorization ledger through the \fact{} layer.
+The directive is not effective until it is recorded in the ledger and verified
+by the \fact{} layer's pre-commit hook.  No machine actor may issue, simulate,
+or substitute a resolution directive.
+\end{enumerate}
+
+These interaction constraints collectively enforce the separation of concerns
+that makes the \bxthree{} accountability architecture sound.  The \purpose{}
+layer defines intent but does not execute within scope; the \bounds{} layer
+executes within scope but cannot authorize actions outside it; the \fact{} layer
+enforces both constraints and records both the actions and the exceptions.
+No layer can substitute for another, and no layer can perform its functions
+without the others.
+
+% ---------------------------------------------------------------
+\subsection{Three-Layer Invariants}\label{sec:layer-invariants}
+
+The following invariants hold for every \bxthree{} node throughout its
+operational lifetime.  They are established at node provisioning, maintained
+by the \fact{} layer's pre-commit hooks, and are inviolable by any machine
+actor operating within the framework's architecture.
+
+\begin{invariant}[Intent Preservation]\label{inv:intent}
+For every action $a$ executed by node $n$, there exists a ledger entry
+$e$ such that $\text{action}(e) = a$ and $\text{scope}(e) \subseteq R(n)$,
+where $R(n)$ is the operating range defined by the \purpose{} layer of $n$.
+\end{invariant}
+
+\begin{invariant}[Immutable Parent Pointer]\label{inv:parent-pointer}
+The parent pointer $\alpha(n)$ of every node $n$ is established at node
+provisioning and is never modified during the node's operational lifetime.
+No machine actor, including the \bounds{} layer and any parent node, may
+modify $\alpha(n)$.
+\end{invariant}
+
+\begin{invariant}[Exclusive Human Terminus]\label{inv:human-anchor}
+For every node $n$, the human anchor $h(n)$ is established at node
+provisioning and is never modified during the node's operational lifetime.
+No machine actor may serve as the terminus for an unresolved exception state
+at node $n$.  The only permissible terminus is $h(n)$.
+\end{invariant}
+
+\begin{invariant}[Authorization Ledger Immutability]\label{inv:ledger-immutability}
+Once an entry $e$ is written to the authorization ledger, it is never
+modified or deleted.  The ledger is append-only, and its integrity is
+enforced by the \fact{} layer's pre-commit hook.
+\end{invariant}
+
+\begin{invariant}[Forensic Ledger Completeness]\label{inv:forensic-completeness}
+Every state transition, every trigger condition, every timeout event, every
+human directive, and every exception event in any pillar's state machine is
+recorded in the Forensic Ledger before any subsequent action is taken by any
+layer of node $n$.
+\end{invariant}
+
+These five invariants are not independent design choices -- they are mutually
+defining structural facts.  Invariant~\ref{inv:intent} depends on
+Invariant~\ref{inv:ledger-immutability} for its enforcement; Invariant
+~\ref{inv:human-anchor} depends on Invariant~\ref{inv:parent-pointer} for the
+propagation path; Invariant~\ref{inv:forensic-completeness} depends on
+Invariant~\ref{inv:ledger-immutability} for the integrity of the recorded
+context.  Together they constitute the structural foundation for the upstream
+accountability guarantee: every consequential action is within scope, every
+exception is attributable, and every unresolved exception reaches $h(n)$.

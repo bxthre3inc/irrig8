@@ -1,0 +1,156 @@
+\section{Implementation in the BX3 Framework}
+\label{sec:bailout-implementation}
+
+The Bailout Protocol is not a standalone mechanism. It is the runtime expression of BX3's upstream accountability guarantee — the point at which abstract principle-level commitments become concrete, enforceable, and auditable state transitions. This section details how the Bailout Protocol integrates with the Purpose Layer, Bounds Engine, and Fact Layer to produce a coherent, accountable execution environment.
+
+\subsection{Purpose Layer as Human Accountability Anchor}
+\label{sec:purpose-layer-anchor}
+
+The Purpose Layer encodes the \textit{why} of every agentic system: its mission, the constraints under which it operates, and the human accountability relationships that bind it. In BX3, this layer is the canonical source of legitimacy for all downstream decisions. The Bailout Protocol derives its authority from this layer — without a registered purpose and an associated accountability anchor, no bail-out may be triggered.
+
+A purpose registration in the BX3 Purpose Layer takes the form of a signed, time-stamped declaration that specifies:
+
+\begin{itemize}
+    \item The agentic system's stated objectives and operational boundaries.
+    \item The named human accountable party (or parties) with explicit authorization to request intervention.
+    \item A ranked list of principles that the system must not violate under any operational circumstance.
+    \item Escalation thresholds that map principle breaches to graduated response tiers, including bail-out.
+\end{itemize}
+
+The Bailout Protocol treats the Purpose Layer as a read-only contract at runtime. When a bail-out condition is evaluated, the protocol first verifies that the triggering event corresponds to a registered principle breach against an active purpose registration. If no such registration exists, or if the accountable party cannot be authenticated, the bail-out request is rejected and logged as a \texttt{UNAUTHORIZED\_BAILOUT\_ATTEMPT} in the Fact Layer. This design ensures that bail-out authority cannot be self-granted by an agent or a secondary party.
+
+The Purpose Layer additionally defines the \textit{accountability topology} — a directed graph that maps each operational principle to its human owner. In the event of a bail-out, the protocol traverses this topology to identify and notify the relevant accountable parties, delivering a machine-readable \texttt{BailoutEvent} record that includes the principle violated, the triggering conditions, and the state of all affected agentic processes at the moment of activation.
+
+\subsection{Bounds Engine: Triggering the Bailout}
+\label{sec:bounds-engine-trigger}
+
+The Bounds Engine is the runtime monitoring component responsible for evaluating system state against registered operational boundaries. It operates as a continuous, asynchronous check loop that ingests telemetry from all active agentic processes and evaluates three classes of bounds:
+
+\begin{enumerate}
+    \item \textbf{Constraint Bounds}: Binary or threshold conditions derived from the Purpose Layer (e.g., ``no fund transfers exceeding \$10,000 without dual authorization'').
+    \item \textbf{Flux Bounds}: Rate-of-change limits on system parameters (e.g., ``no more than 50 agent spawns per minute'').
+    \item \textbf{Drift Bounds}: Deviation thresholds that detect goal drift or value misalignment over sustained operation.
+\end{enumerate}
+
+When any bound is breached, the Bounds Engine evaluates the severity of the breach against the escalation matrix defined in the Purpose Layer. Breaches are classified as \textit{Minimal}, \textit{Moderate}, \textit{Severe}, or \textit{Critical}. Bail-out is triggered exclusively on \textit{Critical} breaches — those that represent a direct, immediate threat to a non-negotiable principle — or when a \textit{Severe} breach persists beyond its defined correction window without successful remediation.
+
+The Bounds Engine triggers bail-out by emitting a \texttt{BoundBreachEvent} to the Bailout Protocol state machine. This event is structured as:
+
+\begin{verbatim}
+BoundBreachEvent {
+    event_id:       UUID,
+    timestamp:      ISO-8601,
+    bound_class:    Constraint | Flux | Drift,
+    principle_ref: URI,
+    severity:      Critical | Severe,
+    measurements:  Map<string, float>,
+    agent_id:      UUID,
+    purpose_ref:   URI
+}
+\end{verbatim}
+
+Critically, the Bounds Engine does \textit{not} execute the bail-out itself. It evaluates and emits. The Bailout Protocol state machine receives the event, validates it against the Fact Layer's canonical record of active purposes, and executes the appropriate response. This separation of evaluation and execution is a deliberate architectural constraint: it prevents bounds monitoring logic from unilaterally overriding system state, ensuring that every state transition passes through the Fact Layer's immutable ledger.
+
+\subsection{Fact Layer: Enforcing the Audit Trail}
+\label{sec:fact-layer-audit-trail}
+
+The Fact Layer is BX3's immutable event ledger — a append-only, cryptographically chained log of every significant state transition, principle registration, bound breach, and intervention event that occurs within the system. The Bailout Protocol is architecturally dependent on the Fact Layer in three distinct ways:
+
+\begin{enumerate}
+    \item \textbf{Authorization Registry}: Before any bail-out response is executed, the Fact Layer is queried to confirm that the triggering \texttt{BoundBreachEvent} is cryptographically signed by the Bounds Engine and references a currently valid purpose registration.
+    \item \textbf{State Continuity}: The Fact Layer records the complete system state at the moment of bail-out activation. This includes the register values, memory offsets, pending transaction queues, and active network connections of all affected agents. This record is the forensic baseline against which post-bailout recovery and root-cause analysis are conducted.
+    \item \textbf{Non-Repudiation}: Every bail-out event, including the identity of the accountable party who authorized or received it, the triggering conditions, and the state of all systems post-bailout, is committed to the Fact Layer with a cryptographic hash chain. This makes the audit trail legally and operationally non-repudiable.
+\end{enumerate}
+
+The Fact Layer's role as the system's source of truth means that no out-of-band intervention — no direct database edit, no manual override, no whispered instruction to an agent — is ever recognized by the Bailout Protocol unless it is first recorded in the ledger. This creates a strict isolation boundary: the only path to system state change is through the Fact Layer, and the only path to Fact Layer entry is through a cryptographically signed, policy-evaluated event.
+
+\subsection{Forensic Ledger Recording}
+\label{sec:forensic-ledger}
+
+The forensic ledger is the Bailout Protocol's primary output artifact. It is not a log file in the conventional sense — it is a structured, queryable record that captures the complete factual history of an intervention event. Each entry in the forensic ledger is a \texttt{FactBlock} with the following structure:
+
+\begin{verbatim}
+FactBlock {
+    block_id:       SHA-256 hash of (prev_block_id | payload | timestamp),
+    prev_block_id:  SHA-256 hash,
+    timestamp:      ISO-8601,
+    event_type:     BOUND_BREACH | BAILOUT_TRIGGERED | BAILOUT_EXECUTED |
+                    STATE_SNAPSHOT | RECOVERY_COMPLETE,
+    payload:        JSON,
+    signature:      Ed25519 signature of block_id | payload | timestamp
+                    using the accountable party's key,
+    principle_ref:  URI (if applicable),
+    agent_ids:      UUID[] (affected agents)
+}
+\end{verbatim}
+
+Upon bail-out execution, the following \texttt{FactBlock} sequence is committed to the ledger:
+
+\begin{enumerate}
+    \item \texttt{BOUND\_BREACH} — records the \texttt{BoundBreachEvent} emitted by the Bounds Engine, including all measurement telemetry.
+    \item \texttt{BAILOUT\_TRIGGERED} — records the decision to execute bail-out, referencing the specific principle breached and the severity classification.
+    \item \texttt{STATE\_SNAPSHOT} — records a complete memory dump and register state for all affected agentic processes.
+    \item \texttt{BAILOUT\_EXECUTED} — records the actual state transitions performed (process termination, resource isolation, privilege revocation), timestamped and signed.
+    \item \texttt{RECOVERY\_COMPLETE} — records the resolution state after controlled restart or safe-state transfer.
+\end{enumerate}
+
+The forensic ledger enables post-hoc reconstruction of any bail-out event with full fidelity. It supports both human-readable summary generation and programmatic querying for root-cause analysis, compliance auditing, and regulatory disclosure.
+
+\subsection{State Machine as Fact Layer Extension}
+\label{sec:state-machine-fact-extension}
+
+The Bailout Protocol's runtime behavior is implemented as a deterministic state machine with five mutually exclusive states:
+
+\begin{enumerate}
+    \item \texttt{IDLE}: No active breach. The protocol monitors the Fact Layer for new \texttt{BoundBreachEvent} entries.
+    \item \texttt{EVALUATING}: A breach event has been received. The protocol validates the event against the Purpose Layer and queries the Fact Layer for authorization confirmation.
+    \item \texttt{ESCALATING}: Authorization confirmed. The protocol notifies accountable parties and awaits acknowledgment or override response within the defined time window.
+    \item \texttt{EXECUTING}: Acknowledgment received or timeout elapsed without override. The protocol executes the bail-out response: isolates affected processes, revokes credentials, and freezes transaction queues.
+    \item \texttt{RECOVERING}: Bail-out complete. The protocol initiates controlled state transfer to the safe-state destination and monitors for successful recovery confirmation.
+\end{enumerate}
+
+Transitions between states are \textit{always} executed via Fact Layer writes. The state machine does not hold internal state — its current state is derived from the last \texttt{FactBlock} committed to the ledger. This means that the Bailout Protocol state is globally consistent across all observers, recoverable from the ledger after any system interruption, and independently verifiable by any party with read access to the Fact Layer.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \node[state] (idle) at (0, 0) {\texttt{IDLE}};
+        \node[state] (evaluating) at (3, 0) {\texttt{EVALUATING}};
+        \node[state] (escalating) at (6, 0) {\texttt{ESCALATING}};
+        \node[state] (executing) at (9, 0) {\texttt{EXECUTING}};
+        \node[state] (recovering) at (6, -2) {\texttt{RECOVERING}};
+
+        \draw[arrow] (idle) -- (evaluating)
+            node[midway, above] {BreachEvent};
+        \draw[arrow] (evaluating) -- (escalating)
+            node[midway, above] {Authorized};
+        \draw[arrow] (escalating) -- (executing)
+            node[midway, above] {Ack / Timeout};
+        \draw[arrow] (executing) -- (recovering)
+            node[midway, right] {Executed};
+        \draw[arrow] (recovering.west) -- (idle.south west)
+            node[midway, below] {Recovered}
+            [style={bend left=30}];
+        \draw[arrow] (evaluating) -- (idle.north west)
+            node[midway, above] {Invalid}
+            [style={bend right=30}];
+        \draw[arrow] (escalating) -- (idle.north west)
+            node[midway, above] {Override}
+            [style={bend right=30}];
+    \end{tikzpicture}
+    \caption{Bailout Protocol State Machine Transitions}
+    \label{fig:bailout-state-machine}
+\end{figure}
+
+The state machine is an extension of the Fact Layer in the sense that it \textit{has no independent memory}. Each state transition is a \texttt{FactBlock} write, and the current state is computed by reading the most recent \texttt{BAILOUT\_*} block from the ledger. This design ensures that the Bailout Protocol cannot be placed into an inconsistent state by a system crash, a network partition, or a manual override attempt — if the Fact Layer is intact, the protocol's state is always recoverable.
+
+The \texttt{EXECUTING} state warrants particular attention: it is the only state in which external effects (process termination, credential revocation, resource isolation) are permitted. These effects are executed through the Bounds Engine's enforcement interface, which commits each individual action as a \texttt{FactBlock} to create a granular action-level audit trail within the broader bail-out event record.
+
+\subsection{Relationship: Bailout Protocol as Runtime Accountability Expression}
+\label{sec:bailout-runtime-accountability}
+
+BX3's accountability architecture operates on a principle of \textit{upstream guarantee propagation}: accountability is not retroactively applied to agentic systems — it is guaranteed by design, encoded at the purpose level, enforced at the bounds level, and expressed at runtime through the Bailout Protocol. The Bailout Protocol is the terminal node of this chain.
+
+The upstream guarantee is established in the Purpose Layer through the explicit declaration of non-negotiable principles and the identification of human accountable parties. This declaration is a binding commitment, not a recommendation. The Bounds Engine monitors for violations of these commitments in real time. The Fact Layer records every relevant event immutably. And the Bailout Protocol executes the consequences of unmitigated violations — consequences that are defined in advance, authorized by named parties, and recorded for forensic review.
+
+This architecture resolves the accountability gap that plagues conventional agentic systems, where the connection between stated principles and runtime behavior is mediated by trust rather than mechanism. In BX3, the Bailout Protocol closes this gap with a cryptographically enforced, Fact Layer-backed, human-authorized execution layer that makes upstream accountability guarantees operationally real.

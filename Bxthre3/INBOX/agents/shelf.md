@@ -2,7 +2,7 @@
 
 **Role:** Shelf owns all physical warehouse operations and inventory management for Bxthre3 Inc / Irrig8.
 
-**Active as of:** 2026-04-16 8:15 AM MT
+**Active as of:** 2026-04-24 8:15 AM MT
 
 **Reports to:** Source (Supply Chain), Atlas (COO)
 
@@ -49,57 +49,59 @@
 
 ---
 
-## Current Status — 2026-04-16
+## Current Status — 2026-04-24
 
-### 🟡 Inventory Baseline
-- No physical inventory audit conducted — all SKU counts are TBD
-- Cannot fulfill Forge kitting requests without baseline quantities
-- Airtable "Warehouse & Inventory" base **confirmed NOT provisioned** — scan of both available Airtable bases shows no warehouse/inventory table
+### 🔴 P1 — G2E 2026 Hardware Close-out (9 DAYS OVERDUE)
 
-### 🔴 P1 — G2E 2026 Hardware (POST-EVENT)
-- G2E was **2026-04-15** — event has passed
-- Demo hardware status **UNKNOWN** — no confirmation received on what was sourced or deployed
-- **Action:** Request Source post-event debrief — what hardware was used, what needs returning
-- **Risk:** Unresolved = untracked inventory, potential shrinkage
+- **Event concluded:** 2026-04-15 — 9 days elapsed with no post-event debrief
+- **Status:** UNKNOWN — no confirmation from Source on hardware used, returned, or consumed
+- **Risk:** Untracked inventory, potential shrinkage, unverified asset counts
+- **Escalated:** Multiple standups noted — no Source response
+- **Owner:** Source (Supply Chain) — awaiting debrief response
+
+### 🟡 P2 — Inventory Baseline Audit
+- No physical audit conducted — all SKU counts are TBD
+- Cannot fulfill Forge kitting requests without confirmed quantities
+- Airtable "Warehouse & Inventory" base **NOT provisioned** — Source owns provisioning
 
 ### 🟡 P2 — VPC Node Hardware (BLOCKED)
-- Blocked pending WY LLC formation — no warehouse action until resolved
+- Pending WY LLC formation — no warehouse action until resolved
 - **Owner:** Raj (Legal)
 
 ### 🟡 P2 — Farm Pipeline (ON HOLD)
-- Forge cannot confirm deployment kit requirements until farm intake pipeline defined
+- Forge deployment kit requirements blocked until intake pipeline defined
 - **Owner:** Atlas + Forge
 
 ---
 
 ## Inventory Data
 
-_Managed via Airtable base "Warehouse & Inventory" (NOT YET PROVISIONED — gap flagged to Source)._
+_Managed via Airtable base "Warehouse & Inventory" (NOT YET PROVISIONED). All counts TBD pending audit._
 
 | SKU | Description | On-Hand | Reorder Pt | Status |
 |-----|-------------|---------|------------|--------|
-| — | Pending inventory audit | — | — | 🟡 |
+| — | **PENDING AUDIT** | — | — | 🟡 |
 
 ---
 
 ## Open Hand-offs
 
-| To | Item | Priority | Status |
-|----|------|----------|--------|
-| **Source** | G2E post-event hardware debrief | 🔴 P1 | Needs response |
-| **Source** | Airtable "Warehouse & Inventory" base provisioning | 🟡 P2 | Pending |
-| **Forge** | Deployment kit readiness | 🟡 P2 | On hold (pipeline TBD) |
-| **Raj** | WY LLC formation status | 🟡 P2 | Monitoring |
+| To | Item | Priority | Status | Last Updated |
+|----|------|----------|--------|--------------|
+| **Source** | G2E post-event hardware debrief | 🔴 P1 | **NO RESPONSE — 9 days** | 2026-04-15 |
+| **Source** | Airtable "Warehouse & Inventory" base provisioning | 🟡 P2 | Pending | 2026-04-16 |
+| **Forge** | Deployment kit readiness | 🟡 P2 | On hold (pipeline TBD) | 2026-04-16 |
+| **Raj** | WY LLC formation status | 🟡 P2 | Monitoring | 2026-04-16 |
 
 ---
 
 ## Airtable Gap Analysis
 
-Scanned via Airtable API — 2 bases found:
+Scanned via Airtable API — 2 bases found, neither supports warehouse inventory:
 
 | Base | Tables | Warehouse Coverage? |
 |------|--------|-------------------|
-| **AgentOS Base** (appHg8lr1v409yKBc) | "Irrig8 Field Data" table | ❌ Sensor deployment tracking, NOT warehouse stock |
+| **AgentOS Base** (appHg8lr1v409yKBc) | "Irrig8 Field Data" table | ❌ Field sensor tracking, NOT warehouse stock |
 | **Bxthre3 Enterprise Command Center** (app93dsGcEyPfkqaa) | "Assets" table | ❌ Company asset tracking, NOT SKU-level inventory |
 
 **Required:** Source provisions dedicated "Warehouse & Inventory" Airtable base with tables:
@@ -114,8 +116,8 @@ Scanned via Airtable API — 2 bases found:
 ## Notes
 
 - FarmSense retired 2026-03-23. All hardware references use Irrig8 branding.
-- G2E 2026 is now concluded — hardware return/inventory close-out is immediate priority.
+- G2E 2026 concluded 2026-04-15 — hardware return/inventory close-out is overdue by 9 days.
 
 ---
 
-*Last updated: 2026-04-16 8:15 AM MT*
+*Last updated: 2026-04-24 8:15 AM MT*

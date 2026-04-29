@@ -1,0 +1,105 @@
+% ============================================================
+% Section 7 — Correctness Properties
+% ============================================================
+\section{Correctness Properties}
+\label{sec:correctness}
+
+This section establishes the formal correctness guarantees that follow from the Recursive Spawning architecture as integrated with the BX3 Framework. We prove three primary properties: (1) that autonomous drift is structurally impossible, (2) that the accountability chain maintains integrity at all times, and (3) that every escalation chain terminates at a human anchor within a bounded number of hops.
+
+\subsection{Drift Prevention Theorem}
+\label{sec:drift-prevention}
+
+\begin{theorem}[Drift Prevention]
+\label{th:drift-prevention}
+For any BX3 node $a$ spawned via Recursive Spawning, operating under a configured maximum spawn depth $D_{\max}$, the accountability chain from $a$ to the root human anchor $r$ cannot be severed, redirected, or lost during any autonomous operation. Formally:
+\[
+\forall a \; \exists! \; r \;.\; \textit{HumanAnchor}(r) \;\wedge\; r \in \textit{Chain}(a) \;\wedge\; \lnot \textit{DriftPossible}(a)
+\]
+where $\textit{DriftPossible}(a)$ is true if and only if there exists a state transition reachable from $a$ under autonomous operation in which $r \notin \textit{Chain}(a)$.
+\end{theorem}
+
+\begin{Proof}
+We prove the theorem by demonstrating that each necessary condition for drift is structurally impossible under the BX3 architecture.
+
+\textbf{Condition 1: Parent pointer modification.} Drift would require modifying $\alpha(a)$ — reassigning the parent of $a$ to a different node or to $\bot$. However, $\alpha(a)$ is established as an immutable property of the Fact Layer at spawn time and is physically enforced by the Fact Layer's deterministic execution. No actor operating in the Bounds Engine or Purpose Layer of $a$ or any ancestor can modify $\alpha(a)$; the Fact Layer rejects all write operations to the parent pointer after initial establishment. Therefore, no state reachable by autonomous operation can alter $\alpha(a)$.
+
+\textbf{Condition 2: Chain traversal suppression.} Drift could occur if an intermediate node in $\textit{Chain}(a)$ suppressed the accountability signal during escalation, preventing the chain from being traversed. The Bailout Protocol's bypass mechanism (Section~ref{sec:bailout}) ensures that escalation from any node $n$ contacts the nearest Purpose Layer ancestor directly, without relying on intermediate nodes to relay the signal. Moreover, the Purpose Layer holds the human anchor identity as an immutable pre-loaded value, not as a lookup that could be intercepted. Suppressing chain traversal would require suppressing the Fact Layer's logging of the \texttt{CHAIN\\_TRAVERSE} event, which is physically enforced. A machine actor in the chain cannot prevent its own Purpose Layer from initiating the bypass.
+
+\textbf{Condition 3: Chain termination at a machine actor.} Drift could theoretically occur if the accountability chain terminated at a machine actor rather than at a human. The Bypass Integrity property of the Bailout Protocol (Section~ref{sec:bailout}) proves that no machine actor can be assigned as the terminus of an escalation. This is established by the bypass mechanism: the function $\texttt{IsMachineActor}(n)$ returns true for every non-human node, and the bypass condition $\forall n : \texttt{IsMachineActor}(n) \implies \lnot \texttt{CanBeEscalationEndpoint}(n)$ holds universally. Therefore, the terminus of any escalation path must be a human actor by construction.
+
+\textbf{Condition 4: Unbounded chain depth.} If spawn depth were unbounded, the accountability chain could grow arbitrarily long, making it theoretically possible for a system to diverge from human oversight before any human could respond. However, the Bounds Engine enforces $D_{\max}$ as a hard upper bound on spawn depth at spawn time: any spawn request that would produce a child with $\textit{depth}(child) > D_{\max}$ is denied and logged as \texttt{DEPTH\\_EXCEEDED}. Therefore, for any node $a$, $\textit{depth}(a) \leq D_{\max}$, and any escalation traverses at most $D_{\max} - \textit{depth}(a) \leq D_{\max}$ parent-pointer hops. The chain is bounded by construction.
+
+Since all four conditions that would permit drift are individually impossible under the BX3 architecture, $\textit{DriftPossible}(a)$ is false for all $a$. The accountability chain from every node terminates exclusively at a human anchor, and this property holds invariant under all autonomous operations. \qed
+\end{Proof}
+
+The drift prevention theorem establishes that the system cannot drift from human accountability through any operational pathway. This is a structural guarantee — enforced by physical constraints at the Fact Layer, the bypass mechanism at the Purpose Layer, and the depth bound at the Bounds Engine — not a statistical guarantee that holds with high probability. Drift is not merely unlikely; it is architecturally impossible.
+
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+
+\begin{definition}[Chain Integrity]
+\label{def:chain-integrity}
+The accountability chain of any node $a$ is said to have \textit{integrity} if and only if:
+\begin{enumerate}[noitemsep]
+    \item $\forall n \in \textit{Chain}(a) : \alpha(n)$ is immutable and correctly recorded in the Fact Layer;
+    \item All three BX3 planes (Purpose, Bounds Engine, Fact Layer) agree on the chain state at every logged event;
+    \item No \texttt{CHAIN\\_INTEGRITY\\_FAILURE} flag has been raised for any node in the chain since the last integrity check.
+\end{enumerate}
+\end{definition}
+
+\begin{corrolary}[Chain Integrity Guarantee]
+For any node $a$ in a BX3 population, the accountability chain maintains integrity at all times during normal operation.
+\end{corrolary}
+
+\begin{Proof}
+Chain integrity follows directly from three architectural properties:
+
+\textbf{Immutability:} By Definition~ref{def:parent-pointer}, $\alpha(n)$ is immutable for all $n$. Therefore condition (1) holds by construction. No operation — autonomous or otherwise — can modify a parent pointer after establishment.
+
+\textbf{Three-plane attestation:} Every chain event (\texttt{CHAIN\\_EXTEND}, \texttt{CHAIN\\_TRAVERSE}, \texttt{CHAIN\\_INTEGRITY\\_CHECK}) is logged simultaneously across all three BX3 planes. A chain state claim requires agreement across all three planes; divergence at any plane raises \texttt{CHAIN\\_INTEGRITY\\_FAILURE}. Therefore condition (2) holds for all events for which the forensic ledger is recorded.
+
+\textbf{Continuous integrity monitoring:} The three-plane attestation process runs at every significant chain event and at configurable heartbeat intervals. Any divergence between planes is immediately flagged and escalated via the Bailout Protocol to the nearest Purpose Layer ancestor. Therefore condition (3) holds as long as the system is operational.
+
+The conjunction of these three properties ensures that chain integrity is maintained continuously and verified at every significant state transition. \qed
+\end{corrolary}
+
+The chain integrity guarantee means that any external auditor — a regulator, a dispute-resolution process, an internal compliance review — can reconstruct the complete accountability chain for any node at any time and have confidence that the chain has not been tampered with or obscured. The forensic ledger provides the evidentiary basis; the three-plane attestation provides the tamper-evidence; and the immutability of the ParentPointer provides the structural foundation.
+
+\subsection{Termination at Purpose Layer}
+\label{sec:termination}
+
+\begin{corrolary}[Termination at Human Anchor]
+For any node $a$ in a closed BX3 population with configured maximum depth $D_{\max}$, every accountability chain $\textit{Chain}(a)$ terminates at a human anchor within at most $D_{\max}$ parent-pointer hops.
+\end{corrolary}
+
+\begin{Proof}
+We proved in Corollary~ref{cor:chain-termination} (Chain Termination from Section~ref{sec:immutable-parent-pointers}) that $\textit{Chain}(a)$ terminates at the root human node $r$ in a finite number of recursive applications of the parent function. Here we establish the tighter bound of $D_{\max}$.
+
+By the depth-enforcement property of the Bounds Engine (Section~ref{sec:bounds-depth}), any spawn that would produce $\textit{depth}(child) > D_{\max}$ is denied at spawn authorization time. Therefore, for any live node $a$, $\textit{depth}(a) \leq D_{\max}$. The accountability chain of $a$ contains exactly $\textit{depth}(a)$ edges, each corresponding to one parent-pointer hop. Since the root human node $r$ has depth $0$, the number of hops from $a$ to $r$ is exactly $\textit{depth}(a) \leq D_{\max}$.
+
+The root human node $r$ is uniquely identified as the sole node in the system with $\alpha(r) = \bot$ and \texttt{IsHumanAnchor}$(r) = \text{true}$. By the Bypass Integrity property of the Bailout Protocol (Section~ref{sec:bailout}), $r$ is the sole permissible terminus for any escalation. Therefore, every chain terminates at $r$, and every escalation terminates at $r$, within at most $D_{\max}$ hops. \qed
+\end{Proof}
+
+This termination bound is a key design parameter for operational planning. In a deployment with $D_{\max} = 5$, any unresolved exception from any node in the population will reach a human principal within at most five escalation hops, regardless of the total number of nodes in the population, the number of spawned children, or the complexity of the reasoning chain. This provides a predictable, auditable upper bound on escalation latency that is independent of system scale — a property that conventional hierarchical supervision architectures cannot guarantee.
+
+\begin{ theorem }[Drift Prevention — Informal Proof Sketch]
+\label{th:drift-sketch}
+\textit{Given:} (i) immutable parent pointer $\alpha(a)$ established at spawn and physically enforced by the Fact Layer; (ii) forensic ledger records every chain event with three-plane attestation; (iii) the Bailout Protocol bypasses all machine actors and terminates exclusively at the human anchor. \textit{Claim:} No autonomous operation can cause a BX3 node to become unanchored from its human principal.
+
+\textit{Proof sketch:} Suppose for contradiction that some node $a$ becomes unanchored at time $t$. For $a$ to become unanchored, one of three things must have occurred: (1) $\alpha(a)$ was modified after spawn — impossible by Fact Layer immutability; (2) the chain from $a$ to the human anchor was severed — impossible because the forensic ledger would have recorded the severance event and triggered a \texttt{CHAIN\\_INTEGRITY\\_FAILURE}, which activates the Bailout Protocol; (3) a machine actor was inserted as a terminal node in the chain — impossible by the bypass integrity property. Since all three pathways to unanchoring are individually impossible, $a$ cannot become unanchored. \textit{qed.}
+\end{ theorem}
+
+The informal proof sketch above captures the same logic as the formal theorem but in a more accessible form. It is included here as a heuristic complement to the formal proof, and to serve as a concise argument for readers who require an intuitive understanding of the drift prevention guarantee before engaging with the formal apparatus.
+
+\subsection{Operational Guarantees in Summary}
+\label{sec:guarantees-summary}
+
+The three correctness properties established in this section — drift prevention, chain integrity, and termination at the human anchor — are not independent claims. They are mutually reinforcing consequences of a single architectural decision: the enforcement of immutable parent pointers at the Fact Layer, with three-plane forensic attestation, under a depth-bounded spawn regime with a mandatory human-only escalation terminus.
+
+\textbf{Drift prevention} follows from the combination of parent pointer immutability (which prevents chain severance) and the bypass integrity property (which prevents machine actors from terminating escalations). The forensic ledger provides the evidence that these constraints have been maintained, and the three-plane attestation ensures that no single plane can falsify its records to conceal a drift event.
+
+\textbf{Chain integrity} follows from the immutability of the ParentPointer relation and the continuous three-plane attestation process. The integrity guarantee is what makes the forensic ledger actionable for external auditors: they can reconstruct the chain from any node and verify, from the immutable Fact Layer records, that the chain has not been tampered with.
+
+\textbf{Termination} follows from the depth bound enforced by the Bounds Engine and the bypass mechanism's exclusion of machine actors from the set of valid escalation terminuses. The termination bound is independent of system scale: the maximum number of escalation hops depends only on $D_{\max}$, not on the total number of nodes or the complexity of the spawned population.
+
+Together, these three properties constitute the Recursive Spawning correctness guarantee: that every node in a BX3 population remains accountable, via a verifiable and immutable chain, to a named human principal who can be reached within a bounded and predictable time horizon, regardless of the node's depth, autonomy level, or operational complexity.

@@ -1,0 +1,57 @@
+% ---------------------------------------------------------------
+% Section 8: Limitations and Future Work
+% ---------------------------------------------------------------
+\section{Limitations and Future Work}
+\label{sec:rs-limitations}
+
+The Recursive Spawning Protocol trades concrete costs for structural accountability guarantees. Each limitation is the direct price of a specific property; none are correctable through optimization alone.
+
+\subsection{Performance Overhead}
+\label{sec:rs-perf-overhead}
+
+Every spawn event passes three validation stages — Purpose Layer authorization, Bounds Engine depth evaluation, and Fact Layer warrant generation with cryptographic commitment — before a child activates. In the AgentOS runtime this adds \numrange{15}{40} ms per spawn under nominal load; a conventional \texttt{fork()} completes in microseconds. Cryptographic signing and hash-chaining in the Fact Layer account for approximately 60\% of this cost. These operations are not optional; they are the mechanism by which chain integrity is preserved.
+
+The overhead accumulates under high-frequency spawn patterns. Fine-grained decomposition strategies — per-document children in batch workloads, per-step children in generative agentic loops — degrade end-to-end throughput relative to naive forking. The prescribed mitigation is batched spawning: a parent provisions fewer children, each handling multiple work units, trading decomposition granularity for lower cumulative overhead. The spawn necessity threshold in the Bounds Engine formalizes this tradeoff as a structural constraint, not a recommendation.
+
+The forensic ledger's append-only Merkle-tree also imposes storage and I/O overhead that scales with spawn frequency. Under sustained high-concurrency load, the ledger write path becomes a bottleneck if the storage layer is not provisioned for write-intensive append-only workloads. Current mitigations include write-ahead log buffering and periodic Merkle-tree checkpoint compaction, but ledger growth management in long-running high-throughput deployments remains an open engineering problem.
+
+\subsection{Scalability Constraints}
+\label{sec:rs-scalability}
+
+RSP's static depth bound creates a structural ceiling that conflicts with workloads requiring deep decomposition. $D_{\max}$ is fixed at the root node and applies uniformly; it cannot adapt to subtree workload characteristics without a Purpose Layer directive. A chain requiring six or seven levels of parallel decomposition cannot proceed beyond $D_{\max}$ without human intervention, even when every spawn is fully authorized. The inability to dynamically adjust depth is deliberate: relaxing it collapses the termination guarantee. The current mitigation — routing depth-bound escalations to the human anchor — is correct but introduces stall latency unacceptable for real-time workloads. A productive direction is \emph{hierarchical depth budgeting}: the Purpose Layer pre-authorizes a depth budget for a subtree at provisioning time, enabling bounded adaptive growth within the subtree without per-spawn human involvement. The budget ceiling remains non-negotiable; a machine-actor-extendable budget is functionally equivalent to removing the bound.
+
+A second constraint arises from the single-ledger architecture. The forensic ledger serves as the authoritative record for all spawn events across concurrent chains; write rate scales proportionally with concurrent sessions. The single-ledger design encounters throughput limits at approximately \numrange{e4}{e5} concurrent agents under sustained spawn activity. Ledger sharding by session namespace — with cross-shard audit via a sparse Merkle tree indexing shard roots — is architecturally feasible because the hash-chaining property is locality-agnostic and compatible with horizontal sharding.
+
+A third constraint is the human anchor as single escalation terminus. Simultaneous escalations from multiple chains converge on the same principal, who becomes a sequential bottleneck. A Purpose Layer proxy issuing \texttt{ACK} directives for pre-authorized escalation categories reduces per-escalation involvement while preserving accountability — structured directive templates (Section~\ref{sec:rs-future-work}) are a prerequisite.
+
+\subsection{Compromised Purpose Layer}
+\label{sec:rs-purpose-compromise}
+
+RSP's guarantees are contingent on the human anchor's availability, competence, and good faith. Unavailability stalls chains at $D_{\text{ESCALATE}}$. Directive error — issuing \texttt{ACK} based on insufficient diagnostic context — cannot be contested by intermediate nodes: the Bounds Engine executes whatever the Purpose Layer issues. If the human anchor itself is compromised, the entire chain above it is subverted.
+
+This is the irreducible trade-off of any human-in-the-loop accountability architecture. RSP makes it explicit rather than hidden. Mitigations include multi-signer Purpose Layer configurations (quorum approval for escalation), which introduce coordination latency, and structured directive templates requiring confirmation of diagnostic fields before issuing directives — reducing directive error probability and creating a reviewable audit trail.
+
+The harmful directive scenario warrants attention: a chain three levels deep where the fourth level executes an irreversible action that the human anchor did not anticipate. RSP provides no dissent pathway. A bounded dissent mechanism — by which a node records a dissent annotation in the forensic ledger when it believes a directive is inconsistent with the chain's recorded intent, without the ability to override the directive — creates a permanent tamper-evident trail for post-hoc review. The mechanism must be strictly bounded: it cannot create a pathway by which spawned agents refuse legitimate directives. The dissent annotation is a record, not a veto.
+
+\subsection{Future Work}
+\label{sec:rs-future-work}
+
+Four items define the research agenda. \emph{Dynamic depth budgeting} extends the static depth bound through Purpose Layer pre-authorization of subtree budgets, preserving termination while enabling adaptive decomposition. \emph{Structured directive templates} — enforced by the Fact Layer pre-commit hook — require the human to confirm diagnostic fields before issuing \texttt{ACK}, \texttt{RESOLVE}, or \texttt{REJECT} directives, reducing error and improving auditability. \emph{Ledger sharding} by session namespace, with cross-shard audit via a sparse Merkle tree, enables horizontal write throughput scaling while preserving tamper-evidence. \emph{Parallel chain supervision} — enabled by structured templates — allows a single human anchor to supervise multiple concurrent chains without becoming a sequential bottleneck.
+
+% ---------------------------------------------------------------
+% Section 9: Conclusion
+% ---------------------------------------------------------------
+\section{Conclusion}
+\label{sec:rs-conclusion}
+
+The Recursive Spawning Protocol makes a single architectural claim: accountability in multi-agent spawning systems is achievable not through policy or convention, but through structure — specifically, through the immutable parent pointer, a cryptographically signed, Fact Layer-enforced reference from each child to its parent, established once at provisioning and unalterable by any actor thereafter.
+
+This claim matters because the alternative fails precisely when accountability is most needed. When an agent spawns a child that spawns a child, when exception conditions propagate across multiple delegation levels, when chain depth exceeds what any human can monitor in real time — convention-based accountability collapses. The delegation chain becomes an unanchored graph: nodes spawn children whose actions attribute to no one, whose scope no one controls, whose termination no one guarantees. RSP was designed for exactly these conditions.
+
+The protocol's three correctness properties establish the operational meaning of the immutable parent pointer. Drift prevention guarantees that every node operates within a scope that is a descendant refinement of the root human's authorized intent — the chain cannot migrate purpose through iterative expansion. Chain integrity guarantees that chain topology and node configurations are tamper-evident after provisioning — no actor, including a compromised node, can alter parentage to obscure accountability. Termination guarantees that the chain cannot grow indefinitely — the depth bound is enforced by the Fact Layer as a structural invariant, not a policy convention. These three properties are jointly enforced by the BX3 Framework's three-layer architecture: Purpose Layer for drift prevention, Bounds Engine for termination, Fact Layer for chain integrity. Removing any layer causes the corresponding guarantee to collapse.
+
+The immutable parent pointer is the architectural foundation of RSP because it is the single structural element that cannot be circumvented, approximated, or weakened without breaking the accountability chain entirely. Unlike depth limits, which can be bypassed through administrative override. Unlike policy conventions, which depend on human compliance. Unlike mutable delegation chains, which can be retroactively rewritten. The parent pointer is physically enforced at every spawn event; it exists in the forensic ledger whether or not any human monitors it; it is append-only and hash-chained, making any tampering detectable at verification time. Accountability does not depend on trust; it depends on verification.
+
+This produces an operational guarantee independent of chain depth, spawn frequency, or operational urgency: every spawned agent is accountable to a named human, traceable through an immutable and verifiably complete parent pointer chain, and bounded by a Purpose Layer-defined depth that guarantees termination. The chain grows toward resolution capability. It does not grow away from accountability.
+
+The limitations — performance overhead, static depth ceilings, and Purpose Layer dependence — are the unavoidable cost of this guarantee. RSP does not resolve human accountability in AI systems generally. It resolves the structurally distinct problem of accountability in multi-agent spawn chains, where agents spawn children and the delegation chain would otherwise collapse into an unanchored graph. For this problem, the immutable parent pointer is a definitive architectural answer.

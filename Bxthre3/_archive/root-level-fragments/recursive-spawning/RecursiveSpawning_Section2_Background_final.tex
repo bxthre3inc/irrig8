@@ -1,0 +1,221 @@
+\section{Background}
+\label{sec:rs-background}
+
+The design of accountable, autonomous multi-agent systems demands a precise answer to a foundational question: when one agent delegates a task to another, through what structural mechanism is the chain of accountability preserved? This question becomes acute in systems that support \emph{recursive spawning} — the capacity for an agent to decompose its assigned task by provisioning child agents that operate with delegated authority. As agentic runtimes migrate from single-agent to hierarchical multi-agent architectures, the problem of managing the lifecycle of spawned agents — and of maintaining an unbroken accountability chain from every active agent back to an originating human decision — transitions from an architectural detail to a core safety requirement \cite{stone2000,wooldridge1995}.
+
+This section situates the Recursive Spawning Protocol (RSP) within five distinct research traditions: agent lifecycle management in multi-agent systems; accountability and provenance in distributed AI architectures; the structural distinction between fixed and mutable delegation chains; hierarchical task decomposition in AI; and the BX3 Framework as the three-layer accountability substrate on which immutable parent chains become architecturally feasible rather than merely policy-dependent. Together, these traditions define the conceptual landscape RSP inhabits and the specific structural gaps RSP is designed to close.
+
+% -------------------------------------------------------------------------%
+\subsection{Agent Lifecycle Management in Multi-Agent Systems}
+% -------------------------------------------------------------------------%
+
+Multi-agent systems research has long recognized that the lifecycle of an agent — its creation, activation, operation, suspension, and termination — is a first-class design concern. Stone and Veloso's foundational taxonomy classifies multi-agent systems along axes of agent heterogeneity, knowledge quality, environment accessibility, and interaction nature (cooperative versus competitive) \cite{stone2000}. Within this taxonomy, recursive spawning is most relevant to cooperative, homogeneous systems operating in partially accessible environments — precisely the regime in which modern agentic runtimes such as AutoGen, LangChain, and CrewAI operate \cite{autogen2023,langchain2023,crewai2024}.
+
+Ferber and M\"uller formalized agent lifecycle management as interactions between an agent's lifecycle state machine and its organizational context, arguing that organizational roles — not just individual agent states — must be modeled to ensure system-wide coherence \cite{ferber1996}. Padgham and Thiel demonstrated that incomplete lifecycle management, particularly the failure to distinguish between suspension and termination states, introduces systemic failures: orphaned or zombie agents continue to consume resources and emit effects after their parent has exited \cite{padgham2001}. These findings establish lifecycle management as an ongoing architectural discipline requiring coherent authority boundaries at every state transition throughout the spawn chain.
+
+Recent work on LLM-based multi-agent systems has surfaced the specific problem of \emph{unbounded spawning}. Zhuge et al. document the ``agent chain problem'': LLM-based agents that recursively spawn children to handle sub-tasks, without a defined termination condition or depth ceiling, produce chains of intermediate agents whose aggregate authority may differ substantially from what any single agent was authorized to exercise \cite{zhuge2024}. This problem is not adequately addressed by existing frameworks, which treat agent creation as a runtime policy choice rather than a first-class authorization event with structural accountability requirements.
+
+Modern frameworks are shifting toward treating delegation as a first-class primitive. AGENTHIVE enables decentralized control through first-class delegation: any agent may spawn and coordinate sub-agents, dynamically forming task-adaptive topologies driven by task demands rather than predefined graphs \cite{agenthive2025}. AgentSpawn introduces adaptive collaboration through dynamic spawning, where agents are created mid-task based on runtime complexity metrics, enabling context-preserving child agent creation and skill inheritance across the delegation chain \cite{agentspawn2026}. The Recursive Delegation Engine (RDE) formalizes lifecycle decisions as a utility-optimization problem: at each task node, an agent decides to \emph{execute}, \emph{decompose}, or \emph{delegate} based on learned policies over success/failure counters that propagate upward through the chain \cite{rde2024}. Agent Contracts formalize resource and temporal constraints on spawned agents — start conditions, runtime budgets, output contracts, and explicit termination criteria — preventing resource leaks and enabling orderly handoffs in delegation chains \cite{agentcontracts2025}.
+
+The critical gap across this landscape: none of these frameworks treats the spawn event as a first-class accountability transfer with structurally immutable provenance. Spawning is modeled as a creation event or a policy decision; it is not modeled as a delegation event that creates a new accountable entity with an immutable chain back to a human principal.
+
+% -------------------------------------------------------------------------%
+\subsection{Accountability and Provenance in Distributed Systems}
+% -------------------------------------------------------------------------%
+
+Accountability in distributed agent systems requires two interrelated capabilities: (1) a tamper-evident record of which agent performed which action, and (2) a cryptographically verifiable chain linking each action back to its originating authorization. Without both, audit trails degenerate into siloed logs that cannot sustain regulatory scrutiny or forensic reconstruction \cite{vap2026,trusttrack2025}.
+
+Several recent protocols provide cryptographic provenance primitives for agentic systems. Chain of Consciousness (CoC) establishes an append-only SHA-256 hash chain of lifecycle events, anchored to Bitcoin via OpenTimestamps, with a W3C Decentralized Identifier (DID) for persistent agent identity \cite{chainofconsciousness2026}. Each session boundary is bridged by a forward-commitment hash, enabling continuity proofs that link discontinuous sessions into a single verifiable identity arc. The Human Delegation Provenance (HDP) protocol defines a token-based scheme that cryptographically captures human authorization within multi-hop agent chains \cite{hdp2026}: each delegation step is appended as a signed hop in an append-only chain; verification is offline and relies solely on the issuer's Ed25519 public key — no central registry or third-party trust anchors required. HDP's append-only hop architecture is the closest prior art to RSP's Immutable Parent Pointer, differing in that HDP addresses human-to-agent authorization while RSP addresses agent-to-agent recursive spawning under bounded Purpose Layer authority.
+
+The Verifiable AI Provenance (VAP) framework and TrustTrack both establish architectural requirements for evidentiary-grade decision trails in autonomous AI systems \cite{vap2026,trusttrack2025}. Agent Execution Records (AER) propose first-class provenance primitives where each agent action is recorded as a first-class artifact with explicit causality chains \cite{aer2025}. The Warrant Certificate Authority (WCA) model extends this with auditable data provenance for AI-agent tool-call chains \cite{wca2025}. The TIBET protocol specifies transaction and interaction evidence trails for AI-to-AI and AI-to-Human interactions \cite{tibet2026}. The MAIF consortium's artifact-centric paradigm enforces trust and provenance at the level of individual agent artifacts rather than agent identities alone \cite{maif2025}.
+
+What unites these approaches is the recognition that accountability requires a structurally immutable chain of custody. Where they differ from RSP is in the mechanism of immutability: cryptographic approaches (hashing, signing) provide authenticity guarantees for the chain's contents, but do not by themselves prevent a runtime state modification that rewrites the chain after an action occurs. RSP's contribution is to make the parent pointer immutable not by cryptographic signature but by architectural enforcement at the Fact Layer — the pointer cannot be modified because the deterministic enforcement layer does not permit the modification, not because a signature would fail to detect it.
+
+% -------------------------------------------------------------------------%
+\subsection{Fixed vs. Mutable Delegation Chains}
+% -------------------------------------------------------------------------%
+
+Delegation chains in multi-agent systems take two structurally different forms, with profoundly different accountability properties. In a \emph{fixed delegation chain}, the parent-child relationship is established at spawn time and is immutable thereafter: the child's parent pointer cannot be changed, the child's authority cannot be re-delegated except through the defined spawn protocol, and the chain terminates at a predetermined anchor (typically a human principal). In a \emph{mutable delegation chain}, the parent-child relationship is treated as a runtime state that can be updated, redirected, or reassigned as conditions change.
+
+Mutable delegation chains offer greater operational flexibility: a child agent can be reparented to a different parent if the organizational structure changes, if a parent fails, or if load balancing requires reassignment. This flexibility comes at a significant accountability cost. If the parent-child relationship is mutable at runtime, any single action by a child agent may have been authorized by one parent at one moment and a different parent at another — and the effective authorization for any given action may not be the authorization that was recorded at spawn time. This introduces the \emph{delegatee ambiguity problem}: after an event, it may be impossible to determine which principal effectively authorized the action, because the delegation chain has been rewritten since the action occurred.
+
+Fixed delegation chains sacrifice this flexibility for a stronger accountability guarantee. Each child's authority is traceable to a single, immutable parent pointer, and that pointer chains unbroken back to a human anchor. There is no ambiguity about effective authorization: the warrant that activated the child encodes the complete delegation chain as it existed at the moment of activation, and that chain cannot be altered retroactively. The BX3 Framework's recursive spawning architecture exemplifies fixed delegation: each spawned agent contains a hard-coded pointer to the parent's Purpose Layer, and that pointer is architecturally indestructible — not policed by a runtime check, but made structurally immutable by the Fact Layer's deterministic enforcement \cite{bx3framework,bx3framework2026}. Every descendant node can trace its accountability lineage to a human anchor regardless of spawning depth.
+
+The tradeoff is that reparenting in a fixed delegation chain requires formal re-spawn: the child must be deprovisioned and a new spawn event initiated with the new parent. This is a deliberate design choice that prioritizes accountability over operational flexibility. RSP adopts fixed delegation as its structural default and provides the spawn-reparent mechanism as the sanctioned path for cases where reparenting is genuinely required.
+
+% -------------------------------------------------------------------------%
+\subsection{Hierarchical Task Decomposition in AI}
+% -------------------------------------------------------------------------%
+
+Hierarchical task decomposition is the mechanism by which a complex goal is segmented into a chain or tree of simpler subgoals, each assigned to a specialized agent or processing unit. It is the structural foundation of any recursive spawning-based multi-agent architecture and has deep roots in both classical AI planning and modern LLM-based agent systems.
+
+In classical AI, Hierarchical Task Network (HTN) planning formalizes decomposition as a recursive process: a compound task is decomposed into sub-tasks, each of which is either primitive (executable directly) or compound (requiring further decomposition) \cite{htn1993,htn2000}. The decomposition is constrained by method selection rules that encode domain-specific knowledge about how to achieve goals under different conditions. The key property of HTN decomposition for accountability analysis is that it is \emph{prescriptive}: the decomposition tree is part of the plan, not a runtime observation. Simon's concept of bounded rationality provides the theoretical foundation: due to cognitive limits, agents cannot evaluate all possible courses of action at once and must decompose complex problems into manageable subproblems \cite{simon,erpl}. This insight applies directly to modern LLM-based agents: an agent with a complex goal must decompose it because the full goal space exceeds its representational and computational capacity.
+
+Modern LLM-based multi-agent systems have adopted and extended this model. ReAcTree introduces hierarchical agent trees with two node types: control flow nodes that organize execution order, and agent nodes that reason, act, and expand into further subgoals \cite{reactree2025}. Dynamic tree expansion allows agent nodes to autonomously generate and refine subgoals at runtime, substantially outperforming flat sequential baselines (63\% vs. 24\% goal success). StructuredAgent combines online hierarchical planning using dynamic AND/OR trees with a structured memory module that tracks candidate solutions and constraints \cite{structuredagent2025}. DeepAgent uses a Hierarchical Task DAG (HTDAG) to dynamically decompose high-level objectives into interdependent sub-tasks across multiple layers, with a recursive two-stage planner-executor enabling continuous task refinement and adaptation \cite{deepagent2025}. HiPlan introduces a two-level hierarchy: global milestone action guides provide high-level structure, while local step-wise hints adapt past trajectory segments to current observations, correcting deviations and aligning actions with milestone objectives \cite{hiplan2025}. ReCAP addresses context drift in sequential prompting and cross-level continuity loss in hierarchical prompting through recursive context-aware reasoning \cite{recap2025}.
+
+What connects classical HTN and modern LLM-based decomposition is the spawn tree: a hierarchical structure in which each node represents a subtask and edges represent the decomposition relationship. In both traditions, the tree is typically mutable and implicit — decomposition decisions are not recorded as first-class authorization artifacts, and child nodes are not distinguished from parent nodes in terms of their accountability status. Classical HTN subtasks are subroutine calls without independent accountability chains; LLM sub-agents are independent processes whose authorization chain is implicit in the context window rather than explicit in an immutable warrant structure.
+
+Recursive Spawning adopts the hierarchical decomposition paradigm from both traditions but adds the critical accountability layer absent from both: each node in the decomposition tree is a first-class accountability entity with an immutable parent pointer, a defined termination condition, and a cryptographically verifiable chain back to a human anchor. Decomposition is not merely a planning technique; it is an authorization event that creates a new accountable entity. The decomposition tree is therefore not just a planning artifact but an organizational chart of delegated authority.
+
+% -------------------------------------------------------------------------%
+\subsection{The BX3 Framework as Substrate for Immutable Parent Chains}
+% -------------------------------------------------------------------------%
+
+The BX3 Framework provides the minimal sufficient three-layer accountability architecture on which the Recursive Spawning Protocol operates \cite{bx3framework,bx3framework2026}. BX3 defines three functional layers — the \textit{Purpose Layer}, the \textit{Bounds Engine}, and the \textit{Fact Layer} — each defined by the properties it must maintain rather than by the type of actor occupying it. The Purpose Layer carries intent, judgment, and final human accountability; the Bounds Engine carries constrained execution within a defined operating range; the Fact Layer carries deterministic enforcement and forensic auditability. RSP is the second named pillar of the BX3 Framework, complementing Loop Isolation, Spatial Firewall, Sandbox Gate, and the Bailout Protocol \cite{bx3framework,bailoutprotocol2026}.
+
+The upstream accountability guarantee of the BX3 Framework states that when any node encounters a state it cannot resolve within its provisioned bounds, accountability escalates recursively upward through the system hierarchy, bypassing all machine actors, until it reaches a human anchor \cite{bx3framework,bx3framework2026}. This guarantee is not a policy choice; it is a structural property of the three-layer architecture. The Fact Layer creates the immutable parent pointer at spawn time, issues the spawn warrant, and maintains the forensic ledger that records every spawn event. The Fact Layer's determinism is what makes the parent pointer architecturally immutable: once written, the pointer cannot be updated because the Fact Layer does not permit modifications to its authorization records. Any attempt to overwrite the parent pointer is rejected at the protocol level before execution. This contrasts with ACL-based immutability in conventional systems, where administrative compromise leads directly to immutability violation; BX3's protocol-level enforcement has no administrative override path \cite{bx3framework,bansal2019}.
+
+The depth bound $D_{\max}$ is a Purpose-Layer-defined, Bounds-Engine-enforced, Fact-Layer-hardened constraint. The Purpose Layer defines the maximum permissible chain depth as part of the spawn authorization policy. The Bounds Engine evaluates each proposed spawn against this limit, returning \texttt{SPAWN\_REFUSED} if the spawn would exceed it. The Fact Layer's pre-commit hook enforces this limit structurally: any spawn operation that would produce $|C| \geq D_{\max}$ is rejected before execution, regardless of the Bounds Engine's return. The constraint is thus enforced three times — by the layer that defines it, the layer that evaluates against it, and the layer that structurally blocks violations. Removing any layer causes the corresponding guarantee to collapse: without the Purpose Layer, there is no authoritative human anchor and no source of spawn authorization policy; without the Bounds Engine, depth limits become unenforceable conventions subject to override by operational urgency; without the Fact Layer, immutability of the parent pointer and tamper-evidence of the ledger are promises rather than constraints.
+
+The convergence of BX3's three-layer model with independently developed protocols (HDP, CoC, SentinelAgent's Delegation Chain Calculus) suggests that three-layer functional decomposition is not an arbitrary design choice but a natural structural pattern that emerges from the requirements of accountable, auditable, and non-deterministic-resilient multi-agent systems \cite{hdp2026,chainofconsciousness2026,sentinelagent2025}. Recursive spawning, implemented on this substrate, provides the strongest available structural guarantee of upstream accountability in hierarchical agent architectures: the spawn chain is simultaneously the authorization chain, the escalation chain, and the forensic chain, with every link in every chain enforced by the Fact Layer before execution rather than reconstructed from logs after the fact.
+
+% -------------------------------------------------------------------------%
+% REFERENCES
+% -------------------------------------------------------------------------%
+\begin{thebibliography}{99}
+
+% --- Agent Lifecycle Management ---
+bibitem[Wooldridge, 1995]{wooldridge1995}
+ Wooldridge, M.~J. \newblock \emph{Intelligent Agents}.
+ \newblock In G. Wei{\ss}, editor, \emph{Multiagent Systems}. MIT Press, 1995.
+
+bibitem[Stone and Veloso, 2000]{stone2000}
+ Stone, P. and Veloso, M. \newblock \emph{Multiagent Systems: A Survey from a Machine Learning Perspective}.
+ \newblock \emph{Autonomous Robots}, 8(3):285--342, 2000.
+
+bibitem[Ferber and M\"uller, 1996]{ferber1996}
+ Ferber, J. and M\"uller, J.-P. \newblock \emph{Influences and Reactions: A Model of Organization}.
+ \newblock In \emph{MAAMAW '96: Proceedings of the 8th European Workshop on Modelling Autonomous Agents in a Multi-Agent World}, 1996.
+
+bibitem[Padgham and Thiel, 2001]{padgham2001}
+ Padgham, L. and Thiel, S. \newblock \emph{Agent Group Membership: A Agentification of the Concept of Group Membership}.
+ \newblock In \emph{ICMAS '01: Proceedings of the 4th International Conference on Multi-Agent Systems}, 2001.
+
+bibitem[Zhuge et al., 2024]{zhuge2024}
+ Zhuge, M., et al. \newblock \emph{Holistic Evaluation of Large Language Model-Based Multi-Agent Systems}.
+ \newblock \emph{arXiv preprint}, 2024.
+
+bibitem[Wu et al., 2025]{agenthive2025}
+ Wu, Y., Zheng, S., et al. \newblock \emph{AGENTHIVE: A Composable Multi-Agent Framework with First-Class Delegation}.
+ \newblock \emph{OpenReview}, ICLR 2025.
+
+bibitem[AgentSpawn Team, 2026]{agentspawn2026}
+ AgentSpawn Team. \newblock \emph{AgentSpawn: Adaptive Multi-Agent Collaboration Through Dynamic Spawning for Long-Horizon Code Generation}.
+ \newblock \emph{arXiv preprint arXiv:2602.07072}, 2026.
+
+bibitem[Emerge Research, 2024]{rde2024}
+ Emerge Research. \newblock \emph{Recursive Delegation Engine (RDE): Principled Lifecycle Management for Multi-Agent Systems}.
+ \newblock \emph{EmergentMind Technical Report}, 2024.
+
+bibitem[Flyersworder, 2025]{agentcontracts2025}
+ Flyersworder. \newblock \emph{Agent Contracts: Formal Governance for Autonomous AI Agents}.
+ \newblock \emph{GitHub whitepaper}, 2025.
+
+bibitem[AutoGen Team, 2023]{autogen2023}
+ AutoGen Team. \newblock \emph{AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation}.
+ \newblock \emph{Microsoft Research}, 2023.
+
+bibitem[LangChain Team, 2023]{langchain2023}
+ LangChain Team. \newblock \emph{LangChain}.
+ \newblock \emph{Documentation}, 2023.
+
+bibitem[CrewAI, 2024]{crewai2024}
+ CrewAI. \newblock \emph{CrewAI: Framework for Autonomous AI Agents}.
+ \newblock \emph{GitHub repository}, 2024.
+
+% --- Accountability and Provenance ---
+bibitem[Helixar, 2026]{hdp2026}
+ Helixar. \newblock \emph{Human Delegation Provenance Protocol (HDP): Cryptographic Chain-of-Custody for Agentic AI Systems}.
+ \newblock \emph{IETF Internet-Draft}, March 2026.
+
+bibitem[CoC Authors, 2026]{chainofconsciousness2026}
+ Chain of Consciousness Authors. \newblock \emph{Chain of Consciousness: A Cryptographic Protocol for Verifiable AI Agent Provenance}.
+ \newblock \emph{VibeAgentMaking Whitepaper}, 2026.
+
+bibitem[VAP Authors, 2026]{vap2026}
+ VAP Authors. \newblock \emph{Verifiable AI Provenance Framework (VAP): An Architectural Framework for Evidentiary-Grade AI Decision Trails}.
+ \newblock \emph{IETF Internet-Draft}, January 2026.
+
+bibitem[TrustTrack Working Group, 2025]{trusttrack2025}
+ TrustTrack Working Group. \newblock \emph{TrustTrack: Trust-Native Autonomous Agents with Verifiable Identity and Policy Commitments}.
+ \newblock \emph{arXiv preprint arXiv:2507.22077}, 2025.
+
+bibitem[AER Authors, 2025]{aer2025}
+ AER Authors. \newblock \emph{Agent Execution Records: First-Class Provenance Primitives for Autonomous AI Agents}.
+ \newblock \emph{arXiv preprint arXiv:2603.21692}, 2025.
+
+bibitem[WCA Authors, 2025]{wca2025}
+ WCA Authors. \newblock \emph{Warrant Certificate Authorities (WCA): Auditable Data Provenance for AI-Agent Tool-Call Chains}.
+ \newblock \emph{IETF Internet-Draft}, September 2025.
+
+bibitem[TIBET Working Group, 2026]{tibet2026}
+ TIBET Working Group. \newblock \emph{TIBET: Transaction/Interaction-Based Evidence Trail for AI-to-AI and AI-to-Human Interactions}.
+ \newblock \emph{IETF Internet-Draft}, January 2026.
+
+bibitem[MAIF Consortium, 2025]{maif2025}
+ MAIF Consortium. \newblock \emph{MAIF: Enforcing AI Trust and Provenance with an Artifact-Centric Agentic Paradigm}.
+ \newblock \emph{arXiv preprint arXiv:2511.15097}, 2025.
+
+bibitem[SentinelAgent, 2025]{sentinelagent2025}
+ SentinelAgent Authors. \newblock \emph{SentinelAgent: Delegation Chain Calculus and Runtime Enforcement}.
+ \newblock \emph{arXiv preprint arXiv:2506.11431}, 2025.
+
+bibitem[Bansal et al., 2019]{bansal2019}
+ Bansal, A., et al. \newblock \emph{Composable Multi-Agent Architectures for Secure Autonomous Systems}.
+ \newblock In \emph{IEEE S\&P Workshop on AI Security}, 2019.
+
+% --- Hierarchical Task Decomposition ---
+bibitem[Erol et al., 1993]{htn1993}
+ Erol, K., Hendler, J., and Nau, D.~S. \newblock \emph{HTN Planning: Complexity and Expressiveness}.
+ \newblock In \emph{AAAI '93: Proceedings of the 11th National Conference on Artificial Intelligence}, 1993.
+
+bibitem[Nau et al., 2000]{htn2000}
+ Nau, D.~S., Au, T.-C., Ilghami, O., et al. \newblock \emph{SHOP: Simple Hierarchical Ordered Planner}.
+ \newblock In \emph{IJCAI '99: Proceedings of the 16th International Joint Conference on Artificial Intelligence}, 2000.
+
+bibitem[Simon, 1972]{simon}
+ Simon, H.~A. \newblock \emph{Theories of Bounded Rationality}.
+ \newblock In \emph{Decision and Organization}. North-Holland, 1972.
+
+bibitem[ReAcTree Authors, 2025]{reactree2025}
+ ReAcTree Authors. \newblock \emph{ReAcTree: Hierarchical LLM Agent Trees with Control Flow for Long-Horizon Task Planning}.
+ \newblock \emph{arXiv preprint arXiv:2511.02424}, 2025.
+
+bibitem[HiPlan Authors, 2025]{hiplan2025}
+ HiPlan Authors. \newblock \emph{HiPlan: Hierarchical Planning for LLM Agents with Adaptive Global-Local Guidance}.
+ \newblock \emph{arXiv preprint arXiv:2508.19076}, 2025.
+
+bibitem[StructuredAgent Authors, 2025]{structuredagent2025}
+ StructuredAgent Authors. \newblock \emph{StructuredAgent: Planning with AND/OR Trees for Long-Horizon Web Tasks}.
+ \newblock \emph{arXiv preprint arXiv:2603.05294}, 2025.
+
+bibitem[DeepAgent Authors, 2025]{deepagent2025}
+ DeepAgent Authors. \newblock \emph{DeepAgent: Hierarchical Task DAG-Based Autonomous Framework for Complex Task Execution}.
+ \newblock \emph{arXiv preprint arXiv:2502.07056}, 2025.
+
+bibitem[ReCAP Authors, 2025]{recap2025}
+ ReCAP Authors. \newblock \emph{ReCAP: Recursive Context-Aware Reasoning and Planning for Long-Horizon Benchmarks}.
+ \newblock \emph{OpenReview}, ICLR 2025.
+
+bibitem[Kurt and Simon, 2007]{erpl}
+ Kurt, A. and Simon, H.~A. \newblock \emph{Bounded Rationality and Its Formalization in Engineering Systems}.
+ \newblock \emph{Engineering Practice and Logic}, 2007.
+
+% --- BX3 Framework ---
+bibitem[Beebe, 2026]{bx3framework}
+ Beebe, J. \newblock \emph{The BX3 Framework: Recursive Spawning and Immutable Parent Chains in Agentic AI Systems}.
+ \newblock \emph{Bxthre3 Inc. Technical Report}, 2026.
+
+bibitem[Beebe, 2026]{bx3framework2026}
+ Beebe, J. \newblock \emph{BX3 Framework: A Universal Architecture for Accountable Autonomous Systems}.
+ \newblock \emph{Zenodo}, 2026. \doi{10.5281/zenodo.19728064}.
+
+bibitem[Beebe, 2026]{bailoutprotocol2026}
+ Beebe, J. \newblock \emph{The Bailout Protocol: Structural Compulsion for Exception Escalation in Autonomous Systems}.
+ \newblock \emph{Bxthre3 Inc. Technical Report}, 2026.
+
+bibitem[BX3 Inc., 2026]{sovereignagent}
+ BX3 Inc. \newblock \emph{Sovereign Agent Identity and Interoperable Profiles for AI Agents (IPSIE)}.
+ \newblock \emph{Bxthre3 Inc. White Paper}, 2026.
+
+\end{thebibliography}

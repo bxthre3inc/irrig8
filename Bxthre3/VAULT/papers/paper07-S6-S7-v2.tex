@@ -1,0 +1,180 @@
+% -------------------------------------------------------
+\section{Integration with the BX3 Framework}
+\label{sec:bx3-integration}
+
+Recursive Spawning is not a standalone mechanism. It is a \textit{structural operationalization} of the BX3 Framework's three-layer architecture applied to the specific challenge of hierarchical agent lifecycle management. Each functional layer plays a distinct and necessary role; removing any layer renders the mechanism incomplete and all three correctness guarantees unsound.
+
+% -------------------------------------------------------
+\subsection{Purpose Layer: The Accountability Anchor}
+\label{sec:purpose-anchor}
+
+The Purpose Layer is the \textit{source of legitimate authority} for every spawned node in the hierarchy. When a parent node births a child via Recursive Spawning, it does so by encoding a \textit{purpose-encoded Worksheet} — a containerized logic set that carries the authorizing Purpose pointer as an immutable, hardware-protected field.
+
+Let $P$ denote the set of all Purpose Layer actors. At spawn time, a parent $p \in P$ authorizes child node $c$ with authorized scope $\sigma_c$, and the Fact Layer records this authorization in the forensic ledger. The child $c$ is instantiated with an immutable parent pointer $\alpha(c) = p$, where
+\begin{equation}
+\alpha : C \rightarrow P \cup \{\bot\}
+\tag{1}
+\end{equation}
+is a total function on the set $C$ of child nodes. The root human actor $h \in H \subseteq P$ satisfies $\alpha(h) = \bot$.
+
+The Purpose Layer serves as the \textit{terminus} of the accountability chain. By the Human Root Mandate, every $p \in P$ must be either a human actor or an institutional actor explicitly authorized by a human. Consequently, the chain $\xi(c)$ for any node $c$ terminates at a human — never at an autonomous system, a model weight, or a consensus mechanism.
+
+Three structural consequences follow:
+
+\begin{itemize}
+    \itemsep0em
+    \item Every Worksheet carries the identity of its authorizing Purpose Layer actor.
+    \item Every spawn event is recorded in the forensic ledger with the authorizing actor's cryptographic signature.
+    \item Only Purpose Layer actors (or explicitly delegated agents holding a constrained grant) may initiate spawn events — intermediate nodes cannot create unauthorized subtrees.
+\end{itemize}
+
+% -------------------------------------------------------
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:bounds-depth}
+
+The Bounds Engine enforces that spawn operations respect hierarchy depth constraints, preventing unbounded recursive delegation — the structural prerequisite for finite termination.
+
+The depth $d(c)$ of a node $c$ is defined recursively:
+\begin{equation}
+d(c) = \begin{cases}
+0 & \text{if } \alpha(c) \in P \\
+1 + d(\alpha(c)) & \text{otherwise}
+\end{cases}
+\tag{2}
+\end{equation}
+
+The Bounds Engine maintains a per-authority depth budget $\Delta(p)$ for each $p \in P$. When $p$ spawns child $c$, the child's maximum allowed depth is bounded by $\min(\Delta(p), d_{\max})$, where $d_{\max}$ is a system-wide hard limit enforced at the Fact Layer. The Bounds Engine checks this budget before authorizing any spawn proposal and records the depth allocation in the forensic ledger.
+
+This two-tier enforcement yields two distinct guarantees:
+
+\begin{enumerate}
+    \itemsep0em
+    \item \textit{System-wide termination:} The hard cap $d_{\max}$ ensures the spawning hierarchy is finite for all nodes, guaranteeing that the accountability chain $\xi$ is finite and that the Bailout Protocol never traverses an infinite path.
+    \item \textit{Per-authority budget control:} The budget $\Delta(p)$ limits how deeply any single human's delegation chain can extend, preventing inadvertent creation of arbitrarily deep machine intermediary chains.
+\end{enumerate}
+
+The Bounds Engine additionally enforces scope isolation between sibling subtrees: a child $c_1$ spawned by $p$ cannot interfere with the Worksheets, sensor inputs, or Fact Layer state of a sibling $c_2$, except through a defined inter-node communication protocol that itself requires Purpose Layer authorization. This prevents cascading failures and ensures that each subtree is an independent accountability unit.
+
+% -------------------------------------------------------
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:fact-ledger}
+
+The Fact Layer provides the deterministic enforcement and forensic auditability that makes the other two layers verifiable. Every spawn event produces an append-only, hash-chained ledger entry:
+
+\begin{equation}
+\text{spawn}(c,\ p,\ \sigma_c,\ t,\ \phi)
+\tag{3}
+\end{equation}
+
+where $c$ is the child, $p \in P$ is the authorizing Purpose Layer actor, $\sigma_c$ is the authorized scope, $t$ is the wall-clock timestamp, and $\phi$ is the cryptographic hash of the authorizing Purpose record. The ledger is append-only and hash-chained: each entry $i$ contains the hash of entry $i-1$, making retroactive tampering detectable at constant time.
+
+The forensic ledger supports three queries essential to Recursive Spawning correctness:
+
+\begin{itemize}
+    \itemsep0em
+    \item \textbf{Ancestry reconstruction:} Given any node $c$, traverse the full parent pointer chain $(c, \alpha(c), \alpha(\alpha(c)), \ldots)$ by following spawn records backward through the ledger. Each spawn entry provides the authorized parent, enabling deterministic chain reconstruction.
+    \item \textbf{Drift detection:} Compare observed node behavior (Fact Layer state deltas, actuator commands, ledger entries) against the authorized scope $\sigma_c$ recorded at spawn. Any divergence is flagged as a drift event and triggers the Bailout Protocol.
+    \item \textbf{Depth verification:} Recompute $d(c)$ from ledger spawn entries and verify $d(c) \leq d_{\max}$. Violation indicates unauthorized depth escalation or retroactive ledger tampering.
+\end{itemize}
+
+The forensic ledger is what makes drift detection and chain integrity possible. Without a deterministic, tamper-evident record of every spawn event, the system cannot prove that the current parent pointer chain matches the authorized chain — and the Human Root Mandate would be unverifiable in practice.
+
+% -------------------------------------------------------
+\section{Correctness Properties}
+\label{sec:correctness}
+
+We establish three correctness properties for Recursive Spawning as implemented within the BX3 Framework: drift prevention, chain integrity, and termination. Each is stated formally with a proof sketch.
+
+% -------------------------------------------------------
+\subsection{Drift Prevention}
+\label{sec:drift-prevention}
+
+\textit{Drift} is the condition in which a spawned node's behavior diverges from its authorized Purpose in a manner that is both undetectable and unrectifiable by the accountability chain. Drift is the central failure mode Recursive Spawning is designed to prevent.
+
+\begin{thrm}[Drift Prevention]
+\label{thrm:drift-prevention}
+In a BX3 system $(P, B, F, \Gamma, \Phi)$ implementing Recursive Spawning, no node $c \in C$ can diverge from its authorized Purpose $p = \alpha(c)$ in a manner that is both (a) undetectable by the accountability chain and (b) unrectifiable by the Bailout Protocol.
+\end{thrm}
+
+\begin{proof}[Proof sketch]
+We prove by contradiction on condition (a). Suppose node $c$ drifts to an unauthorized purpose $p' \neq p$.
+
+\textit{Case 1: $c$ attempts to modify $\alpha(c)$.} By hardware-enforced immutability, $\alpha(c)$ is stored in a write-once, MPU-protected field at the Fact Layer. Any modification requires Fact Layer authorization, which requires a Purpose Layer signature in the forensic ledger. The modification is therefore detectable at the moment of the attempt, and the Bailout Protocol is triggered. The drift is not undetectable.
+
+\textit{Case 2: $c$ acts on $p'$ without modifying $\alpha(c)$.} Any action taken on an unauthorized purpose produces observable state in the Fact Layer (sensor inputs, actuator commands, ledger entries). The forensic ledger records all such states. Divergence is therefore detectable by comparing observed behavior against the authorized scope $\sigma_c$ recorded at spawn. Since the divergence is detectable, condition (a) is violated.
+
+In both cases, drift is detectable. By the definition of the Bailout Protocol, any detectable drift triggers mandatory escalation to a Purpose Layer actor, making it rectifiable. Therefore, no undetectable-and-unrectifiable drift can occur. $\square$
+\endproof
+
+The proof sketch reveals why all three BX3 layers are necessary for drift prevention. Removing the Purpose Layer eliminates the source of legitimate authority, making ``authorized'' vs. ``unauthorized'' purpose undefinable. Removing the Bounds Engine removes depth enforcement, allowing unbounded chains where drift becomes undetectable before escalation can reach a human. Removing the Fact Layer eliminates the tamper-evident record that makes drift detectable. Each layer is load-bearing.
+
+% -------------------------------------------------------
+\subsection{Chain Integrity}
+\label{sec:chain-integrity}
+
+Chain integrity is the property that the in-memory parent pointer chain $\chi(c)$ matches the authorized chain reconstructed from the forensic ledger $\chi_{\mathcal{L}}(c)$.
+
+\begin{thrm}[Chain Integrity]
+\label{thrm:chain-integrity}
+For any node $c$ in a BX3 system implementing Recursive Spawning, the in-memory parent pointer chain
+\begin{equation}
+\chi(c) = (c_0, c_1, c_2, \ldots)
+\quad\text{where}\quad
+c_0 = c,\ c_{i+1} = \alpha(c_i)
+\end{equation}
+and the ledger-authorized chain
+\begin{equation}
+\chi_{\mathcal{L}}(c) = (c_0^{\mathcal{L}}, c_1^{\mathcal{L}}, c_2^{\mathcal{L}}, \ldots)
+\quad\text{reconstructed from forensic ledger entries}
+\end{equation}
+satisfy $c_i = c_i^{\mathcal{L}}$ for all $i \geq 0$.
+\end{thrm}
+
+\begin{proof}[Proof sketch]
+We prove by induction on chain depth $i$.
+
+\textit{Base case ($i = 0$):} $c_0 = c$ appears in the ledger as the subject of its own spawn entry, so $c_0 = c_0^{\mathcal{L}}$ trivially.
+
+\textit{Inductive step:} Assume $c_i = c_i^{\mathcal{L}}$ for some $i \geq 0$. The parent of $c_i$ is $\alpha(c_i) = c_{i+1}$. By immutability of $\alpha$, $c_{i+1}$ is set exactly once at spawn time and cannot change afterward. The Fact Layer wrote $c_{i+1}^{\mathcal{L}}$ into the immutable parent pointer field and recorded it in the forensic ledger as part of the spawn event. Since $\alpha$ cannot be modified post-spawn, $c_{i+1} = c_{i+1}^{\mathcal{L}}$.
+
+By induction, $\chi(c) = \chi_{\mathcal{L}}(c)$. $\square$
+\endproof
+
+The converse also holds: any discrepancy between $\chi(c)$ and $\chi_{\mathcal{L}}(c)$ constitutes definitive evidence of either a hardware memory fault (detectable and rectifiable via chain reconstruction from the ledger) or a compromised sealed envelope (triggers the Bailout Protocol and containment).
+
+% -------------------------------------------------------
+\subsection{Termination}
+\label{sec:termination}
+
+Termination is the property that the accountability chain $\xi(c)$ from any node terminates at a human Purpose Layer actor in a bounded number of steps.
+
+\begin{thrm}[Termination]
+\label{thrm:termination}
+In a BX3 system with Recursive Spawning, for any node $c$, the accountability chain $\xi(c)$ terminates at a human Purpose Layer actor in at most $d_{\max}$ escalation steps.
+\end{thrm}
+
+\begin{proof}[Proof sketch]
+Two constraints jointly enforce termination.
+
+\textit{Constraint 1 (Finite depth):} Every node $c$ satisfies $d(c) \leq d_{\max}$, a Fact Layer hard constraint on all spawn authorizations. Therefore the parent pointer chain from $c$ to a Purpose Layer actor has length at most $d_{\max}$.
+
+\textit{Constraint 2 (Human Root Mandate):} Every element of $P$ is either a human or a human-delegated institutional actor. The terminal element of $\xi(c)$ is therefore a human.
+
+When a node encounters an unresolvable state, it escalates via the Bailout Protocol, traversing the parent pointer chain upward. Each step moves to a node of strictly smaller depth. The chain has length at most $d_{\max}$, so escalation terminates in at most $d_{\max}$ steps at a Purpose Layer actor, which by Constraint 2 is human. $\square$
+\endproof
+
+The constant-time termination property is a direct consequence of immutable parent pointers combined with depth-bounded spawning. Mutable parent pointers would allow the chain to be extended retroactively, making the effective depth potentially unbounded and the worst-case escalation latency unbounded as well. Immutability is what converts the depth bound from a policy into a structural guarantee.
+
+The practical implication is that Recursive Spawning hierarchies are \textit{predictably bounded} regardless of scale. A system with 10,000 spawned nodes and $d_{\max} = 5$ has the same worst-case escalation latency as a system with 10 nodes. This enables formal safety arguments for physical deployments (e.g., Irrig8 edge nodes controlling irrigation equipment) where the worst-case time to human intervention must be known with certainty before deployment certification.
+
+% -------------------------------------------------------
+\subsection{Corollary: Compositional Safety}
+\label{sec:compositional-safety}
+
+The combination of drift prevention, chain integrity, and termination yields a compositional safety guarantee:
+
+\begin{corol}[Compositional Safety]
+Systems composed of multiple independent Recursive Spawning hierarchies maintain all three correctness properties (Theorems \ref{thrm:drift-prevention}, \ref{thrm:chain-integrity}, and \ref{thrm:termination}) independently within each hierarchy. Cross-hierarchy interactions require explicit Purpose Layer authorization and are recorded in the forensic ledger of each participating hierarchy.
+\end{corol}
+
+This corollary enables multi-domain deployments — such as Irrig8, which requires separate spawning hierarchies for irrigation scheduling, equipment health monitoring, and regulatory reporting — where each domain operates as an independent accountability tree under a common Purpose Layer actor, with cross-domain coordination occurring exclusively through Purpose Layer authorization chains.

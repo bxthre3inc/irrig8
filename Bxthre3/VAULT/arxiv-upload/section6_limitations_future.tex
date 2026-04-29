@@ -1,0 +1,86 @@
+% ============================================================
+% Section 6 — Limitations and Future Work
+% ============================================================
+\section{Limitations and Future Work}
+\label{sec:limitations}
+
+\subsection{Limitations}
+
+The Bailout Protocol, as defined and analyzed in this work, represents a principled approach to upstream accountability in bounded AI systems. However, several material limitations constrain its current form, and acknowledging them is essential for honest deployment planning.
+
+\subsubsection{Human Response Latency}
+\label{sec:lim_human_latency}
+
+The protocol's safety properties hold under the assumption that human anchors respond within the configured timeout windows. In practice, human availability is both geographically and temporally heterogeneous. A human anchor may be asleep, in a meeting, or otherwise unreachable during a critical escalation event. The current timeout regime ($T_{\text{bailout}}$ = 120 s, $T_{\text{escalation\_max}}$ = 300 s) represents a engineering judgment about tolerable latency, but it introduces a hard trade-off: shorter timeouts reduce the accountability gap but increase the probability of false-positive timeout exceptions in scenarios where a human is simply slow to respond; longer timeouts extend the window of autonomous operation under risk but widen the period during which no human has acknowledged the exception.
+
+The training wheels framework partially mitigates this by ensuring that outbound actions never proceed without human review. However, during a bailout escalation, the affected node's autonomous processing is frozen, and this freeze itself may have operational consequences in time-sensitive domains such as Irrig8's irrigation control loops. The protocol does not yet incorporate dynamic timeout adjustment based on the operational criticality of the affected node's function.
+
+\subsubsection{Adversarial Conditions}
+\label{sec:lim_adversarial}
+
+The bypass mechanism is defined against a threat model in which machine actors are honest-but-bounded participants in the escalation hierarchy. The statement $\forall n : \texttt{IsMachineActor}(n) \implies \texttt{CannotBeEscalationEndpoint}(n)$ assumes that machine actors correctly implement the relay behavior and do not suppress, replay, or falsify escalation signals.
+
+In an adversarial setting — where a compromised node may selectively suppress bailout triggers, replay stale acknowledgments, or fabricate HUMAN\_ACKNOWLEDGED states — the protocol provides no cryptographic integrity guarantee for escalation signals. The forensic ledger records events after they occur, but it does not prevent a sophisticated adversary from intercepting and neutralizing the signal before it reaches a human anchor. A fully adversarial threat model requires authenticated and attested escalation channels, which are not specified in the current protocol definition.
+
+\subsubsection{Scalability of the Escalation Hierarchy}
+\label{sec:lim_scalability}
+
+The protocol's correctness depends on the existence of a human anchor at the terminus of every escalation path, and on the responsiveness of that anchor within the configured timeout. As a BX3 deployment scales horizontally — adding nodes, sub-agents, and new reasoning domains — the escalation hierarchy must grow correspondingly. At sufficient scale, a single human anchor may become the mandatory terminus for hundreds or thousands of simultaneous nodes, creating a throughput bottleneck that the timeout regime does not address.
+
+The current specification does not define a maximum fan-in per human anchor. In production deployments, it is likely that a single human cannot acknowledge every simultaneous bailout event across a large agentic fleet within any reasonable timeout window. This structural limitation implies that the protocol's safety guarantees degrade under load without explicit load-shedding or queuing policies at the Purpose Layer.
+
+\subsubsection{Exploitation Risk}
+\label{sec:lim_exploitation}
+
+Because the Bailout Protocol creates a mandatory human-in-the-loop for every bounded exception, it is functionally a denial-of-service surface against the autonomous capabilities of the system. A malicious actor who can induce repeated bound-exceeded conditions — for example, by crafting inputs that maximize risk scores at every reasoning step — can use the Bailout Protocol to systematically freeze agentic nodes, preventing any productive autonomous work from completing.
+
+This exploitation risk is distinct from the adversarial condition described above: it does not require the attacker to control any node directly. Any actor capable of influencing the inputs to a bounded reasoning system can trigger repeated bailouts, effectively weaponizing the protocol's safety mechanism as an operational disruption tool. Mitigations include input filtering, anomaly detection on bailout trigger frequency, and rate-limiting of bailout invocations per source, none of which are currently specified in the protocol.
+
+\subsection{Future Work}
+\label{sec:future}
+
+The following research and engineering directions are identified as the natural extensions of this work.
+
+\subsubsection{Formal Verification}
+\label{sec:fw_formal_verification}
+
+The state machine description provided in this work is currently informal-to-semiformal. Future work should produce a machine-checked formal specification using a verification-oriented framework (e.g., TLA$^+$, Coq, or Isabelle/HOL) and establish proofs for the Progress, Determinism, Bounded Resolution, Human Terminality, Bypass Integrity, and Forensic Completeness properties stated in Section~\ref{sec:bailout}. Formal verification would also enable the discovery of corner-case transition paths not apparent in the tabletop analysis, particularly in the interaction between simultaneous bailout events across multiple nodes.
+
+A second dimension of formal verification concerns the bypass mechanism: proving that no scheduling or execution path exists by which a machine actor can be assigned as the terminus of an escalation. This requires formalizing the actor classification function \texttt{IsMachineActor} and proving that it is both sound (no human-occupied node is classified as a machine actor) and complete (every non-human node is correctly classified).
+
+\subsubsection{Adaptive Timeout with Urgency Scoring}
+\label{sec:fw_adaptive_timeout}
+
+The current timeout regime is static and uniform across all nodes. Future work should investigate an adaptive timeout mechanism that adjusts timeout windows dynamically based on a composite urgency score computed at the moment of bailout trigger. This urgency score should incorporate:
+
+\begin{itemize}
+    \item The operational criticality of the affected node (e.g., a field actuator in Irrig8 has higher urgency than a reporting agent);
+    \item The estimated time-to-harm based on the pending action's domain (e.g., financial transactions have higher urgency than scheduling decisions);
+    \item The current load on available human anchors (historical acknowledgment latency as a baseline);
+    \item The depth of the escalation chain already traversed.
+\end{itemize}
+
+Formally, let $u(a, t)$ denote the urgency score for actor $a$ at bailout trigger time $t$. Then:
+
+\[
+T_{\text{bailout}}(a, t) = T_{\text{default}} \cdot \max\left(1, \frac{u(a, t)}{u_{\text{baseline}}}\right) \cdot \texttt{AnchorLoadFactor}(t)
+\]
+
+where \texttt{AnchorLoadFactor}$(t) \geq 1$ increases as the number of concurrent unacknowledged escalations per human anchor approaches its configured maximum. This adaptive scheme preserves the hard upper bound on total resolution time while reducing false-positive timeout exceptions under normal load.
+
+\subsubsection{Distributed Human Anchor Pools}
+\label{sec:fw_distributed_anchors}
+
+The scalability limitation identified in Section~\ref{sec:lim_scalability} points toward a need for distributed human anchor pools: pools of trained human reviewers who can acknowledge bailout events on behalf of the organization, with appropriate privilege scoping based on the nature of the exception.
+
+In this architecture, each bailout trigger is assigned an urgency class (e.g., \texttt{LOW}, \texttt{MEDIUM}, \texttt{HIGH}, \texttt{CRITICAL}) and routed to an anchor pool with the corresponding authorization scope. The anchor pool dispatches the acknowledgment request to the first available qualified anchor, creating a many-to-many relationship between nodes and human anchors rather than the current one-to-one hierarchy.
+
+This design introduces new challenges: anchor pool load balancing, credential scoping to prevent a single anchor from making decisions beyond their authorized scope, geographic latency for globally distributed pools, and governance policies for anchor certification and audit. These are engineering challenges rather than fundamental limitations, and the BX3 Framework's Purpose Layer abstraction provides a natural locus for implementing pool-based acknowledgment routing.
+
+The distributed anchor pool architecture also directly addresses the exploitation risk described in Section~\ref{sec:lim_exploitation}: a pool of $n$ anchors provides $n\times$ acknowledgment bandwidth compared to a single designated anchor, making coordinated denial-of-service via repeated bailout triggers substantially more difficult to sustain.
+
+\subsubsection{Integration with Self-Modification Engine}
+\label{sec:fw_self_mod}
+
+BX3's broader architecture includes a self-modification capability that allows bounded reasoning updates to the agentic system. The interaction between self-modification events and the Bailout Protocol's state machine is not yet specified. A self-modification that alters the bounds configuration of an active node during an ongoing bailout event could produce inconsistent state. Future work should define the interaction contract: whether self-modification is permitted during active bailout states, and if so, under what atomicity and isolation guarantees.
+

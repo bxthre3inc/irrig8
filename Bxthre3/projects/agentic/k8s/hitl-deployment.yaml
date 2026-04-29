@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hitl-service
+  namespace: agent-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hitl-service
+  template:
+    metadata:
+      labels:
+        app: hitl-service
+    spec:
+      containers:
+      - name: hitl
+        image: hitl-image:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+version: 1.0.0
+version: 1.0.0

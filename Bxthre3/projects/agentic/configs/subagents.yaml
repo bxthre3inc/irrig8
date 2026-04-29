@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: SubAgents
+metadata:
+  name: agentic-subagents
+spec:
+  subagents:
+    - name: web_researcher
+      parent_role: researcher
+      specialization: web_search
+      capabilities:
+        - deep_web_search
+        - dark_web_monitoring
+        - social_media_analysis
+      constraints:
+        max_requests_per_minute: 60
+        legal_compliance: true
+    - name: code_generator
+      parent_role: developer
+      specialization: code_generation
+      capabilities:
+        - multi_language_support
+        - framework_specific_generation
+        - test_generation
+      constraints:
+        max_generation_size: 1000
+        security_standards: OWASP
+    - name: security_auditor
+      parent_role: reviewer
+      specialization: security_review
+      capabilities:
+        - vulnerability_scanning
+        - penetration_testing
+        - compliance_checking
+      constraints:
+        false_positive_rate: "<0.001"
+        critical_vulnerability_escalation: immediate
+    - name: deployment_orchestrator
+      parent_role: qa
+      specialization: deployment
+      capabilities:
+        - multi_environment_deployment
+        - rollback_management
+        - canary_analysis
+      constraints:
+        max_downtime: 5m
+        rollback_success_rate: 1.0
+  coordination:
+    - name: research_development_handoff
+      description: "Coordinate between research and development sub-agents"
+      protocol:
+        - research_report → requirements_document
+        - requirements_document → development_spec
+      validation:
+        - completeness_check
+        - consistency_check
+    - name: security_development_integration
+      description: "Integrate security findings into development"
+      protocol:
+        - vulnerability_report → code_fixes
+        - security_requirements → test_cases
+      validation:
+        - fix_verification
+        - regression_testing

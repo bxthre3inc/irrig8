@@ -1,0 +1,43 @@
+\section{Introduction}
+
+Multi-agent systems composed of recursively spawned agents introduce a fundamental accountability problem: as agents spawn sub-agents to handle delegated tasks, the lineage chain connecting any active agent back to its originating authority grows longer and increasingly difficult to verify. When a spawned agent produces an unexpected output, experiences a state discontinuity, or silently fails, the system must be able to trace the causal chain from that agent back to the root authority that initiated the work. In most existing architectures, this tracing is not structurally guaranteed — it is a best-effort property maintained by convention, logging conventions, or external audit tables that can themselves be corrupted or bypassed. This is the \textbf{autonomous drift problem}.
+
+\subsection{The Autonomous Drift Problem}
+
+Autonomous drift occurs when a spawned agent deviates from its intended execution path in a manner that is not immediately observable by any ancestor in the chain. Drift can manifest as: (1) semantic deviation, where the agent's output no longer reflects the intent passed down from its parent; (2) state discontinuity, where the agent's internal context diverges from the checkpointed state its parent expects; or (3) silent termination, where the agent ceases execution without propagating a termination signal or error state to any ancestor. In horizontally scaled multi-agent deployments — such as Irrig8's sensor-driven field operations, where dozens of concurrent agents handle soil-variability mapping, water-volume calculation, and irrigation scheduling — drift in even a single agent can corrupt the fidelity of the entire field operation without triggering any observable alert.
+
+The problem is structural, not incidental. Existing agent spawning models treat the parent pointer as a mutable reference: a spawned agent may update its own parent reference, a parent may reassign a child's parent to a different agent for load-balancing purposes, or a middle-layer orchestrator may drop its own parent link during a state transfer. Each of these mutations severs the audit chain. When an auditor (human or automated) attempts to reconstruct the lineage of a given agent at query time, the chain may be broken at any link — not because the agent failed, but because the pointer was mutated after the fact.
+
+\subsection{Why Existing Approaches Are Insufficient}
+
+The two dominant approaches to drift mitigation in production multi-agent systems are Time-To-Live (TTL) limits and depth limits. Both are scope constraints, not lineage guarantees, and both fail to address the structural mutability of parent pointers.
+
+\textbf{TTL-based drift mitigation} assigns each spawned agent a maximum operational lifetime. When the TTL expires, the agent is forcibly terminated and its work product is discarded or archived. While this prevents runaway execution, it does not prevent drift within the TTL window, and it discards work that may be partially correct. More critically, TTL is a temporal bound, not a causal one — an agent that drifts within its TTL window produces outputs that are indistinguishable from correct outputs unless a separate verification layer exists. TTL provides no mechanism for an auditor to determine whether a drifting agent's parent chain was intact at the moment the drift occurred.
+
+\textbf{Depth limits} restrict how many levels of recursive spawning are permitted below any root authority. This prevents unbounded proliferation of agents but provides no drift protection within the permitted depth. A depth-limited system with five allowed levels can still experience full drift at level 5: each parent-child link is mutable, so the chain is structurally identical to an unbounded system from the perspective of auditability. Depth limits are a resourcegovernance tool, not a trust architecture.
+
+A third approach — external audit logging — maintains a separate ledger recording every spawn event, parent assignment, and state transition. This is the approach used by most production agent platforms today, including the AgentOS event ledger. However, external logs are decoupled from the runtime state of the agents they describe. If a parent pointer is mutated in memory without updating the corresponding log entry, or if a log entry is written before a mutation completes but the mutation is rolled back, the audit trail becomes inconsistent with the actual execution state. The log becomes a second system that must itself be audited, creating an infinite regression.
+
+\subsection{Core Insight: Immutable Parent Pointer Chain}
+
+The Recursive Spawning framework proposed in this paper resolves the autonomous drift problem at the structural level by making parent pointers \textit{immutable from the moment of assignment}. In the AgentOS kernel, every agent is assigned a parent pointer at the moment of spawn. This pointer is stored in the agent's sealed state block and cannot be modified by any agent in the chain — including the agent itself, its parent, or any orchestrator — without triggering a chain-breaking event that is immediately observable by the entire hierarchy.
+
+The intuition is straightforward: if the parent pointer cannot be mutated after assignment, then the lineage chain connecting any agent to its root authority is structurally inviolable. Drift is not eliminated — agents can still deviate semantically or terminate unexpectedly — but the deviation is always visible as an explicit state that differs from the parent-prescribed state, and the causal chain back to the root authority remains intact. An auditor can always answer the question "who initiated this agent, and who approved its current state?" with a definitive pointer, not a best-effort log reconstruction.
+
+This is a structural guarantee, not a behavioral convention. It holds regardless of what individual agents do, regardless of what orchestrators attempt, and regardless of what external logging systems record. It is enforced by the AgentOS kernel's sealed state architecture, in which the parent pointer is stored in a read-only region of the agent's initial state block and all spawn operations are atomic with respect to pointer assignment.
+
+\subsection{Formal Definition of Drift}
+
+Let $A$ be an agent in a recursively spawned hierarchy with root authority $R$. Let $p(A)$ denote the parent of $A$ as stored in $A$'s sealed state block. The chain $C(A) = (R = v_0, v_1, v_2, \dots, v_k = A)$ is the ordered sequence of agents such that for each $i \in [1, k]$, $p(v_i) = v_{i-1}$. $C(A)$ is well-defined if and only if $p(v_i)$ has not been mutated after the spawn of $v_i$.
+
+\textbf{Drift} is defined as a state divergence between an agent $A$ and its parent $p(A)$, formalized as follows. Let $S(p(A))$ be the state prescription passed from $p(A)$ to $A$ at spawn, and let $S(A)$ be the actual operational state of $A$ at query time $t$. $A$ has experienced drift at $t$ if $S(A)$ is not a valid successor state of $S(p(A))$ under the deterministic transition function $\tau$ defined by the AgentOS execution model:
+
+\[
+\text{drift}(A, t) \triangleq \neg \exists s' : S(A) = \tau(S(p(A)), s')
+\]
+
+Under the immutable parent pointer architecture, $p(A)$ is fixed at spawn and $\tau$ is deterministic. Therefore, $\text{drift}(A, t)$ is a well-defined, verifiable predicate — any observer with access to $S(p(A))$ and $S(A)$ can compute it independently. Drift cannot be masked by pointer mutation, because no pointer mutation is possible.
+
+\subsection{Paper Roadmap}
+
+The remainder of this paper is organized as follows. Section 2 presents the Recursive Spawning architecture in detail, including the sealed state block, the atomic spawn protocol, and the immutable pointer invariant. Section 3 provides a formal analysis of drift resistance, proving that immutable parent pointers make the lineage chain of any agent in the hierarchy structurally audit-able at all times. Section 4 describes the AgentOS kernel implementation of Recursive Spawning, including the kernel primitives, the spawn syscall interface, and the runtime enforcement of pointer immutability. Section 5 presents experimental results from the Irrig8 production deployment, quantifying drift detection latency, lineage reconstruction fidelity, and operational overhead relative to TTL-based baselines. Section 6 discusses related work in agent supervision, lineage tracking, and deterministic execution models. Section 7 concludes with a summary of contributions and a discussion of open extensions to the framework.

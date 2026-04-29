@@ -1,0 +1,174 @@
+\section{The Recursive Spawning Protocol}
+\label{sec:rs-protocol}
+
+The Recursive Spawning Protocol (RSP) is the operational instantiation of the immutable parent pointer invariant within the BX3 Framework. RSP is not a policy or a convention — it is an architectural guarantee enforced by three independently operative layers: the Purpose Layer, the Bounds Engine, and the Fact Layer. Each layer gates the spawn transition at a distinct stage. Failure at any layer blocks the spawn. No layer trusts the output of another as a precondition for its own enforcement. This independence is load-bearing: it ensures that a compromised or malfunctioning layer cannot produce an unauthorized spawn by suppressing its own gate.
+
+The protocol proceeds in four sequential stages: Purpose Layer validation, Bounds Engine depth verification, Fact Layer pointer immutability enforcement and forensic ledger commitment, and child activation with an immutable parent anchor. A fifth stage — chain termination verification — is evaluated continuously after activation, not only at spawn time. Each stage is described in detail below.
+
+% -----------------------------------------------------------------------
+\subsection{Stage 1: Purpose Layer Validation}
+\label{sec:rs-protocol-purpose}
+
+The Purpose Layer is the first and most semantically rich gate in the spawn pipeline. Its function is to verify that the proposed child agent's operating scope $R(c)$ constitutes a strict, intentional refinement of the parent's operating scope $R(p)$. The Purpose Layer does not evaluate whether the spawn is operationally convenient or computationally affordable — it evaluates whether the spawn is authorized under the human principal's expressed intent.
+
+The validation predicate enforced at this layer is:
+
+\begin{equation}
+\validatePurpose(p, c) \equiv
+\begin{cases}
+\true & \text{if } R(c) \subsetneq R(p) \ \land\ \scopeSource(c) = p \\
+\false & \text{otherwise}
+\end{cases}
+\label{eq:purpose-validation}
+\end{equation}
+
+where $R(c) \subsetneq R(p)$ denotes a strict subset relationship (proper refinement) and $\scopeSource(c) = p$ records that the scope was derived from the parent's scope, not independently invented. The strict subset requirement is load-bearing: it prevents a child from holding authority equal to or greater than its parent, which would constitute an expansion rather than a refinement. A child that holds $R(c) = R(p)$ has not been refined — it has been delegated laterally, which is not a permitted spawn mode under RSP.
+
+The Purpose Layer also evaluates the \emph{intent coherence} of the spawn. The spawn request must include a purpose descriptor $\psi(c)$ — a structured annotation of the intended operational goal of the child agent. The Purpose Layer checks that $\psi(c)$ is well-formed (non-empty, consistent with the task taxonomy), that it is a proper sub-task of the parent's documented purpose $\psi(p)$, and that no clause in $\psi(c)$ contradicts a constraint in $\psi(p)$. Purpose descriptors that cannot be resolved as subordinate to a parent purpose are rejected.
+
+If $\validatePurpose(p, c)$ returns $\false$, the spawn is rejected at the Purpose Layer gate. The rejection is logged with the specific failure mode — scope expansion, scope source ambiguity, or purpose incoherence — and the requesting parent is notified. The Fact Layer is not invoked; no ledger entry is created; no child entity is instantiated. The rejection is final for this spawn cycle.
+
+% -----------------------------------------------------------------------
+\subsection{Stage 2: Bounds Engine Depth Verification}
+\label{sec:rs-protocol-bounds}
+
+The Bounds Engine is the second gate. Its function is to enforce the \emph{maximum spawn depth} $D_{\max}$, a system-level parameter that bounds the absolute depth of any spawn chain measured from the human anchor. The Bounds Engine operates independently of semantic content — it does not evaluate purpose coherence or scope refinement quality. It evaluates only one property: whether the proposed child $c$, if spawned, would satisfy the depth constraint $\depth(c) \leq D_{\max}$.
+
+The depth of a child is computed as:
+
+\begin{equation}
+\depth(c) = \depth(p) + 1
+\label{eq:child-depth}
+\end{equation}
+
+where $\depth(p)$ is the depth of the parent agent, and a human principal $h$ has $\depth(h) = 0$ by definition. This recursive definition establishes a consistent depth metric across the entire spawn tree.
+
+The convergence criteria enforced by the Bounds Engine are:
+
+\begin{enumerate}
+    \item \textbf{Depth bound:} $\depth(c) \leq D_{\max}$. If violated, the spawn is refused at the Bounds Engine gate.
+    \item \textbf{Branching factor bound:} For any agent $a$, the number of direct children $| \children(a) |$ must not exceed $B_{\max}$, a system-level parameter. This prevents a single agent from producing an exponentially large fan-out that remains within the depth bound but saturates computational resources.
+    \item \textbf{Convergence criterion:} The spawn chain must be converging toward a terminal task — that is, the Purpose Layer scope refinement $R(c) \subsetneq R(p)$ must represent a genuine reduction in operational scope toward a terminal action (a system call, a data write, a human notification). A chain in which successive children have scopes that are refined but not meaningfully closer to a terminal action is flagged as a \emph{potential infinite refinement loop}. The Bounds Engine does not automatically refuse such chains, but it emits a mandatory notification to the parent chain's audit trail and may escalate to the human principal if the loop persists across more than $L_{\max}$ successive spawns without reaching a terminal action.
+\end{enumerate}
+
+If the depth bound is violated — $\depth(c) > D_{\max}$ — the Bounds Engine refuses the spawn and returns a \texttt{DEPTH\_EXCEEDED} error code. The Fact Layer is not consulted; no ledger entry is created. The refusal is logged at the Bounds Engine layer only.
+
+The Bounds Engine maintains a lightweight in-memory representation of the current spawn tree topology — parent pointers, depth values, and branching factor counts — for $O(1)$ lookup of the depth and branching factor constraints. This representation is separate from the forensic ledger maintained by the Fact Layer; the Bounds Engine does not write to the forensic ledger, and the Fact Layer does not read the Bounds Engine's topology cache. Independence is preserved.
+
+% -----------------------------------------------------------------------
+\subsection{Stage 3: Fact Layer — Immutable Pointer and Forensic Ledger}
+\label{sec:rs-protocol-fact-layer}
+
+The Fact Layer is the third and most critical gate. It enforces two structural invariants simultaneously: the \emph{immutable parent pointer} and the \emph{forensic ledger commitment}. These two mechanisms together ensure that the spawn chain is permanently legible and that every spawn event is irreversibly recorded.
+
+\bigskip
+\noindent\textbf{The Immutable Parent Pointer.}
+Once assigned at spawn time, the parent pointer $\parent(c) = p$ is \emph{immutable}. It cannot be modified by any subsequent operation — not by the child, not by the parent, not by any administrative actor, and not by any system-level reconfiguration. The immutability guarantee is enforced by the Fact Layer's write protocol, which rejects any transaction that would modify an existing parent pointer field.
+
+Formally, the Fact Layer enforces:
+
+\begin{equation}
+\forall a \in \mathcal{A}: \modifable(\parent(a)) = \false.
+\label{eq:immutable-parent-pointer}
+\end{equation}
+
+This invariant is not a policy choice — it is a structural property of the ledger architecture. The parent pointer is stored as a content-addressed entry in the forensic ledger, where the address is derived from the child's identifier. Because the address depends on the identifier, and the identifier is fixed at provisioning, the parent pointer cannot be retroactively modified without changing the child's identifier, which would change the address, which would require a new ledger entry — a detectable anomaly, not a modification.
+
+The immutable parent pointer addresses failure mode FM3 (re-parenting drift) directly. Because the parent pointer cannot be changed, the authorization lineage of any agent is permanently legible. An agent cannot be retroactively re-parented to obscure its true origin.
+
+\bigskip
+\noindent\textbf{Forensic Ledger Commitment.}
+Every spawn event that passes the Purpose Layer and Bounds Engine gates is committed to the forensic ledger as an immutable, append-only record. The ledger entry for spawn event $\spawnEvent(c, p, t)$ contains:
+
+\begin{enumerate}
+    \item $\identifier(c)$: the unique identifier of the child agent.
+    \item $\parent(c) = p$: the immutable parent pointer.
+    \item $\anchor(c) = \anchor(p)$: the inherited human anchor reference.
+    \item $\depth(c)$: the depth of the child.
+    \item $R(c) \subsetneq R(p)$: the scope refinement committed at the Purpose Layer.
+    \item $\psi(c)$: the purpose descriptor committed at the Purpose Layer.
+    \item $\ledgerSeq(t)$: the monotonically increasing sequence number of this ledger entry.
+    \item $\hash(\ledgerEntry)$: the SHA-256 hash of the complete ledger entry, which commits to all preceding entries via the chain property:
+    \begin{equation}
+    \hash(\ledgerEntry_t) = H(\hash(\ledgerEntry_{t-1}) \parallel \ledgerEntry_t).
+    \label{eq:ledger-chain-hash}
+    \end{equation}
+\end{enumerate}
+
+The chain hash property of Equation~\eqref{eq:ledger-chain-hash} is load-bearing. It creates a tamper-evident structure: any modification to a prior ledger entry changes its hash, which breaks the chain hash of all subsequent entries, making retroactive modification detectable by computing the chain hash across the full ledger. The forensic ledger is the authoritative record of every authorized spawn event in the system.
+
+The ledger entry is committed \emph{atomically} with the child agent's activation. The Fact Layer uses a two-phase commit protocol: first, the ledger entry is written and its chain hash is computed; second, the child agent is activated and granted an immutable reference to its ledger entry. If the ledger write fails, the child is not activated. If the child activation fails, the ledger entry is rolled back. There is no state in which a child is active without a corresponding ledger entry, and no ledger entry that references a child that was not successfully activated.
+
+% -----------------------------------------------------------------------
+\subsection{Stage 4: Child Activation with Immutable Parent Anchor}
+\label{sec:rs-protocol-child-activation}
+
+A child agent $c$ is activated only after both conditions are satisfied:
+
+\begin{enumerate}
+    \item $\validatePurpose(p, c) = \true$ (Purpose Layer gate passed).
+    \item $\depth(c) \leq D_{\max}$ (Bounds Engine gate passed).
+    \item $\ledgerEntry(\spawnEvent(c, p, t))$ committed to forensic ledger (Fact Layer gate passed).
+\end{enumerate}
+
+Upon activation, the child agent $c$ is initialized with the following immutable structural properties:
+
+\begin{itemize}
+    \item $\parent(c) = p$: immutable parent pointer, established at activation, never modified.
+    \item $\anchor(c) = \anchor(p)$: the human anchor inherited from the parent, propagated from the human principal at the root of the spawn chain.
+    \item $R(c) \subsetneq R(p)$: the scope refinement established at the Purpose Layer, fixed at activation.
+    \item $\psi(c)$: the purpose descriptor, fixed at activation.
+    \item $\ledgerRef(c) = \ledgerEntry(\spawnEvent(c, p, t))$: a permanent reference to the forensic ledger entry that recorded its authorized creation.
+    \item $\status(c) = \text{ACTIVE}$.
+\end{itemize}
+
+The child is activated with $\anchor(c)$ inherited from its parent, not independently verified at child activation time. This is correct and intentional: anchor inheritance is safe because the Fact Layer pre-commit hook at Stage 3 already verified that the parent $\parent(c)$ has a reachable, verified human anchor $\anchor(p)$. The child inherits a correct anchor by construction. No additional anchor verification is needed at activation because the Fact Layer gate has already established the chain property.
+
+The immutability of the parent pointer means that the child cannot be re-parented after activation. The $\anchor(c)$ field is also immutable: once set to $\anchor(p)$ at activation, it cannot be changed. This preserves the human anchor relationship permanently for each agent, regardless of what happens to intermediate nodes in the spawn chain.
+
+% -----------------------------------------------------------------------
+\subsection{Stage 5: Continuous Chain Termination Verification}
+\label{sec:rs-protocol-chain-termination}
+
+Chain termination verification is evaluated \emph{continuously}, not only at spawn time. This is a critical design choice: the drift condition is a function of the live chain state, and a chain that was properly formed at spawn time can become drifted if its human anchor becomes unreachable during operation. A verification performed only at spawn time is insufficient for a system intended to operate over extended durations with dynamic connectivity.
+
+The chain termination verifier traverses the parent pointer chain from any active agent $a$ to its root, checking at each step:
+
+\begin{enumerate}
+    \item The current node $\parent^i(a)$ is reachable ($\status \neq \text{UNREACHABLE}$).
+    \item The current node $\parent^i(a)$ is not terminated ($\status \neq \text{TERMINATED}$).
+    \item The chain eventually terminates at a human principal $h \in \mathcal{H}$ within $D_{\max}$ steps.
+\end{enumerate}
+
+The termination predicate is:
+
+\begin{equation}
+\terminatedAtHuman(a) \equiv \exists h \in \mathcal{H}: \parent^*(a, h) \land \depth(a) \leq D_{\max}.
+\label{eq:chain-terminates-at-human}
+\end{equation}
+
+where $\parent^*(a, h)$ denotes the transitive closure of the parent pointer relation from $a$ to $h$. The chain is verified to terminate at a human if and only if Equation~\eqref{eq:chain-terminates-at-human} holds.
+
+If the chain termination verification fails for an agent $a$ — that is, if $\terminatedAtHuman(a) = \false$ — the agent enters a \texttt{HALTED} state immediately. The Fact Layer logs the termination failure event. The agent does not terminate abruptly (which would cause termination ambiguity, failure mode FM1); instead, it enters a quiescent halted state in which it completes no new actions, spawns no children, and awaits explicit human re-authorization or termination. This is the structural analog of the drift triad's \emph{operating} condition: by entering \texttt{HALTED}, the agent removes the third vertex of the triad and becomes inert pending remediation.
+
+Re-authorization requires explicit human action: a human principal must re-affirm the anchor relationship by re-confirming the spawn chain from the drifted node to the human. No machine actor can re-anchor another agent. This formalizes the non-collapsibility invariant of human anchors in RSP.
+
+% -----------------------------------------------------------------------
+\subsection{Depth Management}
+\label{sec:rs-protocol-depth-management}
+
+Depth management in RSP is a layered system, not a single mechanism. The Bounds Engine provides the hard depth bound; the Purpose Layer provides the convergence criterion; the Fact Layer provides the audit trail for depth consumption; and the chain termination verifier provides continuous monitoring of whether the live chain structure remains within the bound.
+
+\bigskip
+\noindent\textbf{Maximum Spawn Depth.} $D_{\max}$ is a system-level parameter set at system initialization. It represents the maximum number of spawn generations permitted between the human anchor and the deepest active agent. A spawn that would produce $\depth(c) > D_{\max}$ is refused at the Bounds Engine gate. The current default value of $D_{\max}$ is a function of the system's threat model and operational tolerance for cascade blast radius; it is configurable per deployment and per trust domain.
+
+\bigskip
+\noindent\textbf{Spawn Refusal at Depth Limit.} When $\depth(c) = D_{\max}$, the Bounds Engine refuses the spawn and returns \texttt{DEPTH\_LIMIT\_REACHED}. The requesting parent receives this error and is expected to either: (a) execute the task itself without spawning, (b) escalate to its own parent for a depth exemption (which requires Purpose Layer re-authorization and a new scope refinement), or (c) halt and await human re-authorization. The Fact Layer logs the refusal event with full chain context.
+
+\bigskip
+\noindent\textbf{Convergence Criteria.} RSP enforces convergence not just as a depth bound but as a scope reduction requirement. Each spawn must produce a child with $R(c) \subsetneq R(p)$. Over $k$ spawn generations, the scope sequence $R_0 \supsetneq R_1 \supsetneq \cdots \supsetneq R_k$ must be strictly decreasing in scope size. A spawn in which $R(c) \not\subsetneq R(p)$ is refused at the Purpose Layer. A chain in which successive scope refinements are proper subsets but do not converge toward a terminal action within $L_{\max}$ spawn generations is flagged by the Bounds Engine's convergence monitor. These two constraints together ensure that the spawn chain is not just depth-bounded but also \emph{goal-convergent} — it is moving toward resolution, not iterating indefinitely.
+
+\bigskip
+\noindent\textbf{Anti-proliferation Effect.} The interaction of the immutable parent pointer, the Purpose Layer scope refinement requirement, and the maximum depth bound produces an anti-proliferation effect. Because each child holds a strictly reduced scope relative to its parent, the aggregate authority of a spawn tree is bounded not just by depth and branching factor but by the scope refinement property itself: the total operational scope available at depth $d$ is a strict subset of the scope available at depth $d-1$. An agent at depth $d$ cannot expand its scope without Purpose Layer re-authorization, which would require re-connecting to a human principal. Drift propagation is therefore not merely detected — it is structurally limited in scope before it can propagate very far.
+
+\end{document}

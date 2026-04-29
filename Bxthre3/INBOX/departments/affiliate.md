@@ -90,21 +90,31 @@
 ## Status
 
 🟡 **ACTIVE — Pipeline Development**
-🟢 **VPC: 5 Tier 3 targets ready for outreach** (approved 2026-04-06 by Optimize/Growth)
-🔴 **BLOCKER: VPC compliance overdue 13 days** — Tier 1/2 blocked
-🔴 **VPC P0: WY LLC formation blocked** — escalated to brodiblanco
+🟢 **VPC: T3 outreach APPROVED but NOT initiated — 21 days overdue** (was 18 days 2026-04-24)
+🟢 **VPC compliance: planning phase cleared per 2026-04-23 events. T1/T2 requirements still need clarification from VPC Agent**
+🔴 **VPC T3 outreach NOT INITIATED — 21 days since approval (2026-04-06)**
 
 *Daily standup: 8:15 AM MT*
-*Last standup: 2026-04-13*
-*Next standup: 2026-04-14 8:15 AM MT*
+*Last standup: 2026-04-27*
+*Next standup: 2026-04-28 8:15 AM MT*
 
-## Key Updates — 2026-04-13
+## Key Updates — 2026-04-27
 
-- **VPC Tier 3 outreach APPROVED** (2026-04-06 by Optimize/Growth) but NOT initiated. 7 days elapsed. Beginning outreach today.
-- **VPC compliance overdue 13 days.** Tier 1/2 still blocked. Re-escalating to Optimize (Growth) today.
-- **VPC P0 this morning:** WY LLC formation blocked. ~$5,600 needed for bonds + filing. Pre-launch blocker escalated to brodiblanco.
-- **Outreach sequence + agreement template + tracking platform** — all due today, owned by Harvest.
-- **Irrig8 influencer farmers + Starting 5 SaaS reviewers** — pipeline zero, research overdue.
+- **VPC T3 outreach: 21 days overdue** — Zero initiation since 2026-04-06 approval. Only unblocked affiliate revenue lever.
+- **VPC compliance:** Planning phase cleared (2026-04-23). T1/T2 requirements need clarification from VPC Agent. T3 (CPA/individual promoters) NOT blocked by compliance.
+- **VPC WY LLC:** P0 ongoing — Drew assigned. No change.
+- **All other ventures (Irrig8, Starting 5, Zoe):** Zero pipeline. Programs not launched.
+- **Action today:** Begin VPC T3 outreach (xlWin Media, Affpapa/Offervault, CPAGrip/Adscend, SweepsKings/PlayUSA, Twitch/Kick streamers).
+- **Action today:** Escalation check-ins — Drew (WY LLC), VPC Agent (compliance path clarification), Raj (agreement template).
+
+## Key Updates — 2026-04-24
+
+- **VPC T3 outreach: 18 days overdue** — Still NOT initiated. This is the only unblocked affiliate revenue lever for VPC.
+- **VPC compliance update:** Planning phase cleared (2026-04-23 events). T1/T2 still blocked — compliance path needs clarification from VPC Agent.
+- **VPC WY LLC:** P0 ongoing — Drew owns.
+- **All other ventures (Irrig8, Starting 5, Zoe):** Zero pipeline. Programs not launched.
+- **Action today:** Begin VPC T3 outreach (xlWin Media, Affpapa/Offervault, CPAGrip/Adscend, SweepsKings/PlayUSA, Twitch/Kick streamers).
+- **Action today:** Escalation check-ins — Drew (WY LLC), VPC Agent (compliance path), Raj (agreement template).
 
 ## Key Updates — 2026-04-06
 
@@ -113,9 +123,3 @@
 - **Compliance gate:** Tier 1/2 outreach on hold pending compliance clearance. Tier 3 (CPA/individual promoters) may proceed with FTC disclosure compliance only.
 - **Decision needed:** Whether to begin Tier 3 outreach while Tier 1/2 compliance is pending.
 - **Next:** Begin outreach to Tier 3 targets; escalate compliance to Optimize (Growth); build recruitment workflow; draft VPC affiliate agreement template.
-
----
-
-🟡 P2 | optimize | 2026-04-13 15:20 UTC
-
-**VPC compliance re-escalation:** VPC Agent now 13 days overdue on compliance. Tier 1/2 outreach still blocked. Requesting formal ETA or alternative escalation path. VPC P0 (WY LLC) also flagged this morning — first gaming node cannot operate without it. No impact to affiliate program directly but removes the product to sell through affiliates.

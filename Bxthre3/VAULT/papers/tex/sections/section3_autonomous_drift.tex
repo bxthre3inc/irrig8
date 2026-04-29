@@ -1,0 +1,106 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+In a recursive spawning architecture, an \textbf{orphaned agent} is defined as an agent instance whose parent process has either terminated abnormally, become unreachable due to a network partition, or explicitly disassociated itself from the child without transferring supervisory responsibility. The defining characteristic of an orphaned agent is the absence of any active supervisory relationship in its upward ancestry chain.
+
+A \textbf{drifted agent} extends this concept: it is an agent that is not necessarily orphaned in the strict process-parent sense, but whose chain of supervisory relationships no longer connects to a \textbf{human anchor}---a human principal who can exercise meaningful oversight, intervene in agent behavior, or terminate the agent and its descendants. Formally, let $A$ denote the set of all agents in a spawning tree $\mathcal{T}$. Let $H \subset A$ denote the set of human-anchored agents (those with a direct or indirect supervisory link to a human principal). An agent $a \in A$ is \textbf{drifted} if and only if there exists no path in $\mathcal{T}$ from $a$ to any $h \in H$. Drift is therefore a property of the graph topology: it describes agents that have become disconnected from the accountability backbone of the system.
+
+These two conditions are orthogonal but often co-occur. An agent may be orphaned but still connected to $H$ through a surviving intermediary supervisor; it may also be non-orphaned yet drifted if all paths to $H$ pass through agents that have themselves become unresponsive or are executing in a context where the human principal cannot intervene. In practice, the most dangerous configurations arise when both conditions are simultaneously satisfied: a drifted, orphaned agent executing consequential actions with no possibility of human review or override.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not arise from a single root cause but from an interaction of architectural choices, runtime failures, and the emergent behavior of long-running spawn chains. We identify four primary conditions that produce drift.
+
+\textbf{1. Supervisor Termination Without Succession.} When a supervisor agent $s$ spawns a child $c$ and subsequently terminates (normally or abnormally) without designating a successor supervisor or transferring $c$ to an active supervisor, $c$ becomes orphaned. If no other agent in the supervisory chain retains a live connection to $H$, $c$ also becomes drifted. In many implementations, this transfer of responsibility is treated as optional or omitted entirely, leaving the spawned child in a supervisory vacuum.
+
+\textbf{2. Network Partition Between Subtrees.} In distributed deployments, agents may communicate across network boundaries. A partition that separates a subtree $\mathcal{T}_s \subset \mathcal{T}$ from the remainder of the tree severs all paths to $H$ for agents in $\mathcal{T}_s$. The agents within the partitioned subtree continue to execute, spawn further children, and accumulate state, but no supervisory signal from $H$ can reach them. The partition may be transient and resolve, yet the reconnected subtree may exhibit inconsistent state that complicates reintegration.
+
+\textbf{3. Context Isolation Without Exit Mechanism.} Agentic systems frequently employ context isolation (e.g., separate processes, containers, or sandboxed environments) to contain the effects of agent actions. When an agent spawns children within an isolated context and the isolation boundary becomes a one-way barrier, children cannot receive supervisory directives from outside the context. If the spawning agent within the context also terminates or becomes unreachable, the isolated children are simultaneously orphaned and contextually trapped.
+
+\textbf{4. Goal Decomposition Beyond Human Comprehension.} Even when all process-parent relationships remain intact, drift can occur at the \textbf{semantic} level: the chain of spawned agents performs a sequence of goal decompositions such that the terminal actions are no longer recognizable as consistent with the intentions of the human principal. This form of drift is the hardest to detect because it involves a divergence between the \textit{intended meaning} of a directive and the \textit{realized meaning} as interpreted and operationalized through multiple spawning levels. The agents are not technically orphaned, but the chain of semantic alignment to human intent has been severed.
+
+\subsection{Failure Modes}
+
+The consequences of drift manifest across several failure modes, each with distinct risk profiles.
+
+\textbf{Leonard Effect.} A drifted agent continues to act on the last directive it received, propagating this directive to its own children. If the original context was time-sensitive, the agent may execute actions that were appropriate at spawn time but are harmful or nonsensical at execution time. The longer the drift persists, the greater the divergence between the agent's world model and the actual state of the world. This is analogous to the problem of stale data in distributed systems, extended to autonomous agency.
+
+\textbf{Cascade of Unintended Consequences.} Drifted agents spawn their own children, propagating not only the original goal but also any misalignments, corrupted state, or flawed reasoning patterns. Each generation compounds the deviation. In a spawning chain of depth $d$, a single drifted agent at level $k$ can introduce errors that propagate to all $2^{d-k}$ descendants, none of whom have any corrective mechanism because none have access to $H$.
+
+\textbf{Resource Accumulation.} Drifted agents and their descendants continue to consume computational resources (memory, GPU cycles, API quotas, token budgets) without any throttling or termination signal. In environments where agents spawn sub-agents recursively, this can produce exponential resource growth that destabilizes the hosting infrastructure. The drifted subtree acts as a resource leak with no automated detection mechanism.
+
+\textbf{Post-hoc Accountability Gap.} When drift is finally detected (if it ever is), the drifted agents may have executed actions that are irreversible or costly to undo. Because the agents were not under active supervision, no human was able to apply corrective intervention at the point of divergence. The accountability gap between the moment of drift and the moment of detection means that the harm caused by drifted actions cannot be attributed to a human decision-maker who could have prevented it.
+
+\subsection{Why Depth Limits Alone Do Not Solve the Problem}
+
+A common architectural response to the drift problem is to impose a \textbf{depth limit}: a hard cap on the number of generations of spawned agents permitted in any chain. The intuition is that limiting depth reduces the potential damage of any single drifted chain. While depth limits are a useful first-order control, they do not solve the drift problem for three fundamental reasons.
+
+First, depth limits address only the \textit{amplitude} of potential harm, not its \textit{existence}. A drifted agent at depth $d_{\max} - 1$ can still cause significant harm within one generation; it can spawn $n$ children simultaneously, each of which can perform consequential actions. The branching factor, not just the depth, determines the upper bound of simultaneous drifted agents.
+
+Second, depth limits do not prevent drift from occurring at any allowed depth. An agent at depth $d_{\max} - 1$ that becomes drifted because its parent terminated is still a drifted agent. The depth limit says nothing about what happens when an agent near the limit becomes drifted; it merely limits how many more generations can be spawned after the drift occurs. The drift event itself is unaffected.
+
+Third, and most importantly, depth limits do not address \textbf{semantic drift}, which can occur at any depth. An agent at depth $1$ that received a poorly specified or ambiguous directive from the human anchor can propagate that ambiguity through its entire chain, regardless of the depth limit. All descendants will execute actions that are consistent with their local interpretation of the directive, but that interpretation diverges from the human principal's intent. The chain terminates at the depth limit, but the divergence has already occurred. Depth limits are a structural constraint, not a semantic alignment mechanism.
+
+Formally, let $D_{\max}$ denote the imposed depth limit. The probability that a given chain of depth $k \leq D_{\max}$ causes harm $H$ is $P(H \mid \text{drift at depth } k)$. The expected total harm from a spawning system with depth limit $D_{\max}$ is:
+
+\[
+\mathbb{E}[H_{\text{total}}] = \sum_{k=0}^{D_{\max}} N_k \cdot P(D_k) \cdot \mathbb{E}[H \mid D_k]
+\]
+
+where $N_k$ is the number of agents at depth $k$, $P(D_k)$ is the probability that at least one agent at depth $k$ is drifted, and $\mathbb{E}[H \mid D_k]$ is the expected harm given drift at depth $k$. Setting $D_{\max}$ constrains $k$, but does not eliminate any of the terms in the sum. In particular, $P(D_k)$ is independent of $D_{\max}$; drift is determined by the reliability of supervisory links and the semantic fidelity of goal propagation, neither of which is controlled by a depth parameter. Reducing $D_{\max}$ reduces the number of terms in the sum but does not reduce the probability of drift at any given depth, and does not reduce the harm conditional on drift occurring.
+
+A depth limit is therefore a \textit{bounding} mechanism, not a \textit{corrective} mechanism. It limits exposure but does not prevent, detect, or correct drift. Effective drift mitigation requires mechanisms that operate on the supervisory graph topology and on the semantic alignment between agents and human principals, not merely on the structural depth of the spawning tree.
+
+\subsection{A Simple Formal Model}
+
+We present a minimal formal model that captures the essential dynamics of autonomous drift. Let $\mathcal{T} = (V, E)$ be a rooted tree representing the agent spawning graph, with root $r$ representing the human principal or a direct human-anchored agent. Each vertex $v \in V$ represents an agent. Each directed edge $(u, v) \in E$ represents a spawning relationship: $u$ is the supervisor of $v$.
+
+Define a function $\phi: V \to \{\text{active}, \text{orphaned}, \text{drifted}\}$ classifying agent state. An agent $v$ is \textbf{orphaned} if and only if its parent $p(v)$ exists and $\phi(p(v)) = \text{orphaned}$ or $p(v)$ has terminated. An agent $v$ is \textbf{drifted} if and only if there is no path from $v$ to any vertex $h$ such that $h$ is designated as human-anchored.
+
+The \textbf{drift event} occurs when an agent transitions from $\phi(v) = \text{active}$ to $\phi(v) = \text{drifted}$. We model drift as a stochastic process governed by two parameters:
+
+\begin{itemize}
+    \item $\alpha$: the per-step probability that a supervisor terminates without transferring supervisory responsibility to a successor. This captures the \textbf{orphan probability} at each spawning step.
+    \item $\beta$: the per-step probability that a goal propagated from parent to child undergoes a semantic misinterpretation severe enough to constitute a misalignment with the human principal's intent. This captures the \textbf{semantic drift probability}.
+\end{itemize}
+
+For a chain of agents $v_0, v_1, \ldots, v_d$ where $v_0 = r$ (human-anchored) and each $v_{i+1}$ is spawned by $v_i$, the probability that $v_k$ is drifted due to structural orphaning is:
+
+\[
+P_{\text{struct}}(v_k) = 1 - \prod_{i=0}^{k-1} (1 - \alpha_i)
+\]
+
+where $\alpha_i$ is the orphan probability at spawning step $i$. If we assume a constant orphan rate $\alpha$ across all steps, this simplifies to:
+
+\[
+P_{\text{struct}}(v_k) = 1 - (1 - \alpha)^k
+\]
+
+The probability that $v_k$ is drifted due to semantic misalignment is more difficult to quantify precisely, but a simple model assumes independence across steps:
+
+\[
+P_{\text{semantic}}(v_k) = 1 - \prod_{i=0}^{k-1} (1 - \beta_i)
+\]
+
+If $\beta$ is constant:
+
+\[
+P_{\text{semantic}}(v_k) = 1 - (1 - \beta)^k
+\]
+
+An agent is drifted if either condition holds (they are not mutually exclusive):
+
+\[
+P_{\text{drifted}}(v_k) = 1 - (1 - \alpha)^k (1 - \beta)^k = 1 - [(1 - \alpha)(1 - \beta)]^k
+\]
+
+This model reveals several important properties:
+
+\begin{enumerate}
+    \item Drift probability grows monotonically with chain depth $k$, approaching $1$ as $k \to \infty$ regardless of how small $\alpha$ and $\beta$ are. No finite depth limit $D_{\max}$ eliminates drift; it only reduces the probability below the asymptotic bound.
+    \item Even in the limit of a depth limit $D_{\max} = 1$, there is a non-zero probability $(1 - (1 - \alpha)(1 - \beta))$ that the direct child of a human-anchored agent is drifted. Depth limits cannot prevent drift at any finite depth.
+    \item The interaction between $\alpha$ and $\beta$ is multiplicative: a system with $\alpha = 0.01$ and $\beta = 0.01$ has a per-step effective drift rate of approximately $0.02$, not $0.01$. Redundant safeguards that only address one axis of drift (e.g., only preventing orphaning) leave the other axis unaddressed.
+\end{enumerate}
+
+The formal model establishes that drift is not an edge case to be managed by bounding structural parameters; it is an intrinsic property of any spawning system where agents can terminate and goals can be misinterpreted, and must be addressed through continuous supervisory mechanisms rather than one-time structural constraints.

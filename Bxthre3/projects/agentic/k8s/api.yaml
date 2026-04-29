@@ -1,0 +1,46 @@
+# Agentic1 API Server Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: agentic
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: agentic1/api:latest
+          env:
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: agentic
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP

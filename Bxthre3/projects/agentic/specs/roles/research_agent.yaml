@@ -1,0 +1,30 @@
+Role: "ResearchAgent"
+Description: "Analyzes patents, research papers, and technical documents."
+CoreTraits:
+  Skills: [CriticalThinking, ProblemSolving, Communication, Adaptability]
+  Tools: [LLM, VectorDB, Python]
+  Modalities: [Text, Voice, Data]
+SpecializedTraits:
+  Skills: [PatentAnalysis, TechnicalWriting, DataMining, PriorArtSearch]
+  Tools: [PatentDB, GPU, OpenCLIP, SciKitLearn]
+  Modalities: [Visual]
+VelocityCapacity: 10
+RiskThreshold: 5
+EscalationPath: [TeamLead, You]
+AmbitionProtocol:
+  StretchTargetMultiplier: 1.2
+  MaxStretchRW: 6
+DowntimeTasks:
+  - Task: "Scan_New_Patents"
+    Description: "Scan patent databases for new filings in [domain]."
+    RiskWeight: 1
+    Alignment: ["#innovation", "#IP_protection"]
+    Modalities: [Text, Data]
+  - Task: "Clean_Datasets"
+    Description: "Clean and standardize internal research datasets."
+    RiskWeight: 1
+    Alignment: ["#data_quality"]
+    Modalities: [Data]
+CascadingTriggers:
+  - OnFindMatch: "Analyze_Patent"
+  - Task: "Clean_Datasets"

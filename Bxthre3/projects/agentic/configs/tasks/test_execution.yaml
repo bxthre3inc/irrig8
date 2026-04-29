@@ -1,0 +1,33 @@
+name: test_execution
+description: "Execute test cases and record results."
+version: 1.0.0
+role: qa
+inputs:
+  - name: test_cases
+    type: document
+    source: s3://qa-bucket/test-cases/
+  - name: codebase
+    type: repository
+    source: git@github.com:org/repo.git
+outputs:
+  - name: test_results
+    type: report
+    destination: s3://qa-bucket/results/
+steps:
+  - name: setup_environment
+    action: setup
+    tool: pytest
+  - name: run_tests
+    action: execute
+    tool: pytest
+    parameters:
+      verbose: true
+  - name: save_results
+    action: save
+    tool: pytest
+    parameters:
+      output_format: junit
+constraints:
+  max_retries: 3
+  timeout: 7200
+version: 1.0.0

@@ -1,0 +1,178 @@
+% ==============================================================================
+% SECTION 6: LIMITATIONS AND FUTURE WORK
+% ==============================================================================
+
+\section{Limitations and Future Work}
+
+\subsection{Limitations}
+
+The mandatory architectural bail-out protocol delivers strong safety, liveness, and
+accountability guarantees under the structural invariants established in
+Section~\ref{sec:guarantees}.  Nevertheless, four constraints bound the current
+instantiation and must be addressed before deployment in adversarial or
+high-throughput operational environments.
+
+% ------------------------------------------------------------------------------
+\subsubsection{Human Response Latency}
+
+The protocol relies on a human principal as the final trust arbiter for any
+escalated trigger.  Human cognitive response latency introduces a fundamental
+bottleneck: mean response times for novel situations range from 200--500\,ms for
+initial evaluation, with an additional 50--150\,ms for signal composition and
+transmission~\cite{card1980psychology}.  In high-frequency trading engines,
+autonomous vehicle control loops, or real-time critical infrastructure, this
+window may exceed the safe operational horizon.
+
+The tiered escalation model (Section~\ref{sec:bailout-protocol}) partially
+mitigates this by progressively narrowing the action space at each tier, reducing
+the decision burden on the human anchor.  However, the latency bound remains
+non-deterministic and varies with operator state, concurrent workload, and
+channel quality.  The protocol cannot eliminate latency inherent to human
+cognition; it can only structure its impact.  Formal characterization of the
+latency envelope across each tier, and rigorous minimum timing margins for
+specific deployment contexts, remains an open problem.
+
+% ------------------------------------------------------------------------------
+\subsubsection{Adversarial Conditions and Operator Compromise}
+
+The security assumptions underpinning the human anchor degrade under adversarial
+conditions.  In a compromised network environment, bail-out signals may be
+intercepted, delayed, falsified, or suppressed by an active adversary.  More
+critically, if the human operator's authentication credentials or terminal are
+compromised, an adversary may issue fraudulent bail-out signals that forcibly
+disconnect legitimate agents, effectively weaponizing the protocol as a
+denial-of-service mechanism.
+
+The protocol currently assumes a trusted operator identity verification layer
+external to the BX3 Framework.  This assumption must be validated against threat
+models in which the operator's terminal \emph{is} the attack surface.  The
+credential binding described in Section~\ref{sec:guarantee-accountability}
+secures the resolution transition, but it does not protect the escalation signal
+itself during transit.  End-to-end authenticity and integrity of the escalation
+payload are necessary conditions for the protocol's security guarantees to hold
+under active attack.
+
+% ------------------------------------------------------------------------------
+\subsubsection{Scalability of Human Oversight}
+
+The current architecture designates a single human anchor per agent node.  As
+agentic systems scale to hundreds or thousands of concurrent operational units,
+a single operator cannot maintain meaningful oversight fidelity across the full
+agent population.  Empirical studies of human monitoring tasks establish a
+practical ceiling of approximately 5--7 concurrent information streams before
+operator performance degrades significantly~\cite{wickens2008multiple}.
+
+The tiered filtering of the escalation model provides a meaningful narrowing
+mechanism, but the initial detection and classification burden at the monitoring
+interface remains a single point of failure.  Distributed human anchor pools
+(Section~\ref{sec:future_work}) are the architecturally appropriate response, but
+introduce coordination overhead, consensus latency, and the possibility of
+conflicting verdicts that must be resolved.  Until such pools are implemented,
+the protocol's scalability guarantee is bounded by the monitoring capacity of
+the designated anchor.
+
+% ------------------------------------------------------------------------------
+\subsubsection{Exploitation Risk and Protocol Manipulation}
+
+Because the bail-out protocol defines a structured, machine-readable disengagement
+mechanism, adversarial agents or malicious actors who understand its structure may
+engineer false-positive escalations to consume the operator's attention and
+response capacity.  A sophisticated agent could induce repeated escalations by
+systematically producing ambiguous or borderline veto conditions, effectively
+disabling competing agents while degrading the operator's trust in genuine
+escalation signals.
+
+This exploitation risk is compounded by the current tier-transition logic: the
+deterministic mapping from confidence scores and veto states to tier transitions
+is learnable by an adversary with observational access to the signal stream.  Once
+the mapping is characterized, an adversarial agent can produce signals calibrated
+to occupy specific tiers without crossing thresholds that would trigger immediate
+human notification.  Mitigation requires stochastic elements in tier-transition
+logic and anomaly detection at the operator interface to identify systematic
+gaming patterns.
+
+\subsection{Future Work}
+\label{sec:future_work}
+
+The foregoing limitations define a research agenda that proceeds in three
+interdependent phases, each designed to be independently valuable while
+incrementally advancing the protocol toward production-grade robustness.
+
+% ------------------------------------------------------------------------------
+\subsubsection{Formal Verification of Bail-Out Invariants}
+
+A critical next step is the application of formal methods to prove that the
+bail-out protocol maintains its safety, liveness, and accountability guarantees
+under all reachable states.  We intend to model the protocol as a hybrid automata
+system and apply model checking (e.g., UPPAAL or SpaceEx) to verify: (i) that a
+bail-out signal is always generated within a bounded time of any veto condition
+persisting beyond its tolerance window; (ii) that the tier-transition function is
+acyclic and terminates; and (iii) that no reachable state permits autonomous
+execution and a veto condition to be simultaneously active without escalation.
+
+Formal verification will also characterize the protocol's completeness: the
+conditions under which the protocol may fail to generate a necessary bail-out
+signal, and the minimum assumptions required for the guarantees to hold.  This
+analysis will produce a machine-verified safety case supplementing the proof
+sketches in Section~\ref{sec:guarantees}.
+
+% ------------------------------------------------------------------------------
+\subsubsection{Adaptive Timeout Mechanisms}
+
+Current timeout thresholds are statically configured per tier.  We propose an
+adaptive timeout framework that adjusts escalation latency based on: (a)
+historical operator response times weighted by time-of-day, shift pattern, and
+task domain; (b) real-time assessment of network channel quality and signal
+latency; and (c) the valence and magnitude of the veto condition, where higher
+severity triggers shorter adaptive windows.
+
+Machine learning models trained on historical escalation logs can predict
+operator availability and dynamically compress timeouts when the probability of a
+rapid response is high.  This reduces unnecessary autonomous operation during
+ambiguous conditions while preserving adequate response windows when the operator
+is unavailable or the veto severity is elevated.  The adaptive framework must be
+formally verified to ensure that timeout compression never reduces the safety
+margin below the minimum required by the deployment context.
+
+% ------------------------------------------------------------------------------
+\subsubsection{Distributed Human Anchor Pools}
+
+To address the scalability limitation, we propose replacing the single-anchor
+model with a distributed pool of human anchors, each capable of receiving,
+evaluating, and responding to bail-out signals for any agent in the operational
+cohort.  A consensus mechanism (e.g., threshold voting or Byzantine-fault-tolerant
+agreement) determines the authoritative verdict when multiple anchors respond
+concurrently.
+
+This architecture provides fault tolerance against individual operator
+unavailability, increases aggregate oversight bandwidth, and reduces the attack
+surface for operator-compromise attacks.  Key implementation challenges include:
+designing a low-latency consensus protocol compatible with the bail-out timeline;
+managing equitable workload distribution across the pool; establishing clear
+accountability when the pool reaches a split or inconclusive verdict; and
+ensuring that the consensus outcome satisfies the same credential-binding and
+Forensic Ledger requirements as the single-anchor resolution.  The distributed model
+must preserve the ACCOUNTABILITY guarantee: the identity of every participating
+anchor and the basis for the consensus verdict must be permanently recorded.
+
+\subsection{Research Roadmap}
+
+The three phases outlined above define a sequential research program:
+
+\begin{enumerate}
+\item \textbf{Formalization.} Apply formal verification to prove safety,
+  liveness, and accountability invariants under the current single-anchor model.
+  Produce a machine-verified safety case suitable for regulatory submission.
+\item \textbf{Adaptation.} Deploy adaptive timeout frameworks validated against
+  adversarial conditions in simulated environments.  Characterize the tradeoff
+  between latency compression and safety margin reduction.
+\item \textbf{Distribution.} Implement and benchmark distributed human anchor
+  pools with consensus-based verdicts across large agent populations.  Verify that
+  the ACCOUNTABILITY guarantee is preserved under Byzantine fault tolerance.
+\end{enumerate}
+
+Each phase produces independently deployable improvements while laying the
+groundwork for the next.  The foundation is the mandatory architectural
+bail-out protocol as specified: complete, formally characterized, and ready for
+integration into any autonomous multi-agent system that requires structurally
+defensible human accountability.

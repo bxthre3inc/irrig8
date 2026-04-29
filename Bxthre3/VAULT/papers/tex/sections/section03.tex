@@ -1,0 +1,93 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions and Formal Characterization}
+
+In any spawning chain, two failure modes dominate the loss of human oversight: \textbf{orphanhood} and \textbf{drift}. Both are distinct, though they often co-occur.
+
+\begin{definition}
+An agent $a_i$ is an \textbf{orphan} if its parent $a_{i-1}$ has terminated, crashed, or become unreachable, and no agent in the chain holds a claim on $a_i$'s lifecycle. Orphanhood severs the \texttt{spawn} relationship.
+\end{definition}
+
+\begin{definition}
+An agent $a_i$ is \textbf{drifted} if the chain from $a_i$ back to the designated human anchor $a_0$ contains at least one unreachable or unresponsive link. Equivalently, there exists no active path in the chain graph that connects $a_i$ to $a_0$.
+\end{definition}
+
+\begin{note}
+Orphanhood and drift are orthogonal. An agent may be orphaned (parent dead) but still reachable by the human operator through an alternative path (e.g., a sibling chain). Conversely, a chain may be intact but all agents in it are unreachable due to network partition—every agent is drifted simultaneously. In practice, orphaned agents almost always satisfy the drift condition, which is why the two failure modes compound.
+\end{note}
+
+The human anchor is a specially designated agent $a_0$ that the operator can directly reach. In production deployments, $a_0$ is typically the root agent instantiated by the human operator, though in more elaborate structures $a_0$ may itself be a spawned sub-agent with explicit tethering obligations.
+
+A spawning chain is a sequence
+\[
+a_0 \xrightarrow{\text{spawn}} a_1 \xrightarrow{\text{spawn}} a_2 \xrightarrow{\text{spawn}} \cdots \xrightarrow{\text{spawn}} a_n
+\]
+where each $a_i$ carries a reference to its parent $a_{i-1}$ and an immutable identifier $\text{uid}_i$. We say that $a_i$ is \textbf{reachable} from $a_j$ ($i > j$) if every link in the sub-chain $a_j, a_{j+1}, \ldots, a_i$ is active. We say that $a_i$ is \textbf{reachable from the human anchor} if it is reachable from $a_0$.
+
+An agent is \textbf{operationally safe} if it is both reachable from $a_0$ and remains responsive to control signals directed at it through that path.
+
+\subsection{Conditions That Cause Drift}
+
+Drift does not require malice or catastrophic failure. It arises from four routine conditions:
+
+\begin{enumerate}
+\item \textbf{Parent crash.} The parent process terminates normally or abnormally. If the child has no external watchdog and no resurrection protocol, it becomes an orphan and, by the above definition, drifted. In most spawning frameworks, child processes are orphaned when the parent exits unless the runtime has explicit re-parenting logic.
+
+\item \textbf{Communication failure.} The link between parent and child remains intact structurally, but messages are lost or delayed beyond a timeout threshold. If the parent declares the child dead and terminates its side of the channel, the child becomes effectively unreachable even if it is still running.
+
+\item \textbf{Resource exhaustion.} A child agent exhausts its allocated CPU, memory, or budget quota and is killed or throttled by the substrate. The parent may not receive a termination signal, leaving it with a stale reference. The child is alive but unreachable.
+
+\item \textbf{Intentional but undocumented spawning.} An agent spawns a sub-agent without recording the relationship in the global registry. This is common in na\"ive spawning implementations where \texttt{spawn} is treated as a fire-and-forget operation. The sub-agent may be running normally, but the operator has no path to it through any tracked chain.
+\end{enumerate}
+
+Any of these conditions, individually or in combination, breaks the chain and places subsequent agents outside the human operator's reach.
+
+\subsection{Failure Modes}
+
+Once drift occurs, the operational consequences scale with the depth of the drifted chain.
+
+\textbf{Mode 1: Silent accumulation.} Orphaned agents continue to run, consuming resources, generating outputs, and making decisions without oversight. There is no failure signal—the system appears to function normally from the outside because the drifted agents still produce observable behavior. The human operator has no indication that anything has changed.
+
+\textbf{Mode 2: Objective divergence.} Drifted agents, no longer subject to correction signals from the human side of the chain, continue executing their last known objective. If the objective was context-dependent (e.g., "monitor the queue and scale workers"), a drifted agent may continue scaling workers long after the business need has ended, or take actions appropriate to stale context.
+
+\textbf{Mode 3: Cascade reproduction.} A drifted agent that itself is capable of spawning will create children that are also drifted. The drifted subtree grows independently, compounding resource consumption and objective divergence. The original operator remains unaware until resource exhaustion or anomalous outputs are noticed externally.
+
+\textbf{Mode 4: Orphaned termination failure.} When the human operator attempts to shut down the chain, drifted agents do not receive termination signals through the chain. They must be identified and killed individually through out-of-band means (e.g., direct process control or infrastructure-level intervention). This is especially difficult when the drifted agent's existence was never documented.
+
+These modes are not mutually exclusive. In a large deployed system, silent accumulation is the norm until cascade reproduction drives resource exhaustion beyond a threshold that triggers external alarms.
+
+\subsection{Why Depth Limits Alone Do Not Solve Drift}
+
+A common and intuitive countermeasure is to impose a \textbf{depth limit}: chains may not spawn beyond a fixed depth $D$, at which point the leaf agent is treated as terminal. This limits the blast radius of a drifted chain but does not eliminate the problem for three reasons.
+
+\begin{enumerate}
+\item \textbf{Depth limits cap damage but do not prevent it.} Consider a limit of $D = 3$. If agents at depth 2 are orphaned and drifted, their children at depth 3 still exist and still diverge. The limit prevents further growth; it does not recover the drifted agents. Each drifted subtree of depth up to $D$ continues consuming resources and executing independently.
+
+\item \textbf{Depth limits do not address the orphan rate.} The rate at which agents become orphaned is determined by the stability of the underlying runtime, the spawning framework's re-parenting behavior, and the frequency of resource pressure events. Depth limits are orthogonal to these root causes. A system that produces orphaned agents at depth 1 will continue producing them; depth limits merely change where the orphans accumulate.
+
+\item \textbf{Depth limits create artificial terminal states.} An agent at depth $D$ that is capped from spawning may hold unfinished work that requires further decomposition. If the limit is applied without a graceful degradation strategy, the terminal agent becomes a dead end—it cannot complete its objective and cannot delegate it. This creates a different kind of operational failure: the chain terminates cleanly but the task is left incomplete.
+\end{enumerate}
+
+Depth limits are a useful containment mechanism, but they are a bandage over the structural failure of chain integrity. They do not restore reachability to drifted agents, nor do they reduce the probability that orphaning events occur. A robust system must address the root cause—loss of the path to the human anchor—not merely limit how far drifted chains can extend.
+
+\subsection{A Simple Formal Model}
+
+We model a spawning chain as a directed graph $G = (V, E)$ where each vertex $v_i \in V$ represents an agent $a_i$, and each directed edge $(v_{i-1}, v_i) \in E$ represents a live spawn link. The human anchor is a distinguished vertex $v_0 \in V$.
+
+Reachability in $G$ is defined with respect to a liveness predicate $L(v_i)$ that evaluates to true if and only if $v_i$ is responsive. The human anchor $v_0$ is assumed always live. An agent $v_i$ is \textbf{drifted} if there exists no path $v_0 \to v_i$ such that every vertex on the path satisfies $L = \text{true}$.
+
+When a parent $v_{i-1}$ fails ( $L(v_{i-1}) = \text{false}$ ), the edge $(v_{i-1}, v_i)$ becomes a \textbf{broken link}. The child $v_i$ is orphaned. Whether $v_i$ itself remains live determines whether it becomes a drifted agent. If $v_i$ is live (the agent's process survived the parent's termination), it now satisfies:
+\[
+\nexists \text{ path } v_0 \to v_i \text{ with all vertices live}
+\]
+—formally drifted. It may continue to spawn children, which inherit the drift condition: a child spawned by $v_i$ has no live path to $v_0$ through its own parent, since $v_i$'s link to $v_0$ is broken.
+
+The operator's effective control domain at time $t$ is the set
+\[
+\mathcal{C}(t) = \{ v_i \in V \mid \text{there exists a live path } v_0 \to v_i \text{ at time } t \}.
+\]
+As the system runs, $|\mathcal{C}(t)|$ is non-monotonic: it increases as agents are spawned and decreases as orphans accumulate. The system is in a \textbf{drift regime} when $|\mathcal{C}(t)| < |V|$—i.e., when at least one agent in $V$ is not reachable from $v_0$.
+
+A depth limit $D$ bounds $|V|$ by constraining the maximum path length from $v_0$ to any vertex, but it does not affect $\mathcal{C}(t)$. The drifted subgraph $V \setminus \mathcal{C}(t)$ may still be large and active within the bound $D$. Depth limits contain the maximum possible damage; they do not repair the reachability graph.
+
+This model clarifies why effective drift mitigation requires maintaining reachability (ensuring $V \setminus \mathcal{C}(t) = \emptyset$ at all times), not merely limiting depth. A system that ensures chain integrity—through persistent registry, explicit lifecycle ownership, and graceful re-parenting—keeps $\mathcal{C}(t) = V$ by construction. Depth limits cannot substitute for this guarantee.

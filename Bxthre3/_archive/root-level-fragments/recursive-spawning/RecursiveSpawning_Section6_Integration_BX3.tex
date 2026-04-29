@@ -1,0 +1,94 @@
+\section{Integration with the BX3 Framework}
+\label{sec:rs-integration}
+
+The Recursive Spawning Protocol is not an independent mechanism — it is a structural enforcement layer embedded within the BX3 Framework's three-layer architecture. This section maps each RSP component to its governing BX3 layer and establishes the structural necessity of each mapping. The Purpose Layer, Bounds Engine, and Fact Layer are not merely convenient hosts for RSP functionality; they are the minimal architectural substrate without which the RSP's correctness guarantees cannot be realized.
+
+% --------------------------------------------------------------------------%
+\subsection{Purpose Layer: Accountability Anchor}
+\label{sec:integration-purpose}
+
+The \purpose{} layer serves as the exclusive spawn authorization gate and the exclusive escalation terminus in every RSP chain. This dual role — originating all authorized chain growth and receiving all unresolvable exceptions — is what makes the chain accountable to a human principal at both its origin and its boundary.
+
+\medskip
+\noindent\textbf{Authorization gate.}
+Every spawn event $p \xrightarrow{\mathrm{spawn}} c$ requires a \texttt{spawn-authorize} directive from the \purpose{} layer of $p$. The directive is issued only after verifying: (i) $R(c) \subseteq R(p)$ (scope refinement), (ii) $d(c) = d(p) + 1 \leq D_{\max}$ (depth constraint), and (iii) $h(c) = h(p)$ (human anchor inheritance). The \purpose{} layer performs deterministic set and integer comparisons — it does not make discretionary judgments about spawn appropriateness. The human principal's intent is expressed at provisioning as a scope definition; the \purpose{} layer enforces that the chain grows only within that scope.
+
+\medskip
+\noindent\textbf{Exclusive escalation terminus.}
+When the chain reaches $D_{\mathrm{ESCALATE}}$ without resolving an exception condition, the Bounds Engine suspends autonomous spawn and awaits a directive from $h(n_k)$. The directive is issued by the human principal — not by any machine actor — and the options are \texttt{ACK} (continue), \texttt{RESOLVE} (redirect), or \texttt{REJECT} (terminate). No machine actor can issue these directives. The escalation path terminates exclusively in human judgment, and human judgment is finite: the directive arrives in bounded time. This is what closes the termination argument.
+
+\medskip
+\noindent\textbf{Why the Purpose Layer is structurally necessary.}
+Without the \purpose{} layer as the exclusive authorization gate, a machine actor could provision children without scope refinement verification, producing chains whose operating scopes diverge from the human anchor's intent by lateral expansion. Without the \purpose{} layer as the exclusive escalation terminus, an unresolvable exception could drive unbounded chain growth — the termination theorem would fail. The \purpose{} layer is not a design choice; it is a structural necessity for both drift prevention and termination.
+
+% --------------------------------------------------------------------------%
+\subsection{Bounds Engine: Depth Enforcement}
+\label{sec:integration-bounds}
+
+The \bounds{} layer evaluates spawn necessity and enforces the depth constraint at every spawn event. It operates as the constrained execution layer: it cannot originate spawn authorization, but it can reject any spawn that violates the depth bound or that lacks a Purpose Layer warrant.
+
+\medskip
+\noindent\textbf{Depth enforcement.}
+The depth of node $n_i$ is $d(n_i) = i$, where $i$ is the number of spawn generations from the root human principal. At each spawn proposal $p \xrightarrow{\mathrm{spawn}} c$, the \bounds{} layer verifies $d(c) \leq D_{\max}$ before the Fact Layer pre-commit hook accepts the event. If $d(c) = D_{\max}$, the Fact Layer rejects the spawn and the \bounds{} layer transitions to \texttt{ESCALATING} state. This is a structural enforcement: the check is performed by the Fact Layer pre-commit hook, which is outside the authority of the \bounds{} layer. The \bounds{} layer cannot bypass this check by operational urgency, by exception severity, or by any machine-level override.
+
+\medskip
+\noindent\textbf{Spawn necessity evaluation.}
+The \bounds{} layer additionally evaluates whether the proposed spawn is necessary for task resolution — whether the child node addresses a functional requirement that cannot be met by the parent. This evaluation prevents gratuitous chain growth that consumes depth budget without corresponding task progress. The evaluation is a deterministic policy function applied at spawn proposal time; it is not a subjective judgment and is therefore auditable.
+
+\medskip
+\noindent\textbf{Why the Bounds Engine is structurally necessary.}
+Without the \bounds{} layer, depth enforcement would require trust in each node's self-compliance — a policy-based approach that fails when nodes are adversarial, buggy, or operating under scope conflict. The \bounds{} layer provides a structural enforcement point that is outside the authority of the nodes it constrains. This is the same architectural principle that makes the Fact Layer pre-commit hook effective: enforcement is positioned outside the authority of the actors it governs.
+
+% --------------------------------------------------------------------------%
+\subsection{Fact Layer: Forensic Ledger}
+\label{sec:integration-fact}
+
+The \fact{} layer maintains the append-only, hash-chained forensic ledger $\mathcal{L}$ and enforces the immutable parent pointer. It is the evidentiary substrate of the entire RSP accountability architecture: every authorized spawn event, every state transition, every Purpose Layer directive, and every rejected spawn attempt is permanently recorded in $\mathcal{L}$.
+
+\medskip
+\noindent\textbf{Immutable parent pointer.}
+For any spawn event $p \xrightarrow{\mathrm{spawn}} c$, the Fact Layer establishes $\ParentPointer{p}{c}$ atomically with the creation of node $c$. After provisioning, $\ParentPointer{p}{c}$ is immutable: no actor — including the \purpose{} layer after provisioning, the \bounds{} engine, or $c$ itself — can modify it. The Fact Layer write protocol rejects any modification request. This makes the delegation chain a runtime-verifiable artifact rather than a forensic reconstruction.
+
+\medskip
+\noindent\textbf{Atomic provisioning.}
+The parent pointer and its Purpose Layer warrant are created as a single Fact Layer write. There is no temporal window in which the pointer exists without authorization, or in which authorization exists without a corresponding pointer. This eliminates the class of exploits where a parent pointer is first established and then retroactively authorized — a gap that conventional fork-based systems are inherently vulnerable to.
+
+\medskip
+\noindent\textbf{Hash-chained ledger.}
+Each entry in $\mathcal{L}$ contains the hash of the previous entry, creating a tamper-evident chain. Any attempt to insert, delete, or reorder a historical entry breaks hash continuity and is detectable by any observer with ledger read access. The ledger serves as both the inductive proof of drift prevention (each refinement step is a recorded entry) and the evidence base for chain integrity verification (any tampering is detectable post-hoc).
+
+\medskip
+\noindent\textbf{Pre-commit hook.}
+Before any spawn event is recorded, the Fact Layer pre-commit hook verifies: (i) the proposed child scope $R(c)$ is a strict subset of the parent scope $R(p)$, (ii) the proposed depth $d(c) \leq D_{\max}$, and (iii) the Purpose Layer warrant $\phi$ is present and valid. Any violation causes the Fact Layer to reject the write and log the rejection. The pre-commit hook is the structural mechanism that makes scope refinement and depth enforcement enforceable properties rather than policy conventions.
+
+\medskip
+\noindent\textbf{Why the Fact Layer is structurally necessary.}
+Without the Fact Layer's immutable parent pointer, the chain topology could be retroactively rewritten — the re-parenting drift failure mode becomes possible. Without the forensic ledger, the inductive proof of drift prevention has no empirical verification path: each scope refinement step would be an assertion rather than a recorded event. Without the pre-commit hook, scope refinement and depth enforcement depend on runtime compliance of machine actors, which fails under adversarial conditions. The Fact Layer is not an implementation detail; it is the structural foundation of the entire RSP accountability architecture.
+
+% --------------------------------------------------------------------------%
+\subsection{Structural Necessity Summary}
+\label{sec:integration-summary}
+
+The mapping between RSP components and BX3 layers is summarized in Table~\ref{tab:rsp-bx3-mapping}.
+
+\begin{table}[ht]
+\centering
+\caption{RSP Component to BX3 Layer Mapping}
+\label{tab:rsp-bx3-mapping}
+\begin{tabular}{lll}
+\toprule
+\textbf{RSP Component} & \textbf{BX3 Layer} & \textbf{Guarantee Enforced} \\
+\midrule
+Spawn authorization gate & \purpose{} & Drift prevention (origin) \\
+Exclusive escalation terminus & \purpose{} & Termination (boundary) \\
+Depth constraint enforcement & \bounds{} & Termination (growth bound) \\
+Spawn necessity evaluation & \bounds{} & Termination (budget discipline) \\
+Immutable parent pointer & \fact{} & Chain integrity (topology) \\
+Atomic provisioning & \fact{} & Chain integrity (no temporal gap) \\
+Forensic ledger & \fact{} & Drift prevention (empirical verification) \\
+Pre-commit hook & \fact{} & Drift prevention + termination (structural enforcement) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The three-layer BX3 architecture is not merely compatible with the RSP — it is minimal sufficient for the RSP's guarantees. Removing any layer causes the corresponding guarantee to collapse. This is not a design coincidence; it is a structural necessity: the RSP's guarantees depend on enforcement mechanisms that are positioned outside the authority of the actors they constrain, and the BX3 three-layer architecture is the minimal structure that achieves this positioning.

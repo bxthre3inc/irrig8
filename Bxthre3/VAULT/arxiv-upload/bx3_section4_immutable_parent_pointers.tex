@@ -1,0 +1,245 @@
+\section{Immutable Parent Pointers}
+\label{sec:immutable-parent-pointers}
+
+Every node in a \bxthree{} agent tree carries exactly one reference to its parent, called the \emph{parent pointer}. This pointer is assigned once at node creation and is never modified thereafter — not by the node itself, not by any administrative process, and not under any circumstances. Together, the parent pointers form a directed acyclic graph (DAG) rooted at the human principal $h$, through which every spawned entity is accountability-linked to a named human anchor by construction. The immutability of this structure is not a coding convention; it is a physical property enforced by the \fact{} layer at the execution boundary. This section defines the ParentPointer relation formally, derives the accountability chain construction, establishes the human root as the null-parent base case, describes how the \fact{} layer blocks modification attempts, specifies the Purpose Layer's role in spawn authorization, and presents the chain traversal algorithm with correctness guarantees.
+
+% ---------------------------------------------------------------
+\subsection{Formal Definition of the ParentPointer Relation}
+
+Let $\mathcal{N}$ denote the set of all nodes in a \bxthree{} agent tree, and let $\bot$ denote the null parent reference. For each node $n \in \mathcal{N}$, the parent pointer $\alpha(n)$ is defined as:
+
+\begin{equation}
+\alpha(n) =
+\begin{cases}
+p & \text{if } n \text{ was spawned by parent node } p \in \mathcal{N} \\[6pt]
+\bot & \text{if } n \text{ is the human root anchor } h
+\end{cases}
+\tag{PP-1}
+\end{equation}
+
+The relation $\textit{ParentPointer}(p, c)$ holds exactly when a spawn event produces child $c$ with $\alpha(c) = p$. The governing properties are:
+
+\begin{enumerate}
+\item[\textbf{P1 — Uniqueness:}] For any child node $c$, there exists exactly one parent $p$ such that $\textit{ParentPointer}(p, c)$ holds. No child may have more than one parent simultaneously. This is a structural invariant of the spawn operation.
+
+\item[\textbf{P2 — Immutability:}] Once $\textit{ParentPointer}(p, c)$ is established, it cannot be modified, reassigned, transferred, or severed for the entire operational lifetime of $c$. Formally:
+\begin{equation}
+\forall n \in \mathcal{N}, \forall t \in \text{runtime}: \alpha_t(n) = \alpha_0(n)
+\tag{PP-2}
+\end{equation}
+where $\alpha_0(n)$ is the value assigned atomically at node creation and $\alpha_t(n)$ is the value at any subsequent time $t > 0$.
+\end{enumerate}
+
+Immutability is not a permissions policy or a Bounds Engine constraint. It is a physical property enforced by the \fact{} layer at the memory or storage boundary — a write-once assignment that no actor, machine or human, can override through software means. The \fact{} layer treats the parent pointer region as read-only after initialization, rejecting any subsequent write request with a logged protocol violation entry. The Purpose Layer can authorize new spawn events (creating new parent pointers), but it cannot edit existing ones — authorization for chain extension and immutability of existing pointers are separate, non-confusable operations operating at different architectural layers.
+
+% ---------------------------------------------------------------
+\subsection{The Accountability Chain}
+
+The ParentPointer relation, applied transitively from any node back to the system origin, generates the \emph{accountability chain}. This chain is the complete, ordered ancestry record of any node in the system and is the structural backbone of upstream accountability in the Bailout Protocol.
+
+\begin{definition}[Accountability Chain]
+\label{def:chain}
+For any node $a \in \mathcal{N}$, the accountability chain of $a$, denoted $\textit{Chain}(a)$, is defined recursively as:
+\begin{equation}
+\textit{Chain}(a) = \textit{ParentPointer}(\text{parent}(a), a) \;\cup\; \textit{Chain}(\text{parent}(a))
+\tag{CH-1}
+\end{equation}
+
+\noindent with base case:
+\begin{equation}
+\text{parent}(r) = \bot \quad \text{for the root human node } r \;\Rightarrow\; \textit{Chain}(r) = \emptyset
+\tag{CH-2}
+\end{equation}
+\end{definition}
+
+In expanded form, $\textit{Chain}(a) = \{\,\alpha(a),\; \alpha^{(2)}(a),\; \alpha^{(3)}(a),\; \dots,\; \alpha^{(k)}(a)\,\}$ where $\alpha^{(i)}(a)$ denotes the $i$-fold composition of $\alpha$ and $k$ is the smallest integer such that $\alpha^{(k)}(a) = \bot$. The recursion terminates at the root human because each step moves strictly upward in the hierarchy; no cycle can exist because each node has at most one parent and the root has null parent.
+
+An equivalent iterative formulation for algorithm implementation:
+
+\begin{align}
+& \textbf{Input: } a \in \mathcal{N} \quad \text{(originating node)} \tag{C-ITER} \\
+& \textbf{Output: } C = \textit{Chain}(a) \text{ as an ordered list from parent to root} \\
+& \textbf{Algorithm:} \\
+& \quad C \leftarrow [] \\
+& \quad p \leftarrow \alpha(a) \\
+& \quad \textbf{while } p \neq \bot \textbf{ do} \\
+& \qquad C.\text{append}(p) \\
+& \qquad p \leftarrow \alpha(p) \\
+& \quad \textbf{return } C
+\end{align}
+
+The ordered list $C$ reflects the exact sequence of nodes that an exception traverses when propagating upward toward the human root. $C[0] = \alpha(a)$ is the immediate parent; $C[-1]$ is the penultimate ancestor; and if the human root is reachable, $C$ terminates with nodes whose parent is $\bot$. The chain does not include $a$ itself, consistent with the Bailout Protocol's semantics in which node $n$ sends its exception to its parent $\alpha(n)$.
+
+\begin{corrollary}[Unique Human Termination]
+Every non-root node $a$ has a non-empty chain that terminates at the root human $r$. Formally: $\forall a \neq r: r \in \textit{Chain}(a)$. The root human is the unique terminal element of every non-empty accountability chain.
+\end{corrollary}
+
+The corollary follows directly from the recursion: each step moves to $\text{parent}(a)$, and only the root has $\bot$ as its parent. No spawned node can have an empty chain (it always contains at least its own parent edge), and no chain can terminate anywhere other than $r$.
+
+% ---------------------------------------------------------------
+\subsection{The Root Human Anchor: Null Parent Base Case}
+
+The human principal $h$ occupies the root of every \bxthree{} agent tree. By structural definition:
+
+\begin{equation}
+\alpha(h) = \bot
+\tag{HR-1}
+\end{equation}
+
+The null-parent base case is not a degenerate or placeholder condition — it is the necessary termination point for all chain traversals and the source of spawn authority for all descendant nodes. The root human is characterized by the following structural properties:
+
+\begin{enumerate}
+\item[\textbf{H1 — Null Parent:}] $\alpha(h) = \bot$. The root human is the origin point of all authority in the tree. It is not a spawned entity and cannot be created by the spawn mechanism; it exists by institutional designation.
+
+\item[\textbf{H2 — Unique Accountability Terminus:}] There is exactly one human root per rooted sub-tree. The framework does not support co-principal roots or peer human principals sharing accountability for the same branch. Every node in the tree has the same terminus $h$.
+
+\item[\textbf{H3 — Non-spawnability:}] The human root is not a provisioned node and cannot be instantiated via the spawn authorization process described in \S\ref{sec:spawn-authorization}. It is the principal who owns the top-level Purpose Layer and bears final accountability for all actions within the tree.
+
+\item[\textbf{H4 — Chain Termination:}] For any node $n \in \mathcal{N}$, if the chain traversal algorithm reaches a node $p$ such that $\alpha(p) = \bot$, then $p = h$ and traversal terminates. No machine-actor node has $\alpha = \bot$. This property is what guarantees that no exception can propagate past the human principal into a machine-only region of the tree.
+\end{enumerate}
+
+The null-parent base case serves as the termination condition for the chain traversal algorithm. When $p = \bot$, the while-loop exits and the accumulated chain $C$ is returned. The empty chain of $h$ confirms that no further propagation is possible — $h$ is the terminal node, not a transit node.
+
+% ---------------------------------------------------------------
+\subsection{Immutability Enforcement by the Fact Layer}
+
+The immutability of $\alpha$ is a runtime enforcement property implemented by the \fact{} layer, which is the only authority in the \bxthree{} architecture capable of committing state changes to the Forensic Ledger. This is not a logical constraint inside the Bounds Engine — it is a physical property of the execution boundary.
+
+The enforcement model operates through three mechanisms:
+
+\begin{enumerate}
+\item[$\mathbf{F_1}$] \textbf{Write-once assignment at node creation.} When a new node $c$ is spawned by parent $p$, the \purpose{} layer authorizes the spawn and the \fact{} layer records the provisioning event in the Forensic Ledger, including $\alpha(c) = p$. This assignment is atomic: no intermediate state exists in which $\alpha(c)$ is uninitialized or null before receiving $p$.
+
+\item[$\mathbf{F_2}$] \textbf{Read-only access at the machine-actor level.} All machine actors — including the Bounds Engine and any administrative process operating outside the \purpose{} layer — have read-only access to $\alpha(n)$ for all $n \in \mathcal{N}$. The \fact{} layer enforces this by rejecting any write request to the parent pointer region that does not originate from the \purpose{} layer with a valid human authorization signature. This includes requests from the node itself, from sibling nodes, from ancestor nodes, and from operating-system-level administrative processes.
+
+\item[$\mathbf{F_3}$] \textbf{Rejected modification attempts logged as violations.} If any actor — machine or human — attempts to modify $\alpha(n)$ without proper \purpose{} layer authorization, the \fact{} layer records the attempt as a \texttt{parent-pointer-modification-attempt} event in the Forensic Ledger. The modification is rejected and has no effect on system state. The log entry is immutable and constitutes a tamper-evident record of the attempted breach.
+\end{enumerate}
+
+The enforcement treats the parent pointer as a special category of \fact{} layer state: one that is fixed at provisioning and cannot be altered at runtime by any actor except the \purpose{} layer acting on explicit human authorization. This is the same mechanism by which the \fact{} layer enforces any hard constraint — it is not a check that can be bypassed by presenting correct credentials, because the enforcement is embedded in the execution boundary itself.
+
+The immutability guarantee has a direct consequence for the Bailout Protocol's correctness: because the parent chain cannot be redirected at runtime, the propagation path for any exception is fixed and deterministic from the moment of node creation. No compromised node, no malicious administrative process, and no network-level attack can reroute exceptions around the human anchor — the path is structurally locked at provisioning time.
+
+The failure modes that immutability must survive include:
+
+\begin{itemize}
+\item \textbf{Bounds Engine compromise:} A Bounds Engine behaving adversarially cannot issue a write to its own or a child node's parent pointer — the \fact{} layer rejects it at the boundary.
+\item \textbf{Child node rebellion:} A spawned child cannot overwrite its own ParentPointer to disavow its lineage — the pointer region is read-only at the Fact Layer boundary.
+\item \textbf{Administrative override:} Even a human operator with root access at the OS level cannot modify a \fact{}-protected parent pointer through software means, because the protection is embedded in the execution boundary itself.
+\item \textbf{Hardware failure and recovery:} A node that experiences power loss or forced reboot does not lose its parent pointer because the pointer is stored in non-volatile \fact{} layer storage. Upon recovery, the node resumes with its chain intact.
+\end{itemize}
+
+% ---------------------------------------------------------------
+\subsection{Spawn Authorization via the Purpose Layer}
+
+While existing parent pointers are immutable, the system must be able to \emph{grow} the accountability chain through new spawn events. The creation of a new parent pointer is the sole mechanism by which the accountability chain extends, and it requires explicit, \purpose{}-layer-mediated authorization. No node may spontaneously generate a child and establish a new parent pointer without going through the authorized spawn protocol.
+
+The spawn authorization process follows this canonical sequence:
+
+\begin{enumerate}
+\item[$\mathbf{S_1}$] \textbf{Spawn request.} The Bounds Engine at node $p$ generates a \texttt{spawn-request} containing: the proposed child node class $cls(c)$, the operational scope $R(c)$ (the child's provisioned operating range), the parent's $\alpha(p)$ for lineage context, and a proposed worksheet bundle $W(c)$ encapsulating the parent's Purpose translated into the child's local context.
+
+\item[$\mathbf{S_2}$] \textbf{Purpose Layer evaluation.} The \purpose{} layer at node $p$ — which corresponds to the human principal or a human-authorized decision process — evaluates the spawn request against its registered mission parameters, constraint envelope, and resource allocation policy. Evaluation criteria include: whether $cls(c)$ is within the parent's authorized scope, whether the child's Purpose is a proper sub-intent of the parent's Purpose (preventing autonomous drift), and whether the parent possesses the institutional authority to extend the tree at this location.
+
+\item[$\mathbf{S_3}$] \textbf{Authorization ledger entry.} If the \purpose{} layer approves, it records \texttt{spawn-authorized(parent=$p$, child=$c$, scope=$R(c)$, timestamp=$t$)} in the Forensic Ledger. This entry, written by the \fact{} layer, is immutable and constitutes the legal and operational record that the human principal authorized the creation of node $c$ and the assignment of its parent pointer.
+
+\item[$\mathbf{S_4}$] \textbf{Child node instantiation.} Upon receiving authorization, the \fact{} layer instantiates node $c$ with $\alpha(c) = p$, initializes the child's worksheet $W(c)$ with the parent's Purpose, and deploys the child to its operational context. The parent pointer is set atomically and is immediately subject to the immutability constraints of \S\ref{sec:immutability-enforcement}. There is no gap in time between the child's agency activation and its lineage establishment.
+\end{enumerate}
+
+The derived-Purpose mechanism is critical: the child carries the parent's Purpose (translated into the child's operational context) — it does not generate its own independent Purpose. This is what allows the human root's intent to propagate across arbitrarily deep trees while maintaining a single, unbroken accountability chain.
+
+The spawn authorization constraint is formally:
+
+\begin{equation}
+\text{Spawn}(p, cls, R) \implies \exists c: \bigl(\alpha(c) = p\bigr) \land \bigl(\text{Purpose}(c) \subseteq \text{Purpose}(p)\bigr) \land \bigl(\text{FactLayer.record}(\text{spawn-authorized})\bigr)
+\tag{SP-1}
+\end{equation}
+
+The child node $c$ exists \emph{iff}: the parent pointer is set to $p$, the child's Purpose is a proper subset of the parent's Purpose (preventing drift), and the \fact{} layer has recorded the authorization. These three conditions are jointly necessary and jointly sufficient for a valid spawn event.
+
+Every spawn event is logged on three discrete planes simultaneously:
+
+\begin{itemize}
+\item \textbf{Purpose Plane:} Records the authorization decision, the authorizing actor, and the scope of delegated authority.
+\item \textbf{Bounds Engine Plane:} Records the spawn request, the Bounds Engine's reasoning about the child's proposed context, and the worksheet contents transmitted.
+\item \textbf{Fact Plane:} Records the physical parent pointer write operation, the child node's initialization, and the immutable chain state.
+\end{itemize}
+
+If any plane's log diverges from the others, a \texttt{chain-integrity-failure} flag is raised and a Bailout Protocol signal is sent to the nearest \purpose{} layer ancestor. This three-plane attestation ensures no single plane can be compromised without detection.
+
+% ---------------------------------------------------------------
+\subsection{Chain Traversal Algorithm}
+
+The chain traversal algorithm is the mechanism by which an exception originating at node $n$ propagates upward through the accountability chain toward the human anchor $h$. It is the operational core of the Bailout Protocol's upward propagation phase and depends fundamentally on the immutability and correctness of the parent pointer structure.
+
+\begin{algorithm}[htbp]
+\caption{ChainTraversal — upward exception propagation}
+\label{alg:chain-traversal}
+\begin{algorithmic}[1]
+\State \textbf{Input:} node $n$ (originating node), exception context $\text{ctx}$
+\State \textbf{Output:} \texttt{propagated} or \texttt{parent\_unreachable}
+\State
+\State $C \leftarrow \text{Chain}(n)$ \Comment{Compute ordered chain from parent to root}
+\State $p \leftarrow C[0]$ \Comment{Immediate parent; empty if $n = h$}
+\State
+\While{$p \neq \bot$}
+    \State $\text{ctx}' \leftarrow \text{ctx}.\text{append\_node}(p)$ \Comment{Append diagnostic context at $p$}
+    \State $\text{FactLayer.UpdateLedger}(\text{ctx}')$ \Comment{Atomic append-only ledger update}
+    \State $\text{response} \leftarrow \text{SendToParent}(p, \text{ctx}')$ \Comment{Propagate to $p$}
+    \State
+    \If{$\text{response} = \texttt{ack}$}
+        \State \textbf{return} \texttt{propagated} \Comment{Human anchor reached}
+    \ElsIf{$\text{response} = \texttt{nack}$}
+        \State $p \leftarrow \alpha(p)$ \Comment{Move to next ancestor}
+        \State \textbf{continue}
+    \Else \Comment{No response within $T_{\text{prop}}$}
+        \State $\text{pathway} \leftarrow \text{SelectPathway}(PHR)$ \Comment{Next-best pathway}
+        \State $\text{response} \leftarrow \text{SendViaAlternate}(p, \text{ctx}', \text{pathway})$
+        \State \If{$\text{response} = \texttt{ack}$} \State \textbf{return} \texttt{propagated}
+        \ElsIf{$N_{\text{retries}} \geq N_{\text{max}}$} \State \textbf{return} \texttt{parent\_unreachable}
+        \EndIf
+    \EndIf
+\EndWhile
+\State \textbf{return} \texttt{propagated} \Comment{Reached human root $h$ via chain}
+\end{algorithmic}
+\end{algorithm}
+
+\subparagraph{Algorithm invariants.}
+
+\begin{enumerate}
+\item[$\mathbf{I_1}$] \textbf{Chain completeness:} For any node $n$, $\text{Chain}(n)$ contains exactly $\{\,\alpha(n), \alpha^{(2)}(n), \dots, \alpha^{(k)}(n)\,\}$ where $\alpha^{(k)}(n) = \bot$. No node is omitted and no node is added. This follows from the definition of $\text{Chain}$ in CH-1 and the loop termination condition $p \neq \bot$.
+
+\item[$\mathbf{I_2}$] \textbf{Propagation order:} The algorithm visits nodes in strict ancestor order: it sends to $\alpha(n)$ before $\alpha^{(2)}(n)$, and so on. This ordering is guaranteed by the ordered construction of $C$. Each intermediate node appends its diagnostic context before forwarding — a node cannot be bypassed because the diagnostic trail requires each node's timestamp and state snapshot in the ledger entry.
+
+\item[$\mathbf{I_3}$] \textbf{Termination at human root:} When $p = \bot$, the loop terminates and returns \texttt{propagated}. This return value indicates success — the human anchor $h$ has been reached. The termination condition is reached exactly at the human root, the sole node with $\alpha = \bot$.
+
+\item[$\mathbf{I_4}$] \textbf{Ledger append-only property:} Every call to $\text{FactLayer.UpdateLedger}(\text{ctx}')$ is an append operation. The Fact Layer does not permit overwriting or truncation, preserving the complete diagnostic history of the propagation.
+\end{enumerate}
+
+\subparagraph{Termination and correctness proofs.}
+
+\textbf{Termination:} The while loop iterates at most $k$ times, where $k$ is the depth of node $n$ in the agent tree (the number of edges from $n$ to the human root). Each iteration sets $p \leftarrow \alpha(p)$, moving strictly upward in the hierarchy. Since the parent relation is a strict partial function (each node has at most one parent, and the root has $\alpha = \bot$), repeated iteration must eventually reach $\bot$ and exit the loop. The loop cannot iterate indefinitely.
+
+\textbf{Correctness:} We establish that the algorithm returns \texttt{propagated} \emph{iff} the human anchor $h$ is reachable via the accountability chain. If $h$ is reachable, chain construction produces the ordered list $C = [\alpha(n), \alpha^{(2)}(n), \dots, h]$, and the while loop traverses each element until $p = \bot$, returning \texttt{propagated}. If $h$ is not reachable (e.g., due to network partition and exhausted retries), the algorithm returns \texttt{parent\_unreachable} after $N_{\max}$ failures at the last reachable ancestor. The invariants ensure that no node in the chain is skipped and that each node receives the full diagnostic context before the exception propagates further.
+
+\subparagraph{Complexity.} Let $d$ denote the depth of node $n$ in the agent tree. The chain traversal algorithm visits at most $d$ nodes, with at most $N_{\max}$ retry attempts per node. Time complexity is $O(d \cdot N_{\max})$; space complexity is $O(d)$ for the accumulated chain and diagnostic context. Both are linear in tree depth, satisfying the scalability requirement that a single human \purpose{} layer can govern arbitrarily large trees.
+
+\subparagraph{Relationship to the Bailout Protocol.} Chain traversal implements the ESCALATING state of the Bailout Protocol: $\text{Escalate}(n, \text{ctx})$ invokes the chain traversal algorithm to move the exception upward. The immutability of the parent pointer ensures that the traversal path is deterministic and cannot be altered during propagation. This makes the Bailout Protocol's liveness guarantee — that every unresolved exception reaches a human — structurally dependent on the immutability guarantee of the parent pointer system.
+
+% ---------------------------------------------------------------
+\subsection{Structural Properties of the Immutable Pointer System}
+
+The combination of immutable parent pointers, chain construction, human-root base case, \fact{} layer enforcement, \purpose{} layer spawn authorization, and chain traversal yields the following structural properties:
+
+\begin{enumerate}
+\item[$\mathbf{P_1}$] \textbf{Acyclicity.} No cycle can exist in the parent pointer structure. Every node has at most one parent, and the human root has no parent. Therefore, repeated traversal of $\alpha$ from any starting node must eventually reach $\bot$. This is guaranteed by the spawn authorization condition SP-1.
+
+\item[$\mathbf{P_2}$] \textbf{Single accountability terminus.} Every node $n \in \mathcal{N}$ has exactly one accountability terminus: the human root $h$ reached by following $\alpha$ transitively from $n$. No alternative terminus exists. No machine actor can serve as the terminal node of an accountability chain because no machine actor has $\alpha = \bot$.
+
+\item[$\mathbf{P_3}$] \textbf{Non-repudiation of spawn.} Every parent-child relationship is recorded in the Forensic Ledger at spawn time with a \purpose{} layer authorization signature. The tree structure itself is a permanent, tamper-evident record of which human principal authorized which delegation and when. No node can claim to have been spawned without authorization.
+
+\item[$\mathbf{P_4}$] \textbf{Deterministic propagation path.} Because $\alpha$ is immutable and the chain traversal algorithm deterministically follows $\alpha$ from child to parent, the exception propagation path for any node $n$ is fully determined at node creation and cannot be altered at runtime. This eliminates the failure class in which a compromised intermediate node redirects exceptions around the human anchor.
+
+\item[$\mathbf{P_5}$] \textbf{Scalability to arbitrary tree depth.} Time and space complexity of chain traversal are both $O(d)$ where $d$ is tree depth. A single human root can govern trees of arbitrarily large breadth and depth without superlinear overhead. This satisfies the architectural requirement that the \bxthree{} model scales to enterprise and infrastructure deployments with large distributed agent networks.
+\end{enumerate}
+
+These properties collectively ensure that the \bxthree{} recursive spawning architecture maintains its accountability guarantees — every action traces to a human principal, every exception reaches a human principal, and no machine actor can break or reroute this chain — regardless of system scale, network conditions, or the presence of compromised nodes.

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic1 - HITL Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f0f; color: #fff; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; }
+        h1 { font-size: 28px; font-weight: 700; }
+        .subtitle { opacity: 0.9; margin-top: 4px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: #1a1a1a; border-radius: 12px; padding: 20px; border: 1px solid #333; }
+        .card h2 { font-size: 16px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+        .pending-item { background: #252525; padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #667eea; }
+        .pending-item h3 { font-size: 14px; margin-bottom: 8px; }
+        .pending-item p { font-size: 12px; color: #888; margin-bottom: 12px; }
+        .btn-group { display: flex; gap: 8px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.85; }
+        .btn-approve { background: #22c55e; color: #fff; }
+        .btn-reject { background: #ef4444; color: #fff; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat { background: #1a1a1a; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #333; }
+        .stat-value { font-size: 32px; font-weight: 700; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
+        .empty { text-align: center; color: #666; padding: 40px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Agentic1 HITL Dashboard</h1>
+            <p class="subtitle">Human-in-the-Loop Approval System</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="pending-count">0</div>
+                <div class="stat-label">Pending Approvals</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="approved-count">0</div>
+                <div class="stat-label">Approved Today</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="rejected-count">0</div>
+                <div class="stat-label">Rejected Today</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Pending Approvals</h2>
+                <div id="pending-list">
+                    <div class="empty">No pending approvals</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Quick Actions</h2>
+                <div style="margin-top: 12px;">
+                    <button class="btn btn-approve" onclick="approveAll()" style="width: 100%;">Approve All</button>
+                    <button class="btn btn-reject" onclick="rejectAll()" style="width: 100%; margin-top: 8px;">Reject All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/hitl';
+
+        async function loadPending() {
+            try {
+                const res = await fetch(`${API_BASE}/pending`);
+                const data = await res.json();
+                renderPending(data.pending || []);
+            } catch (err) {
+                console.error('Failed to load pending:', err);
+            }
+        }
+
+        function renderPending(pending) {
+            const list = document.getElementById('pending-list');
+            document.getElementById('pending-count').textContent = pending.length;
+
+            if (pending.length === 0) {
+                list.innerHTML = '<div class="empty">No pending approvals</div>';
+                return;
+            }
+
+            list.innerHTML = pending.map(p => `
+                <div class="pending-item" data-task-id="${p.task_id}">
+                    <h3>${p.task?.Task || 'Unknown Task'}</h3>
+                    <p>Requester: ${p.requester} | Risk: ${p.task?.RiskWeight || 'N/A'}</p>
+                    <div class="btn-group">
+                        <button class="btn btn-approve" onclick="approve('${p.task_id}')">Approve</button>
+                        <button class="btn btn-reject" onclick="reject('${p.task_id}')">Reject</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function approve(taskId) {
+            await fetch(`${API_BASE}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId, approver: 'You' })
+            });
+            loadPending();
+        }
+
+        async function reject(taskId) {
+            await fetch(`${API_BASE}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId, rejector: 'You', reason: 'Rejected via dashboard' })
+            });
+            loadPending();
+        }
+
+        async function approveAll() {
+            const items = document.querySelectorAll('.pending-item');
+            for (const item of items) {
+                await approve(item.dataset.taskId);
+            }
+        }
+
+        async function rejectAll() {
+            const items = document.querySelectorAll('.pending-item');
+            for (const item of items) {
+                await reject(item.dataset.taskId);
+            }
+        }
+
+        loadPending();
+        setInterval(loadPending, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+\section{The Autonomous Drift Problem}
+
+\subsection{Definitions}
+
+In any spawning system that permits agents to create child agents without a mandatory human checkpoint, two degenerate structural conditions can arise.
+
+\begin{definition}[Orphaned Agent]
+An agent $a$ is \emph{orphaned} if its parent agent $p$ has either (a) terminated normally, (b) crashed, or (c) become unreachable by any communication channel registered to the spawning graph at the time of $a$'s creation. Orphaning is a structural property of the parent--child edge; it does not require $a$ to be aware of the condition.
+\end{definition}
+
+\begin{definition}[Drifted Agent]
+An agent $a$ is \emph{drifted} if every chain of spawn relations originating at $a$ eventually terminates at an agent that is neither itself a human agent nor under direct human supervisory control. Equivalently, the human-ancestor distance of $a$ is undefined (there is no human in its ancestry). A drifted agent may be orphaned or may have an active parent, but the entire lineage above it lacks a human anchor.
+\end{definition}
+
+These two conditions are orthogonal. An agent can be orphaned (parent gone) but still drifted if its parent was also not human-anchored. An agent can have an active parent yet be drifted if the parent's lineage is itself detached from any human.
+
+\subsection{Formal Model}
+
+Let $G = (V, E)$ be a directed acyclic graph (DAG) where each vertex $v \in V$ represents an agent and each directed edge $e = (u, v) \in E$ represents the spawn relation "$u$ created $v$". Let $H \subset V$ denote the set of human agents (agents with direct human principals). Define the ancestor function:
+
+\[
+\mathrm{Anc}(v) = \{ w \in V \mid w \text{ is reachable from } v \text{ via a reverse path of spawn edges} \}
+\]
+
+An agent $v$ is \emph{human-anchored} if $H \cap \mathrm{Anc}(v) \neq \emptyset$. It is \emph{drifted} otherwise.
+
+Define the depth function:
+
+\[
+\mathrm{depth}(v) = \begin{cases}
+0 & \text{if } v \in H \\
+1 + \max_{(v,w) \in E} \mathrm{depth}(w) & \text{otherwise}
+\end{cases}
+\]
+
+A \emph{depth limit} $\delta$ is a system parameter such that no agent with $\mathrm{depth}(v) > \delta$ may be spawned. Depth limits are the most common architectural response to drift. We examine why they are insufficient.
+
+\subsection{Conditions That Cause Drift}
+
+Drift is not a single failure mode; it emerges from three distinct causal conditions.
+
+\textbf{Condition 1: Unmonitored Subroutine Spawning.}
+An agent $p$ that has the capability to spawn children (a tool, a plugin, or an integrated subprocess) may do so as part of its normal operation. If $p$ is spawned without the system tracking its children as first-class entities, and if $p$ terminates before its children do, the children become orphaned and enter a drifted state if no human-anchor remains in the extended lineage. This is the most common case in practice: it requires no malicious behavior, only incomplete lifecycle tracking.
+
+\textbf{Condition 2: Principal Transfer Without Anchor Inheritance.}
+Some architectures implement explicit delegation: agent $a$ transfers control of a task to agent $b$, then ceases to exist. If $b$ does not inherit $a$'s human-ancestor relationship (i.e., the spawn relation is replaced rather than extended), $b$ loses its human anchor even though it continues to operate. The task persists; the human provenance is severed.
+
+\textbf{Condition 3: Network Partition During Spawn.}
+When an agent $a$ initiates the spawn of $b$, there is a window between the decision to spawn and the completion of the spawn protocol. If $a$ crashes or becomes unreachable during this window, the system may record $b$ as a child of $a$ without $b$ receiving confirmation. $b$ may then attempt to operate, having been spawned but not fully initialized with a recognized parent link. This is a consistency failure in the spawn graph itself.
+
+\subsection{Failure Modes}
+
+Once an agent has entered a drifted state, the system faces a set of compounding failure modes.
+
+\textbf{F1: Invisible Operation.}
+A drifted agent continues to execute. Unlike a crashed or stopped agent, it does not signal failure. It may complete work, spawn further children, and exit normally. All of its outputs are structurally valid. The drift is invisible because there is no error, only absence: no human is watching, and no system is auditing for human-anchor presence.
+
+\textbf{F2: Cascade Inheritance.}
+A drifted agent $d$ that spawns children produces children that inherit the drifted condition. Because $\mathrm{Anc}(c) \subseteq \mathrm{Anc}(d)$ for any child $c$ of $d$, and $H \cap \mathrm{Anc}(d) = \emptyset$, we have $H \cap \mathrm{Anc}(c) = \emptyset$ for all such $c$. Drift propagates downward through the spawn graph with no natural friction.
+
+\textbf{F3: Zombie Retention.}
+When a drifted agent holds resources (memory, file handles, tokens, credentials) that were allocated during its operation, normal resource-cleanup logic depends on either the agent terminating or a parent reaping those resources. If the agent is orphaned and no reaper exists, those resources persist beyond the agent's logical lifetime. In a long-running system, accumulated zombie retention can exhaust system capacity.
+
+\textbf{F4: Anchor Substitution.}
+If the system attempts to recover from drift by assigning a fallback principal (e.g., a system-level service account) as the new human anchor, it does not restore the original intent. The fallback principal has not authorized the agent's actions, has no semantic knowledge of its mission, and cannot meaningfully supervise its outputs. The agent is no longer drifted by the formal definition, but it is now operating under a principal that has no legitimate claim to its actions. This is anchor substitution, not drift correction.
+
+\subsection{Why Depth Limits Are Insufficient}
+
+A depth limit $\delta$ constrains $\mathrm{depth}(v)$ for all $v \in V$. It is tempting to suppose that a bounded depth implies a bounded drift surface: if the longest chain from a human to any agent has length $\delta$, then no agent can be more than $\delta$ spawn events from human oversight.
+
+However, depth limits address only the distance measure, not the anchor condition. Consider:
+
+\begin{enumerate}
+\item A depth limit of $\delta = 1$ permits agents to spawn one level of children. Suppose human $h$ spawns agent $a_1$, and $a_1$ spawns agent $a_2$. The depth of $a_2$ is 2, which violates the limit, so $a_2$ is not spawned. Drift is prevented \emph{by construction} in this case.
+
+\item Now introduce a delegation event: $h$ spawns $a_1$, $a_1$ spawns $a_2$, then $a_2$ transfers its task to $a_3$ and exits. If $a_3$ is treated as a new root (or if the transfer severs the spawn edge to $a_2$), then $a_3$ has depth 0 under the model but has no human principal. The depth limit is satisfied; the anchor condition is not.
+
+\item In a system that permits agents to be created by external processes (webhooks, cron-triggered scripts, third-party API callbacks), the spawn graph may have entry points outside the depth-limited subgraph. An agent spawned outside the controlled subgraph has undefined depth and undefined anchor status simultaneously; depth limits have no jurisdiction.
+\end{enumerate}
+
+More fundamentally, depth limits are a structural bound on a static property. Drift is a dynamic condition that emerges from the interaction of lifecycle management, communication topology, and failure modes over time. A depth limit can only say that a chain of a given length exists; it cannot say that the agent at the end of that chain has a living, reachable, accountable parent, or that any human principal is monitoring its outputs.
+
+The practical insufficiency of depth limits can be stated precisely:
+
+\begin{center}
+\fbox{A depth limit $\delta$ does not prevent drift in any system where agents can (1) transfer their principal, (2) be spawned by external processes, or (3) survive the termination of their parent.}
+\end{center}
+
+All three conditions are common in autonomous agent systems. Therefore, depth limits are a necessary but not sufficient safeguard.
+
+\subsection{Structural Requirements for Drift Prevention}
+
+From the above analysis, drift is prevented only when the following structural invariant holds for every agent $v \in V$:
+
+\[
+H \cap \mathrm{Anc}(v) \neq \emptyset
+\]
+
+This invariant cannot be maintained by a static depth bound alone. It requires:
+\begin{itemize}
+\item Lifecycle tracking: every spawn event records a parent--child edge in a graph that is audited for anchor presence.
+\item Orphan detection: terminated or unreachable parents trigger a check of whether their children remain human-anchored; if not, the children are re-anchored or terminated.
+\item Principal inheritance: delegation or transfer events must preserve the human-ancestor chain rather than sever it.
+\item External spawn isolation: agents created outside the controlled spawn graph must be explicitly anchored before receiving autonomous agency.
+\end{itemize}
+
+Without all four, any system that permits autonomous spawning will, given sufficient time and workload, produce drifted agents. The drift is not an edge case; it is the predicted terminus of any spawning architecture that treats depth as a proxy for accountability.

@@ -1,0 +1,95 @@
+\documentclass[11pt,oneside]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage[hidelinks]{hyperref}
+
+% Shorthand
+\newcommand{\bxthree}{BX3}
+\newcommand{\purpose}{\textit{Purpose}}
+\newcommand{\bounds}{\textit{Bounds}}
+\newcommand{\fact}{\textit{Fact}}
+
+\newtheorem{invariant}{Invariant}
+\newtheorem{property}[invariant]{Property}
+\newtheorem{assumption}[invariant]{Assumption}
+\newtheorem{theorem}{Theorem}
+
+\begin{document}
+\thispagestyle{empty}
+\vspace*{2cm}
+
+\begin{center}
+\textbf{\LARGE The BX3 Framework: Architectural Accountability for Recursive Multi-Agent Systems}\\[1.5em]
+
+\textbf{Jeremy Beebe}$^{1}$\footnote{Corresponding author. Email: jeremy@bxthre3.com} \\[0.6em]
+\textbf{$^{1}$Bxthre3 Inc, Monte Vista, Colorado, USA}\\[2em]
+
+\textbf{Abstract}\\[0.5em]
+\end{center}
+
+\noindent
+We present the \textbf{BX3 Framework} (Behavior, Execution, and eXchange Architecture) ---
+a novel architectural framework for recursive multi-agent AI systems that enforces
+human accountability as a compulsory structural property, not a policy aspiration.
+The framework organizes every node into three immutable functional layers ---
+\textbf{Purpose} (intent and final authority), \textbf{Bounds} (bounded reasoning within
+provisioned operating ranges), and \textbf{Fact} (deterministic enforcement and forensic
+auditability) --- and introduces five named architectural pillars that collectively
+constitute an \textbf{upstream accountability guarantee}: that BX3 systems
+fail upward into human consciousness, never downward into autonomous chaos.
+
+The five pillars are: (1) \textbf{Loop Isolation}, which prevents state circularity
+in recursive execution graphs; (2) \textbf{Recursive Spawning}, which maintains immutable
+parent-child accountability chains as nodes spawn subordinate agents; (3)
+\textbf{Spatial Firewall}, which enforces execution domain separation between spawned
+sub-agents; (4) \textbf{Sandbox Gate}, which provides controlled inter-domain
+communication channels with mandatory authorization verification; and
+(5) \textbf{Bailout Protocol}, which compels every unresolved exception state to
+propagate upward to a named human principal, bypassing all intermediate machine
+actors, with immutable forensic attribution at every step.
+
+We provide formal specifications for each pillar, establish the correctness
+properties they jointly guarantee, and describe the complete BX3 three-layer
+implementation model.  Evaluated against the Tiered Agentic Oversight (TAO) model,
+the BX3 Framework provides stronger accountability guarantees: TAO permits
+absorption at intermediate machine tiers; the BX3 Framework forbids it
+architecturally.  We further characterize the framework's properties under
+adversarial conditions and identify the directed research agenda required to
+extend these guarantees to high-stakes production deployments.
+
+\noindent\textbf{Keywords:} multi-agent systems, accountability, human-in-the-loop,
+fail-safe design, recursive AI, architectural frameworks, BX3, Bailout Protocol
+
+\newpage
+
+% Section 1 — Introduction
+\input{BailoutProtocol_Section1_Introduction.tex}
+% Section 2 — Background
+\input{BailoutProtocol_Section2_Background.tex}
+% Section 3 — The Bailout Protocol
+\input{BailoutProtocol_Section3.tex}
+% Section 4 — Implementation in the BX3 Framework
+\input{BailoutProtocol_Section4_Implementation_FINAL.tex}
+% Section 5 — Guarantees and Correctness Properties
+\input{BailoutProtocol_Section5_Guarantees.tex}
+% Section 6 — Limitations and Future Work
+\input{BailoutProtocol_Sections_6_7.tex}
+% Section 7 — Conclusion
+\input{BailoutProtocol_Section7_Conclusion.tex}
+
+% Acknowledgments
+\section*{Acknowledgments}
+We acknowledge the foundational influence of Norbert Wiener's Cybernetics in
+establishing the structural relationship between autonomous decision-making
+authority and human accountability.  We further acknowledge the socio-technical
+systems literature, particularly Trist and Bamforth's analysis of organizational
+change, for establishing the principle that technological and social systems are
+co-constituted --- a principle that informs the BX3 Framework's treatment of
+human-AI governance as an architectural, not merely a policy-level, commitment.
+No external funding was received for this work.
+
+% References
+\bibliographystyle{plain}
+\bibliography{BailoutProtocol}
+\end{document}
